@@ -1,0 +1,114 @@
+"use client";
+
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { TechnicalSignal } from "@/lib/technicalAnalysisData";
+import { TrendingUp, TrendingDown, Minus, Zap, BarChart2, Activity } from "lucide-react";
+
+interface SignalTableProps {
+  signals: TechnicalSignal[];
+}
+
+const SignalBadge: React.FC<{ signal: string }> = ({ signal }) => {
+  const config = {
+    "Mua": { bg: "bg-emerald-50", text: "text-emerald-700", icon: TrendingUp },
+    "Bán": { bg: "bg-red-50", text: "text-red-700", icon: TrendingDown },
+    "Trung lập": { bg: "bg-gray-50", text: "text-gray-600", icon: Minus },
+  };
+  const c = config[signal as keyof typeof config] || config["Trung lập"];
+  const Icon = c.icon;
+
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold ${c.bg} ${c.text}`}>
+      <Icon size={12} />
+      {signal}
+    </span>
+  );
+};
+
+const StrengthDots: React.FC<{ strength: string }> = ({ strength }) => {
+  const levels = { "Mạnh": 3, "Trung bình": 2, "Yếu": 1 };
+  const level = levels[strength as keyof typeof levels] || 1;
+
+  return (
+    <div className="flex items-center gap-1">
+      {[1, 2, 3].map((i) => (
+        <div
+          key={i}
+          className={`w-1.5 h-1.5 rounded-full ${
+            i <= level
+              ? level === 3
+                ? "bg-emerald-500"
+                : level === 2
+                ? "bg-amber-400"
+                : "bg-gray-400"
+              : "bg-gray-200"
+          }`}
+        />
+      ))}
+      <span className="text-xs text-gray-500 ml-1">{strength}</span>
+    </div>
+  );
+};
+
+const SignalTable: React.FC<SignalTableProps> = ({ signals }) => {
+  const maSignals = signals.filter(
+    (s) => s.indicator.includes("SMA") || s.indicator.includes("EMA")
+  );
+  const oscSignals = signals.filter(
+    (s) => !s.indicator.includes("SMA") && !s.indicator.includes("EMA")
+  );
+
+  const renderTable = (items: TechnicalSignal[], title: string, icon: React.ReactNode) => (
+    <Card className="shadow-sm border-gray-200">
+      <CardHeader className="pb-2 pt-3 px-4">
+        <CardTitle className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+          {icon}
+          {title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="px-4 pb-3">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-100">
+                <th className="text-left py-2 text-xs text-gray-500 font-medium">Chỉ báo</th>
+                <th className="text-right py-2 text-xs text-gray-500 font-medium">Giá trị</th>
+                <th className="text-center py-2 text-xs text-gray-500 font-medium">Tín hiệu</th>
+                <th className="text-right py-2 text-xs text-gray-500 font-medium">Độ mạnh</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((signal) => (
+                <tr
+                  key={signal.indicator}
+                  className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors"
+                >
+                  <td className="py-2.5 text-sm text-gray-700 font-medium">{signal.indicator}</td>
+                  <td className="py-2.5 text-right font-mono text-sm text-gray-600">
+                    {signal.value}
+                  </td>
+                  <td className="py-2.5 text-center">
+                    <SignalBadge signal={signal.signal} />
+                  </td>
+                  <td className="py-2.5 text-right">
+                    <StrengthDots strength={signal.strength} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  return (
+    <div className="space-y-4">
+      {renderTable(maSignals, "Đường trung bình động", <BarChart2 size={16} className="text-blue-500" />)}
+      {renderTable(oscSignals, "Chỉ báo kỹ thuật", <Activity size={16} className="text-purple-500" />)}
+    </div>
+  );
+};
+
+export default SignalTable;
