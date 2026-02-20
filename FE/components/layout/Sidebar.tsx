@@ -20,11 +20,11 @@ import { cn } from "@/lib/utils";
 const navigation = [
     { name: "Tổng quan", href: "/", icon: LayoutDashboard },
     { name: "Thị trường", href: "/market", icon: BarChart2 },
+    { name: "Chỉ số", href: "/indices", icon: Activity },
     { name: "Bảng điện", href: "/price-board", icon: Monitor },
     { name: "Cổ phiếu", href: "/stocks", icon: LineChart },
     { name: "Phân tích", href: "/analysis", icon: PieChart },
     { name: "Tin tức", href: "/news", icon: Newspaper },
-    { name: "Chỉ số", href: "/indices", icon: Activity },
     { name: "Cài đặt", href: "/settings", icon: Settings },
 ];
 

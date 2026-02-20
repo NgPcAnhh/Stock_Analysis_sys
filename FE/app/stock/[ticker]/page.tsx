@@ -14,6 +14,8 @@ import RecommendationsSection from "@/components/stock/RecommendationsSection";
 import FinancialMetricsTab from "@/components/stock/FinancialMetricsTab";
 import FinancialReportsTab from "@/components/stock/FinancialReportsTab";
 import CompanyProfileTab from "@/components/stock/CompanyProfileTab";
+import StockComparisonTab from "@/components/stock/StockComparisonTab";
+import BalanceSheetTab from "@/components/stock/BalanceSheetTab";
 import { Card, CardContent } from "@/components/ui/card";
 import { Footer } from "@/components/layout/Footer";
 import { getStockDetailData } from "@/lib/stockDetailMockData";
@@ -134,6 +136,18 @@ export default function StockDetailPage({ params }: StockDetailPageProps) {
                 {activeTab === "profile" && (
                     <div className="py-4">
                         <CompanyProfileTab />
+                    </div>
+                )}
+
+                {activeTab === "compare" && (
+                    <div className="py-4">
+                        <StockComparisonTab />
+                    </div>
+                )}
+
+                {activeTab === "analysis" && (
+                    <div className="py-4">
+                        <BalanceSheetTab />
                     </div>
                 )}
             </div>
