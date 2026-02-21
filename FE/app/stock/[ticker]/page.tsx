@@ -150,6 +150,7 @@ export default function StockDetailPage({ params }: StockDetailPageProps) {
                         <BalanceSheetTab />
                     </div>
                 )}
+
             </div>
 
             {/* Spacing before footer */}

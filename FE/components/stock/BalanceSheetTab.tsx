@@ -5,6 +5,7 @@ import ReactECharts from "echarts-for-react";
 import IncomeStatementTab from "@/components/stock/IncomeStatementTab";
 import CashFlowTab from "@/components/stock/CashFlowTab";
 import QuantAnalysisTab from "@/components/stock/QuantAnalysisTab";
+import ValuationForecastTab from "@/components/stock/ValuationForecastTab";
 import {
   overviewStats,
   altmanZScore,
@@ -40,7 +41,7 @@ const YoYBadge = ({ value, direction }: { value: number; direction?: "up" | "dow
 };
 
 // ==================== ROW 0: PAGE HEADER (SHARED) ====================
-type SubTab = "balance" | "income" | "cashflow" | "quant";
+type SubTab = "balance" | "income" | "cashflow" | "quant" | "valuation";
 
 function PageHeader({
   ticker,
@@ -57,7 +58,8 @@ function PageHeader({
     { id: "balance", icon: "📊", label: "Bảng Cân Đối Kế Toán" },
     { id: "income", icon: "📈", label: "Kết Quả Kinh Doanh" },
     { id: "cashflow", icon: "💰", label: "Lưu Chuyển Tiền Tệ" },
-    { id: "quant", icon: "📐", label: "Phân tích Định lượng" },
+    { id: "quant", icon: "📐", label: "Phân tích 360" },
+    { id: "valuation", icon: "💰", label: "Định giá & Dự phóng" },
   ];
 
   return (
@@ -732,6 +734,7 @@ export default function BalanceSheetTab() {
       {subTab === "income" && <IncomeStatementTab />}
       {subTab === "cashflow" && <CashFlowTab />}
       {subTab === "quant" && <QuantAnalysisTab />}
+      {subTab === "valuation" && <ValuationForecastTab />}
     </div>
   );
 }

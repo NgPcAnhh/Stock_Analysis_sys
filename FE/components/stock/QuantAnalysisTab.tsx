@@ -15,11 +15,9 @@ import {
   varData,
   radarMetrics,
   rollingReturnPeriods,
-  monteCarlo,
   generateMonteCarlo,
-  generateValuation,
 } from "@/lib/mockQuantData";
-import type { MonteCarloResult, ValuationResult } from "@/lib/mockQuantData";
+import type { MonteCarloResult } from "@/lib/mockQuantData";
 import { useStockDetail } from "@/lib/StockDetailContext";
 
 /* ================================================================= */
@@ -996,6 +994,34 @@ const MonteCarloSimulation = () => {
   const [annualVol, setAnnualVol] = useState(28.5);          // %
   const [timeDays, setTimeDays] = useState(253);             // trading days
 
+  /* ── Confirmed params – chart only renders when user clicks confirm ── */
+  const [confirmedParams, setConfirmedParams] = useState({
+    numSims: 1000,
+    annualReturn: 10,
+    annualVol: 28.5,
+    timeDays: 253,
+  });
+  const [isSimulating, setIsSimulating] = useState(false);
+  const [hasSimulated, setHasSimulated] = useState(false);
+
+  const paramsChanged =
+    numSims !== confirmedParams.numSims ||
+    annualReturn !== confirmedParams.annualReturn ||
+    annualVol !== confirmedParams.annualVol ||
+    timeDays !== confirmedParams.timeDays;
+
+  const handleConfirm = useCallback(() => {
+    setIsSimulating(true);
+    // Defer heavy computation to next frame so the spinner shows first
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        setConfirmedParams({ numSims, annualReturn, annualVol, timeDays });
+        setHasSimulated(true);
+        setIsSimulating(false);
+      }, 50);
+    });
+  }, [numSims, annualReturn, annualVol, timeDays]);
+
   /* ── Risk scenario presets ──────────────────────────────────────── */
   const riskPresets = useMemo(
     () => [
@@ -1018,22 +1044,22 @@ const MonteCarloSimulation = () => {
     []
   );
 
-  /* ── Run simulation ──────────────────────────────────────────────── */
+  /* ── Run simulation (only when confirmedParams change) ───────────── */
   const mcResult: MonteCarloResult = useMemo(
     () =>
       generateMonteCarlo({
-        numSims: Math.max(100, Math.min(numSims, 10000)),
-        days: Math.max(20, Math.min(timeDays, 504)),
-        annualReturn,
-        annualVol,
+        numSims: Math.max(100, Math.min(confirmedParams.numSims, 10000)),
+        days: Math.max(20, Math.min(confirmedParams.timeDays, 504)),
+        annualReturn: confirmedParams.annualReturn,
+        annualVol: confirmedParams.annualVol,
       }),
-    [numSims, annualReturn, annualVol, timeDays]
+    [confirmedParams]
   );
 
   const { paths, percentile95, percentile50, percentile5, stats } = mcResult;
   const days = useMemo(
-    () => Array.from({ length: timeDays }, (_, i) => `Day ${i}`),
-    [timeDays]
+    () => Array.from({ length: confirmedParams.timeDays }, (_, i) => `Day ${i}`),
+    [confirmedParams.timeDays]
   );
 
   /* ── Chart option ────────────────────────────────────────────────── */
@@ -1083,7 +1109,7 @@ const MonteCarloSimulation = () => {
         data: days,
         axisLabel: {
           fontSize: 9, color: "#94a3b8",
-          interval: Math.max(Math.floor(timeDays / 6), 1),
+          interval: Math.max(Math.floor(confirmedParams.timeDays / 6), 1),
           formatter: (v: string) => v.replace("Day ", "D"),
         },
         axisLine: { lineStyle: { color: "#e2e8f0" } },
@@ -1115,7 +1141,7 @@ const MonteCarloSimulation = () => {
         },
       ],
     };
-  }, [paths, percentile50, percentile95, percentile5, days, timeDays]);
+  }, [paths, percentile50, percentile95, percentile5, days, confirmedParams.timeDays]);
 
   const fmtVND = (v: number) => v.toLocaleString("vi-VN") + " đ";
 
@@ -1206,363 +1232,138 @@ const MonteCarloSimulation = () => {
               step={1}
             />
           </div>
+
+          {/* Confirm Button */}
+          <div className="flex items-center gap-3 pt-1">
+            <button
+              onClick={handleConfirm}
+              disabled={isSimulating}
+              className={`inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all ${
+                isSimulating
+                  ? "bg-blue-400 cursor-not-allowed"
+                  : paramsChanged || !hasSimulated
+                    ? "bg-blue-600 hover:bg-blue-700 active:scale-[0.98] ring-1 ring-blue-600/20"
+                    : "bg-blue-500 hover:bg-blue-600"
+              }`}
+            >
+              {isSimulating ? (
+                <>
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Đang mô phỏng…
+                </>
+              ) : (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                  </svg>
+                  Chạy mô phỏng
+                </>
+              )}
+            </button>
+            {paramsChanged && hasSimulated && (
+              <span className="text-xs text-amber-600 font-medium animate-pulse">
+                ⚠ Tham số đã thay đổi — nhấn &quot;Chạy mô phỏng&quot; để cập nhật
+              </span>
+            )}
+          </div>
         </div>
       </CardWrapper>
 
       {/* ── Main Chart + Stats ─────────────────────────────────────── */}
-      <CardWrapper title={`Mô phỏng Monte Carlo (${numSims.toLocaleString()} kịch bản · ${timeDays - 1} ngày)`}>
-        <p className="text-[11px] text-gray-400 -mt-2 mb-3">
-          μ = {annualReturn}%/năm · σ = {annualVol}%/năm · Hiển thị {Math.min(50, numSims)} đường mẫu
-        </p>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          {/* Left: Spaghetti Chart */}
-          <div className="lg:col-span-9">
-            <ReactECharts option={option} style={{ height: 400 }} />
+      {!hasSimulated && !isSimulating ? (
+        /* Placeholder when no simulation has been run yet */
+        <CardWrapper title="Mô phỏng Monte Carlo">
+          <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mb-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            <p className="text-sm font-medium text-gray-500">Chưa có dữ liệu mô phỏng</p>
+            <p className="text-xs text-gray-400 mt-1">Thiết lập tham số và nhấn &quot;Chạy mô phỏng&quot; để bắt đầu</p>
           </div>
+        </CardWrapper>
+      ) : (
+        <CardWrapper title={`Mô phỏng Monte Carlo (${confirmedParams.numSims.toLocaleString()} kịch bản · ${confirmedParams.timeDays - 1} ngày)`}>
+          <p className="text-[11px] text-gray-400 -mt-2 mb-3">
+            μ = {confirmedParams.annualReturn}%/năm · σ = {confirmedParams.annualVol}%/năm · Hiển thị {Math.min(50, confirmedParams.numSims)} đường mẫu
+          </p>
 
-          {/* Right: Stats Panel */}
-          <div className="lg:col-span-3 flex flex-col gap-3">
-            {statItems.map((it) => (
-              <div key={it.label} className="bg-gray-50 rounded-lg border border-gray-100 p-3">
+          <div className="relative grid grid-cols-1 lg:grid-cols-12 gap-4">
+            {/* Loading overlay */}
+            {isSimulating && (
+              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/80 backdrop-blur-[2px] rounded-lg transition-opacity">
+                <div className="relative">
+                  <div className="h-12 w-12 rounded-full border-4 border-gray-200" />
+                  <div className="absolute inset-0 h-12 w-12 rounded-full border-4 border-transparent border-t-blue-500 animate-spin" />
+                </div>
+                <p className="mt-4 text-sm font-medium text-gray-600 animate-pulse">Đang chạy mô phỏng…</p>
+                <p className="text-xs text-gray-400 mt-1">{numSims.toLocaleString()} kịch bản · {timeDays - 1} ngày</p>
+              </div>
+            )}
+
+            {/* Left: Spaghetti Chart */}
+            <div className="lg:col-span-9">
+              <ReactECharts option={option} style={{ height: 400 }} />
+            </div>
+
+            {/* Right: Stats Panel */}
+            <div className="lg:col-span-3 flex flex-col gap-3">
+              {statItems.map((it) => (
+                <div key={it.label} className="bg-gray-50 rounded-lg border border-gray-100 p-3">
+                  <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">
+                    {it.label}
+                  </span>
+                  <div className={`text-lg font-extrabold font-mono ${it.color} mt-0.5`}>
+                    {it.value}
+                  </div>
+                </div>
+              ))}
+
+              {/* Win Rate */}
+              <div className="bg-gray-50 rounded-lg border border-gray-100 p-3">
                 <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">
-                  {it.label}
+                  Xác suất có lãi (Win Rate)
                 </span>
-                <div className={`text-lg font-extrabold font-mono ${it.color} mt-0.5`}>
-                  {it.value}
+                <div className="text-lg font-extrabold font-mono text-gray-800 mt-0.5">
+                  {stats.winRate}%
+                </div>
+                <div className="mt-2 h-2 w-full rounded-full bg-gray-200 overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all"
+                    style={{
+                      width: `${stats.winRate}%`,
+                      background: `linear-gradient(90deg, #00C076 0%, #00C076 ${stats.winRate}%, #EF4444 ${stats.winRate}%, #EF4444 100%)`,
+                    }}
+                  />
+                </div>
+                <div className="flex justify-between mt-1 text-[9px] text-gray-400 font-mono">
+                  <span>Lỗ {(100 - stats.winRate).toFixed(1)}%</span>
+                  <span>Lãi {stats.winRate}%</span>
                 </div>
               </div>
-            ))}
-
-            {/* Win Rate */}
-            <div className="bg-gray-50 rounded-lg border border-gray-100 p-3">
-              <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">
-                Xác suất có lãi (Win Rate)
-              </span>
-              <div className="text-lg font-extrabold font-mono text-gray-800 mt-0.5">
-                {stats.winRate}%
-              </div>
-              <div className="mt-2 h-2 w-full rounded-full bg-gray-200 overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all"
-                  style={{
-                    width: `${stats.winRate}%`,
-                    background: `linear-gradient(90deg, #00C076 0%, #00C076 ${stats.winRate}%, #EF4444 ${stats.winRate}%, #EF4444 100%)`,
-                  }}
-                />
-              </div>
-              <div className="flex justify-between mt-1 text-[9px] text-gray-400 font-mono">
-                <span>Lỗ {(100 - stats.winRate).toFixed(1)}%</span>
-                <span>Lãi {stats.winRate}%</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <InsightBlock level={level}>
-          <strong>Nhận định:</strong> Dựa trên mô phỏng {numSims.toLocaleString()} kịch bản
-          (μ={annualReturn}%, σ={annualVol}%), cổ phiếu có{" "}
-          <span className="font-mono font-semibold">{stats.winRate}%</span> xác suất đóng cửa
-          cao hơn giá hiện tại sau {timeDays - 1} ngày giao dịch, với mức kỳ vọng trung bình tăng{" "}
-          <span className="font-mono font-semibold text-[#F97316]">
-            {stats.expectedReturn > 0 ? "+" : ""}{stats.expectedReturn}%
-          </span>.
-          {stats.winRate >= 65
-            ? " Phân bổ rủi ro nghiêng về phía tích cực — momentum hỗ trợ chiến lược mua & nắm giữ."
-            : stats.winRate >= 50
-              ? " Phân bổ cân bằng — cần kết hợp stop-loss để quản lý rủi ro."
-              : " Xác suất thua lỗ cao — không nên mở vị thế mới nếu chưa có tín hiệu đảo chiều."}
-          {annualVol >= 35 &&
-            " ⚠️ Biến động rất cao — mô hình nhạy cảm với sigma, kết quả cần diễn giải thận trọng."}
-        </InsightBlock>
-      </CardWrapper>
-    </div>
-  );
-};
-
-/* ================================================================= */
-/*  SECTION 6 – ĐỊNH GIÁ CỔ PHIẾU (MONTE CARLO DCF)                 */
-/* ================================================================= */
-
-const StockValuationMC = () => {
-  /* ── Valuation parameters ─────────────────────────────────────── */
-  const [currentEPS, setCurrentEPS] = useState(5200);          // VND
-  const [growthRate, setGrowthRate] = useState(15);             // %
-  const [growthVol, setGrowthVol] = useState(8);                // %
-  const [discountRate, setDiscountRate] = useState(12);         // %
-  const [terminalGrowth, setTerminalGrowth] = useState(3);      // %
-  const [projYears, setProjYears] = useState(5);
-  const [valSims, setValSims] = useState(5000);
-
-  const currentPrice = 85000; // VND from mock
-
-  /* ── Run valuation simulation ────────────────────────────────── */
-  const valResult: ValuationResult = useMemo(
-    () =>
-      generateValuation(
-        { currentEPS, growthRate, growthVol, discountRate, terminalGrowth, years: projYears, numSims: Math.max(500, Math.min(valSims, 20000)) },
-        currentPrice
-      ),
-    [currentEPS, growthRate, growthVol, discountRate, terminalGrowth, projYears, valSims]
-  );
-
-  /* ── Histogram of fair values ───────────────────────────────────── */
-  const histOption = useMemo(() => {
-    // Bucket fair values into bins
-    const values = valResult.fairValues;
-    const minV = Math.min(...values);
-    const maxV = Math.max(...values);
-    const BINS = 30;
-    const binWidth = (maxV - minV) / BINS || 1;
-    const buckets: { range: string; center: number; count: number }[] = [];
-
-    for (let i = 0; i < BINS; i++) {
-      const lo = minV + i * binWidth;
-      const hi = lo + binWidth;
-      const count = values.filter((v) => v >= lo && (i === BINS - 1 ? v <= hi : v < hi)).length;
-      buckets.push({
-        range: `${(lo / 1000).toFixed(0)}K–${(hi / 1000).toFixed(0)}K`,
-        center: Math.round((lo + hi) / 2),
-        count,
-      });
-    }
-
-    return {
-      tooltip: {
-        trigger: "axis",
-        backgroundColor: "#1e293b",
-        borderColor: "#334155",
-        textStyle: { color: "#f1f5f9", fontSize: 11, fontFamily: "Roboto Mono" },
-      },
-      grid: { top: 40, bottom: 45, left: 50, right: 20 },
-      xAxis: {
-        type: "category",
-        data: buckets.map((b) => b.range),
-        axisLabel: { fontSize: 8, color: "#94a3b8", rotate: 45, interval: 2 },
-        axisLine: { lineStyle: { color: "#e2e8f0" } },
-      },
-      yAxis: {
-        type: "value",
-        name: "Số kịch bản",
-        nameTextStyle: { fontSize: 10, color: "#94a3b8" },
-        axisLabel: { fontSize: 9, color: "#94a3b8" },
-        splitLine: { lineStyle: { color: "#f1f5f9" } },
-      },
-      series: [
-        {
-          type: "bar",
-          data: buckets.map((b) => ({
-            value: b.count,
-            itemStyle: {
-              color: b.center < currentPrice ? "#EF4444" : "#00C076",
-              opacity: 0.75,
-            },
-          })),
-          barMaxWidth: 20,
-        },
-      ],
-      // Mark lines for current price & median
-      ...(valResult.median > 0
-        ? {}
-        : {}),
-    };
-  }, [valResult, currentPrice]);
-
-  /* ── Valuation verdict ──────────────────────────────────────────── */
-  const verdictLevel: InsightLevel =
-    valResult.upside >= 20
-      ? "positive"
-      : valResult.upside >= 0
-        ? "neutral"
-        : valResult.upside >= -15
-          ? "warning"
-          : "negative";
-
-  const verdictText =
-    valResult.upside >= 20
-      ? "Cổ phiếu đang được định giá thấp đáng kể so với giá trị nội tại ước tính — có tiềm năng tăng giá tốt."
-      : valResult.upside >= 0
-        ? "Giá hiện tại gần mức hợp lý theo mô hình DCF Monte Carlo — upside hạn chế."
-        : valResult.upside >= -15
-          ? "Cổ phiếu đang bị định giá cao nhẹ — cân nhắc chờ điều chỉnh trước khi mua."
-          : "Giá hiện tại cao hơn nhiều so với giá trị nội tại — rủi ro downside lớn.";
-
-  const fmtK = (v: number) => (v / 1000).toFixed(1) + "K đ";
-  const fmtVND = (v: number) => v.toLocaleString("vi-VN") + " đ";
-
-  return (
-    <div className="space-y-4">
-      {/* ── Valuation Inputs ──────────────────────────────────────── */}
-      <CardWrapper>
-        <div className="space-y-4">
-          <h4 className="text-xs font-semibold text-gray-600 uppercase tracking-wider flex items-center gap-2">
-            <span className="w-1 h-4 bg-purple-500 rounded-full" />
-            Tham số Định giá DCF
-          </h4>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <ParamInput
-              label="EPS hiện tại"
-              value={currentEPS}
-              onChange={setCurrentEPS}
-              unit="VND"
-              min={100}
-              max={100000}
-              step={100}
-            />
-            <ParamInput
-              label="Tăng trưởng EPS"
-              value={growthRate}
-              onChange={setGrowthRate}
-              unit="%/năm"
-              min={-20}
-              max={50}
-              step={0.5}
-            />
-            <ParamInput
-              label="Biến động tăng trưởng"
-              value={growthVol}
-              onChange={setGrowthVol}
-              unit="%"
-              min={1}
-              max={30}
-              step={0.5}
-            />
-            <ParamInput
-              label="Tỷ lệ chiết khấu"
-              value={discountRate}
-              onChange={setDiscountRate}
-              unit="%/năm"
-              min={5}
-              max={25}
-              step={0.5}
-            />
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <ParamInput
-              label="Tăng trưởng vĩnh viễn"
-              value={terminalGrowth}
-              onChange={setTerminalGrowth}
-              unit="%"
-              min={0}
-              max={8}
-              step={0.5}
-            />
-            <ParamInput
-              label="Số năm dự phóng"
-              value={projYears}
-              onChange={setProjYears}
-              min={3}
-              max={10}
-              step={1}
-            />
-            <ParamInput
-              label="Số kịch bản"
-              value={valSims}
-              onChange={setValSims}
-              min={500}
-              max={20000}
-              step={500}
-            />
-          </div>
-        </div>
-      </CardWrapper>
-
-      {/* ── Results ───────────────────────────────────────────────── */}
-      <CardWrapper title="Phân phối Giá trị Nội tại (Fair Value)">
-        <p className="text-[11px] text-gray-400 -mt-2 mb-3">
-          Mô phỏng {valSims.toLocaleString()} kịch bản DCF với biến động tăng trưởng ngẫu nhiên
-        </p>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          {/* Left: Histogram */}
-          <div className="lg:col-span-8">
-            <ReactECharts option={histOption} style={{ height: 350 }} />
-            <div className="flex items-center justify-center gap-4 mt-1 text-[10px] text-gray-500">
-              <span className="flex items-center gap-1">
-                <span className="inline-block w-3 h-3 rounded-sm bg-[#EF4444] opacity-75" />
-                Dưới giá hiện tại
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="inline-block w-3 h-3 rounded-sm bg-[#00C076] opacity-75" />
-                Trên giá hiện tại
-              </span>
             </div>
           </div>
 
-          {/* Right: Summary Cards */}
-          <div className="lg:col-span-4 flex flex-col gap-3">
-            <div className="bg-gray-50 rounded-lg border border-gray-100 p-3">
-              <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">
-                Giá hiện tại
-              </span>
-              <div className="text-lg font-extrabold font-mono text-gray-800 mt-0.5">
-                {fmtVND(currentPrice)}
-              </div>
-            </div>
-            <div className="bg-gray-50 rounded-lg border border-gray-100 p-3">
-              <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">
-                Giá trị Nội tại (Trung vị)
-              </span>
-              <div className="text-lg font-extrabold font-mono text-[#F97316] mt-0.5">
-                {fmtVND(valResult.median)}
-              </div>
-            </div>
-            <div className="bg-gray-50 rounded-lg border border-gray-100 p-3">
-              <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">
-                Khoảng tin cậy 80%
-              </span>
-              <div className="text-sm font-bold font-mono text-gray-700 mt-0.5">
-                {fmtK(valResult.percentile10)} – {fmtK(valResult.percentile90)}
-              </div>
-            </div>
-            <div className="bg-gray-50 rounded-lg border border-gray-100 p-3">
-              <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">
-                Upside / Downside
-              </span>
-              <div
-                className={`text-lg font-extrabold font-mono mt-0.5 ${
-                  valResult.upside >= 0 ? "text-[#00C076]" : "text-[#EF4444]"
-                }`}
-              >
-                {valResult.upside > 0 ? "+" : ""}
-                {valResult.upside}%
-              </div>
-            </div>
-            <div className="bg-gray-50 rounded-lg border border-gray-100 p-3">
-              <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">
-                Xác suất Undervalued
-              </span>
-              <div className="text-lg font-extrabold font-mono text-gray-800 mt-0.5">
-                {valResult.pctUndervalued}%
-              </div>
-              <div className="mt-2 h-2 w-full rounded-full bg-gray-200 overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-[#00C076] transition-all"
-                  style={{ width: `${valResult.pctUndervalued}%` }}
-                />
-              </div>
-              <div className="flex justify-between mt-1 text-[9px] text-gray-400 font-mono">
-                <span>Đắt {(100 - valResult.pctUndervalued).toFixed(1)}%</span>
-                <span>Rẻ {valResult.pctUndervalued}%</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <InsightBlock level={verdictLevel}>
-          <strong>Nhận định Định giá:</strong> Với EPS hiện tại {currentEPS.toLocaleString()} đ,
-          tăng trưởng kỳ vọng {growthRate}%/năm ± {growthVol}%, chiết khấu {discountRate}%:{" "}
-          giá trị nội tại trung vị ước tính{" "}
-          <span className="font-mono font-semibold text-[#F97316]">{fmtVND(valResult.median)}</span>,
-          tương đương upside{" "}
-          <span className={`font-mono font-semibold ${valResult.upside >= 0 ? "text-[#00C076]" : "text-[#EF4444]"}`}>
-            {valResult.upside > 0 ? "+" : ""}{valResult.upside}%
-          </span>{" "}
-          so với giá thị trường. {verdictText}{" "}
-          Có <span className="font-mono font-semibold">{valResult.pctUndervalued}%</span> kịch bản
-          cho thấy cổ phiếu đang bị định giá thấp.
-        </InsightBlock>
-      </CardWrapper>
+          <InsightBlock level={level}>
+            <strong>Nhận định:</strong> Dựa trên mô phỏng {confirmedParams.numSims.toLocaleString()} kịch bản
+            (μ={confirmedParams.annualReturn}%, σ={confirmedParams.annualVol}%), cổ phiếu có{" "}
+            <span className="font-mono font-semibold">{stats.winRate}%</span> xác suất đóng cửa
+            cao hơn giá hiện tại sau {confirmedParams.timeDays - 1} ngày giao dịch, với mức kỳ vọng trung bình tăng{" "}
+            <span className="font-mono font-semibold text-[#F97316]">
+              {stats.expectedReturn > 0 ? "+" : ""}{stats.expectedReturn}%
+            </span>.
+            {stats.winRate >= 65
+              ? " Phân bổ rủi ro nghiêng về phía tích cực — momentum hỗ trợ chiến lược mua & nắm giữ."
+              : stats.winRate >= 50
+                ? " Phân bổ cân bằng — cần kết hợp stop-loss để quản lý rủi ro."
+                : " Xác suất thua lỗ cao — không nên mở vị thế mới nếu chưa có tín hiệu đảo chiều."}
+            {confirmedParams.annualVol >= 35 &&
+              " ⚠️ Biến động rất cao — mô hình nhạy cảm với sigma, kết quả cần diễn giải thận trọng."}
+          </InsightBlock>
+        </CardWrapper>
+      )}
     </div>
   );
 };
@@ -1580,7 +1381,7 @@ export default function QuantAnalysisTab() {
       <div className="flex items-center gap-2">
         <span className="w-1.5 h-6 bg-gradient-to-b from-[#F97316] to-[#F59E0B] rounded-full" />
         <h2 className="text-base font-bold text-gray-800">
-          Phân tích Định lượng – {stockInfo?.ticker ?? ""}
+          Phân tích 360 – {stockInfo?.ticker ?? ""}
         </h2>
       </div>
 
@@ -1650,26 +1451,7 @@ export default function QuantAnalysisTab() {
       <hr className="border-gray-100" />
 
       {/* ═══════════════════════════════════════════════════════════ */}
-      {/*  SECTION 4: SO SÁNH & ĐÁNH GIÁ TỔNG HỢP                   */}
-      {/* ═══════════════════════════════════════════════════════════ */}
-      <section>
-        <SectionHeading
-          icon="🎯"
-          title="So sánh & Đánh giá Tổng hợp"
-          subtitle="Radar đa chiều và phân tích rolling return theo chu kỳ đầu tư"
-        />
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <RiskRewardRadar />
-            <RollingReturnTable />
-          </div>
-        </div>
-      </section>
-
-      <hr className="border-gray-100" />
-
-      {/* ═══════════════════════════════════════════════════════════ */}
-      {/*  SECTION 5: MÔ PHỎNG MONTE CARLO                           */}
+      {/*  SECTION 4: MÔ PHỎNG MONTE CARLO                           */}
       {/* ═══════════════════════════════════════════════════════════ */}
       <section>
         <SectionHeading
@@ -1683,15 +1465,20 @@ export default function QuantAnalysisTab() {
       <hr className="border-gray-100" />
 
       {/* ═══════════════════════════════════════════════════════════ */}
-      {/*  SECTION 6: ĐỊNH GIÁ CỔ PHIẾU                              */}
+      {/*  SECTION 6: SO SÁNH & ĐÁNH GIÁ TỔNG HỢP                   */}
       {/* ═══════════════════════════════════════════════════════════ */}
       <section>
         <SectionHeading
-          icon="💰"
-          title="Định giá Cổ phiếu (Monte Carlo DCF)"
-          subtitle="Ước tính giá trị nội tại qua mô phỏng dòng tiền chiết khấu với biến động ngẫu nhiên"
+          icon="🎯"
+          title="So sánh & Đánh giá Tổng hợp"
+          subtitle="Radar đa chiều và phân tích rolling return theo chu kỳ đầu tư"
         />
-        <StockValuationMC />
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <RiskRewardRadar />
+            <RollingReturnTable />
+          </div>
+        </div>
       </section>
     </div>
   );
