@@ -4,6 +4,7 @@ import React, { useState, useMemo } from "react";
 import ReactECharts from "echarts-for-react";
 import IncomeStatementTab from "@/components/stock/IncomeStatementTab";
 import CashFlowTab from "@/components/stock/CashFlowTab";
+import QuantAnalysisTab from "@/components/stock/QuantAnalysisTab";
 import {
   overviewStats,
   altmanZScore,
@@ -39,7 +40,7 @@ const YoYBadge = ({ value, direction }: { value: number; direction?: "up" | "dow
 };
 
 // ==================== ROW 0: PAGE HEADER (SHARED) ====================
-type SubTab = "balance" | "income" | "cashflow";
+type SubTab = "balance" | "income" | "cashflow" | "quant";
 
 function PageHeader({
   ticker,
@@ -56,6 +57,7 @@ function PageHeader({
     { id: "balance", icon: "📊", label: "Bảng Cân Đối Kế Toán" },
     { id: "income", icon: "📈", label: "Kết Quả Kinh Doanh" },
     { id: "cashflow", icon: "💰", label: "Lưu Chuyển Tiền Tệ" },
+    { id: "quant", icon: "📐", label: "Phân tích Định lượng" },
   ];
 
   return (
@@ -729,6 +731,7 @@ export default function BalanceSheetTab() {
       {subTab === "balance" && <BalanceSheetContent />}
       {subTab === "income" && <IncomeStatementTab />}
       {subTab === "cashflow" && <CashFlowTab />}
+      {subTab === "quant" && <QuantAnalysisTab />}
     </div>
   );
 }

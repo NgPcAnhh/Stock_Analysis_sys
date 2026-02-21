@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useRef, useState, memo } from "react";
+import React, { useEffect, useRef, useState, memo, useMemo } from "react";
+import ReactECharts from "echarts-for-react";
 import { marketEvents } from "@/lib/socketEvents";
 import type { IndexDisplayData } from "@/lib/priceBoardTypes";
 import { INDEX_CODES, CHART_INDEX_IDS } from "@/lib/priceBoardData";
@@ -9,6 +10,58 @@ import { fmtIndexValue, fmtIndexChange, safeFloat } from "@/lib/priceBoardUtils"
 /* ================================================================= */
 /*  IndexBar – top row showing market indices with live updates       */
 /* ================================================================= */
+
+/** Sparkline mini chart for index cards */
+const MiniSparkline = memo(function MiniSparkline({
+  data,
+  color,
+  height = 40,
+}: {
+  data: number[];
+  color: string;
+  height?: number;
+}) {
+  const option = useMemo(() => ({
+    animation: false,
+    grid: { top: 2, bottom: 2, left: 0, right: 0 },
+    xAxis: { type: "category" as const, show: false, boundaryGap: false },
+    yAxis: {
+      type: "value" as const,
+      show: false,
+      min: data.length > 0 ? Math.min(...data) * 0.9999 : undefined,
+      max: data.length > 0 ? Math.max(...data) * 1.0001 : undefined,
+    },
+    series: [
+      {
+        type: "line",
+        data,
+        smooth: true,
+        symbol: "none",
+        lineStyle: { width: 1.5, color },
+        areaStyle: {
+          color: {
+            type: "linear",
+            x: 0, y: 0, x2: 0, y2: 1,
+            colorStops: [
+              { offset: 0, color: color + "40" },
+              { offset: 1, color: color + "05" },
+            ],
+          },
+        },
+      },
+    ],
+  }), [data, color]);
+
+  if (data.length < 2) return null;
+
+  return (
+    <ReactECharts
+      option={option}
+      style={{ height, width: "100%" }}
+      opts={{ renderer: "svg" }}
+    />
+  );
+});
 
 /** A single mini index card */
 const IndexCard = memo(function IndexCard({ symbol }: { symbol: string }) {
@@ -32,13 +85,27 @@ const IndexCard = memo(function IndexCard({ symbol }: { symbol: string }) {
     noChange: 0,
   });
 
+  const priceHistory = useRef<number[]>([]);
+  const MAX_POINTS = 60;
+
   const [, tick] = useState(0);
   const rafId = useRef(0);
 
   useEffect(() => {
     const unsub = marketEvents.on(symbol, (delta: Record<string, unknown>) => {
       const s = stateRef.current;
-      if (delta.p != null) s.value = safeFloat(delta.p);
+      if (delta.p != null) {
+        const newPrice = safeFloat(delta.p);
+        s.value = newPrice;
+        // Accumulate price history for sparkline
+        if (newPrice > 0) {
+          const hist = priceHistory.current;
+          if (hist.length === 0 || hist[hist.length - 1] !== newPrice) {
+            hist.push(newPrice);
+            if (hist.length > MAX_POINTS) hist.shift();
+          }
+        }
+      }
       if (delta.cv != null) s.change = safeFloat(delta.cv);
       if (delta.cp != null) s.changePercent = safeFloat(delta.cp);
       if (delta.tv != null) s.totalVolume = safeFloat(delta.tv);
@@ -61,6 +128,7 @@ const IndexCard = memo(function IndexCard({ symbol }: { symbol: string }) {
   const isUp = change > 0;
   const isDown = change < 0;
   const mainColor = isUp ? "text-[#00c076]" : isDown ? "text-[#ff3333]" : "text-[#ffd700]";
+  const chartColor = isUp ? "#00c076" : isDown ? "#ff3333" : "#ffd700";
   const bgColor = isUp
     ? "border-[#00c076]/30 bg-[#00c076]/5"
     : isDown
@@ -82,22 +150,29 @@ const IndexCard = memo(function IndexCard({ symbol }: { symbol: string }) {
   };
 
   return (
-    <div className={`rounded-lg border px-3 py-2 min-w-[180px] ${bgColor}`}>
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-[13px] font-bold text-white">{symbol}</span>
-        <span className={`text-[11px] ${mainColor}`}>
-          {isUp ? "▲" : isDown ? "▼" : "—"}
-        </span>
+    <div className={`rounded-lg border px-3 py-2 min-w-[220px] flex-1 flex gap-2 ${bgColor}`}>
+      {/* Left: text info */}
+      <div className="flex flex-col justify-between flex-shrink-0 min-w-[100px]">
+        <div className="flex items-center justify-between mb-0.5">
+          <span className="text-[13px] font-bold text-white">{symbol}</span>
+          <span className={`text-[11px] ${mainColor} ml-2`}>
+            {isUp ? "▲" : isDown ? "▼" : "—"}
+          </span>
+        </div>
+        <div className={`text-[18px] font-bold leading-tight ${mainColor}`}>
+          {value > 0 ? fmtIndexValue(value) : "—"}
+        </div>
+        <div className={`text-[12px] ${mainColor} mt-0.5`}>
+          {fmtIndexChange(change)} ({changePercent > 0 ? "+" : ""}{changePercent.toFixed(2)}%)
+        </div>
+        <div className="flex items-center gap-2 mt-1 text-[10px] text-gray-400">
+          <span>KL: {fmtVol(totalVolume)}</span>
+          <span>GT: {fmtVal(totalValue)}</span>
+        </div>
       </div>
-      <div className={`text-[18px] font-bold ${mainColor}`}>
-        {value > 0 ? fmtIndexValue(value) : "—"}
-      </div>
-      <div className={`text-[12px] ${mainColor} mt-0.5`}>
-        {fmtIndexChange(change)} ({changePercent > 0 ? "+" : ""}{changePercent.toFixed(2)}%)
-      </div>
-      <div className="flex items-center gap-2 mt-1.5 text-[10px] text-gray-400">
-        <span>KL: {fmtVol(totalVolume)}</span>
-        <span>GT: {fmtVal(totalValue)}</span>
+      {/* Right: sparkline chart */}
+      <div className="flex-1 min-w-[80px] flex items-center">
+        <MiniSparkline data={[...priceHistory.current]} color={chartColor} height={52} />
       </div>
     </div>
   );
@@ -224,15 +299,15 @@ const IndexSummaryTable = memo(function IndexSummaryTable() {
 
 export default function IndexBar() {
   return (
-    <div className="flex flex-col xl:flex-row gap-3 mb-2">
+    <div className="flex flex-col xl:flex-row gap-2 mb-2">
       {/* Mini cards for key indices */}
-      <div className="flex gap-2 overflow-x-auto no-scrollbar flex-1 min-w-0">
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-2 flex-1 min-w-0">
         {CHART_INDEX_IDS.map((id) => (
           <IndexCard key={id} symbol={id} />
         ))}
       </div>
       {/* Compact summary table for all indices */}
-      <div className="xl:w-[520px] flex-shrink-0 overflow-auto">
+      <div className="xl:w-[480px] flex-shrink-0 overflow-auto">
         <IndexSummaryTable />
       </div>
     </div>
