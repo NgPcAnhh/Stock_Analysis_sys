@@ -15,9 +15,12 @@ class Settings(BaseSettings):
     ALLOWED_ORIGINS: str = "http://localhost:3000"
 
     # Database
-    DATABASE_URL: str = "postgresql+psycopg2://admin:123456@dwh-postgres:5432/postgres"
+    # Kết nối localhost:5432 (Machine host) thay vì dwh-postgres (Docker network)
+    DATABASE_URL: str = "postgresql+psycopg2://admin:123456@localhost:5432/postgres"
 
     # Redis
+    REDIS_URL: str = "redis://localhost:6379/0"
+    REDIS_CACHE_TTL: int = 300  # 5 phút
 
     # External APIs
 

@@ -3,7 +3,7 @@ from typing import Generator
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
-from BE.app.config.config import get_settings
+from app.core.config import get_settings
 
 settings = get_settings()
 

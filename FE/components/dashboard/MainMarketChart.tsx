@@ -1,30 +1,32 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import ReactECharts from "echarts-for-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MARKET_CHART_DATA, INDEX_META } from "@/lib/marketChartData";
-import type { OHLCVData } from "@/lib/marketChartData";
+import { Loader2 } from "lucide-react";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+export interface OHLCVData {
+    date: string;
+    open: number;
+    high: number;
+    low: number;
+    close: number;
+    volume: number;
+}
+
+// Tên hiển thị cho index
+const INDEX_META: Record<string, { name: string }> = {
+    VNINDEX: { name: "VN-INDEX" },
+    VN30: { name: "VN30" },
+    HNXINDEX: { name: "HNX-INDEX" },
+    UPCOMINDEX: { name: "UPCOM-INDEX" },
+};
 
 // ==================== TIME FRAME ====================
 type TimeFrame = "1W" | "1M" | "3M" | "6M" | "1Y" | "ALL";
-
-function filterByTimeFrame(data: OHLCVData[], tf: TimeFrame): OHLCVData[] {
-    if (tf === "ALL" || data.length === 0) return data;
-    const last = new Date(data[data.length - 1].date);
-    let start: Date;
-    switch (tf) {
-        case "1W": start = new Date(last); start.setDate(start.getDate() - 7); break;
-        case "1M": start = new Date(last); start.setMonth(start.getMonth() - 1); break;
-        case "3M": start = new Date(last); start.setMonth(start.getMonth() - 3); break;
-        case "6M": start = new Date(last); start.setMonth(start.getMonth() - 6); break;
-        case "1Y": start = new Date(last); start.setFullYear(start.getFullYear() - 1); break;
-        default: return data;
-    }
-    const startStr = start.toISOString().slice(0, 10);
-    return data.filter(d => d.date >= startStr);
-}
 
 // ==================== FORMAT HELPERS ====================
 function formatDate(dateStr: string, short = false): string {
@@ -530,10 +532,35 @@ interface MainMarketChartProps {
 export const MainMarketChart = ({ ticker = "VNINDEX" }: MainMarketChartProps) => {
     const [chartType, setChartType] = useState<"line" | "candle" | "volume">("line");
     const [timeFrame, setTimeFrame] = useState<TimeFrame>("1Y");
+    const [data, setData] = useState<OHLCVData[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const rawData = MARKET_CHART_DATA[ticker] || MARKET_CHART_DATA.VNINDEX;
-    const data = useMemo(() => filterByTimeFrame(rawData, timeFrame), [rawData, timeFrame]);
-    const meta = INDEX_META[ticker] || INDEX_META.VNINDEX;
+    // ── Fetch dữ liệu chart từ API ──
+    const fetchChart = useCallback(async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const res = await fetch(
+                `${API_BASE}/api/v1/tong-quan/market-chart/${ticker}?period=${timeFrame}`
+            );
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const json = await res.json();
+            // API trả { data: [...], meta: {...} }
+            setData(json.data || []);
+        } catch (err: any) {
+            console.error("Failed to fetch chart:", err);
+            setError(err.message || "Không thể tải biểu đồ");
+        } finally {
+            setLoading(false);
+        }
+    }, [ticker, timeFrame]);
+
+    useEffect(() => {
+        fetchChart();
+    }, [fetchChart]);
+
+    const meta = INDEX_META[ticker] || { name: ticker };
 
     // Tính thống kê hiển thị header
     const stats = useMemo(() => {
@@ -549,6 +576,7 @@ export const MainMarketChart = ({ ticker = "VNINDEX" }: MainMarketChartProps) =>
     }, [data]);
 
     const chartOption = useMemo(() => {
+        if (data.length === 0) return {};
         switch (chartType) {
             case "line": return getLineChartOption(data, ticker);
             case "candle": return getCandleChartOption(data, ticker);
@@ -671,13 +699,44 @@ export const MainMarketChart = ({ ticker = "VNINDEX" }: MainMarketChartProps) =>
             </CardHeader>
 
             {/* Chart */}
-            <CardContent className="p-0">
-                <ReactECharts
-                    option={chartOption}
-                    style={{ height: chartType === "candle" ? "520px" : "460px", width: "100%" }}
-                    notMerge={true}
-                    lazyUpdate={true}
-                />
+            <CardContent className="p-0 relative">
+                {/* Loading overlay */}
+                {loading && (
+                    <div className="absolute inset-0 bg-white/70 z-20 flex flex-col items-center justify-center gap-2">
+                        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+                        <span className="text-sm text-gray-500">Đang tải dữ liệu...</span>
+                    </div>
+                )}
+
+                {/* Error state */}
+                {error && !loading && (
+                    <div className="flex flex-col items-center justify-center py-20 gap-2">
+                        <p className="text-red-500 text-sm">{error}</p>
+                        <button
+                            onClick={fetchChart}
+                            className="text-xs text-blue-500 hover:text-blue-700 underline"
+                        >
+                            Thử lại
+                        </button>
+                    </div>
+                )}
+
+                {/* Chart */}
+                {!error && data.length > 0 && (
+                    <ReactECharts
+                        option={chartOption}
+                        style={{ height: chartType === "candle" ? "520px" : "460px", width: "100%" }}
+                        notMerge={true}
+                        lazyUpdate={true}
+                    />
+                )}
+
+                {/* Empty state */}
+                {!error && !loading && data.length === 0 && (
+                    <div className="flex items-center justify-center py-20 text-sm text-gray-400">
+                        Không có dữ liệu cho {meta.name} ({timeFrame})
+                    </div>
+                )}
             </CardContent>
         </Card>
     );

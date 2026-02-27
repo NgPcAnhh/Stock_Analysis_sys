@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import ReactECharts from "echarts-for-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,9 +14,20 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 
-// Generate sparkline data for different timeframes
-const generateSparkline = (base: number, points: number, volatility: number) =>
-    Array.from({ length: points }, () => base + (Math.random() - 0.5) * volatility);
+// Seeded PRNG to guarantee identical output on server & client
+function seededRandom(seed: number) {
+    let s = seed;
+    return () => {
+        s = (s * 16807 + 0) % 2147483647;
+        return (s - 1) / 2147483646;
+    };
+}
+
+// Generate sparkline data deterministically
+const generateSparkline = (base: number, points: number, volatility: number, seed: number) => {
+    const rng = seededRandom(seed);
+    return Array.from({ length: points }, () => base + (rng() - 0.5) * volatility);
+};
 
 const MACRO_INDICATORS = [
     {
@@ -25,10 +36,10 @@ const MACRO_INDICATORS = [
         change: 12.34,
         changePct: 0.98,
         sparklines: {
-            "1m": generateSparkline(1250, 20, 40),
-            "3m": generateSparkline(1220, 30, 60),
-            "6m": generateSparkline(1180, 40, 80),
-            "1y": generateSparkline(1100, 50, 120),
+            "1m": generateSparkline(1250, 20, 40, 101),
+            "3m": generateSparkline(1220, 30, 60, 102),
+            "6m": generateSparkline(1180, 40, 80, 103),
+            "1y": generateSparkline(1100, 50, 120, 104),
         },
     },
     {
@@ -37,10 +48,10 @@ const MACRO_INDICATORS = [
         change: 15,
         changePct: 0.06,
         sparklines: {
-            "1m": generateSparkline(24800, 20, 100),
-            "3m": generateSparkline(24700, 30, 200),
-            "6m": generateSparkline(24500, 40, 300),
-            "1y": generateSparkline(24200, 50, 500),
+            "1m": generateSparkline(24800, 20, 100, 201),
+            "3m": generateSparkline(24700, 30, 200, 202),
+            "6m": generateSparkline(24500, 40, 300, 203),
+            "1y": generateSparkline(24200, 50, 500, 204),
         },
     },
     {
@@ -49,10 +60,10 @@ const MACRO_INDICATORS = [
         change: 0,
         changePct: 0,
         sparklines: {
-            "1m": generateSparkline(4.5, 20, 0.3),
-            "3m": generateSparkline(4.4, 30, 0.5),
-            "6m": generateSparkline(4.2, 40, 0.8),
-            "1y": generateSparkline(4.0, 50, 1.0),
+            "1m": generateSparkline(4.5, 20, 0.3, 301),
+            "3m": generateSparkline(4.4, 30, 0.5, 302),
+            "6m": generateSparkline(4.2, 40, 0.8, 303),
+            "1y": generateSparkline(4.0, 50, 1.0, 304),
         },
     },
     {
@@ -61,10 +72,10 @@ const MACRO_INDICATORS = [
         change: -0.1,
         changePct: -3.03,
         sparklines: {
-            "1m": generateSparkline(3.2, 20, 0.2),
-            "3m": generateSparkline(3.3, 30, 0.4),
-            "6m": generateSparkline(3.1, 40, 0.5),
-            "1y": generateSparkline(3.0, 50, 0.8),
+            "1m": generateSparkline(3.2, 20, 0.2, 401),
+            "3m": generateSparkline(3.3, 30, 0.4, 402),
+            "6m": generateSparkline(3.1, 40, 0.5, 403),
+            "1y": generateSparkline(3.0, 50, 0.8, 404),
         },
     },
     {
@@ -73,10 +84,10 @@ const MACRO_INDICATORS = [
         change: 0.3,
         changePct: 4.84,
         sparklines: {
-            "1m": generateSparkline(6.4, 20, 0.3),
-            "3m": generateSparkline(6.2, 30, 0.5),
-            "6m": generateSparkline(5.8, 40, 0.8),
-            "1y": generateSparkline(5.5, 50, 1.2),
+            "1m": generateSparkline(6.4, 20, 0.3, 501),
+            "3m": generateSparkline(6.2, 30, 0.5, 502),
+            "6m": generateSparkline(5.8, 40, 0.8, 503),
+            "1y": generateSparkline(5.5, 50, 1.2, 504),
         },
     },
     {
@@ -85,10 +96,10 @@ const MACRO_INDICATORS = [
         change: 0.8,
         changePct: 1.02,
         sparklines: {
-            "1m": generateSparkline(78, 20, 2),
-            "3m": generateSparkline(76, 30, 4),
-            "6m": generateSparkline(72, 40, 6),
-            "1y": generateSparkline(68, 50, 10),
+            "1m": generateSparkline(78, 20, 2, 601),
+            "3m": generateSparkline(76, 30, 4, 602),
+            "6m": generateSparkline(72, 40, 6, 603),
+            "1y": generateSparkline(68, 50, 10, 604),
         },
     },
 ];
@@ -159,7 +170,7 @@ export const MacroData = () => {
                                 <TableRow key={item.name} className="hover:bg-muted/50 border-b border-border/50">
                                     <TableCell className="font-semibold text-sm">{item.name}</TableCell>
                                     <TableCell className="text-right font-medium text-sm">
-                                        {item.price.toLocaleString(undefined, { minimumFractionDigits: item.price < 100 ? 1 : 2, maximumFractionDigits: 2 })}
+                                        {item.price.toLocaleString("en-US", { minimumFractionDigits: item.price < 100 ? 1 : 2, maximumFractionDigits: 2 })}
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <span className={cn("text-sm font-medium", isPositive ? "text-green-500" : item.change < 0 ? "text-red-500" : "text-yellow-500")}>

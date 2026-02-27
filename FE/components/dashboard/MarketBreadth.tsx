@@ -1,83 +1,170 @@
 "use client";
 
-import React from "react";
+import React, { useCallback, useEffect, useState, useMemo } from "react";
 import ReactECharts from "echarts-for-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader2, RefreshCw } from "lucide-react";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+interface BreadthData {
+    advancing: number;
+    declining: number;
+    unchanged: number;
+}
 
 export const MarketBreadth = () => {
-    const advancing = 245;
-    const declining = 187;
-    const unchanged = 68;
-    const total = advancing + declining + unchanged;
+    const [data, setData] = useState<BreadthData | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const option = {
-        tooltip: {
-            trigger: "item",
-            formatter: (params: any) =>
-                `<b>${params.name}</b><br/>Số mã: <b>${params.value}</b><br/>Tỷ lệ: <b>${params.percent}%</b>`,
-        },
-        legend: {
-            bottom: 0,
-            itemWidth: 12,
-            itemHeight: 12,
-            textStyle: { fontSize: 13, color: "#555" },
-        },
-        graphic: [
-            {
-                type: "text",
-                left: "center",
-                top: "38%",
-                style: {
-                    text: `${total}`,
-                    fontSize: 32,
-                    fontWeight: "bold",
-                    fill: "#1f2937",
-                    textAlign: "center",
-                },
+    const fetchData = useCallback(async () => {
+        try {
+            setError(null);
+            const res = await fetch(
+                `${API_BASE}/api/v1/tong-quan/market-breadth`
+            );
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const json: BreadthData = await res.json();
+            setData(json);
+        } catch (err: unknown) {
+            console.error("Failed to fetch market breadth:", err);
+            setError("Không thể tải dữ liệu");
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchData();
+        const interval = setInterval(fetchData, 120_000);
+        return () => clearInterval(interval);
+    }, [fetchData]);
+
+    const total = data
+        ? data.advancing + data.declining + data.unchanged
+        : 0;
+
+    const option = useMemo(() => {
+        if (!data) return {};
+        return {
+            tooltip: {
+                trigger: "item",
+                formatter: (params: { name: string; value: number; percent: number }) =>
+                    `<b>${params.name}</b><br/>Số mã: <b>${params.value}</b><br/>Tỷ lệ: <b>${params.percent}%</b>`,
             },
-            {
-                type: "text",
-                left: "center",
-                top: "50%",
-                style: {
-                    text: "Tổng mã",
-                    fontSize: 13,
-                    fill: "#9ca3af",
-                    textAlign: "center",
-                },
+            legend: {
+                bottom: 0,
+                itemWidth: 12,
+                itemHeight: 12,
+                textStyle: { fontSize: 13, color: "#555" },
             },
-        ],
-        series: [
-            {
-                type: "pie",
-                radius: ["55%", "80%"],
-                center: ["50%", "45%"],
-                avoidLabelOverlap: false,
-                padAngle: 3,
-                itemStyle: { borderRadius: 6 },
-                label: { show: false },
-                emphasis: {
-                    scale: true,
-                    scaleSize: 6,
-                    itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: "rgba(0, 0, 0, 0.15)" },
+            graphic: [
+                {
+                    type: "text",
+                    left: "center",
+                    top: "38%",
+                    style: {
+                        text: `${total}`,
+                        fontSize: 32,
+                        fontWeight: "bold",
+                        fill: "#1f2937",
+                        textAlign: "center",
+                    },
                 },
-                labelLine: { show: false },
-                data: [
-                    { value: advancing, name: "Tăng", itemStyle: { color: "#22c55e" } },
-                    { value: unchanged, name: "Đứng giá", itemStyle: { color: "#eab308" } },
-                    { value: declining, name: "Giảm", itemStyle: { color: "#ef4444" } },
-                ],
-            },
-        ],
-    };
+                {
+                    type: "text",
+                    left: "center",
+                    top: "50%",
+                    style: {
+                        text: "Tổng mã",
+                        fontSize: 13,
+                        fill: "#9ca3af",
+                        textAlign: "center",
+                    },
+                },
+            ],
+            series: [
+                {
+                    type: "pie",
+                    radius: ["55%", "80%"],
+                    center: ["50%", "45%"],
+                    avoidLabelOverlap: false,
+                    padAngle: 3,
+                    itemStyle: { borderRadius: 6 },
+                    label: { show: false },
+                    emphasis: {
+                        scale: true,
+                        scaleSize: 6,
+                        itemStyle: {
+                            shadowBlur: 10,
+                            shadowOffsetX: 0,
+                            shadowColor: "rgba(0, 0, 0, 0.15)",
+                        },
+                    },
+                    labelLine: { show: false },
+                    data: [
+                        {
+                            value: data.advancing,
+                            name: "Tăng",
+                            itemStyle: { color: "#22c55e" },
+                        },
+                        {
+                            value: data.unchanged,
+                            name: "Đứng giá",
+                            itemStyle: { color: "#eab308" },
+                        },
+                        {
+                            value: data.declining,
+                            name: "Giảm",
+                            itemStyle: { color: "#ef4444" },
+                        },
+                    ],
+                },
+            ],
+        };
+    }, [data, total]);
 
     return (
-        <Card className="shadow-sm border-gray-200 h-full">
-            <CardHeader className="pb-2">
-                <CardTitle className="text-lg font-bold text-gray-800">Độ rộng thị trường</CardTitle>
+        <Card className="shadow-sm border-gray-200 h-full flex flex-col">
+            <CardHeader className="pb-2 shrink-0">
+                <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg font-bold text-gray-800">
+                        Độ rộng thị trường
+                    </CardTitle>
+                    {!loading && (
+                        <button
+                            onClick={fetchData}
+                            className="text-muted-foreground hover:text-foreground transition-colors"
+                            title="Làm mới"
+                        >
+                            <RefreshCw className="h-4 w-4" />
+                        </button>
+                    )}
+                </div>
             </CardHeader>
-            <CardContent className="h-[calc(100%-60px)]">
-                <ReactECharts option={option} style={{ height: "100%", width: "100%" }} />
+            <CardContent className="flex-1 min-h-0 relative">
+                {loading && !data ? (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    </div>
+                ) : error ? (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                        <p className="text-sm text-red-500">{error}</p>
+                        <button
+                            onClick={fetchData}
+                            className="text-xs text-blue-500 hover:underline"
+                        >
+                            Thử lại
+                        </button>
+                    </div>
+                ) : (
+                    <ReactECharts
+                        option={option}
+                        style={{ height: "100%", width: "100%" }}
+                        notMerge
+                    />
+                )}
             </CardContent>
         </Card>
     );

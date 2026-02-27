@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { MarketIndexCards } from "@/components/dashboard/MarketIndexCards";
 import { MainMarketChart } from "@/components/dashboard/MainMarketChart";
 import { SectorPerformance } from "@/components/dashboard/SectorPerformance";
@@ -12,14 +15,19 @@ import { NewsSection } from "@/components/dashboard/NewsSection";
 import { Footer } from "@/components/layout/Footer";
 
 export default function Home() {
+    const [activeTicker, setActiveTicker] = useState("VNINDEX");
+
     return (
         <>
             <div className="p-6 mx-auto max-w-7xl space-y-10 pb-10 pt-4">
                 {/* Row 1: Main Market Chart (Full Width) */}
                 <section>
-                    <MarketIndexCards />
+                    <MarketIndexCards
+                        activeIndex={activeTicker}
+                        onIndexSelect={(id) => setActiveTicker(id)}
+                    />
                     <div className="mt-10">
-                        <MainMarketChart ticker="VNINDEX" />
+                        <MainMarketChart ticker={activeTicker} />
                     </div>
                 </section>
 
