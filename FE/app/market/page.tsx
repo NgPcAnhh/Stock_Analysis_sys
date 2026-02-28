@@ -1,14 +1,26 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useRef } from "react";
 import MarketHeatmap from "@/components/market/MarketHeatmap";
-import SectorMarketOverview from "@/components/market/SectorMarketOverview";
-import SectorAnalysisTable from "@/components/market/SectorAnalysisTable";
 import IndexImpactLiquidity from "@/components/market/IndexImpactLiquidity";
 import { MarketBreadth } from "@/components/dashboard/MarketBreadth";
 import { CashFlow } from "@/components/market/CashFlow";
-import { SectorWatchlist } from "@/components/market/SectorWatchlist";
 import { TableProperties } from "lucide-react";
+
+// ── Lazy load below-fold components — chỉ tải khi scroll tới ──
+const SectorMarketOverview = dynamic(
+    () => import("@/components/market/SectorMarketOverview"),
+    { ssr: false }
+);
+const SectorAnalysisTable = dynamic(
+    () => import("@/components/market/SectorAnalysisTable"),
+    { ssr: false }
+);
+const SectorWatchlist = dynamic(
+    () => import("@/components/market/SectorWatchlist").then((m) => ({ default: m.SectorWatchlist })),
+    { ssr: false }
+);
 
 export default function MarketPage() {
     const detailedSectorRef = useRef<HTMLElement>(null);

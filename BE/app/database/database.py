@@ -1,25 +1,50 @@
-from typing import Generator
+"""
+Async database module — sử dụng asyncpg + SQLAlchemy AsyncSession.
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
+Chuyển từ sync psycopg2 sang async asyncpg để:
+  - Không block event loop khi query DB
+  - Hỗ trợ hàng ngàn request đồng thời mà không nghẽn threadpool
+"""
+from typing import AsyncGenerator
+
+from sqlalchemy.ext.asyncio import (
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
+from sqlalchemy.orm import DeclarativeBase
 
 from app.core.config import get_settings
 
 settings = get_settings()
 
-# Sync engine for FastAPI (psycopg2)
-engine = create_engine(
-    settings.DATABASE_URL,
+# ── Chuyển URL từ psycopg2 sang asyncpg ──
+_db_url = settings.DATABASE_URL
+if "+psycopg2" in _db_url:
+    _db_url = _db_url.replace("+psycopg2", "+asyncpg")
+elif "postgresql://" in _db_url and "+asyncpg" not in _db_url:
+    _db_url = _db_url.replace("postgresql://", "postgresql+asyncpg://")
+
+# ── Async engine ──
+engine = create_async_engine(
+    _db_url,
     echo=settings.DEBUG,
-    pool_size=20,
-    max_overflow=10,
-    pool_pre_ping=True,
+    pool_size=20,          # số connection giữ sẵn
+    max_overflow=20,       # thêm 20 connection khi peak → tổng max 40
+    pool_pre_ping=True,    # kiểm tra connection còn sống trước khi dùng
+    pool_recycle=1800,     # tái tạo connection sau 30 phút (tránh timeout)
+    pool_timeout=10,       # timeout chờ connection từ pool (giây)
+    # asyncpg performance: cache prepared statements per connection
+    connect_args={
+        "statement_cache_size": 100,    # cache 100 prepared statements / conn
+        "command_timeout": 20,          # abort query sau 20s
+    },
 )
 
-# Sync session factory
-SessionLocal = sessionmaker(
+# ── Async session factory ──
+AsyncSessionLocal = async_sessionmaker(
     bind=engine,
-    class_=Session,
+    class_=AsyncSession,
     expire_on_commit=False,
 )
 
@@ -28,24 +53,23 @@ class Base(DeclarativeBase):
     pass
 
 
-def get_db() -> Generator[Session, None, None]:
-    """Dependency that provides a database session."""
-    db = SessionLocal()
-    try:
-        yield db
-        db.commit()
-    except Exception:
-        db.rollback()
-        raise
-    finally:
-        db.close()
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    """Dependency cung cấp async database session."""
+    async with AsyncSessionLocal() as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
 
 
 async def init_db() -> None:
-    """Create all tables (for development only)."""
-    Base.metadata.create_all(bind=engine)
+    """Tạo tables (development only)."""
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
 
 async def close_db() -> None:
-    """Close database engine."""
-    engine.dispose()
+    """Đóng engine khi shutdown."""
+    await engine.dispose()

@@ -147,8 +147,13 @@ export const MarketBreadth = () => {
             <CardContent className="flex-1 min-h-0 relative">
                 {loading && !data ? (
                     <div className="flex flex-col items-center justify-center h-full gap-4">
-                        <Skeleton className="h-40 w-40 rounded-full" />
-                        <div className="flex gap-6">
+                        <div className="relative">
+                            <Skeleton className="h-40 w-40 rounded-full" />
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
+                            </div>
+                        </div>
+                        <div className="flex gap-6 animate-pulse">
                             <Skeleton className="h-4 w-16" />
                             <Skeleton className="h-4 w-24" />
                             <Skeleton className="h-4 w-14" />

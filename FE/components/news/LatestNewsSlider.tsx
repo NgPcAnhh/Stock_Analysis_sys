@@ -36,7 +36,27 @@ const SOURCE_COLORS: Record<string, string> = {
     NDH: "bg-rose-600",
 };
 
-const HeroNewsSection = () => {
+function getSessionId(): string {
+    if (typeof window === "undefined") return "anonymous";
+    let sid = localStorage.getItem("vnstock_session_id");
+    if (!sid) {
+        sid = crypto.randomUUID?.() ?? Math.random().toString(36).slice(2);
+        localStorage.setItem("vnstock_session_id", sid);
+    }
+    return sid;
+}
+
+async function trackClick(articleId: number) {
+    try {
+        await fetch(`${API}/news/track-click`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ article_id: articleId, session_id: getSessionId() }),
+        });
+    } catch { /* silent */ }
+}
+
+const LatestNewsSlider: React.FC = () => {
     const [items, setItems] = useState<NewsItem[]>([]);
     const [loading, setLoading] = useState(true);
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -47,12 +67,12 @@ const HeroNewsSection = () => {
         let cancelled = false;
         (async () => {
             try {
-                const res = await fetch(`${API}/tong-quan/news?limit=8`);
+                const res = await fetch(`${API}/news/latest?limit=8`);
                 if (!res.ok) throw new Error("API error");
                 const data: NewsItem[] = await res.json();
                 if (!cancelled) setItems(data);
             } catch (e) {
-                console.error("HeroNewsSection fetch error:", e);
+                console.error("LatestNewsSlider fetch error:", e);
             } finally {
                 if (!cancelled) setLoading(false);
             }
@@ -60,7 +80,6 @@ const HeroNewsSection = () => {
         return () => { cancelled = true; };
     }, []);
 
-    /* ── Arrow visibility ── */
     const updateArrows = useCallback(() => {
         const el = scrollRef.current;
         if (!el) return;
@@ -89,7 +108,6 @@ const HeroNewsSection = () => {
         el.scrollBy({ left: dir === "left" ? -w : w, behavior: "smooth" });
     };
 
-    /* ── Skeleton ── */
     if (loading) {
         return (
             <div className="grid grid-cols-4 gap-4">
@@ -110,7 +128,6 @@ const HeroNewsSection = () => {
 
     return (
         <div className="relative group/slider">
-            {/* Left arrow */}
             {canLeft && (
                 <button
                     onClick={() => scroll("left")}
@@ -119,7 +136,6 @@ const HeroNewsSection = () => {
                     <ChevronLeft className="h-5 w-5 text-gray-700" />
                 </button>
             )}
-            {/* Right arrow */}
             {canRight && (
                 <button
                     onClick={() => scroll("right")}
@@ -129,7 +145,6 @@ const HeroNewsSection = () => {
                 </button>
             )}
 
-            {/* Scrollable row — 4 cards visible at a time */}
             <div
                 ref={scrollRef}
                 className="flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2"
@@ -139,19 +154,16 @@ const HeroNewsSection = () => {
                     const badgeColor = SOURCE_COLORS[item.source ?? ""] || "bg-slate-600";
                     const hasImg = item.summary ? /<img\s/i.test(item.summary) : false;
 
-                    const Wrapper = item.link ? "a" : "div";
-                    const wrapperProps = item.link
-                        ? { href: item.link, target: "_blank", rel: "noopener noreferrer" }
-                        : {};
-
                     return (
-                        <Wrapper
+                        <a
                             key={item.id}
-                            {...(wrapperProps as any)}
+                            href={item.link ?? "#"}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             data-news-card
-                            className="w-[calc((100%-48px)/4)] min-w-[calc((100%-48px)/4)] shrink-0 snap-start rounded-lg border bg-white overflow-hidden shadow-sm hover:shadow-lg transition-all cursor-pointer group flex flex-col"
+                            onClick={() => trackClick(item.id)}
+                            className="w-[calc((100%-48px)/4)] min-w-[calc((100%-48px)/4)] shrink-0 snap-start rounded-xl border bg-white overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer group flex flex-col"
                         >
-                            {/* Thumbnail */}
                             <div className="relative w-full h-[140px] bg-gradient-to-br from-gray-100 to-gray-50 overflow-hidden">
                                 {hasImg ? (
                                     <img
@@ -161,16 +173,14 @@ const HeroNewsSection = () => {
                                         loading="lazy"
                                     />
                                 ) : (
-                                    <div className="w-full h-full flex items-center justify-center">
-                                        <Newspaper className="h-10 w-10 text-gray-300" />
+                                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-50 to-amber-50">
+                                        <Newspaper className="h-10 w-10 text-orange-300" />
                                     </div>
                                 )}
                                 <Badge className={`absolute top-2 left-2 ${badgeColor} text-white text-[11px] px-2 py-0.5`}>
                                     {item.source || "Tin tức"}
                                 </Badge>
                             </div>
-
-                            {/* Content */}
                             <div className="p-3 flex flex-col flex-1">
                                 <h3 className="text-sm font-semibold line-clamp-2 leading-snug group-hover:text-orange-600 transition-colors">
                                     {item.title}
@@ -180,15 +190,13 @@ const HeroNewsSection = () => {
                                         <Clock className="w-3 h-3" />
                                         {timeAgo(item.published)}
                                     </span>
-                                    {item.link && (
-                                        <span className="text-xs text-orange-500 flex items-center gap-1">
-                                            <ExternalLink className="w-3 h-3" />
-                                            Đọc thêm
-                                        </span>
-                                    )}
+                                    <span className="text-xs text-orange-500 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <ExternalLink className="w-3 h-3" />
+                                        Đọc
+                                    </span>
                                 </div>
                             </div>
-                        </Wrapper>
+                        </a>
                     );
                 })}
             </div>
@@ -196,4 +204,4 @@ const HeroNewsSection = () => {
     );
 };
 
-export default HeroNewsSection;
+export default LatestNewsSlider;

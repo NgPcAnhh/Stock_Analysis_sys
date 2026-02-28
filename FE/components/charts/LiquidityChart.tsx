@@ -65,7 +65,7 @@ export const LiquidityChart = () => {
         },
         dataZoom: [
             { type: "inside", start: 0, end: 100 },
-            { type: "slider", start: 0, end: 100, height: 18, bottom: 4 },
+            { type: "slider", start: 50, end: 100, height: 18, bottom: 4 },
         ],
         series: [
             {

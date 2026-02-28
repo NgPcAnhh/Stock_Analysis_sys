@@ -34,34 +34,40 @@ const fmt = (v: number) => {
 
 function SparklineChart({ data, positive }: { data: number[]; positive: boolean }) {
     const option = useMemo(
-        () => ({
-            grid: { top: 2, bottom: 2, left: 2, right: 2 },
-            xAxis: { type: "category" as const, show: false, data: data.map((_, i) => i) },
-            yAxis: { type: "value" as const, show: false, min: Math.min(...data) * 0.999, max: Math.max(...data) * 1.001 },
-            series: [
-                {
-                    type: "line",
-                    data,
-                    smooth: true,
-                    symbol: "none",
-                    lineStyle: { width: 1.5, color: positive ? "#16a34a" : "#dc2626" },
-                    areaStyle: {
-                        color: {
-                            type: "linear",
-                            x: 0, y: 0, x2: 0, y2: 1,
-                            colorStops: [
-                                { offset: 0, color: positive ? "rgba(22,163,74,0.15)" : "rgba(220,38,38,0.15)" },
-                                { offset: 1, color: "rgba(255,255,255,0)" },
-                            ],
+        () => {
+            if (!data || data.length === 0) return {};
+            const minVal = Math.min(...data);
+            const maxVal = Math.max(...data);
+            return {
+                grid: { top: 2, bottom: 2, left: 2, right: 2 },
+                xAxis: { type: "category" as const, show: false, data: data.map((_, i) => i) },
+                yAxis: { type: "value" as const, show: false, min: minVal * 0.999, max: maxVal * 1.001 },
+                series: [
+                    {
+                        type: "line",
+                        data,
+                        smooth: true,
+                        symbol: "none",
+                        lineStyle: { width: 1.5, color: positive ? "#16a34a" : "#dc2626" },
+                        areaStyle: {
+                            color: {
+                                type: "linear",
+                                x: 0, y: 0, x2: 0, y2: 1,
+                                colorStops: [
+                                    { offset: 0, color: positive ? "rgba(22,163,74,0.15)" : "rgba(220,38,38,0.15)" },
+                                    { offset: 1, color: "rgba(255,255,255,0)" },
+                                ],
+                            },
                         },
                     },
-                },
-            ],
-            tooltip: { show: false },
-        }),
+                ],
+                tooltip: { show: false },
+            };
+        },
         [data, positive]
     );
 
+    if (!data || data.length === 0) return <span className="text-gray-400 text-xs">N/A</span>;
     return <ReactECharts option={option} style={{ height: 36, width: 120 }} opts={{ renderer: "svg" }} />;
 }
 

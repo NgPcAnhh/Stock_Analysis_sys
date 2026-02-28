@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import logging
+import math
 from datetime import date, timedelta
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy import text
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.cache import cache_get, cache_set
 
@@ -53,9 +54,9 @@ def _status(change: float) -> str:
 # ────────────────────────────────────────────────────────────────────
 # 0. Ticker Slide — top 10 tăng, top 10 giảm + 4 chỉ số
 # ────────────────────────────────────────────────────────────────────
-def get_ticker_slide(db: Session) -> List[Dict[str, Any]]:
+async def get_ticker_slide(db: AsyncSession) -> List[Dict[str, Any]]:
     cache_key = "ticker_slide"
-    cached = cache_get(cache_key)
+    cached = await cache_get(cache_key)
     if cached is not None:
         return cached
 
@@ -90,7 +91,8 @@ def get_ticker_slide(db: Session) -> List[Dict[str, Any]]:
         ) prev
         ORDER BY t.sort_order
     """)
-    idx_rows = db.execute(idx_sql).mappings().all()
+    result = await db.execute(idx_sql)
+    idx_rows = result.mappings().all()
 
     indices = []
     for r in idx_rows:
@@ -151,7 +153,8 @@ def get_ticker_slide(db: Session) -> List[Dict[str, Any]]:
         UNION ALL
         SELECT * FROM top_losers
     """)
-    stock_rows = db.execute(stock_sql).mappings().all()
+    result = await db.execute(stock_sql)
+    stock_rows = result.mappings().all()
 
     stocks = []
     for r in stock_rows:
@@ -163,15 +166,15 @@ def get_ticker_slide(db: Session) -> List[Dict[str, Any]]:
             "category": r["category"],
         })
 
-    result = indices + stocks
-    cache_set(cache_key, result, ttl=120)  # cache 2 phút
-    return result
+    data = indices + stocks
+    await cache_set(cache_key, data, ttl=120)  # cache 2 phút
+    return data
 
 
 # ────────────────────────────────────────────────────────────────────
 # 1. Market Index Cards
 # ────────────────────────────────────────────────────────────────────
-def get_market_index_cards(db: Session) -> List[Dict[str, Any]]:
+async def get_market_index_cards(db: AsyncSession) -> List[Dict[str, Any]]:
     """Return latest index values for VNINDEX, VN30, HNX, UPCOM."""
     sql = text("""
         SELECT
@@ -207,11 +210,12 @@ def get_market_index_cards(db: Session) -> List[Dict[str, Any]]:
     
     # ── Redis cache ──
     cache_key = "market_index_cards"
-    cached = cache_get(cache_key)
+    cached = await cache_get(cache_key)
     if cached is not None:
         return cached
 
-    rows = db.execute(sql).mappings().all()
+    r = await db.execute(sql)
+    rows = r.mappings().all()
 
     results = []
     for r in rows:
@@ -226,7 +230,7 @@ def get_market_index_cards(db: Session) -> List[Dict[str, Any]]:
             "status": _status(change),
         })
 
-    cache_set(cache_key, results, ttl=60)  # cache 1 phút
+    await cache_set(cache_key, results, ttl=60)  # cache 1 phút
     return results
 
 
@@ -286,8 +290,8 @@ def _build_market_chart_sql(interval: Optional[str]) -> str:
     """
 
 
-def get_market_chart(
-    db: Session,
+async def get_market_chart(
+    db: AsyncSession,
     ticker: str = "VNINDEX",
     period: str = "1Y",
     page: int = 1,
@@ -306,7 +310,7 @@ def get_market_chart(
         }
     """
     cache_key = f"market_chart:{ticker}:{period}"
-    cached = cache_get(cache_key)
+    cached = await cache_get(cache_key)
 
     if cached is None:
         # ── Query DB ──────────────────────────────────────────────
@@ -316,7 +320,8 @@ def get_market_chart(
         interval = RESAMPLE_MAP.get(period)
         sql = text(_build_market_chart_sql(interval))
 
-        rows = db.execute(sql, {"ticker": ticker, "cutoff": cutoff}).mappings().all()
+        r = await db.execute(sql, {"ticker": ticker, "cutoff": cutoff})
+        rows = r.mappings().all()
         cached = [
             {
                 "date": r["trading_date"].isoformat()
@@ -332,7 +337,7 @@ def get_market_chart(
         ]
         # ── Lưu vào Redis ─────────────────────────────────────────
         ttl = CACHE_TTL_MAP.get(period, 300)
-        cache_set(cache_key, cached, ttl=ttl)
+        await cache_set(cache_key, cached, ttl=ttl)
         logger.info(
             "market_chart DB query: ticker=%s period=%s rows=%d",
             ticker, period, len(cached),
@@ -368,14 +373,14 @@ def get_market_chart(
 # 3. Biến động ngành
 # ────────────────────────────────────────────────────────────────────
 
-def get_sector_performance(db: Session) -> List[Dict[str, Any]]:
+async def get_sector_performance(db: AsyncSession) -> List[Dict[str, Any]]:
     """
     Tối ưu:
       - CTE lấy 2 ngày giao dịch gần nhất rồi JOIN thay vì N sub-query tương quan
       - Redis cache 2 phút
     """
     cache_key = "sector_performance"
-    cached = cache_get(cache_key)
+    cached = await cache_get(cache_key)
     if cached is not None:
         return cached
 
@@ -412,9 +417,10 @@ def get_sector_performance(db: Session) -> List[Dict[str, Any]]:
         GROUP BY co.icb_name2
         ORDER BY value DESC;
     """)
-    rows = db.execute(sql).mappings().all()
+    r = await db.execute(sql)
+    rows = r.mappings().all()
     result = [{"name": r["name"], "value": float(r["value"] or 0)} for r in rows]
-    cache_set(cache_key, result, ttl=120)
+    await cache_set(cache_key, result, ttl=120)
     return result
 
 
@@ -422,13 +428,13 @@ def get_sector_performance(db: Session) -> List[Dict[str, Any]]:
 # 4. CHỉ số quốc tế (international & macro indices)
 # ────────────────────────────────────────────────────────────────────
 
-def get_market_comparison(db: Session) -> List[Dict[str, Any]]:
+async def get_market_comparison(db: AsyncSession) -> List[Dict[str, Any]]:
     """Latest close + % change for macro_economy asset types (global indices etc.).
 
     Redis cache 5 phút — dữ liệu quốc tế cập nhật không quá thường xuyên.
     """
     cache_key = "market_comparison"
-    cached = cache_get(cache_key)
+    cached = await cache_get(cache_key)
     if cached is not None:
         return cached
 
@@ -455,7 +461,8 @@ def get_market_comparison(db: Session) -> List[Dict[str, Any]]:
         ) p
         ORDER BY a.asset_type;
     """)
-    rows = db.execute(sql).mappings().all()
+    r = await db.execute(sql)
+    rows = r.mappings().all()
     result = [
         {
             "name": r["name"],
@@ -465,7 +472,7 @@ def get_market_comparison(db: Session) -> List[Dict[str, Any]]:
         }
         for r in rows
     ]
-    cache_set(cache_key, result, ttl=300)
+    await cache_set(cache_key, result, ttl=300)
     return result
 
 
@@ -473,13 +480,13 @@ def get_market_comparison(db: Session) -> List[Dict[str, Any]]:
 # 5. Market Breadth
 # ────────────────────────────────────────────────────────────────────
 
-def get_market_breadth(db: Session) -> Dict[str, int]:
+async def get_market_breadth(db: AsyncSession) -> Dict[str, int]:
     """Count advancing / declining / unchanged stocks for the latest trading day.
 
     Redis cache 2 phút.
     """
     cache_key = "market_breadth"
-    cached = cache_get(cache_key)
+    cached = await cache_get(cache_key)
     if cached is not None:
         return cached
 
@@ -510,13 +517,14 @@ def get_market_breadth(db: Session) -> Dict[str, int]:
         WHERE v.t0_date > v.t1_date
         AND prev.close > 0;
     """)
-    r = db.execute(sql).mappings().one()
+    res = await db.execute(sql)
+    r = res.mappings().one()
     result = {
         "advancing": int(r["advancing"] or 0),
         "declining": int(r["declining"] or 0),
         "unchanged": int(r["unchanged"] or 0),
     }
-    cache_set(cache_key, result, ttl=120)
+    await cache_set(cache_key, result, ttl=120)
     return result
 
 
@@ -524,8 +532,8 @@ def get_market_breadth(db: Session) -> Dict[str, int]:
 # 6. Top Stocks Table (gainers / losers / foreign)
 # ────────────────────────────────────────────────────────────────────
 
-def get_top_stocks(
-    db: Session, category: str = "gainers", limit: int = 10
+async def get_top_stocks(
+    db: AsyncSession, category: str = "gainers", limit: int = 10
 ) -> List[Dict[str, Any]]:
     """Top cổ phiếu tăng / giảm / khối ngoại.
 
@@ -537,7 +545,7 @@ def get_top_stocks(
     # ── Khối ngoại ──────────────────────────────────────────────────
     if category == "foreign":
         cache_key = f"top_stocks:foreign:{limit}"
-        cached = cache_get(cache_key)
+        cached = await cache_get(cache_key)
         if cached is not None:
             return cached
 
@@ -584,7 +592,8 @@ def get_top_stocks(
             UNION ALL
             SELECT * FROM top_net_sell
         """)
-        rows = db.execute(sql, {"limit": limit}).mappings().all()
+        res = await db.execute(sql, {"limit": limit})
+        rows = res.mappings().all()
         result = [
             {
                 "symbol": r["symbol"],
@@ -598,12 +607,12 @@ def get_top_stocks(
             }
             for r in rows
         ]
-        cache_set(cache_key, result, ttl=120)
+        await cache_set(cache_key, result, ttl=120)
         return result
 
     # ── Tăng giá / Giảm giá — cùng pattern với stock_sql của Ticker Slide ──
     cache_key = f"top_stocks:{category}:{limit}"
-    cached = cache_get(cache_key)
+    cached = await cache_get(cache_key)
     if cached is not None:
         return cached
 
@@ -645,7 +654,8 @@ def get_top_stocks(
         ORDER BY {order_clause}
         LIMIT :limit
     """)
-    rows = db.execute(sql, {"limit": limit}).mappings().all()
+    res = await db.execute(sql, {"limit": limit})
+    rows = res.mappings().all()
     result = [
         {
             "symbol": r["symbol"],
@@ -656,7 +666,7 @@ def get_top_stocks(
         }
         for r in rows
     ]
-    cache_set(cache_key, result, ttl=120)
+    await cache_set(cache_key, result, ttl=120)
     return result
 
 
@@ -664,8 +674,8 @@ def get_top_stocks(
 # 6b. Top Stocks — Unified (all 3 categories in 1 call, 1 Redis key)
 # ────────────────────────────────────────────────────────────────────
 
-def get_top_stocks_all(
-    db: Session, limit: int = 10
+async def get_top_stocks_all(
+    db: AsyncSession, limit: int = 10
 ) -> Dict[str, List[Dict[str, Any]]]:
     """Trả về cả 3 danh mục top cổ phiếu trong 1 lần gọi.
 
@@ -675,7 +685,7 @@ def get_top_stocks_all(
     gộp kết quả rồi lưu Redis.
     """
     cache_key = f"top_stocks:all:{limit}"
-    cached = cache_get(cache_key)
+    cached = await cache_get(cache_key)
     if cached is not None:
         return cached
 
@@ -726,7 +736,8 @@ def get_top_stocks_all(
         UNION ALL
         SELECT * FROM top_losers
     """)
-    gl_rows = db.execute(gl_sql, {"limit": limit}).mappings().all()
+    res = await db.execute(gl_sql, {"limit": limit})
+    gl_rows = res.mappings().all()
 
     gainers: List[Dict[str, Any]] = []
     losers: List[Dict[str, Any]] = []
@@ -783,7 +794,8 @@ def get_top_stocks_all(
         UNION ALL
         SELECT * FROM top_net_sell
     """)
-    f_rows = db.execute(foreign_sql, {"limit": limit}).mappings().all()
+    res2 = await db.execute(foreign_sql, {"limit": limit})
+    f_rows = res2.mappings().all()
 
     foreign: List[Dict[str, Any]] = [
         {
@@ -800,7 +812,7 @@ def get_top_stocks_all(
     ]
 
     result = {"gainers": gainers, "losers": losers, "foreign": foreign}
-    cache_set(cache_key, result, ttl=120)
+    await cache_set(cache_key, result, ttl=120)
     return result
 
 
@@ -813,8 +825,8 @@ _EB_EXCHANGE_MAP = {"HSX": "HOSE", "HNX": "HNX", "UPCOM": "UPCOM"}
 _EB_EXCHANGE_REVERSE = {"HOSE": "HSX", "HNX": "HNX", "UPCOM": "UPCOM"}
 
 
-def get_market_heatmap(
-    db: Session, exchange: str = "all"
+async def get_market_heatmap(
+    db: AsyncSession, exchange: str = "all"
 ) -> List[Dict[str, Any]]:
     """Sector → stocks treemap data.
 
@@ -823,7 +835,7 @@ def get_market_heatmap(
     Cached in Redis for 120 s.
     """
     cache_key = f"market_heatmap:{exchange}"
-    cached = cache_get(cache_key)
+    cached = await cache_get(cache_key)
     if cached is not None:
         return cached
 
@@ -863,7 +875,8 @@ def get_market_heatmap(
         ) sub
         ORDER BY sector, trade_val DESC
     """)
-    rows = db.execute(sql, params).mappings().all()
+    res = await db.execute(sql, params)
+    rows = res.mappings().all()
 
     # Group by sector, cap 15 stocks per sector
     sectors: Dict[str, List[Dict]] = {}
@@ -883,7 +896,7 @@ def get_market_heatmap(
         {"name": sector, "children": stocks}
         for sector, stocks in sectors.items()
     ]
-    cache_set(cache_key, result, ttl=120)
+    await cache_set(cache_key, result, ttl=120)
     return result
 
 
@@ -899,46 +912,61 @@ SPARKLINE_PERIOD_DAYS = {
 }
 
 
-def get_macro_data(db: Session) -> List[Dict[str, Any]]:
-    """Macro indicators with sparkline data for all periods."""
-    results = []
-    asset_types_sql = text("""
-        SELECT DISTINCT asset_type FROM hethong_phantich_chungkhoan.macro_economy ORDER BY asset_type
-    """)
-    asset_types = [r["asset_type"] for r in db.execute(asset_types_sql).mappings().all()]
+async def get_macro_data(db: AsyncSession) -> List[Dict[str, Any]]:
+    """Macro indicators with sparkline data — 1 query thay vì N+1.
 
-    for asset in asset_types:
-        # Get latest 2 records for headline values
-        latest_sql = text("""
-            SELECT close, date
-            FROM hethong_phantich_chungkhoan.macro_economy
-            WHERE asset_type = :asset
-            ORDER BY date DESC
-            LIMIT 2
-        """)
-        latest_rows = db.execute(latest_sql, {"asset": asset}).mappings().all()
-        if len(latest_rows) < 2:
+    FIX: Trước đây chạy 5 queries/asset_type → 20 assets = 100+ queries.
+    Giờ chỉ 1 query duy nhất lấy toàn bộ dữ liệu, xử lý Python-side.
+    Redis cache 5 phút.
+    """
+    cache_key = "macro_data"
+    cached = await cache_get(cache_key)
+    if cached is not None:
+        return cached
+
+    # 1 query lấy hết — tránh N+1 hoàn toàn
+    sql = text("""
+        SELECT asset_type, close, date
+        FROM hethong_phantich_chungkhoan.macro_economy
+        WHERE close IS NOT NULL
+        ORDER BY asset_type, date DESC
+    """)
+    res = await db.execute(sql)
+    rows = res.mappings().all()
+
+    # Group by asset_type
+    from collections import defaultdict
+    grouped: Dict[str, List[Dict]] = defaultdict(list)
+    for r in rows:
+        grouped[r["asset_type"]].append({
+            "close": float(r["close"]),
+            "date": r["date"].isoformat() if hasattr(r["date"], "isoformat") else str(r["date"]),
+        })
+
+    cutoffs = {
+        k: (date.today() - timedelta(days=d)).isoformat()
+        for k, d in SPARKLINE_PERIOD_DAYS.items()
+    }
+
+    results = []
+    for asset, data_rows in grouped.items():
+        if len(data_rows) < 2:
             continue
 
-        cur_close = float(latest_rows[0]["close"] or 0)
-        prev_close = float(latest_rows[1]["close"] or 0)
+        # data_rows đã sort DESC → [0] = newest, [1] = prev
+        cur_close = data_rows[0]["close"]
+        prev_close = data_rows[1]["close"]
         change = round(cur_close - prev_close, 4)
         change_pct = round((change / prev_close * 100), 2) if prev_close else 0
 
-        # Build sparklines for all 4 periods
+        # Sparklines — filter Python-side thay vì query lại DB
         sparklines: Dict[str, List[float]] = {}
-        for period_key, days in SPARKLINE_PERIOD_DAYS.items():
-            cutoff = (date.today() - timedelta(days=days)).isoformat()
-            spark_sql = text("""
-                SELECT close
-                FROM hethong_phantich_chungkhoan.macro_economy
-                WHERE asset_type = :asset AND date >= :cutoff
-                ORDER BY date ASC
-            """)
-            spark_rows = db.execute(
-                spark_sql, {"asset": asset, "cutoff": cutoff}
-            ).mappings().all()
-            sparklines[period_key] = [float(s["close"] or 0) for s in spark_rows]
+        for period_key, cutoff_date in cutoffs.items():
+            sparklines[period_key] = [
+                r["close"]
+                for r in reversed(data_rows)  # reverse → ASC order
+                if r["date"] >= cutoff_date
+            ]
 
         results.append({
             "name": asset,
@@ -948,6 +976,7 @@ def get_macro_data(db: Session) -> List[Dict[str, Any]]:
             "sparklines": sparklines,
         })
 
+    await cache_set(cache_key, results, ttl=300)
     return results
 
 
@@ -955,17 +984,18 @@ def get_macro_data(db: Session) -> List[Dict[str, Any]]:
 # 9. News
 # ────────────────────────────────────────────────────────────────────
 
-def get_news(
-    db: Session, limit: int = 10, offset: int = 0
+async def get_news(
+    db: AsyncSession, limit: int = 10, offset: int = 0
 ) -> List[Dict[str, Any]]:
     """Latest news from the news table."""
     sql = text("""
         SELECT id, source, title, link, published, summary
         FROM hethong_phantich_chungkhoan.news
         ORDER BY published DESC NULLS LAST
-        LIMIT 10 OFFSET :offset
+        LIMIT :limit OFFSET :offset
     """)
-    rows = db.execute(sql, {"limit": limit, "offset": offset}).mappings().all()
+    res = await db.execute(sql, {"limit": limit, "offset": offset})
+    rows = res.mappings().all()
     return [
         {
             "id": r["id"],
@@ -983,10 +1013,10 @@ def get_news(
 # 10. Valuation P/E
 # ────────────────────────────────────────────────────────────────────
 
-def get_valuation_pe(db: Session) -> List[Dict[str, Any]]:
+async def get_valuation_pe(db: AsyncSession) -> List[Dict[str, Any]]:
     """Average market P/E per quarter for the last 12 quarters. Cached 300 s."""
     cache_key = "valuation_pe"
-    cached = cache_get(cache_key)
+    cached = await cache_get(cache_key)
     if cached is not None:
         return cached
 
@@ -1001,7 +1031,8 @@ def get_valuation_pe(db: Session) -> List[Dict[str, Any]]:
         ORDER BY year DESC, quarter DESC
         LIMIT 12
     """)
-    rows = db.execute(sql).mappings().all()
+    res = await db.execute(sql)
+    rows = res.mappings().all()
     rows = list(reversed(rows))
     result = [
         {
@@ -1010,7 +1041,7 @@ def get_valuation_pe(db: Session) -> List[Dict[str, Any]]:
         }
         for r in rows
     ]
-    cache_set(cache_key, result, ttl=300)
+    await cache_set(cache_key, result, ttl=300)
     return result
 
 
@@ -1018,10 +1049,10 @@ def get_valuation_pe(db: Session) -> List[Dict[str, Any]]:
 # 11. Liquidity
 # ────────────────────────────────────────────────────────────────────
 
-def get_liquidity(db: Session, days: int = 20) -> List[Dict[str, Any]]:
+async def get_liquidity(db: AsyncSession, days: int = 20) -> List[Dict[str, Any]]:
     """Daily total trading value (close * volume) aggregated from history_price. Cached 300 s."""
     cache_key = f"liquidity:{days}"
-    cached = cache_get(cache_key)
+    cached = await cache_get(cache_key)
     if cached is not None:
         return cached
 
@@ -1035,7 +1066,8 @@ def get_liquidity(db: Session, days: int = 20) -> List[Dict[str, Any]]:
         ORDER BY trading_date DESC
         LIMIT :days
     """)
-    rows = db.execute(sql, {"days": days}).mappings().all()
+    res = await db.execute(sql, {"days": days})
+    rows = res.mappings().all()
     rows = list(reversed(rows))
     result = [
         {
@@ -1044,7 +1076,7 @@ def get_liquidity(db: Session, days: int = 20) -> List[Dict[str, Any]]:
         }
         for r in rows
     ]
-    cache_set(cache_key, result, ttl=300)
+    await cache_set(cache_key, result, ttl=300)
     return result
 
 
@@ -1074,7 +1106,7 @@ _MACRO_YEARLY_LABELS = {
 _MACRO_YEARLY_COLS = list(_MACRO_YEARLY_LABELS.keys())
 
 
-def get_macro_yearly(db: Session) -> Dict[str, Any]:
+async def get_macro_yearly(db: AsyncSession) -> Dict[str, Any]:
     """Return vn_macro_yearly data.
 
     Response format:
@@ -1088,7 +1120,7 @@ def get_macro_yearly(db: Session) -> Dict[str, Any]:
     Cached 1 hour — yearly data rarely changes.
     """
     cache_key = "macro_yearly"
-    cached = cache_get(cache_key)
+    cached = await cache_get(cache_key)
     if cached is not None:
         return cached
 
@@ -1097,12 +1129,12 @@ def get_macro_yearly(db: Session) -> Dict[str, Any]:
         FROM hethong_phantich_chungkhoan.vn_macro_yearly
         ORDER BY year ASC
     """)
-    rows = db.execute(sql).mappings().all()
+    res = await db.execute(sql)
+    rows = res.mappings().all()
 
     if not rows:
         return {"years": [], "indicators": []}
 
-    import math
     years = [int(r["year"]) for r in rows]
     indicators = []
     for col in _MACRO_YEARLY_COLS:
@@ -1120,5 +1152,5 @@ def get_macro_yearly(db: Session) -> Dict[str, Any]:
         })
 
     result = {"years": years, "indicators": indicators}
-    cache_set(cache_key, result, ttl=3600)
+    await cache_set(cache_key, result, ttl=3600)
     return result

@@ -1,3 +1,8 @@
+create sequence new_v1_id_seq
+    as integer;
+
+alter sequence new_v1_id_seq owner to admin;
+
 create table history_price
 (
     ticker       varchar(10) not null,
@@ -240,6 +245,26 @@ create table event
 alter table event
     owner to admin;
 
+create table news
+(
+    id          integer   default nextval('hethong_phantich_chungkhoan.new_v1_id_seq'::regclass) not null
+        constraint new_v1_pkey
+            primary key,
+    source      text,
+    title       text,
+    link        text
+        constraint new_v1_link_key
+            unique,
+    published   timestamp,
+    summary     text,
+    inserted_at timestamp default now()
+);
+
+alter table news
+    owner to admin;
+
+alter sequence new_v1_id_seq owned by news.id;
+
 create table vn_macro_yearly
 (
     year                               integer not null
@@ -262,23 +287,5 @@ create table vn_macro_yearly
 );
 
 alter table vn_macro_yearly
-    owner to admin;
-
-create table news
-(
-    id          serial
-        constraint new_v1_pkey
-            primary key,
-    source      text,
-    title       text,
-    link        text
-        constraint new_v1_link_key
-            unique,
-    published   timestamp,
-    summary     text,
-    inserted_at timestamp default now()
-);
-
-alter table news
     owner to admin;
 

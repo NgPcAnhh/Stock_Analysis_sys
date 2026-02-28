@@ -1,21 +1,74 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import ReactECharts from "echarts-for-react";
-import { STOCK_LIST_DATA, STOCK_SECTORS, STOCK_SIGNALS, type StockListItem } from "@/lib/stockListMockData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowUpDown, Search, TrendingUp, TrendingDown, BarChart3, Filter, SlidersHorizontal, ListFilter } from "lucide-react";
+import { ArrowUpDown, Search, TrendingUp, TrendingDown, BarChart3, Filter, SlidersHorizontal, ListFilter, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import StockScreener from "@/components/stocks/StockScreener";
 
-type SortKey = keyof StockListItem;
+/* ── API base ──────────────────────────────────────────────────── */
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
+
+/* ── Types matching BE response ────────────────────────────────── */
+interface StockItem {
+    ticker: string;
+    company_name: string | null;
+    sector: string | null;
+    exchange: string | null;
+    current_price: number | null;
+    price_change: number | null;
+    price_change_percent: number | null;
+    volume: number | null;
+    avg_volume_10d: number | null;
+    market_cap: number | null;
+    pe: number | null;
+    pb: number | null;
+    eps: number | null;
+    roe: number | null;
+    roa: number | null;
+    debt_to_equity: number | null;
+    dividend_yield: number | null;
+    high_52w: number | null;
+    low_52w: number | null;
+    week_change_52: number | null;
+    sparkline: number[];
+}
+
+interface MarketSummary {
+    total_stocks: number;
+    total_up: number;
+    total_down: number;
+    total_unchanged: number;
+    total_volume: number;
+    avg_pe: number | null;
+}
+
+interface OverviewResponse {
+    data: StockItem[];
+    total: number;
+    page: number;
+    page_size: number;
+    total_pages: number;
+    summary: MarketSummary;
+}
+
+interface SectorItem {
+    name: string;
+    count: number;
+}
+
+/* ── Sort field mapping (FE key → BE sort_by) ─────────────────── */
+type SortKey = "ticker" | "current_price" | "price_change_percent" | "volume" | "market_cap" | "pe" | "pb" | "eps" | "roe" | "week_change_52";
 type SortDir = "asc" | "desc";
 
+/* ── Formatters ────────────────────────────────────────────────── */
 const formatPrice = (p: number) => p.toLocaleString("vi-VN");
 const formatVolume = (v: number) => {
     if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
@@ -23,20 +76,15 @@ const formatVolume = (v: number) => {
     return v.toString();
 };
 const formatMarketCap = (v: number) => {
-    if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(2)}Tr tỷ`;
-    if (v >= 1_000) return `${(v / 1_000).toFixed(0)}K tỷ`;
-    return `${v.toLocaleString()}T`;
+    if (v >= 1e12) return `${(v / 1e12).toFixed(2)}Tr tỷ`;
+    if (v >= 1e9) return `${(v / 1e9).toFixed(0)}K tỷ`;
+    if (v >= 1e6) return `${(v / 1e6).toFixed(0)} tỷ`;
+    return v.toLocaleString("vi-VN");
 };
 
-const signalColor: Record<string, string> = {
-    "Mua": "bg-green-100 text-green-700 border-green-200",
-    "Bán": "bg-red-100 text-red-700 border-red-200",
-    "Nắm giữ": "bg-blue-100 text-blue-700 border-blue-200",
-    "Theo dõi": "bg-amber-100 text-amber-700 border-amber-200",
-};
-
-// Sparkline mini chart component
+/* ── Sparkline component ───────────────────────────────────────── */
 const Sparkline = ({ data, positive }: { data: number[]; positive: boolean }) => {
+    if (!data || data.length === 0) return <span className="text-gray-300 text-xs">—</span>;
     const option = {
         grid: { left: 0, right: 0, top: 0, bottom: 0 },
         xAxis: { type: "category" as const, show: false, data: data.map((_, i) => i) },
@@ -58,61 +106,123 @@ const Sparkline = ({ data, positive }: { data: number[]; positive: boolean }) =>
     return <ReactECharts option={option} style={{ height: 32, width: 80 }} opts={{ renderer: "svg" }} />;
 };
 
+/* ── Session ID (persistent per browser tab) ───────────────────── */
+const getSessionId = () => {
+    if (typeof window === "undefined") return "anonymous";
+    let sid = sessionStorage.getItem("stock_session_id");
+    if (!sid) {
+        sid = `s_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        sessionStorage.setItem("stock_session_id", sid);
+    }
+    return sid;
+};
+
 export default function StocksPage() {
-    const [activeTab, setActiveTab] = useState("screener");
+    const [activeTab, setActiveTab] = useState("overview");
+
+    /* ── Data state ── */
+    const [stocks, setStocks] = useState<StockItem[]>([]);
+    const [summary, setSummary] = useState<MarketSummary>({ total_stocks: 0, total_up: 0, total_down: 0, total_unchanged: 0, total_volume: 0, avg_pe: null });
+    const [total, setTotal] = useState(0);
+    const [totalPages, setTotalPages] = useState(1);
+    const [sectors, setSectors] = useState<SectorItem[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [initialLoad, setInitialLoad] = useState(true);
+    const [sectorsLoading, setSectorsLoading] = useState(true);
+
+    /* ── Filter / sort / page state ── */
     const [search, setSearch] = useState("");
     const [sectorFilter, setSectorFilter] = useState("Tất cả");
-    const [signalFilter, setSignalFilter] = useState("Tất cả");
-    const [sortKey, setSortKey] = useState<SortKey>("marketCap");
+    const [sortKey, setSortKey] = useState<SortKey>("market_cap");
     const [sortDir, setSortDir] = useState<SortDir>("desc");
+    const [page, setPage] = useState(1);
+    const pageSize = 30;
 
+    /* ── Debounce refs ── */
+    const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const trackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    /* ── Fetch stock overview data ── */
+    const fetchStocks = useCallback(async () => {
+        setLoading(true);
+        try {
+            const params = new URLSearchParams({
+                page: String(page),
+                page_size: String(pageSize),
+                sort_by: sortKey,
+                sort_dir: sortDir,
+            });
+            if (search) params.set("search", search);
+            if (sectorFilter !== "Tất cả") params.set("sector", sectorFilter);
+
+            const res = await fetch(`${API}/stock-list/overview?${params}`);
+            if (!res.ok) throw new Error("API error");
+            const json: OverviewResponse = await res.json();
+            setStocks(json.data);
+            setTotal(json.total);
+            setTotalPages(json.total_pages);
+            setSummary(json.summary);
+        } catch (err) {
+            console.error("Failed to fetch stock overview:", err);
+        } finally {
+            setLoading(false);
+            setInitialLoad(false);
+        }
+    }, [page, pageSize, sortKey, sortDir, search, sectorFilter]);
+
+    /* ── Fetch sectors ── */
+    useEffect(() => {
+        (async () => {
+            setSectorsLoading(true);
+            try {
+                const res = await fetch(`${API}/stock-list/sectors`);
+                if (res.ok) {
+                    const json: SectorItem[] = await res.json();
+                    setSectors(json);
+                }
+            } catch (err) {
+                console.error("Failed to fetch sectors:", err);
+            } finally {
+                setSectorsLoading(false);
+            }
+        })();
+    }, []);
+
+    /* ── Refetch when filters change ── */
+    useEffect(() => { fetchStocks(); }, [fetchStocks]);
+
+    /* ── Reset page when search / sector changes ── */
+    useEffect(() => { setPage(1); }, [search, sectorFilter]);
+
+    /* ── Search tracking (debounced 1.5s) ── */
+    const handleSearch = (value: string) => {
+        setSearch(value);
+        if (trackTimerRef.current) clearTimeout(trackTimerRef.current);
+        if (value.trim().length >= 2) {
+            trackTimerRef.current = setTimeout(() => {
+                fetch(`${API}/stock-list/track-search`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ keyword: value.trim(), session_id: getSessionId() }),
+                }).catch(() => { });
+            }, 1500);
+        }
+    };
+
+    /* ── Click tracking ── */
+    const trackClick = (ticker: string) => {
+        fetch(`${API}/stock-list/track-click`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ticker, session_id: getSessionId() }),
+        }).catch(() => { });
+    };
+
+    /* ── Sort toggle ── */
     const toggleSort = (key: SortKey) => {
         if (sortKey === key) setSortDir(d => d === "asc" ? "desc" : "asc");
         else { setSortKey(key); setSortDir("desc"); }
     };
-
-    const filtered = useMemo(() => {
-        let list = [...STOCK_LIST_DATA];
-
-        // Search
-        if (search) {
-            const q = search.toLowerCase();
-            list = list.filter(s =>
-                s.ticker.toLowerCase().includes(q) ||
-                s.companyName.toLowerCase().includes(q)
-            );
-        }
-
-        // Sector filter
-        if (sectorFilter !== "Tất cả") {
-            list = list.filter(s => s.sector === sectorFilter);
-        }
-
-        // Signal filter
-        if (signalFilter !== "Tất cả") {
-            list = list.filter(s => s.signal === signalFilter);
-        }
-
-        // Sort
-        list.sort((a, b) => {
-            const av = a[sortKey] ?? 0;
-            const bv = b[sortKey] ?? 0;
-            if (typeof av === "number" && typeof bv === "number") {
-                return sortDir === "asc" ? av - bv : bv - av;
-            }
-            return sortDir === "asc"
-                ? String(av).localeCompare(String(bv))
-                : String(bv).localeCompare(String(av));
-        });
-
-        return list;
-    }, [search, sectorFilter, signalFilter, sortKey, sortDir]);
-
-    // Summary stats
-    const totalUp = STOCK_LIST_DATA.filter(s => s.priceChangePercent > 0).length;
-    const totalDown = STOCK_LIST_DATA.filter(s => s.priceChangePercent < 0).length;
-    const totalVolume = STOCK_LIST_DATA.reduce((acc, s) => acc + s.volume, 0);
-    const avgPE = STOCK_LIST_DATA.filter(s => s.pe !== null).reduce((acc, s, _, arr) => acc + (s.pe ?? 0) / arr.length, 0);
 
     const SortHeader = ({ label, field, className = "" }: { label: string; field: SortKey; className?: string }) => (
         <TableHead
@@ -135,7 +245,7 @@ export default function StocksPage() {
                         Bảng phân tích cổ phiếu <span className="text-orange-500">vnstock</span>
                     </h1>
                     <div className="text-sm text-gray-500">
-                        {STOCK_LIST_DATA.length} mã · Cập nhật: Vừa xong
+                        {total} mã · Cập nhật: Vừa xong
                     </div>
                 </div>
 
@@ -158,11 +268,26 @@ export default function StocksPage() {
                         </TabsTrigger>
                     </TabsList>
 
-                    {/* ════ TAB 1: OVERVIEW (original) ════ */}
+                    {/* ════ TAB 1: OVERVIEW ════ */}
                     <TabsContent value="overview" className="space-y-5 mt-4">
 
                 {/* Summary Cards */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {initialLoad ? (
+                        // Skeleton summary cards
+                        Array.from({ length: 4 }).map((_, i) => (
+                            <Card key={i} className="shadow-sm border-gray-200">
+                                <CardContent className="p-4 flex items-center gap-3">
+                                    <Skeleton className="w-9 h-9 rounded-lg" />
+                                    <div className="space-y-1.5 flex-1">
+                                        <Skeleton className="h-3 w-16" />
+                                        <Skeleton className="h-6 w-12" />
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))
+                    ) : (
+                        <>
                     <Card className="shadow-sm border-gray-200">
                         <CardContent className="p-4 flex items-center gap-3">
                             <div className="p-2 bg-green-100 rounded-lg">
@@ -170,7 +295,7 @@ export default function StocksPage() {
                             </div>
                             <div>
                                 <p className="text-xs text-gray-500">Mã tăng</p>
-                                <p className="text-xl font-bold text-green-600">{totalUp}</p>
+                                <p className="text-xl font-bold text-green-600">{summary.total_up}</p>
                             </div>
                         </CardContent>
                     </Card>
@@ -181,7 +306,7 @@ export default function StocksPage() {
                             </div>
                             <div>
                                 <p className="text-xs text-gray-500">Mã giảm</p>
-                                <p className="text-xl font-bold text-red-600">{totalDown}</p>
+                                <p className="text-xl font-bold text-red-600">{summary.total_down}</p>
                             </div>
                         </CardContent>
                     </Card>
@@ -192,7 +317,7 @@ export default function StocksPage() {
                             </div>
                             <div>
                                 <p className="text-xs text-gray-500">Tổng KLGD</p>
-                                <p className="text-xl font-bold text-gray-800">{formatVolume(totalVolume)}</p>
+                                <p className="text-xl font-bold text-gray-800">{formatVolume(summary.total_volume)}</p>
                             </div>
                         </CardContent>
                     </Card>
@@ -203,10 +328,12 @@ export default function StocksPage() {
                             </div>
                             <div>
                                 <p className="text-xs text-gray-500">P/E Trung bình</p>
-                                <p className="text-xl font-bold text-gray-800">{avgPE.toFixed(1)}x</p>
+                                <p className="text-xl font-bold text-gray-800">{summary.avg_pe != null ? `${summary.avg_pe.toFixed(1)}x` : "—"}</p>
                             </div>
                         </CardContent>
                     </Card>
+                        </>
+                    )}
                 </div>
 
                 {/* Filters */}
@@ -219,7 +346,7 @@ export default function StocksPage() {
                                 type="text"
                                 placeholder="Tìm mã cổ phiếu hoặc tên công ty..."
                                 value={search}
-                                onChange={(e) => setSearch(e.target.value)}
+                                onChange={(e) => handleSearch(e.target.value)}
                                 className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-400"
                             />
                         </div>
@@ -227,6 +354,12 @@ export default function StocksPage() {
                         {/* Sector filter */}
                         <div className="flex flex-wrap gap-2">
                             <span className="text-xs text-gray-500 flex items-center mr-1">Ngành:</span>
+                            {sectorsLoading ? (
+                                Array.from({ length: 8 }).map((_, i) => (
+                                    <Skeleton key={i} className="h-6 w-20 rounded-full" />
+                                ))
+                            ) : (
+                                <>
                             <Badge
                                 variant={sectorFilter === "Tất cả" ? "default" : "outline"}
                                 className={`cursor-pointer text-xs ${sectorFilter === "Tất cả" ? "bg-orange-500 hover:bg-orange-600 text-white" : "hover:border-orange-300"}`}
@@ -234,34 +367,18 @@ export default function StocksPage() {
                             >
                                 Tất cả
                             </Badge>
-                            {STOCK_SECTORS.map((s) => (
+                            {sectors.map((s) => (
                                 <Badge
-                                    key={s}
-                                    variant={sectorFilter === s ? "default" : "outline"}
-                                    className={`cursor-pointer text-xs ${sectorFilter === s ? "bg-orange-500 hover:bg-orange-600 text-white" : "hover:border-orange-300"}`}
-                                    onClick={() => setSectorFilter(s)}
+                                    key={s.name}
+                                    variant={sectorFilter === s.name ? "default" : "outline"}
+                                    className={`cursor-pointer text-xs ${sectorFilter === s.name ? "bg-orange-500 hover:bg-orange-600 text-white" : "hover:border-orange-300"}`}
+                                    onClick={() => setSectorFilter(s.name)}
                                 >
-                                    {s}
+                                    {s.name} ({s.count})
                                 </Badge>
                             ))}
-                        </div>
-
-                        {/* Signal filter */}
-                        <div className="flex flex-wrap gap-2">
-                            <span className="text-xs text-gray-500 flex items-center mr-1">Tín hiệu:</span>
-                            {STOCK_SIGNALS.map((s) => (
-                                <Badge
-                                    key={s}
-                                    variant={signalFilter === s ? "default" : "outline"}
-                                    className={`cursor-pointer text-xs ${signalFilter === s
-                                        ? "bg-orange-500 hover:bg-orange-600 text-white"
-                                        : "hover:border-orange-300"
-                                        }`}
-                                    onClick={() => setSignalFilter(s)}
-                                >
-                                    {s}
-                                </Badge>
-                            ))}
+                                </>
+                            )}
                         </div>
                     </CardContent>
                 </Card>
@@ -270,32 +387,81 @@ export default function StocksPage() {
                 <Card className="shadow-sm border-gray-200">
                     <CardHeader className="pb-2">
                         <CardTitle className="text-base font-bold text-gray-800 flex items-center justify-between">
-                            <span>Danh sách cổ phiếu ({filtered.length} mã)</span>
+                            <span>Danh sách cổ phiếu ({total} mã)</span>
+                            {loading && <Loader2 className="w-4 h-4 animate-spin text-orange-500" />}
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="p-0">
-                        <div className="overflow-x-auto">
+                        <div className="overflow-x-auto relative">
+                            {/* Loading overlay for subsequent loads */}
+                            {loading && !initialLoad && (
+                                <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] z-20 flex items-center justify-center">
+                                    <div className="flex flex-col items-center gap-3">
+                                        <div className="relative">
+                                            <div className="w-10 h-10 border-3 border-orange-200 rounded-full" />
+                                            <div className="absolute inset-0 w-10 h-10 border-3 border-orange-500 rounded-full border-t-transparent animate-spin" />
+                                        </div>
+                                        <span className="text-xs text-gray-500 font-medium">Đang tải dữ liệu...</span>
+                                    </div>
+                                </div>
+                            )}
                             <Table>
                                 <TableHeader>
                                     <TableRow className="bg-gray-50 text-xs">
-                                        <TableHead className="w-[130px] sticky left-0 bg-gray-50 z-10">Mã CK</TableHead>
-                                        <SortHeader label="Giá" field="currentPrice" className="text-right" />
-                                        <SortHeader label="Thay đổi" field="priceChangePercent" className="text-right" />
+                                        <TableHead className="w-[160px] sticky left-0 bg-gray-50 z-10">Mã CK</TableHead>
+                                        <SortHeader label="Giá" field="current_price" className="text-right" />
+                                        <SortHeader label="Thay đổi" field="price_change_percent" className="text-right" />
                                         <TableHead className="text-center w-[90px]">Xu hướng</TableHead>
                                         <SortHeader label="KLGD" field="volume" className="text-right" />
-                                        <SortHeader label="Vốn hóa" field="marketCap" className="text-right" />
+                                        <SortHeader label="Vốn hóa" field="market_cap" className="text-right" />
                                         <SortHeader label="P/E" field="pe" className="text-right" />
                                         <SortHeader label="P/B" field="pb" className="text-right" />
                                         <SortHeader label="EPS" field="eps" className="text-right" />
                                         <SortHeader label="ROE" field="roe" className="text-right" />
-                                        <SortHeader label="52W %" field="weekChange52" className="text-right" />
-                                        <SortHeader label="NN mua ròng" field="foreignNetBuy" className="text-right" />
-                                        <TableHead className="text-center">Tín hiệu</TableHead>
+                                        <SortHeader label="52W %" field="week_change_52" className="text-right" />
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {filtered.map((stock) => {
-                                        const isUp = stock.priceChangePercent >= 0;
+                                    {/* Skeleton rows on initial load */}
+                                    {initialLoad && stocks.length === 0 && (
+                                        Array.from({ length: 10 }).map((_, i) => (
+                                            <TableRow key={`skeleton-${i}`} className="animate-pulse">
+                                                <TableCell className="sticky left-0 bg-white z-10">
+                                                    <div className="flex items-center gap-2">
+                                                        <Skeleton className="w-8 h-8 rounded-lg" />
+                                                        <div className="space-y-1">
+                                                            <Skeleton className="h-4 w-12" />
+                                                            <Skeleton className="h-2.5 w-20" />
+                                                        </div>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-right"><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
+                                                <TableCell className="text-right">
+                                                    <div className="flex flex-col items-end gap-1">
+                                                        <Skeleton className="h-3 w-12" />
+                                                        <Skeleton className="h-4 w-14 rounded" />
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-center"><Skeleton className="h-8 w-20 mx-auto rounded" /></TableCell>
+                                                <TableCell className="text-right"><Skeleton className="h-4 w-12 ml-auto" /></TableCell>
+                                                <TableCell className="text-right"><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
+                                                <TableCell className="text-right"><Skeleton className="h-4 w-10 ml-auto" /></TableCell>
+                                                <TableCell className="text-right"><Skeleton className="h-4 w-10 ml-auto" /></TableCell>
+                                                <TableCell className="text-right"><Skeleton className="h-4 w-14 ml-auto" /></TableCell>
+                                                <TableCell className="text-right"><Skeleton className="h-4 w-12 ml-auto" /></TableCell>
+                                                <TableCell className="text-right"><Skeleton className="h-4 w-12 ml-auto" /></TableCell>
+                                            </TableRow>
+                                        ))
+                                    )}
+                                    {stocks.length === 0 && !loading && !initialLoad && (
+                                        <TableRow>
+                                            <TableCell colSpan={11} className="text-center py-12 text-gray-400">
+                                                Không tìm thấy cổ phiếu nào
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                    {stocks.map((stock) => {
+                                        const isUp = (stock.price_change_percent ?? 0) >= 0;
                                         return (
                                             <TableRow
                                                 key={stock.ticker}
@@ -303,7 +469,11 @@ export default function StocksPage() {
                                             >
                                                 {/* Ticker + Company */}
                                                 <TableCell className="sticky left-0 bg-white group-hover:bg-orange-50/50 z-10">
-                                                    <Link href={`/stock/${stock.ticker}`} className="block">
+                                                    <Link
+                                                        href={`/stock/${stock.ticker}`}
+                                                        className="block"
+                                                        onClick={() => trackClick(stock.ticker)}
+                                                    >
                                                         <div className="flex items-center gap-2">
                                                             <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs ${isUp ? "bg-gradient-to-br from-green-500 to-green-700" : "bg-gradient-to-br from-red-500 to-red-700"}`}>
                                                                 {stock.ticker.charAt(0)}
@@ -312,8 +482,8 @@ export default function StocksPage() {
                                                                 <div className="font-bold text-sm text-gray-900 group-hover:text-orange-600 transition-colors">
                                                                     {stock.ticker}
                                                                 </div>
-                                                                <div className="text-[10px] text-gray-400 truncate max-w-[100px]">
-                                                                    {stock.sector}
+                                                                <div className="text-[10px] text-gray-400 truncate max-w-[120px]">
+                                                                    {stock.company_name ?? stock.sector ?? "—"}
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -322,9 +492,9 @@ export default function StocksPage() {
 
                                                 {/* Price */}
                                                 <TableCell className="text-right">
-                                                    <Link href={`/stock/${stock.ticker}`} className="block">
+                                                    <Link href={`/stock/${stock.ticker}`} className="block" onClick={() => trackClick(stock.ticker)}>
                                                         <span className={`font-semibold text-sm ${isUp ? "text-green-600" : "text-red-600"}`}>
-                                                            {formatPrice(stock.currentPrice)}
+                                                            {stock.current_price != null ? formatPrice(stock.current_price) : "—"}
                                                         </span>
                                                     </Link>
                                                 </TableCell>
@@ -333,10 +503,10 @@ export default function StocksPage() {
                                                 <TableCell className="text-right">
                                                     <div className="flex flex-col items-end">
                                                         <span className={`text-xs font-medium ${isUp ? "text-green-600" : "text-red-600"}`}>
-                                                            {isUp ? "+" : ""}{formatPrice(stock.priceChange)}
+                                                            {stock.price_change != null ? `${isUp ? "+" : ""}${formatPrice(stock.price_change)}` : "—"}
                                                         </span>
                                                         <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${isUp ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
-                                                            {isUp ? "+" : ""}{stock.priceChangePercent.toFixed(2)}%
+                                                            {stock.price_change_percent != null ? `${isUp ? "+" : ""}${stock.price_change_percent.toFixed(2)}%` : "—"}
                                                         </span>
                                                     </div>
                                                 </TableCell>
@@ -350,55 +520,45 @@ export default function StocksPage() {
 
                                                 {/* Volume */}
                                                 <TableCell className="text-right text-xs text-gray-700 font-medium">
-                                                    {formatVolume(stock.volume)}
+                                                    {stock.volume != null ? formatVolume(stock.volume) : "—"}
                                                 </TableCell>
 
                                                 {/* Market Cap */}
                                                 <TableCell className="text-right text-xs text-gray-700 font-medium">
-                                                    {formatMarketCap(stock.marketCap)}
+                                                    {stock.market_cap != null ? formatMarketCap(stock.market_cap) : "—"}
                                                 </TableCell>
 
                                                 {/* P/E */}
                                                 <TableCell className="text-right text-xs text-gray-700">
-                                                    {stock.pe !== null ? stock.pe.toFixed(1) : "—"}
+                                                    {stock.pe != null ? stock.pe.toFixed(1) : "—"}
                                                 </TableCell>
 
                                                 {/* P/B */}
                                                 <TableCell className="text-right text-xs text-gray-700">
-                                                    {stock.pb.toFixed(1)}
+                                                    {stock.pb != null ? stock.pb.toFixed(1) : "—"}
                                                 </TableCell>
 
                                                 {/* EPS */}
                                                 <TableCell className="text-right text-xs text-gray-700">
-                                                    {stock.eps.toLocaleString()}
+                                                    {stock.eps != null ? stock.eps.toLocaleString() : "—"}
                                                 </TableCell>
 
                                                 {/* ROE */}
                                                 <TableCell className="text-right">
-                                                    <span className={`text-xs font-medium ${stock.roe >= 15 ? "text-green-600" : stock.roe >= 0 ? "text-gray-700" : "text-red-600"}`}>
-                                                        {stock.roe.toFixed(1)}%
-                                                    </span>
+                                                    {stock.roe != null ? (
+                                                        <span className={`text-xs font-medium ${stock.roe >= 15 ? "text-green-600" : stock.roe >= 0 ? "text-gray-700" : "text-red-600"}`}>
+                                                            {stock.roe.toFixed(1)}%
+                                                        </span>
+                                                    ) : <span className="text-xs text-gray-400">—</span>}
                                                 </TableCell>
 
                                                 {/* 52W Change */}
                                                 <TableCell className="text-right">
-                                                    <span className={`text-xs font-medium ${stock.weekChange52 >= 0 ? "text-green-600" : "text-red-600"}`}>
-                                                        {stock.weekChange52 > 0 ? "+" : ""}{stock.weekChange52.toFixed(1)}%
-                                                    </span>
-                                                </TableCell>
-
-                                                {/* Foreign */}
-                                                <TableCell className="text-right">
-                                                    <span className={`text-xs font-medium ${stock.foreignNetBuy >= 0 ? "text-green-600" : "text-red-600"}`}>
-                                                        {stock.foreignNetBuy > 0 ? "+" : ""}{stock.foreignNetBuy}T
-                                                    </span>
-                                                </TableCell>
-
-                                                {/* Signal */}
-                                                <TableCell className="text-center">
-                                                    <span className={`inline-block px-2 py-0.5 text-[10px] font-semibold rounded border ${signalColor[stock.signal]}`}>
-                                                        {stock.signal}
-                                                    </span>
+                                                    {stock.week_change_52 != null ? (
+                                                        <span className={`text-xs font-medium ${stock.week_change_52 >= 0 ? "text-green-600" : "text-red-600"}`}>
+                                                            {stock.week_change_52 > 0 ? "+" : ""}{stock.week_change_52.toFixed(1)}%
+                                                        </span>
+                                                    ) : <span className="text-xs text-gray-400">—</span>}
                                                 </TableCell>
                                             </TableRow>
                                         );
@@ -406,6 +566,55 @@ export default function StocksPage() {
                                 </TableBody>
                             </Table>
                         </div>
+
+                        {/* Pagination */}
+                        {totalPages > 1 && (
+                            <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
+                                <span className="text-xs text-gray-500">
+                                    Trang {page}/{totalPages} · Hiển thị {stocks.length}/{total} mã
+                                </span>
+                                <div className="flex items-center gap-1">
+                                    <button
+                                        disabled={page <= 1}
+                                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                                        className="p-1.5 rounded-md border border-gray-200 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                                    >
+                                        <ChevronLeft className="w-4 h-4" />
+                                    </button>
+                                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                        let pageNum: number;
+                                        if (totalPages <= 5) {
+                                            pageNum = i + 1;
+                                        } else if (page <= 3) {
+                                            pageNum = i + 1;
+                                        } else if (page >= totalPages - 2) {
+                                            pageNum = totalPages - 4 + i;
+                                        } else {
+                                            pageNum = page - 2 + i;
+                                        }
+                                        return (
+                                            <button
+                                                key={pageNum}
+                                                onClick={() => setPage(pageNum)}
+                                                className={`w-8 h-8 rounded-md text-xs font-medium ${page === pageNum
+                                                    ? "bg-orange-500 text-white"
+                                                    : "border border-gray-200 hover:bg-gray-100 text-gray-700"
+                                                    }`}
+                                            >
+                                                {pageNum}
+                                            </button>
+                                        );
+                                    })}
+                                    <button
+                                        disabled={page >= totalPages}
+                                        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                                        className="p-1.5 rounded-md border border-gray-200 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                                    >
+                                        <ChevronRight className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
 

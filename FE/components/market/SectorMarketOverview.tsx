@@ -1,8 +1,7 @@
 "use client";
 
-import React from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import ReactECharts from "echarts-for-react";
-import { SECTOR_OVERVIEW_DATA } from "@/lib/mockData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     Table,
@@ -12,9 +11,46 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
+import { RefreshCw, Loader2 } from "lucide-react";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+interface SectorOverviewItem {
+    name: string;
+    change: number;
+    volume: number;
+    value: number;
+    cashFlow: number;
+}
 
 const SectorMarketOverview = () => {
-    const chartOption = {
+    const [data, setData] = useState<SectorOverviewItem[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    const fetchData = useCallback(async () => {
+        try {
+            setError(null);
+            const res = await fetch(`${API_BASE}/api/v1/market/sector-overview`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const json: SectorOverviewItem[] = await res.json();
+            setData(json);
+        } catch (err) {
+            console.error("Failed to fetch sector overview:", err);
+            setError("Không thể tải dữ liệu");
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchData();
+        const interval = setInterval(fetchData, 120_000);
+        return () => clearInterval(interval);
+    }, [fetchData]);
+
+    const chartOption = useMemo(() => ({
         tooltip: {
             trigger: "axis",
             axisPointer: { type: "shadow" },
@@ -36,7 +72,7 @@ const SectorMarketOverview = () => {
             axisLabel: { show: false },
             axisTick: { show: false },
             splitLine: { show: false },
-            data: SECTOR_OVERVIEW_DATA.map((item) => item.name),
+            data: data.map((item) => item.name),
         },
         series: [
             {
@@ -45,29 +81,79 @@ const SectorMarketOverview = () => {
                 stack: "Total",
                 label: {
                     show: true,
-                    position: "right", // Dynamic position based on value would be better but simple for now
+                    position: "right",
                     formatter: "{b}",
                 },
-                data: SECTOR_OVERVIEW_DATA.map((item) => ({
+                data: data.map((item) => ({
                     value: item.change,
                     itemStyle: {
-                        color: item.change >= 0 ? "#22c55e" : "#ef4444"
+                        color: item.change >= 0 ? "#22c55e" : "#ef4444",
                     },
                     label: {
-                        position: item.change >= 0 ? "left" : "right"
-                    }
+                        position: item.change >= 0 ? "left" : "right",
+                    },
                 })),
             },
         ],
-    };
+    }), [data]);
+
+    if (loading) {
+        return (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card className="shadow-sm border-gray-200">
+                    <CardHeader className="pb-2"><CardTitle className="text-lg font-bold text-gray-800">Biến động ngành</CardTitle></CardHeader>
+                    <CardContent>
+                        <div className="h-[350px] relative overflow-hidden rounded-lg">
+                            <Skeleton className="h-full w-full" />
+                            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+                                <Loader2 className="w-7 h-7 text-orange-500 animate-spin" />
+                                <span className="text-xs text-slate-400">Đang tải biểu đồ...</span>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card className="shadow-sm border-gray-200">
+                    <CardHeader className="pb-2"><CardTitle className="text-lg font-bold text-gray-800">Chi tiết ngành</CardTitle></CardHeader>
+                    <CardContent>
+                        <div className="space-y-2.5 animate-pulse">
+                            <div className="flex justify-between border-b pb-2">
+                                <Skeleton className="h-3 w-20" />
+                                <Skeleton className="h-3 w-14" />
+                                <Skeleton className="h-3 w-14" />
+                            </div>
+                            {Array.from({ length: 10 }).map((_, i) => (
+                                <div key={i} className="flex justify-between py-1">
+                                    <Skeleton className="h-3 w-24" />
+                                    <Skeleton className="h-3 w-10" />
+                                    <Skeleton className="h-3 w-14" />
+                                </div>
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex flex-col items-center justify-center py-12 text-gray-500 gap-3">
+                <p>{error}</p>
+                <button onClick={fetchData} className="flex items-center gap-1 text-blue-600 hover:underline text-sm">
+                    <RefreshCw className="w-4 h-4" /> Thử lại
+                </button>
+            </div>
+        );
+    }
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card className="shadow-sm border-gray-200">
                 <CardHeader className="pb-2">
-                    <CardTitle className="text-lg font-bold text-gray-800">
-                        Biến động ngành
-                    </CardTitle>
+                    <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg font-bold text-gray-800">Biến động ngành</CardTitle>
+                        <button onClick={fetchData} className="text-gray-400 hover:text-gray-600"><RefreshCw className="w-4 h-4" /></button>
+                    </div>
                 </CardHeader>
                 <CardContent>
                     <ReactECharts option={chartOption} style={{ height: "350px" }} />
@@ -76,9 +162,7 @@ const SectorMarketOverview = () => {
 
             <Card className="shadow-sm border-gray-200">
                 <CardHeader className="pb-2">
-                    <CardTitle className="text-lg font-bold text-gray-800">
-                        Chi tiết ngành
-                    </CardTitle>
+                    <CardTitle className="text-lg font-bold text-gray-800">Chi tiết ngành</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="overflow-auto max-h-[350px]">
@@ -91,12 +175,11 @@ const SectorMarketOverview = () => {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {SECTOR_OVERVIEW_DATA.map((item) => (
+                                {data.map((item) => (
                                     <TableRow key={item.name}>
                                         <TableCell className="font-medium">{item.name}</TableCell>
                                         <TableCell
-                                            className={`text-right font-bold ${item.change >= 0 ? "text-green-600" : "text-red-600"
-                                                }`}
+                                            className={`text-right font-bold ${item.change >= 0 ? "text-green-600" : "text-red-600"}`}
                                         >
                                             {item.change}%
                                         </TableCell>

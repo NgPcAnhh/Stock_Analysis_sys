@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
-import { SECTOR_TABLE_DATA, SectorTableRow } from "@/lib/mockData";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import {
     Table,
@@ -11,7 +10,25 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, RefreshCw } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+interface SectorTableRow {
+    name: string;
+    stockCount: number;
+    marketCap: string;
+    pe: number;
+    pb: number;
+    dividendYield: number;
+    lnstGrowth3Y: number;
+    priceChange1D: number;
+    priceChange7D: number;
+    priceChangeYTD: number;
+    priceChange1Y: number;
+    priceChange3Y: number;
+}
 
 type SortKey = keyof SectorTableRow;
 type SortDir = "asc" | "desc";
@@ -25,8 +42,32 @@ const fmt = (v: number) => {
 };
 
 export default function SectorAnalysisTable() {
+    const [data, setData] = useState<SectorTableRow[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [sortKey, setSortKey] = useState<SortKey>("marketCap");
     const [sortDir, setSortDir] = useState<SortDir>("desc");
+
+    const fetchData = useCallback(async () => {
+        try {
+            setError(null);
+            const res = await fetch(`${API_BASE}/api/v1/market/sector-analysis`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const json: SectorTableRow[] = await res.json();
+            setData(json);
+        } catch (err) {
+            console.error("Failed to fetch sector analysis:", err);
+            setError("Không thể tải dữ liệu");
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchData();
+        const interval = setInterval(fetchData, 300_000);
+        return () => clearInterval(interval);
+    }, [fetchData]);
 
     const handleSort = (key: SortKey) => {
         if (sortKey === key) {
@@ -37,7 +78,7 @@ export default function SectorAnalysisTable() {
         }
     };
 
-    const sorted = [...SECTOR_TABLE_DATA].sort((a, b) => {
+    const sorted = useMemo(() => [...data].sort((a, b) => {
         let av: number | string = a[sortKey];
         let bv: number | string = b[sortKey];
         // parse marketCap string for numeric sort
@@ -50,7 +91,7 @@ export default function SectorAnalysisTable() {
         if (av < bv) return sortDir === "asc" ? -1 : 1;
         if (av > bv) return sortDir === "asc" ? 1 : -1;
         return 0;
-    });
+    }), [data, sortKey, sortDir]);
 
     const SortableHead = ({ label, colKey, className = "" }: { label: string; colKey: SortKey; className?: string }) => (
         <TableHead
@@ -63,6 +104,44 @@ export default function SectorAnalysisTable() {
             </span>
         </TableHead>
     );
+
+    if (loading) {
+        return (
+            <Card className="shadow-sm border-gray-200">
+                <CardContent className="p-4">
+                    <div className="animate-pulse space-y-0">
+                        {/* Header row */}
+                        <div className="flex gap-3 py-2 border-b border-slate-200">
+                            <Skeleton className="h-3 w-28" />
+                            {Array.from({ length: 10 }).map((_, i) => (
+                                <Skeleton key={i} className="h-3 w-14" />
+                            ))}
+                        </div>
+                        {/* Data rows */}
+                        {Array.from({ length: 12 }).map((_, i) => (
+                            <div key={i} className="flex gap-3 py-2.5 border-b border-slate-50">
+                                <Skeleton className="h-3 w-28" />
+                                {Array.from({ length: 10 }).map((_, j) => (
+                                    <Skeleton key={j} className="h-3 w-14" />
+                                ))}
+                            </div>
+                        ))}
+                    </div>
+                </CardContent>
+            </Card>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex flex-col items-center justify-center py-12 text-gray-500 gap-3">
+                <p>{error}</p>
+                <button onClick={fetchData} className="flex items-center gap-1 text-blue-600 hover:underline text-sm">
+                    <RefreshCw className="w-4 h-4" /> Thử lại
+                </button>
+            </div>
+        );
+    }
 
     return (
         <Card className="shadow-sm border-gray-200">
