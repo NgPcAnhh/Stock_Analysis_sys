@@ -9,6 +9,7 @@ from app.modules.tong_quan.schemas import (
     HeatmapSector,
     LiquidityPoint,
     MacroIndicatorItem,
+    MacroYearlyResponse,
     MarketBreadthData,
     MarketComparisonItem,
     MarketIndexCard,
@@ -18,6 +19,7 @@ from app.modules.tong_quan.schemas import (
     SectorPerformanceItem,
     TickerSlideItem,
     TopStockItem,
+    TopStocksAllResponse,
     ValuationPoint,
 )
 
@@ -93,6 +95,19 @@ def top_stocks(
     return logic.get_top_stocks(db, category=category, limit=limit)
 
 
+# ── 6b. Top Stocks — ALL (unified) ────────────────────────────────
+@router.get("/top-stocks-all", response_model=TopStocksAllResponse)
+def top_stocks_all(
+    limit: int = Query(10, ge=1, le=20),
+    db: Session = Depends(get_db),
+):
+    """Trả về top cổ phiếu tăng giá + giảm giá + khối ngoại trong 1 lần gọi.
+
+    Dữ liệu được cache Redis (TTL 120s) — spam nút Refresh không query DB.
+    """
+    return logic.get_top_stocks_all(db, limit=limit)
+
+
 # ── 7. Market Heatmap ─────────────────────────────────────────────
 @router.get("/market-heatmap", response_model=List[HeatmapSector])
 def market_heatmap(
@@ -136,3 +151,10 @@ def liquidity(
 ):
     """Thanh khoản thị trường — tổng GTGD theo ngày."""
     return logic.get_liquidity(db, days=days)
+
+
+# ── 12. Macro Yearly ──────────────────────────────────────────
+@router.get("/macro-yearly", response_model=MacroYearlyResponse)
+def macro_yearly(db: Session = Depends(get_db)):
+    """Chỉ số vĩ mô Việt Nam theo năm (GDP, lạm phát, lãi suất, FDI, …)."""
+    return logic.get_macro_yearly(db)

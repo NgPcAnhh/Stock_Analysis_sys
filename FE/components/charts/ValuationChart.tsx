@@ -1,35 +1,74 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import ReactECharts from "echarts-for-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
-const PE_DATA = [
-    { month: "T1", value: 14.2 },
-    { month: "T2", value: 14.5 },
-    { month: "T3", value: 15.1 },
-    { month: "T4", value: 14.8 },
-    { month: "T5", value: 15.3 },
-    { month: "T6", value: 15.8 },
-    { month: "T7", value: 15.2 },
-    { month: "T8", value: 14.9 },
-    { month: "T9", value: 15.5 },
-    { month: "T10", value: 16.1 },
-    { month: "T11", value: 16.5 },
-    { month: "T12", value: 16.2 },
-];
+interface PEPoint {
+    month: string;
+    value: number;
+}
+
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
+
+/** Only show the last N periods */
+const VISIBLE_PERIODS = 10;
 
 export const ValuationChart = () => {
+    const [data, setData] = useState<PEPoint[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const res = await fetch(`${API}/tong-quan/valuation-pe`);
+                if (!res.ok) throw new Error("API error");
+                const json: PEPoint[] = await res.json();
+                if (!cancelled) setData(json.slice(-VISIBLE_PERIODS));
+            } catch (e) {
+                console.error("ValuationChart fetch error:", e);
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        })();
+        return () => { cancelled = true; };
+    }, []);
+
+    const values = data.map((d) => d.value);
+    const minVal = values.length ? Math.floor(Math.min(...values) - 1) : 0;
+    const maxVal = values.length ? Math.ceil(Math.max(...values) + 2) : 20;
+
     const option = {
-        tooltip: { trigger: "axis" },
-        grid: { left: "3%", right: "4%", bottom: "3%", containLabel: true },
-        xAxis: { type: "category", data: PE_DATA.map((d) => d.month) },
-        yAxis: { type: "value", min: 13, max: 18 },
+        tooltip: {
+            trigger: "axis" as const,
+            formatter: (params: any) => {
+                const p = Array.isArray(params) ? params[0] : params;
+                return `<b>${p.name}</b><br/>P/E: <b>${p.value.toFixed(2)}</b>`;
+            },
+        },
+        grid: { left: "3%", right: "4%", top: "8%", bottom: "15%", containLabel: true },
+        xAxis: {
+            type: "category" as const,
+            data: data.map((d) => d.month),
+            axisLabel: {
+                rotate: 45,
+                fontSize: 10,
+                interval: 0,
+            },
+        },
+        yAxis: {
+            type: "value" as const,
+            min: minVal,
+            max: maxVal,
+            axisLabel: { formatter: (v: number) => v.toFixed(1) },
+        },
         series: [
             {
                 name: "P/E",
                 type: "line",
-                data: PE_DATA.map((d) => d.value),
+                data: values,
                 smooth: true,
                 lineStyle: { color: "#f97316", width: 2 },
                 itemStyle: { color: "#f97316" },
@@ -53,7 +92,17 @@ export const ValuationChart = () => {
                 <CardTitle className="text-lg font-bold text-gray-800">P/E VN-Index</CardTitle>
             </CardHeader>
             <CardContent className="h-[340px]">
-                <ReactECharts option={option} style={{ height: "100%", width: "100%" }} />
+                {loading ? (
+                    <div className="flex flex-col gap-2 h-full pt-2">
+                        <Skeleton className="h-full w-full" />
+                    </div>
+                ) : data.length === 0 ? (
+                    <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+                        Không có dữ liệu
+                    </div>
+                ) : (
+                    <ReactECharts option={option} style={{ height: "100%", width: "100%" }} />
+                )}
             </CardContent>
         </Card>
     );

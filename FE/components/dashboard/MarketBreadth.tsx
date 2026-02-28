@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useState, useMemo } from "react";
 import ReactECharts from "echarts-for-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2, RefreshCw } from "lucide-react";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -111,7 +112,7 @@ export const MarketBreadth = () => {
                         },
                         {
                             value: data.unchanged,
-                            name: "Đứng giá",
+                            name: "Không thay đổi",
                             itemStyle: { color: "#eab308" },
                         },
                         {
@@ -145,8 +146,13 @@ export const MarketBreadth = () => {
             </CardHeader>
             <CardContent className="flex-1 min-h-0 relative">
                 {loading && !data ? (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    <div className="flex flex-col items-center justify-center h-full gap-4">
+                        <Skeleton className="h-40 w-40 rounded-full" />
+                        <div className="flex gap-6">
+                            <Skeleton className="h-4 w-16" />
+                            <Skeleton className="h-4 w-24" />
+                            <Skeleton className="h-4 w-14" />
+                        </div>
                     </div>
                 ) : error ? (
                     <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">

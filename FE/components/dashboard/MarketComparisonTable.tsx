@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { ArrowUp, ArrowDown, Minus, Loader2, RefreshCw } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
     Table,
     TableBody,
@@ -55,7 +56,7 @@ export function MarketComparisonTable() {
             <CardHeader className="pb-2 border-b border-border/50 shrink-0">
                 <div className="flex items-center justify-between">
                     <CardTitle className="text-base font-semibold">
-                        Thị trường quốc tế
+                        Các chỉ số toàn cầu & vĩ mô
                     </CardTitle>
                     {!loading && (
                         <button
@@ -71,9 +72,24 @@ export function MarketComparisonTable() {
 
             <CardContent className="p-0 flex-1 overflow-y-auto relative">
                 {loading && data.length === 0 ? (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                    </div>
+                    <Table>
+                        <TableHeader>
+                            <TableRow className="hover:bg-transparent">
+                                <TableHead className="w-[120px]">Chỉ số</TableHead>
+                                <TableHead className="text-right">Điểm</TableHead>
+                                <TableHead className="text-right">% Thay đổi</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {Array.from({ length: 8 }).map((_, i) => (
+                                <TableRow key={i} className="border-b border-border/50">
+                                    <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                                    <TableCell className="text-right"><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
+                                    <TableCell className="text-right"><Skeleton className="h-4 w-14 ml-auto" /></TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
                 ) : error ? (
                     <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
                         <p className="text-sm text-red-500">{error}</p>

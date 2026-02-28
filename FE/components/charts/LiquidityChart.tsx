@@ -1,34 +1,77 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import ReactECharts from "echarts-for-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
-const LIQUIDITY_DATA = [
-    { date: "16/01", value: 18500 },
-    { date: "17/01", value: 22300 },
-    { date: "18/01", value: 19800 },
-    { date: "19/01", value: 25400 },
-    { date: "20/01", value: 21200 },
-    { date: "21/01", value: 23800 },
-    { date: "22/01", value: 28500 },
-    { date: "23/01", value: 26200 },
-];
+interface LiquidityPoint {
+    date: string;
+    value: number;
+}
+
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
 
 export const LiquidityChart = () => {
+    const [data, setData] = useState<LiquidityPoint[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const res = await fetch(`${API}/tong-quan/liquidity?days=30`);
+                if (!res.ok) throw new Error("API error");
+                const json: LiquidityPoint[] = await res.json();
+                if (!cancelled) setData(json);
+            } catch (e) {
+                console.error("LiquidityChart fetch error:", e);
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        })();
+        return () => { cancelled = true; };
+    }, []);
+
+    const values = data.map((d) => d.value);
+
     const option = {
-        tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
-        grid: { left: "3%", right: "4%", bottom: "3%", containLabel: true },
-        xAxis: { type: "category", data: LIQUIDITY_DATA.map((d) => d.date) },
-        yAxis: {
-            type: "value",
-            axisLabel: { formatter: (val: number) => `${(val / 1000).toFixed(0)}K` }
+        tooltip: {
+            trigger: "axis" as const,
+            axisPointer: { type: "shadow" as const },
+            formatter: (params: any) => {
+                const p = Array.isArray(params) ? params[0] : params;
+                return `<b>${p.name}</b><br/>GTGD: <b>${Number(p.value).toLocaleString("en-US")}</b> tỷ`;
+            },
         },
+        grid: { left: "3%", right: "4%", top: "8%", bottom: "18%", containLabel: true },
+        xAxis: {
+            type: "category" as const,
+            data: data.map((d) => d.date),
+            axisLabel: {
+                rotate: 45,
+                fontSize: 10,
+                interval: 0,
+            },
+        },
+        yAxis: {
+            type: "value" as const,
+            scale: true,
+            axisLabel: {
+                formatter: (val: number) => `${val.toLocaleString("en-US")} tỷ`,
+                fontSize: 10,
+            },
+            splitLine: { lineStyle: { type: "dashed" as const, color: "#e5e7eb" } },
+        },
+        dataZoom: [
+            { type: "inside", start: 0, end: 100 },
+            { type: "slider", start: 0, end: 100, height: 18, bottom: 4 },
+        ],
         series: [
             {
                 name: "GTGD (tỷ)",
                 type: "bar",
-                data: LIQUIDITY_DATA.map((d) => d.value),
+                data: values,
                 itemStyle: {
                     color: {
                         type: "linear",
@@ -39,6 +82,7 @@ export const LiquidityChart = () => {
                         ],
                     },
                 },
+                barMaxWidth: 28,
             },
         ],
     };
@@ -49,7 +93,17 @@ export const LiquidityChart = () => {
                 <CardTitle className="text-lg font-bold text-gray-800">Thanh khoản thị trường</CardTitle>
             </CardHeader>
             <CardContent className="h-[340px]">
-                <ReactECharts option={option} style={{ height: "100%", width: "100%" }} />
+                {loading ? (
+                    <div className="flex flex-col gap-2 h-full pt-2">
+                        <Skeleton className="h-full w-full" />
+                    </div>
+                ) : data.length === 0 ? (
+                    <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+                        Không có dữ liệu
+                    </div>
+                ) : (
+                    <ReactECharts option={option} style={{ height: "100%", width: "100%" }} />
+                )}
             </CardContent>
         </Card>
     );

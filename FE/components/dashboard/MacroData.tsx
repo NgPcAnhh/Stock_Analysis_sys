@@ -1,9 +1,7 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
-import ReactECharts from "echarts-for-react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
     Table,
     TableBody,
@@ -12,186 +10,168 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { ArrowUpRight, ArrowDownRight, Minus } from "lucide-react";
 
-// Seeded PRNG to guarantee identical output on server & client
-function seededRandom(seed: number) {
-    let s = seed;
-    return () => {
-        s = (s * 16807 + 0) % 2147483647;
-        return (s - 1) / 2147483646;
-    };
+interface MacroYearlyIndicator {
+    key: string;
+    label: string;
+    values: (number | null)[];
 }
 
-// Generate sparkline data deterministically
-const generateSparkline = (base: number, points: number, volatility: number, seed: number) => {
-    const rng = seededRandom(seed);
-    return Array.from({ length: points }, () => base + (rng() - 0.5) * volatility);
+interface MacroYearlyResponse {
+    years: number[];
+    indicators: MacroYearlyIndicator[];
+}
+
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
+
+/** Show last N years only */
+const VISIBLE_YEARS = 4;
+
+/** Format a numeric value nicely; null → "N/A" */
+const fmt = (v: number | null): string => {
+    if (v === null || v === undefined) return "N/A";
+    if (Math.abs(v) >= 1000) return v.toLocaleString("en-US", { maximumFractionDigits: 1 });
+    return v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
-const MACRO_INDICATORS = [
-    {
-        name: "VN-Index",
-        price: 1258.56,
-        change: 12.34,
-        changePct: 0.98,
-        sparklines: {
-            "1m": generateSparkline(1250, 20, 40, 101),
-            "3m": generateSparkline(1220, 30, 60, 102),
-            "6m": generateSparkline(1180, 40, 80, 103),
-            "1y": generateSparkline(1100, 50, 120, 104),
-        },
-    },
-    {
-        name: "USD/VND",
-        price: 24850,
-        change: 15,
-        changePct: 0.06,
-        sparklines: {
-            "1m": generateSparkline(24800, 20, 100, 201),
-            "3m": generateSparkline(24700, 30, 200, 202),
-            "6m": generateSparkline(24500, 40, 300, 203),
-            "1y": generateSparkline(24200, 50, 500, 204),
-        },
-    },
-    {
-        name: "Lãi suất ON",
-        price: 4.5,
-        change: 0,
-        changePct: 0,
-        sparklines: {
-            "1m": generateSparkline(4.5, 20, 0.3, 301),
-            "3m": generateSparkline(4.4, 30, 0.5, 302),
-            "6m": generateSparkline(4.2, 40, 0.8, 303),
-            "1y": generateSparkline(4.0, 50, 1.0, 304),
-        },
-    },
-    {
-        name: "CPI",
-        price: 3.2,
-        change: -0.1,
-        changePct: -3.03,
-        sparklines: {
-            "1m": generateSparkline(3.2, 20, 0.2, 401),
-            "3m": generateSparkline(3.3, 30, 0.4, 402),
-            "6m": generateSparkline(3.1, 40, 0.5, 403),
-            "1y": generateSparkline(3.0, 50, 0.8, 404),
-        },
-    },
-    {
-        name: "GDP Growth",
-        price: 6.5,
-        change: 0.3,
-        changePct: 4.84,
-        sparklines: {
-            "1m": generateSparkline(6.4, 20, 0.3, 501),
-            "3m": generateSparkline(6.2, 30, 0.5, 502),
-            "6m": generateSparkline(5.8, 40, 0.8, 503),
-            "1y": generateSparkline(5.5, 50, 1.2, 504),
-        },
-    },
-    {
-        name: "Giá vàng SJC",
-        price: 79.5,
-        change: 0.8,
-        changePct: 1.02,
-        sparklines: {
-            "1m": generateSparkline(78, 20, 2, 601),
-            "3m": generateSparkline(76, 30, 4, 602),
-            "6m": generateSparkline(72, 40, 6, 603),
-            "1y": generateSparkline(68, 50, 10, 604),
-        },
-    },
-];
-
-type TimeFrame = "1m" | "3m" | "6m" | "1y";
-
-const MiniSparkline = ({ data, isPositive }: { data: number[]; isPositive: boolean }) => {
-    const option = {
-        grid: { left: 0, right: 0, top: 0, bottom: 0 },
-        xAxis: { show: false, type: "category" as const },
-        yAxis: { show: false, type: "value" as const },
-        series: [
-            {
-                type: "line",
-                data,
-                smooth: true,
-                symbol: "none",
-                lineStyle: { color: isPositive ? "#22c55e" : "#ef4444", width: 1.5 },
-                areaStyle: {
-                    color: {
-                        type: "linear" as const,
-                        x: 0, y: 0, x2: 0, y2: 1,
-                        colorStops: [
-                            { offset: 0, color: isPositive ? "rgba(34,197,94,0.2)" : "rgba(239,68,68,0.2)" },
-                            { offset: 1, color: isPositive ? "rgba(34,197,94,0)" : "rgba(239,68,68,0)" },
-                        ],
-                    },
-                },
-            },
-        ],
+/** Compute YoY growth string: (cur - prev) / |prev| * 100 */
+const growthFmt = (cur: number | null, prev: number | null): { text: string; dir: "up" | "down" | "flat" } => {
+    if (cur === null || prev === null || prev === 0) return { text: "N/A", dir: "flat" };
+    const pct = ((cur - prev) / Math.abs(prev)) * 100;
+    const rounded = Math.round(pct * 100) / 100;
+    const sign = rounded > 0 ? "+" : "";
+    return {
+        text: `${sign}${rounded.toFixed(2)}%`,
+        dir: rounded > 0 ? "up" : rounded < 0 ? "down" : "flat",
     };
-    return <ReactECharts option={option} style={{ height: 32, width: 80 }} opts={{ renderer: "svg" }} />;
 };
 
 export const MacroData = () => {
-    const [timeFrame, setTimeFrame] = useState<TimeFrame>("1m");
+    const [data, setData] = useState<MacroYearlyResponse | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const res = await fetch(`${API}/tong-quan/macro-yearly`);
+                if (!res.ok) throw new Error("API error");
+                const json: MacroYearlyResponse = await res.json();
+                if (!cancelled) setData(json);
+            } catch (e) {
+                console.error("MacroData fetch error:", e);
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        })();
+        return () => { cancelled = true; };
+    }, []);
+
+    /** Trim to last VISIBLE_YEARS years */
+    const view = useMemo(() => {
+        if (!data) return null;
+        const total = data.years.length;
+        if (total <= VISIBLE_YEARS) return data;
+        const startIdx = total - VISIBLE_YEARS;
+        return {
+            years: data.years.slice(startIdx),
+            indicators: data.indicators.map((ind) => ({
+                ...ind,
+                values: ind.values.slice(startIdx),
+            })),
+        };
+    }, [data]);
 
     return (
         <Card className="shadow-sm border-gray-200">
-            <CardHeader className="pb-3 flex flex-row items-center justify-between border-b border-gray-100">
+            <CardHeader className="pb-3 border-b border-gray-100">
                 <CardTitle className="text-lg font-bold text-gray-800">
-                    Chỉ số vĩ mô
+                    Chỉ số vĩ mô Việt Nam
                 </CardTitle>
-                <Tabs value={timeFrame} onValueChange={(v) => setTimeFrame(v as TimeFrame)} className="w-auto">
-                    <TabsList className="h-8 bg-gray-100">
-                        <TabsTrigger value="1m" className="text-xs px-3 h-6 data-[state=active]:bg-green-500 data-[state=active]:text-white">1M</TabsTrigger>
-                        <TabsTrigger value="3m" className="text-xs px-3 h-6 data-[state=active]:bg-green-500 data-[state=active]:text-white">3M</TabsTrigger>
-                        <TabsTrigger value="6m" className="text-xs px-3 h-6 data-[state=active]:bg-green-500 data-[state=active]:text-white">6M</TabsTrigger>
-                        <TabsTrigger value="1y" className="text-xs px-3 h-6 data-[state=active]:bg-green-500 data-[state=active]:text-white">1Y</TabsTrigger>
-                    </TabsList>
-                </Tabs>
             </CardHeader>
             <CardContent className="p-0">
-                <Table>
-                    <TableHeader>
-                        <TableRow className="hover:bg-transparent">
-                            <TableHead className="text-xs">Chỉ số</TableHead>
-                            <TableHead className="text-xs text-right">Giá hiện tại</TableHead>
-                            <TableHead className="text-xs text-right">Thay đổi</TableHead>
-                            <TableHead className="text-xs text-right">% Thay đổi</TableHead>
-                            <TableHead className="text-xs text-right">Biểu đồ</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {MACRO_INDICATORS.map((item) => {
-                            const isPositive = item.change >= 0;
-                            return (
-                                <TableRow key={item.name} className="hover:bg-muted/50 border-b border-border/50">
-                                    <TableCell className="font-semibold text-sm">{item.name}</TableCell>
-                                    <TableCell className="text-right font-medium text-sm">
-                                        {item.price.toLocaleString("en-US", { minimumFractionDigits: item.price < 100 ? 1 : 2, maximumFractionDigits: 2 })}
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <span className={cn("text-sm font-medium", isPositive ? "text-green-500" : item.change < 0 ? "text-red-500" : "text-yellow-500")}>
-                                            {isPositive && item.change > 0 ? "+" : ""}{item.change}
-                                        </span>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <span className={cn("text-sm font-semibold", isPositive ? "text-green-500" : item.changePct < 0 ? "text-red-500" : "text-yellow-500")}>
-                                            {isPositive && item.changePct > 0 ? "+" : ""}{item.changePct.toFixed(2)}%
-                                        </span>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <div className="flex justify-end">
-                                            <MiniSparkline data={item.sparklines[timeFrame]} isPositive={isPositive} />
-                                        </div>
-                                    </TableCell>
+                {loading ? (
+                    <div className="p-4 space-y-3">
+                        {Array.from({ length: 8 }).map((_, i) => (
+                            <Skeleton key={i} className="h-6 w-full" />
+                        ))}
+                    </div>
+                ) : !view || view.indicators.length === 0 ? (
+                    <div className="flex items-center justify-center h-40 text-gray-400 text-sm">
+                        Không có dữ liệu
+                    </div>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="hover:bg-transparent">
+                                    <TableHead className="text-xs font-semibold sticky left-0 bg-white z-10 min-w-[200px]">
+                                        Chỉ số
+                                    </TableHead>
+                                    {view.years.map((y) => (
+                                        <TableHead key={y} className="text-xs text-center font-semibold min-w-[90px]">
+                                            {y}
+                                        </TableHead>
+                                    ))}
+                                    <TableHead className="text-xs text-center font-semibold min-w-[100px] bg-blue-50">
+                                        Tăng trưởng
+                                    </TableHead>
                                 </TableRow>
-                            );
-                        })}
-                    </TableBody>
-                </Table>
+                            </TableHeader>
+                            <TableBody>
+                                {view.indicators.map((ind) => {
+                                    const vals = ind.values;
+                                    const lastIdx = vals.length - 1;
+                                    const growth = lastIdx >= 1
+                                        ? growthFmt(vals[lastIdx], vals[lastIdx - 1])
+                                        : { text: "N/A", dir: "flat" as const };
+
+                                    return (
+                                        <TableRow key={ind.key} className="hover:bg-muted/50 border-b border-border/50">
+                                            <TableCell className="font-semibold text-sm sticky left-0 bg-white z-10">
+                                                {ind.label}
+                                            </TableCell>
+                                            {vals.map((val, idx) => {
+                                                const prev = idx > 0 ? vals[idx - 1] : null;
+                                                const isUp = val !== null && prev !== null && val > prev;
+                                                const isDown = val !== null && prev !== null && val < prev;
+                                                return (
+                                                    <TableCell
+                                                        key={idx}
+                                                        className={cn(
+                                                            "text-center text-sm tabular-nums",
+                                                            val === null && "text-gray-300",
+                                                            isUp && "text-green-600",
+                                                            isDown && "text-red-500",
+                                                        )}
+                                                    >
+                                                        {fmt(val)}
+                                                    </TableCell>
+                                                );
+                                            })}
+                                            <TableCell className={cn(
+                                                "text-center text-sm font-semibold tabular-nums bg-blue-50/50",
+                                                growth.dir === "up" && "text-green-600",
+                                                growth.dir === "down" && "text-red-500",
+                                                growth.dir === "flat" && "text-gray-400",
+                                            )}>
+                                                <span className="inline-flex items-center gap-0.5">
+                                                    {growth.dir === "up" && <ArrowUpRight className="h-3.5 w-3.5" />}
+                                                    {growth.dir === "down" && <ArrowDownRight className="h-3.5 w-3.5" />}
+                                                    {growth.dir === "flat" && <Minus className="h-3.5 w-3.5" />}
+                                                    {growth.text}
+                                                </span>
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })}
+                            </TableBody>
+                        </Table>
+                    </div>
+                )}
             </CardContent>
         </Card>
     );

@@ -1,41 +1,64 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import ReactECharts from "echarts-for-react";
-import { MARKET_HEATMAP_DATA } from "@/lib/mockData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
 import * as echarts from "echarts";
 
-// Define which sectors belong to which exchange
-const EXCHANGE_MAP: Record<string, string[]> = {
-    all: [],
-    HOSE: ["Ngân hàng", "Bất động sản", "Thép", "Chứng khoán"],
-    HNX: ["Ngân hàng", "Chứng khoán"],
-    UPCOM: ["Bất động sản", "Thép"],
-};
+interface HeatmapStock {
+    name: string;
+    value: number;
+    pChange: number;
+    volume: number;
+}
+interface HeatmapSector {
+    name: string;
+    children: HeatmapStock[];
+}
+
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
 
 export const MarketHeatmap = () => {
     const [exchange, setExchange] = useState("all");
+    const [data, setData] = useState<HeatmapSector[]>([]);
+    const [loading, setLoading] = useState(true);
+    const fetchRef = useRef(0);
 
-    const filteredData = useMemo(() => {
-        if (exchange === "all") return MARKET_HEATMAP_DATA;
-        const allowedSectors = EXCHANGE_MAP[exchange] || [];
-        return MARKET_HEATMAP_DATA.filter((s) => allowedSectors.includes(s.name));
-    }, [exchange]);
+    const fetchData = useCallback(async (ex: string) => {
+        const id = ++fetchRef.current;
+        setLoading(true);
+        try {
+            const q = ex === "all" ? "" : `?exchange=${ex}`;
+            const res = await fetch(`${API}/tong-quan/market-heatmap${q}`);
+            if (!res.ok) throw new Error("API error");
+            const json: HeatmapSector[] = await res.json();
+            if (id === fetchRef.current) setData(json);
+        } catch (e) {
+            console.error("MarketHeatmap fetch error:", e);
+            if (id === fetchRef.current) setData([]);
+        } finally {
+            if (id === fetchRef.current) setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchData(exchange);
+    }, [exchange, fetchData]);
 
     const option = {
         tooltip: {
             formatter: function (info: any) {
                 const value = info.value;
                 const treePathInfo = info.treePathInfo;
-                const treePath = [];
+                const treePath: string[] = [];
                 for (let i = 1; i < treePathInfo.length; i++) {
                     treePath.push(treePathInfo[i].name);
                 }
                 const change = value[1];
                 const changeColor = change > 0 ? "#22c55e" : change < 0 ? "#ef4444" : "#eab308";
-                return `<b>${echarts.format.encodeHTML(treePath.join(" / "))}</b><br/>Thay đổi: <span style="color:${changeColor};font-weight:bold">${change > 0 ? "+" : ""}${change}%</span><br/>Vốn hóa: <b>${value[0].toLocaleString()}</b>`;
+                return `<b>${echarts.format.encodeHTML(treePath.join(" / "))}</b><br/>Thay đổi: <span style="color:${changeColor};font-weight:bold">${change > 0 ? "+" : ""}${change}%</span><br/>GTGD: <b>${value[0].toLocaleString()} tỷ</b>`;
             },
         },
         series: [
@@ -58,7 +81,7 @@ export const MarketHeatmap = () => {
                     borderWidth: 1,
                     gapWidth: 1,
                 },
-                data: filteredData.map((sector) => ({
+                data: data.map((sector) => ({
                     name: sector.name,
                     children: sector.children.map((stock) => ({
                         name: stock.name,
@@ -90,8 +113,18 @@ export const MarketHeatmap = () => {
                     </TabsList>
                 </Tabs>
             </CardHeader>
-            <CardContent className="h-[480px]">
-                <ReactECharts option={option} style={{ height: "100%", width: "100%" }} notMerge={true} />
+            <CardContent className="h-[480px] relative">
+                {loading ? (
+                    <div className="flex flex-col gap-2 pt-4 h-full">
+                        <Skeleton className="h-full w-full" />
+                    </div>
+                ) : data.length === 0 ? (
+                    <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+                        Không có dữ liệu
+                    </div>
+                ) : (
+                    <ReactECharts option={option} style={{ height: "100%", width: "100%" }} notMerge={true} />
+                )}
             </CardContent>
         </Card>
     );

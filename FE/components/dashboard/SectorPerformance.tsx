@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import ReactECharts from "echarts-for-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2, RefreshCw } from "lucide-react";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -40,9 +41,30 @@ export const SectorPerformance = () => {
         return () => clearInterval(interval);
     }, [fetchData]);
 
+    const chartRef = useRef<ReactECharts | null>(null);
+
+    // Khi dataZoom thay đổi: nếu range > 50% thì tắt label để tránh chồng chéo
+    const onDataZoom = useCallback(() => {
+        const instance = chartRef.current?.getEchartsInstance();
+        if (!instance) return;
+        const opt = instance.getOption() as { dataZoom?: { start?: number; end?: number }[] };
+        const dz = opt.dataZoom?.[0];
+        if (!dz) return;
+        const range = (dz.end ?? 100) - (dz.start ?? 0);
+        const showLabel = range <= 50;
+        instance.setOption({
+            series: [{ label: { show: showLabel } }],
+        });
+    }, []);
+
     // ── Chart option ──
     const option = React.useMemo(() => {
         if (data.length === 0) return {};
+
+        // Tính % hiển thị mặc định: nếu <= 12 ngành thì show hết, ngược lại show ~12 ngành
+        const totalItems = data.length;
+        const defaultEndPercent = totalItems <= 12 ? 100 : Math.round((12 / totalItems) * 100);
+
         return {
             tooltip: {
                 trigger: "axis",
@@ -56,19 +78,53 @@ export const SectorPerformance = () => {
                         </span>`;
                 },
             },
-            grid: { left: "3%", right: "6%", bottom: "3%", top: "4%", containLabel: true },
+            grid: {
+                left: "3%",
+                right: "6%",
+                bottom: totalItems > 12 ? "18%" : "8%",
+                top: "6%",
+                containLabel: true,
+            },
+            dataZoom: [
+                {
+                    type: "slider",
+                    xAxisIndex: 0,
+                    start: 0,
+                    end: defaultEndPercent,
+                    height: 20,
+                    bottom: 4,
+                    borderColor: "transparent",
+                    backgroundColor: "#f3f4f6",
+                    fillerColor: "rgba(59,130,246,0.15)",
+                    handleStyle: { color: "#3b82f6", borderColor: "#3b82f6" },
+                    textStyle: { fontSize: 10, color: "#6b7280" },
+                    brushSelect: false,
+                },
+                {
+                    type: "inside",
+                    xAxisIndex: 0,
+                    start: 0,
+                    end: defaultEndPercent,
+                    zoomOnMouseWheel: true,
+                    moveOnMouseMove: true,
+                },
+            ],
             xAxis: {
                 type: "category",
                 data: data.map((s) => s.name),
                 axisLabel: {
-                    rotate: data.length > 6 ? 30 : 0,
-                    fontSize: 11,
+                    rotate: 35,
+                    fontSize: 10,
                     interval: 0,
+                    width: 80,
+                    overflow: "truncate",
                 },
+                axisTick: { alignWithLabel: true },
             },
             yAxis: {
                 type: "value",
-                axisLabel: { formatter: "{value}%" },
+                axisLabel: { formatter: "{value}%", fontSize: 11 },
+                splitLine: { lineStyle: { type: "dashed", color: "#e5e7eb" } },
             },
             series: [
                 {
@@ -80,7 +136,8 @@ export const SectorPerformance = () => {
                         },
                     })),
                     type: "bar",
-                    barMaxWidth: 36,
+                    barMaxWidth: 40,
+                    barMinWidth: 16,
                     label: {
                         show: true,
                         position: "top",
@@ -115,8 +172,14 @@ export const SectorPerformance = () => {
 
             <CardContent className="flex-1 min-h-0 relative">
                 {loading && data.length === 0 ? (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    <div className="flex items-end justify-around h-full pb-8 px-4">
+                        {[65, 40, 80, 35, 55, 70, 45, 60, 50, 75].map((h, i) => (
+                            <Skeleton
+                                key={i}
+                                className="w-8"
+                                style={{ height: `${h}%` }}
+                            />
+                        ))}
                     </div>
                 ) : error ? (
                     <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
@@ -136,9 +199,11 @@ export const SectorPerformance = () => {
                     </div>
                 ) : (
                     <ReactECharts
+                        ref={chartRef}
                         option={option}
                         style={{ height: "100%", width: "100%" }}
                         notMerge
+                        onEvents={{ datazoom: onDataZoom }}
                     />
                 )}
             </CardContent>

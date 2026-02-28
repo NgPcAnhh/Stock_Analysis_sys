@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
-import { Clock, ExternalLink, Newspaper } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, ExternalLink, Newspaper } from "lucide-react";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -17,48 +17,84 @@ interface NewsItemData {
     link: string | null;
 }
 
-function formatDate(isoDate: string | null): string {
-    if (!isoDate) return "";
-    try {
-        const d = new Date(isoDate);
-        const dd = String(d.getUTCDate()).padStart(2, "0");
-        const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
-        const yyyy = d.getUTCFullYear();
-        return `${dd}/${mm}/${yyyy}`;
-    } catch {
-        return "";
-    }
+function timeAgo(iso: string | null): string {
+    if (!iso) return "";
+    const diff = Date.now() - new Date(iso).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 60) return `${mins} phút trước`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours} giờ trước`;
+    const days = Math.floor(hours / 24);
+    return `${days} ngày trước`;
 }
 
-// Static fallback news data so component works without backend
-const FALLBACK_NEWS: NewsItemData[] = [
-    { id: 1, title: "Thị trường chứng khoán Việt Nam tăng điểm phiên đầu tuần", source: "VnExpress", published: "2026-02-20T09:00:00Z", summary: "VN-Index tăng hơn 10 điểm trong phiên giao dịch đầu tuần nhờ lực kéo từ nhóm ngân hàng và bất động sản.", link: null },
-    { id: 2, title: "Fed giữ nguyên lãi suất, tác động tới dòng vốn ngoại", source: "CafeF", published: "2026-02-19T14:30:00Z", summary: "Cục Dự trữ Liên bang Mỹ quyết định giữ nguyên lãi suất trong cuộc họp tháng 2.", link: null },
-    { id: 3, title: "Nhóm cổ phiếu ngân hàng dẫn dắt thị trường", source: "VietStock", published: "2026-02-18T10:00:00Z", summary: "Nhiều mã ngân hàng lớn đồng loạt tăng giá, giúp VN-Index vượt mốc 1.250 điểm.", link: null },
-    { id: 4, title: "Dòng tiền khối ngoại quay trở lại mua ròng", source: "TCBS", published: "2026-02-17T08:00:00Z", summary: "Khối ngoại mua ròng hơn 500 tỷ đồng trên sàn HOSE trong tuần qua.", link: null },
-];
+const SOURCE_COLORS: Record<string, string> = {
+    VnExpress: "bg-blue-600",
+    CafeF: "bg-emerald-600",
+    VietStock: "bg-purple-600",
+    Bloomberg: "bg-amber-600",
+    TCBS: "bg-teal-600",
+    NDH: "bg-rose-600",
+};
 
 export function NewsSection() {
-    const [news, setNews] = useState<NewsItemData[]>(FALLBACK_NEWS);
-    const [loading, setLoading] = useState(false);
+    const [news, setNews] = useState<NewsItemData[]>([]);
+    const [loading, setLoading] = useState(true);
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const [canLeft, setCanLeft] = useState(false);
+    const [canRight, setCanRight] = useState(false);
 
-    // Optionally try to fetch from backend; fall back to static data on failure
     useEffect(() => {
+        let cancelled = false;
+        setLoading(true);
         fetch(`${API_BASE}/api/v1/tong-quan/news?limit=8`)
             .then((res) => {
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 return res.json();
             })
             .then((data) => {
-                if (Array.isArray(data) && data.length > 0) {
+                if (!cancelled && Array.isArray(data) && data.length > 0) {
                     setNews(data);
                 }
             })
-            .catch(() => {
-                // Keep fallback data, no error shown
+            .catch(() => {})
+            .finally(() => {
+                if (!cancelled) setLoading(false);
             });
+        return () => { cancelled = true; };
     }, []);
 
+    /* ── Arrow visibility ── */
+    const updateArrows = useCallback(() => {
+        const el = scrollRef.current;
+        if (!el) return;
+        setCanLeft(el.scrollLeft > 4);
+        setCanRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+    }, []);
+
+    useEffect(() => {
+        const el = scrollRef.current;
+        if (!el) return;
+        // wait a tick so widths are computed
+        const t = setTimeout(updateArrows, 50);
+        el.addEventListener("scroll", updateArrows, { passive: true });
+        window.addEventListener("resize", updateArrows);
+        return () => {
+            clearTimeout(t);
+            el.removeEventListener("scroll", updateArrows);
+            window.removeEventListener("resize", updateArrows);
+        };
+    }, [news, updateArrows]);
+
+    const scroll = (dir: "left" | "right") => {
+        const el = scrollRef.current;
+        if (!el) return;
+        const card = el.querySelector<HTMLElement>("[data-news-card]");
+        const w = card ? card.offsetWidth + 16 : 300; // card + gap
+        el.scrollBy({ left: dir === "left" ? -w : w, behavior: "smooth" });
+    };
+
+    /* ── Skeleton ── */
     if (loading) {
         return (
             <div className="space-y-4">
@@ -67,18 +103,14 @@ export function NewsSection() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     {[1, 2, 3, 4].map((i) => (
-                        <Card key={i} className="overflow-hidden animate-pulse">
-                            <div className="h-32 bg-muted" />
-                            <CardContent className="p-4 space-y-2">
-                                <div className="h-4 bg-muted rounded w-3/4" />
-                                <div className="h-3 bg-muted rounded w-1/2" />
-                            </CardContent>
-                        </Card>
+                        <Skeleton key={i} className="h-[240px] rounded-xl" />
                     ))}
                 </div>
             </div>
         );
     }
+
+    if (news.length === 0) return null;
 
     return (
         <div className="space-y-4">
@@ -88,48 +120,90 @@ export function NewsSection() {
                     Xem tất cả
                 </Link>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {news.map((item) => (
-                    <Card key={item.id} className="overflow-hidden group cursor-pointer hover:shadow-md transition-all">
-                        {/* Placeholder visual header since DB has no image */}
-                        <div className="h-28 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
-                            <Newspaper className="h-10 w-10 text-primary/30" />
-                        </div>
-                        <CardContent className="p-4">
-                            <div className="flex items-center justify-between mb-2">
-                                <Badge variant="secondary" className="text-xs font-normal">
-                                    {item.source || "Tin tức"}
-                                </Badge>
-                                <div className="flex items-center text-xs text-muted-foreground">
-                                    <Clock className="w-3 h-3 mr-1" />
-                                    {formatDate(item.published)}
+
+            {/* Slider wrapper */}
+            <div className="relative group/slider">
+                {/* Left arrow */}
+                {canLeft && (
+                    <button
+                        onClick={() => scroll("left")}
+                        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full p-2 -ml-3 opacity-0 group-hover/slider:opacity-100 transition-opacity"
+                    >
+                        <ChevronLeft className="h-5 w-5 text-gray-700" />
+                    </button>
+                )}
+                {/* Right arrow */}
+                {canRight && (
+                    <button
+                        onClick={() => scroll("right")}
+                        className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full p-2 -mr-3 opacity-0 group-hover/slider:opacity-100 transition-opacity"
+                    >
+                        <ChevronRight className="h-5 w-5 text-gray-700" />
+                    </button>
+                )}
+
+                {/* Scrollable row — exactly 4 cards visible */}
+                <div
+                    ref={scrollRef}
+                    className="flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2"
+                    style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+                >
+                    {news.map((item) => {
+                        const badgeColor = SOURCE_COLORS[item.source ?? ""] || "bg-slate-600";
+                        const hasImg = item.summary ? /<img\s/i.test(item.summary) : false;
+
+                        const Wrapper = item.link ? "a" : "div";
+                        const wrapperProps = item.link
+                            ? { href: item.link, target: "_blank", rel: "noopener noreferrer" }
+                            : {};
+
+                        return (
+                            <Wrapper
+                                key={item.id}
+                                {...(wrapperProps as any)}
+                                data-news-card
+                                className="w-[calc((100%-48px)/4)] min-w-[calc((100%-48px)/4)] shrink-0 snap-start rounded-lg border bg-white overflow-hidden shadow-sm hover:shadow-lg transition-all cursor-pointer group flex flex-col"
+                            >
+                                {/* Thumbnail */}
+                                <div className="relative h-[140px] bg-gradient-to-br from-gray-100 to-gray-50 overflow-hidden">
+                                    {hasImg ? (
+                                        <div
+                                            className="w-full h-full [&_img]:w-full [&_img]:h-full [&_img]:object-cover"
+                                            style={{ fontSize: 0, lineHeight: 0, color: "transparent" }}
+                                            dangerouslySetInnerHTML={{ __html: item.summary! }}
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center">
+                                            <Newspaper className="h-10 w-10 text-gray-300" />
+                                        </div>
+                                    )}
+                                    <Badge className={`absolute top-2 left-2 ${badgeColor} text-white text-[11px] px-2 py-0.5`}>
+                                        {item.source || "Tin tức"}
+                                    </Badge>
                                 </div>
-                            </div>
-                            {item.link ? (
-                                <a href={item.link} target="_blank" rel="noopener noreferrer">
-                                    <h3 className="font-semibold line-clamp-2 leading-snug group-hover:text-primary transition-colors">
+
+                                {/* Content */}
+                                <div className="p-3 flex flex-col flex-1">
+                                    <h3 className="text-sm font-semibold line-clamp-2 leading-snug group-hover:text-primary transition-colors">
                                         {item.title}
                                     </h3>
-                                </a>
-                            ) : (
-                                <h3 className="font-semibold line-clamp-2 leading-snug group-hover:text-primary transition-colors">
-                                    {item.title}
-                                </h3>
-                            )}
-                            {item.summary && (
-                                <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
-                                    {item.summary}
-                                </p>
-                            )}
-                            {item.link && (
-                                <div className="flex items-center text-xs text-primary/70 mt-2 gap-1">
-                                    <ExternalLink className="w-3 h-3" />
-                                    <span>Đọc thêm</span>
+                                    <div className="flex items-center justify-between mt-auto pt-2">
+                                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                            <Clock className="w-3 h-3" />
+                                            {timeAgo(item.published)}
+                                        </span>
+                                        {item.link && (
+                                            <span className="text-xs text-primary/70 flex items-center gap-1">
+                                                <ExternalLink className="w-3 h-3" />
+                                                Đọc thêm
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
-                            )}
-                        </CardContent>
-                    </Card>
-                ))}
+                            </Wrapper>
+                        );
+                    })}
+                </div>
             </div>
         </div>
     );

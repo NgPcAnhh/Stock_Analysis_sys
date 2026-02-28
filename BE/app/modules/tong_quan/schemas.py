@@ -75,6 +75,20 @@ class TopStockItem(BaseModel):
     price: float
     change: float = Field(..., description="Percent change")
     volume: str = Field(..., description="Formatted volume, e.g. '2.5M'")
+    percent: Optional[float] = Field(None, description="Percent change (alias)")
+    foreignBuy: Optional[int] = Field(None, description="Foreign buy volume")
+    foreignSell: Optional[int] = Field(None, description="Foreign sell volume")
+    netVolume: Optional[int] = Field(None, description="Net foreign volume")
+    side: Optional[Literal["net_buy", "net_sell"]] = Field(
+        None, description="Side: net_buy or net_sell (foreign only)"
+    )
+
+
+class TopStocksAllResponse(BaseModel):
+    """Unified response for all 3 categories — fetched in 1 API call."""
+    gainers: List[TopStockItem]
+    losers: List[TopStockItem]
+    foreign: List[TopStockItem]
 
 
 # ── 7. Market Heatmap ─────────────────────────────────────────────
@@ -121,3 +135,15 @@ class ValuationPoint(BaseModel):
 class LiquidityPoint(BaseModel):
     date: str = Field(..., description="Trading date dd/mm")
     value: float = Field(..., description="Total trading value in billions VND")
+
+
+# ── 12. Macro Yearly (vn_macro_yearly) ───────────────────────────
+class MacroYearlyIndicator(BaseModel):
+    key: str = Field(..., description="Column name in DB")
+    label: str = Field(..., description="Human-readable label")
+    values: List[Optional[float]] = Field(..., description="Values per year; None = N/A")
+
+
+class MacroYearlyResponse(BaseModel):
+    years: List[int]
+    indicators: List[MacroYearlyIndicator]

@@ -54,13 +54,6 @@ def _status(change: float) -> str:
 # 0. Ticker Slide — top 10 tăng, top 10 giảm + 4 chỉ số
 # ────────────────────────────────────────────────────────────────────
 def get_ticker_slide(db: Session) -> List[Dict[str, Any]]:
-    """
-    Trả danh sách cho thanh trượt dưới header:
-      - 4 chỉ số thị trường (VNINDEX, VN30, HNXINDEX, UPCOMINDEX)
-      - Top 10 cổ phiếu tăng giá mạnh nhất so với phiên trước
-      - Top 10 cổ phiếu giảm giá mạnh nhất so với phiên trước
-    Tổng cộng tối đa 24 items.
-    """
     cache_key = "ticker_slide"
     cached = cache_get(cache_key)
     if cached is not None:
@@ -112,14 +105,18 @@ def get_ticker_slide(db: Session) -> List[Dict[str, Any]]:
 
     # ── Top 10 tăng + Top 10 giảm (cổ phiếu thường) ──
     stock_sql = text("""
-        WITH latest_date AS (
-            SELECT MAX(trading_date) AS td
+        WITH ranked_dates AS (
+            SELECT trading_date, ROW_NUMBER() OVER (ORDER BY trading_date DESC) AS rn
             FROM hethong_phantich_chungkhoan.history_price
+            WHERE close IS NOT NULL
+            GROUP BY trading_date
+            HAVING COUNT(*) >= 50
+        ),
+        latest_date AS (
+            SELECT trading_date AS td FROM ranked_dates WHERE rn = 1
         ),
         prev_date AS (
-            SELECT MAX(trading_date) AS td
-            FROM hethong_phantich_chungkhoan.history_price
-            WHERE trading_date < (SELECT td FROM latest_date)
+            SELECT trading_date AS td FROM ranked_dates WHERE rn = 2
         ),
         changes AS (
             SELECT
@@ -368,12 +365,11 @@ def get_market_chart(
 
 
 # ────────────────────────────────────────────────────────────────────
-# 3. Sector Performance
+# 3. Biến động ngành
 # ────────────────────────────────────────────────────────────────────
 
 def get_sector_performance(db: Session) -> List[Dict[str, Any]]:
-    """Average % price change per sector (icb_name2) for the latest trading day.
-
+    """
     Tối ưu:
       - CTE lấy 2 ngày giao dịch gần nhất rồi JOIN thay vì N sub-query tương quan
       - Redis cache 2 phút
@@ -384,24 +380,30 @@ def get_sector_performance(db: Session) -> List[Dict[str, Any]]:
         return cached
 
     sql = text("""
-        WITH latest_date AS (
-            SELECT MAX(trading_date) AS td FROM history_price
+        WITH ranked_dates AS (
+            SELECT trading_date, COUNT(*) AS cnt,
+                   ROW_NUMBER() OVER (ORDER BY trading_date DESC) AS rn
+            FROM hethong_phantich_chungkhoan.history_price
+            WHERE close IS NOT NULL
+            GROUP BY trading_date
+            HAVING COUNT(*) >= 50
+        ),
+        latest_date AS (
+            SELECT trading_date AS td FROM ranked_dates WHERE rn = 1
         ),
         prev_date AS (
-            SELECT MAX(trading_date) AS td
-            FROM history_price
-            WHERE trading_date < (SELECT td FROM latest_date)
+            SELECT trading_date AS td FROM ranked_dates WHERE rn = 2
         )
         SELECT
             co.icb_name2 AS name,
             ROUND(AVG(
                 (cur.close - prev.close) / prev.close * 100
             )::numeric, 2) AS value
-        FROM company_overview co
-        JOIN history_price cur
+        FROM hethong_phantich_chungkhoan.company_overview co
+        JOIN hethong_phantich_chungkhoan.history_price cur
             ON cur.ticker = co.ticker
             AND cur.trading_date = (SELECT td FROM latest_date)
-        JOIN history_price prev
+        JOIN hethong_phantich_chungkhoan.history_price prev
             ON prev.ticker = co.ticker
             AND prev.trading_date = (SELECT td FROM prev_date)
         WHERE prev.close > 0
@@ -417,7 +419,7 @@ def get_sector_performance(db: Session) -> List[Dict[str, Any]]:
 
 
 # ────────────────────────────────────────────────────────────────────
-# 4. Market Comparison (international & macro indices)
+# 4. CHỉ số quốc tế (international & macro indices)
 # ────────────────────────────────────────────────────────────────────
 
 def get_market_comparison(db: Session) -> List[Dict[str, Any]]:
@@ -440,12 +442,12 @@ def get_market_comparison(db: Session) -> List[Dict[str, Any]]:
                 ELSE 0
             END AS change
         FROM (
-            SELECT DISTINCT asset_type FROM macro_economy
+            SELECT DISTINCT asset_type FROM hethong_phantich_chungkhoan.macro_economy
         ) a
         CROSS JOIN LATERAL (
             SELECT ARRAY(
                 SELECT close
-                FROM macro_economy me
+                FROM hethong_phantich_chungkhoan.macro_economy me
                 WHERE me.asset_type = a.asset_type
                 ORDER BY date DESC
                 LIMIT 2
@@ -482,26 +484,27 @@ def get_market_breadth(db: Session) -> Dict[str, int]:
         return cached
 
     sql = text("""
-        WITH recent_dates AS (
-            SELECT DISTINCT trading_date
-            FROM history_price
-            ORDER BY trading_date DESC
-            LIMIT 2
+        WITH ranked_dates AS (
+            SELECT trading_date,
+                   ROW_NUMBER() OVER (ORDER BY trading_date DESC) AS rn
+            FROM hethong_phantich_chungkhoan.history_price
+            WHERE close IS NOT NULL
+            GROUP BY trading_date
+            HAVING COUNT(*) >= 50
         ),
         date_vars AS (
             SELECT
-                MAX(trading_date) AS t0_date,
-                MIN(trading_date) AS t1_date
-            FROM recent_dates
+                (SELECT trading_date FROM ranked_dates WHERE rn = 1) AS t0_date,
+                (SELECT trading_date FROM ranked_dates WHERE rn = 2) AS t1_date
         )
         SELECT
             COUNT(*) FILTER (WHERE cur.close > prev.close) AS advancing,
             COUNT(*) FILTER (WHERE cur.close < prev.close) AS declining,
             COUNT(*) FILTER (WHERE cur.close = prev.close) AS unchanged
         FROM date_vars v
-        JOIN history_price cur
+        JOIN hethong_phantich_chungkhoan.history_price cur
         ON cur.trading_date = v.t0_date
-        JOIN history_price prev
+        JOIN hethong_phantich_chungkhoan.history_price prev
         ON prev.trading_date = v.t1_date
         AND prev.ticker = cur.ticker
         WHERE v.t0_date > v.t1_date
@@ -518,20 +521,20 @@ def get_market_breadth(db: Session) -> Dict[str, int]:
 
 
 # ────────────────────────────────────────────────────────────────────
-# 6. Top Stocks (gainers / losers / foreign)
+# 6. Top Stocks Table (gainers / losers / foreign)
 # ────────────────────────────────────────────────────────────────────
 
 def get_top_stocks(
     db: Session, category: str = "gainers", limit: int = 10
 ) -> List[Dict[str, Any]]:
-    """Top gaining, losing, or foreign-traded stocks.
+    """Top cổ phiếu tăng / giảm / khối ngoại.
 
-    Tối ưu:
-      - gainers / losers: tận dụng cache của ticker_slide (đã có sẵn top 10
-        tăng & top 10 giảm) → không query DB lần nữa.
-      - foreign: query riêng + Redis cache 2 phút.
+    - gainers: top 10 tăng giá mạnh nhất (% change cao nhất)
+    - losers:  top 10 giảm giá mạnh nhất (% change thấp nhất)
+    - foreign: top 10 net mua ròng cao nhất + top 10 net bán ròng lớn nhất = 20 mã
     """
 
+    # ── Khối ngoại ──────────────────────────────────────────────────
     if category == "foreign":
         cache_key = f"top_stocks:foreign:{limit}"
         cached = cache_get(cache_key)
@@ -540,32 +543,46 @@ def get_top_stocks(
 
         sql = text("""
             WITH latest_date AS (
-                SELECT MAX(trading_date) AS td FROM history_price
+                SELECT trading_date AS td
+                FROM hethong_phantich_chungkhoan.electric_board
+                WHERE foreign_buy_volume IS NOT NULL
+                ORDER BY trading_date DESC
+                LIMIT 1
             ),
-            prev_date AS (
-                SELECT MAX(trading_date) AS td
-                FROM history_price
-                WHERE trading_date < (SELECT td FROM latest_date)
+            foreign_data AS (
+                SELECT
+                    eb.ticker                                     AS symbol,
+                    eb.match_price                                AS price,
+                    CASE WHEN eb.ref_price > 0
+                        THEN ROUND(((eb.match_price - eb.ref_price)
+                                    / eb.ref_price * 100)::numeric, 2)
+                        ELSE 0 END                                AS change,
+                    COALESCE(eb.foreign_buy_volume, 0)            AS foreign_buy,
+                    COALESCE(eb.foreign_sell_volume, 0)           AS foreign_sell,
+                    COALESCE(eb.foreign_buy_volume, 0)
+                      - COALESCE(eb.foreign_sell_volume, 0)       AS net_volume
+                FROM hethong_phantich_chungkhoan.electric_board eb
+                WHERE eb.trading_date = (SELECT td FROM latest_date)
+                  AND eb.match_price IS NOT NULL
+                  AND eb.match_price > 0
+            ),
+            top_net_buy AS (
+                SELECT *, 'net_buy' AS side
+                FROM foreign_data
+                WHERE net_volume > 0
+                ORDER BY net_volume DESC
+                LIMIT :limit
+            ),
+            top_net_sell AS (
+                SELECT *, 'net_sell' AS side
+                FROM foreign_data
+                WHERE net_volume < 0
+                ORDER BY net_volume ASC
+                LIMIT :limit
             )
-            SELECT
-                cur.ticker  AS symbol,
-                cur.close   AS price,
-                CASE WHEN prev.close > 0
-                    THEN ROUND(((cur.close - prev.close) / prev.close * 100)::numeric, 2)
-                    ELSE 0 END AS change,
-                cur.volume
-            FROM history_price cur
-            JOIN history_price prev
-                ON prev.ticker = cur.ticker
-                AND prev.trading_date = (SELECT td FROM prev_date)
-            JOIN company_overview co
-                ON co.ticker = cur.ticker
-            WHERE cur.trading_date = (SELECT td FROM latest_date)
-              AND cur.close IS NOT NULL
-              AND prev.close IS NOT NULL
-              AND prev.close > 0
-            ORDER BY cur.volume DESC
-            LIMIT :limit
+            SELECT * FROM top_net_buy
+            UNION ALL
+            SELECT * FROM top_net_sell
         """)
         rows = db.execute(sql, {"limit": limit}).mappings().all()
         result = [
@@ -573,92 +590,301 @@ def get_top_stocks(
                 "symbol": r["symbol"],
                 "price": float(r["price"] or 0),
                 "change": float(r["change"] or 0),
-                "volume": _format_volume(int(r["volume"] or 0)),
+                "volume": _format_volume(abs(int(r["net_volume"] or 0))),
+                "foreignBuy": int(r["foreign_buy"] or 0),
+                "foreignSell": int(r["foreign_sell"] or 0),
+                "netVolume": int(r["net_volume"] or 0),
+                "side": r["side"],
             }
             for r in rows
         ]
         cache_set(cache_key, result, ttl=120)
         return result
 
-    # ── Gainers / Losers — tận dụng cache ticker_slide ──
-    slide_data = get_ticker_slide(db)  # đã cached sẵn, không query DB thêm
-    cat_key = "gainer" if category == "gainers" else "loser"
-    filtered = [
+    # ── Tăng giá / Giảm giá — cùng pattern với stock_sql của Ticker Slide ──
+    cache_key = f"top_stocks:{category}:{limit}"
+    cached = cache_get(cache_key)
+    if cached is not None:
+        return cached
+
+    order_clause = "percent DESC" if category == "gainers" else "percent ASC"
+    sql = text(f"""
+        WITH ranked_dates AS (
+            SELECT trading_date, ROW_NUMBER() OVER (ORDER BY trading_date DESC) AS rn
+            FROM hethong_phantich_chungkhoan.history_price
+            WHERE close IS NOT NULL
+            GROUP BY trading_date
+            HAVING COUNT(*) >= 50
+        ),
+        latest_date AS (
+            SELECT trading_date AS td FROM ranked_dates WHERE rn = 1
+        ),
+        prev_date AS (
+            SELECT trading_date AS td FROM ranked_dates WHERE rn = 2
+        ),
+        changes AS (
+            SELECT
+                cur.ticker,
+                cur.close AS price,
+                cur.close - prev.close AS change,
+                CASE WHEN prev.close > 0
+                    THEN ROUND(((cur.close - prev.close) / prev.close * 100)::numeric, 2)
+                    ELSE 0 END AS percent,
+                cur.volume
+            FROM hethong_phantich_chungkhoan.history_price cur
+            JOIN hethong_phantich_chungkhoan.history_price prev
+                ON cur.ticker = prev.ticker
+                AND prev.trading_date = (SELECT td FROM prev_date)
+            WHERE cur.trading_date = (SELECT td FROM latest_date)
+              AND cur.close IS NOT NULL
+              AND prev.close IS NOT NULL
+              AND prev.close > 0
+        )
+        SELECT ticker AS symbol, price, change, percent, volume
+        FROM changes
+        ORDER BY {order_clause}
+        LIMIT :limit
+    """)
+    rows = db.execute(sql, {"limit": limit}).mappings().all()
+    result = [
         {
-            "symbol": item["symbol"],
-            "price": item["price"],
-            "change": item["percent"],  # percent = % thay đổi
-            "volume": "",  # ticker_slide không lưu volume
+            "symbol": r["symbol"],
+            "price": float(r["price"] or 0),
+            "change": float(r["change"] or 0),
+            "percent": float(r["percent"] or 0),
+            "volume": _format_volume(int(r["volume"] or 0)),
         }
-        for item in slide_data
-        if item["category"] == cat_key
+        for r in rows
     ]
-    return filtered[:limit]
+    cache_set(cache_key, result, ttl=120)
+    return result
+
+
+# ────────────────────────────────────────────────────────────────────
+# 6b. Top Stocks — Unified (all 3 categories in 1 call, 1 Redis key)
+# ────────────────────────────────────────────────────────────────────
+
+def get_top_stocks_all(
+    db: Session, limit: int = 10
+) -> Dict[str, List[Dict[str, Any]]]:
+    """Trả về cả 3 danh mục top cổ phiếu trong 1 lần gọi.
+
+    Redis key: ``top_stocks:all:{limit}`` — TTL 120 s.
+    Nếu cache hit → trả ngay, không query DB.
+    Nếu cache miss → chạy 2 SQL (1 cho gainers+losers, 1 cho foreign),
+    gộp kết quả rồi lưu Redis.
+    """
+    cache_key = f"top_stocks:all:{limit}"
+    cached = cache_get(cache_key)
+    if cached is not None:
+        return cached
+
+    # ── 1. Gainers + Losers (1 query, lấy cả 2 đầu) ───────────────
+    gl_sql = text("""
+        WITH ranked_dates AS (
+            SELECT trading_date,
+                   ROW_NUMBER() OVER (ORDER BY trading_date DESC) AS rn
+            FROM hethong_phantich_chungkhoan.history_price
+            WHERE close IS NOT NULL
+            GROUP BY trading_date
+            HAVING COUNT(*) >= 50
+        ),
+        latest_date AS (
+            SELECT trading_date AS td FROM ranked_dates WHERE rn = 1
+        ),
+        prev_date AS (
+            SELECT trading_date AS td FROM ranked_dates WHERE rn = 2
+        ),
+        changes AS (
+            SELECT
+                cur.ticker,
+                cur.close                                         AS price,
+                cur.close - prev.close                            AS change,
+                CASE WHEN prev.close > 0
+                    THEN ROUND(((cur.close - prev.close)
+                                / prev.close * 100)::numeric, 2)
+                    ELSE 0 END                                    AS percent,
+                cur.volume
+            FROM hethong_phantich_chungkhoan.history_price cur
+            JOIN hethong_phantich_chungkhoan.history_price prev
+                ON cur.ticker = prev.ticker
+                AND prev.trading_date = (SELECT td FROM prev_date)
+            WHERE cur.trading_date = (SELECT td FROM latest_date)
+              AND cur.close IS NOT NULL
+              AND prev.close IS NOT NULL
+              AND prev.close > 0
+        ),
+        top_gainers AS (
+            SELECT *, 'gainer' AS cat
+            FROM changes ORDER BY percent DESC LIMIT :limit
+        ),
+        top_losers AS (
+            SELECT *, 'loser' AS cat
+            FROM changes ORDER BY percent ASC LIMIT :limit
+        )
+        SELECT * FROM top_gainers
+        UNION ALL
+        SELECT * FROM top_losers
+    """)
+    gl_rows = db.execute(gl_sql, {"limit": limit}).mappings().all()
+
+    gainers: List[Dict[str, Any]] = []
+    losers: List[Dict[str, Any]] = []
+    for r in gl_rows:
+        item = {
+            "symbol": r["ticker"],
+            "price": float(r["price"] or 0),
+            "change": float(r["change"] or 0),
+            "percent": float(r["percent"] or 0),
+            "volume": _format_volume(int(r["volume"] or 0)),
+        }
+        if r["cat"] == "gainer":
+            gainers.append(item)
+        else:
+            losers.append(item)
+
+    # ── 2. Foreign (1 query — net_buy + net_sell) ───────────────────
+    foreign_sql = text("""
+        WITH latest_date AS (
+            SELECT trading_date AS td
+            FROM hethong_phantich_chungkhoan.electric_board
+            WHERE foreign_buy_volume IS NOT NULL
+            ORDER BY trading_date DESC
+            LIMIT 1
+        ),
+        foreign_data AS (
+            SELECT
+                eb.ticker                                     AS symbol,
+                eb.match_price                                AS price,
+                CASE WHEN eb.ref_price > 0
+                    THEN ROUND(((eb.match_price - eb.ref_price)
+                                / eb.ref_price * 100)::numeric, 2)
+                    ELSE 0 END                                AS change,
+                COALESCE(eb.foreign_buy_volume, 0)            AS foreign_buy,
+                COALESCE(eb.foreign_sell_volume, 0)           AS foreign_sell,
+                COALESCE(eb.foreign_buy_volume, 0)
+                  - COALESCE(eb.foreign_sell_volume, 0)       AS net_volume
+            FROM hethong_phantich_chungkhoan.electric_board eb
+            WHERE eb.trading_date = (SELECT td FROM latest_date)
+              AND eb.match_price IS NOT NULL
+              AND eb.match_price > 0
+        ),
+        top_net_buy AS (
+            SELECT *, 'net_buy' AS side
+            FROM foreign_data WHERE net_volume > 0
+            ORDER BY net_volume DESC LIMIT :limit
+        ),
+        top_net_sell AS (
+            SELECT *, 'net_sell' AS side
+            FROM foreign_data WHERE net_volume < 0
+            ORDER BY net_volume ASC LIMIT :limit
+        )
+        SELECT * FROM top_net_buy
+        UNION ALL
+        SELECT * FROM top_net_sell
+    """)
+    f_rows = db.execute(foreign_sql, {"limit": limit}).mappings().all()
+
+    foreign: List[Dict[str, Any]] = [
+        {
+            "symbol": r["symbol"],
+            "price": float(r["price"] or 0),
+            "change": float(r["change"] or 0),
+            "volume": _format_volume(abs(int(r["net_volume"] or 0))),
+            "foreignBuy": int(r["foreign_buy"] or 0),
+            "foreignSell": int(r["foreign_sell"] or 0),
+            "netVolume": int(r["net_volume"] or 0),
+            "side": r["side"],
+        }
+        for r in f_rows
+    ]
+
+    result = {"gainers": gainers, "losers": losers, "foreign": foreign}
+    cache_set(cache_key, result, ttl=120)
+    return result
 
 
 # ────────────────────────────────────────────────────────────────────
 # 7. Market Heatmap
 # ────────────────────────────────────────────────────────────────────
 
+# Mapping electric_board exchange codes to user-friendly names
+_EB_EXCHANGE_MAP = {"HSX": "HOSE", "HNX": "HNX", "UPCOM": "UPCOM"}
+_EB_EXCHANGE_REVERSE = {"HOSE": "HSX", "HNX": "HNX", "UPCOM": "UPCOM"}
+
+
 def get_market_heatmap(
     db: Session, exchange: str = "all"
 ) -> List[Dict[str, Any]]:
-    """Sector → stocks treemap data."""
+    """Sector → stocks treemap data.
+
+    Uses electric_board (24 ms) instead of history_price (13 s)
+    because ref_price is already available — no need for window functions.
+    Cached in Redis for 120 s.
+    """
+    cache_key = f"market_heatmap:{exchange}"
+    cached = cache_get(cache_key)
+    if cached is not None:
+        return cached
+
     exchange_filter = ""
     params: Dict[str, Any] = {}
     if exchange != "all":
-        exchange_filter = "AND co.exchange = :exchange"
-        params["exchange"] = exchange
+        eb_code = _EB_EXCHANGE_REVERSE.get(exchange, exchange)
+        exchange_filter = "AND eb.exchange = :exchange"
+        params["exchange"] = eb_code
 
     sql = text(f"""
-        WITH latest_two AS (
-            SELECT
-                hp.ticker,
-                hp.close,
-                hp.volume,
-                hp.trading_date,
-                ROW_NUMBER() OVER (PARTITION BY hp.ticker ORDER BY hp.trading_date DESC) AS rn
-            FROM history_price hp
-            WHERE hp.close IS NOT NULL AND hp.close > 0
-        ),
-        stock_data AS (
-            SELECT
-                co.icb_name2 AS sector,
-                cur.ticker,
-                cur.close AS price,
-                cur.volume,
-                ROUND(((cur.close - prev.close) / prev.close * 100)::numeric, 2) AS p_change
-            FROM latest_two cur
-            JOIN latest_two prev ON cur.ticker = prev.ticker AND prev.rn = 2
-            JOIN company_overview co ON cur.ticker = co.ticker
-            WHERE cur.rn = 1
-              AND prev.close > 0
+        SELECT sector, ticker, price, volume, p_change
+        FROM (
+            SELECT DISTINCT ON (eb.ticker)
+                co.icb_name2                                      AS sector,
+                eb.ticker,
+                eb.match_price                                    AS price,
+                COALESCE(eb.accumulated_volume, 0)                AS volume,
+                CASE WHEN eb.ref_price > 0
+                     THEN ROUND(((eb.match_price - eb.ref_price)
+                                 / eb.ref_price * 100)::numeric, 2)
+                     ELSE 0 END                                   AS p_change,
+                eb.match_price * COALESCE(eb.accumulated_volume, 0) AS trade_val
+            FROM hethong_phantich_chungkhoan.electric_board eb
+            JOIN hethong_phantich_chungkhoan.company_overview co
+                 ON eb.ticker = co.ticker
+            WHERE eb.trading_date = (
+                    SELECT MAX(trading_date)
+                    FROM hethong_phantich_chungkhoan.electric_board
+                    WHERE match_price IS NOT NULL
+                  )
+              AND eb.match_price IS NOT NULL
+              AND eb.match_price > 0
               AND co.icb_name2 IS NOT NULL
               {exchange_filter}
-        )
-        SELECT sector, ticker, price, volume, p_change
-        FROM stock_data
-        ORDER BY sector, price * volume DESC
+            ORDER BY eb.ticker, trade_val DESC
+        ) sub
+        ORDER BY sector, trade_val DESC
     """)
     rows = db.execute(sql, params).mappings().all()
 
-    # Group by sector
+    # Group by sector, cap 15 stocks per sector
     sectors: Dict[str, List[Dict]] = {}
     for r in rows:
         sector = r["sector"]
         if sector not in sectors:
             sectors[sector] = []
-        sectors[sector].append({
-            "name": r["ticker"],
-            "value": float(r["price"] or 0) * int(r["volume"] or 0) / 1_000_000,  # proxy market cap in M
-            "pChange": float(r["p_change"] or 0),
-            "volume": int(r["volume"] or 0),
-        })
+        if len(sectors[sector]) < 15:
+            sectors[sector].append({
+                "name": r["ticker"],
+                "value": float(r["price"] or 0) * int(r["volume"] or 0) / 1_000_000,
+                "pChange": float(r["p_change"] or 0),
+                "volume": int(r["volume"] or 0),
+            })
 
-    return [
-        {"name": sector, "children": stocks[:15]}  # cap at 15 per sector
+    result = [
+        {"name": sector, "children": stocks}
         for sector, stocks in sectors.items()
     ]
+    cache_set(cache_key, result, ttl=120)
+    return result
 
 
 # ────────────────────────────────────────────────────────────────────
@@ -677,7 +903,7 @@ def get_macro_data(db: Session) -> List[Dict[str, Any]]:
     """Macro indicators with sparkline data for all periods."""
     results = []
     asset_types_sql = text("""
-        SELECT DISTINCT asset_type FROM macro_economy ORDER BY asset_type
+        SELECT DISTINCT asset_type FROM hethong_phantich_chungkhoan.macro_economy ORDER BY asset_type
     """)
     asset_types = [r["asset_type"] for r in db.execute(asset_types_sql).mappings().all()]
 
@@ -685,7 +911,7 @@ def get_macro_data(db: Session) -> List[Dict[str, Any]]:
         # Get latest 2 records for headline values
         latest_sql = text("""
             SELECT close, date
-            FROM macro_economy
+            FROM hethong_phantich_chungkhoan.macro_economy
             WHERE asset_type = :asset
             ORDER BY date DESC
             LIMIT 2
@@ -705,7 +931,7 @@ def get_macro_data(db: Session) -> List[Dict[str, Any]]:
             cutoff = (date.today() - timedelta(days=days)).isoformat()
             spark_sql = text("""
                 SELECT close
-                FROM macro_economy
+                FROM hethong_phantich_chungkhoan.macro_economy
                 WHERE asset_type = :asset AND date >= :cutoff
                 ORDER BY date ASC
             """)
@@ -735,9 +961,9 @@ def get_news(
     """Latest news from the news table."""
     sql = text("""
         SELECT id, source, title, link, published, summary
-        FROM news
+        FROM hethong_phantich_chungkhoan.news
         ORDER BY published DESC NULLS LAST
-        LIMIT :limit OFFSET :offset
+        LIMIT 10 OFFSET :offset
     """)
     rows = db.execute(sql, {"limit": limit, "offset": offset}).mappings().all()
     return [
@@ -758,28 +984,34 @@ def get_news(
 # ────────────────────────────────────────────────────────────────────
 
 def get_valuation_pe(db: Session) -> List[Dict[str, Any]]:
-    """Average market P/E per quarter for the last 8 quarters."""
+    """Average market P/E per quarter for the last 12 quarters. Cached 300 s."""
+    cache_key = "valuation_pe"
+    cached = cache_get(cache_key)
+    if cached is not None:
+        return cached
+
     sql = text("""
         SELECT
             year,
             quarter,
             ROUND(AVG(pe)::numeric, 2) AS avg_pe
-        FROM financial_ratio
-        WHERE pe IS NOT NULL AND pe > 0
+        FROM hethong_phantich_chungkhoan.financial_ratio
+        WHERE pe IS NOT NULL AND pe > 0 AND pe < 200
         GROUP BY year, quarter
         ORDER BY year DESC, quarter DESC
         LIMIT 12
     """)
     rows = db.execute(sql).mappings().all()
-    # Reverse so oldest first
     rows = list(reversed(rows))
-    return [
+    result = [
         {
             "month": f"Q{r['quarter']}/{r['year']}",
             "value": float(r["avg_pe"] or 0),
         }
         for r in rows
     ]
+    cache_set(cache_key, result, ttl=300)
+    return result
 
 
 # ────────────────────────────────────────────────────────────────────
@@ -787,24 +1019,106 @@ def get_valuation_pe(db: Session) -> List[Dict[str, Any]]:
 # ────────────────────────────────────────────────────────────────────
 
 def get_liquidity(db: Session, days: int = 20) -> List[Dict[str, Any]]:
-    """Daily total trading value (close * volume) aggregated from history_price."""
+    """Daily total trading value (close * volume) aggregated from history_price. Cached 300 s."""
+    cache_key = f"liquidity:{days}"
+    cached = cache_get(cache_key)
+    if cached is not None:
+        return cached
+
     sql = text("""
         SELECT
             trading_date,
             ROUND((SUM(close * volume) / 1e9)::numeric, 0) AS total_value_bn
-        FROM history_price
+        FROM hethong_phantich_chungkhoan.history_price
         WHERE close IS NOT NULL AND volume IS NOT NULL
         GROUP BY trading_date
         ORDER BY trading_date DESC
         LIMIT :days
     """)
     rows = db.execute(sql, {"days": days}).mappings().all()
-    # Reverse so oldest first
     rows = list(reversed(rows))
-    return [
+    result = [
         {
-            "date": r["trading_date"],
+            "date": r["trading_date"].strftime("%d/%m") if hasattr(r["trading_date"], "strftime") else str(r["trading_date"])[5:10].replace("-", "/"),
             "value": float(r["total_value_bn"] or 0),
         }
         for r in rows
     ]
+    cache_set(cache_key, result, ttl=300)
+    return result
+
+
+# ────────────────────────────────────────────────────────────────────
+# 12. Macro Yearly (vn_macro_yearly)
+# ────────────────────────────────────────────────────────────────────
+
+# Human‑readable labels for vn_macro_yearly columns
+_MACRO_YEARLY_LABELS = {
+    "tang_truong_gdp": "Tăng trưởng GDP (%)",
+    "lam_phat": "Lạm phát CPI (%)",
+    "tang_truong_cong_nghiep_xay_dung": "Tăng trưởng CN & XD (%)",
+    "tang_truong_nganh_che_bien_che_tao": "Tăng trưởng Chế biến chế tạo (%)",
+    "tang_truong_tieu_dung_ho_gia_inh": "Tăng trưởng tiêu dùng hộ GĐ (%)",
+    "ty_gia_usd_vnd": "Tỷ giá USD/VND",
+    "lai_suat_tien_gui": "Lãi suất tiền gửi (%)",
+    "lai_suat_cho_vay": "Lãi suất cho vay (%)",
+    "tang_truong_xuat_khau": "Tăng trưởng xuất khẩu (%)",
+    "tang_truong_nhap_khau": "Tăng trưởng nhập khẩu (%)",
+    "can_can_thuong_mai": "Cán cân thương mại (USD)",
+    "fdi_thuc_hien": "FDI thực hiện (USD)",
+    "du_tru_ngoai_hoi": "Dự trữ ngoại hối (USD)",
+    "tang_truong_cung_tien_m2": "Tăng trưởng cung tiền M2 (%)",
+    "no_xau_ngan_hang": "Nợ xấu ngân hàng (%)",
+}
+
+_MACRO_YEARLY_COLS = list(_MACRO_YEARLY_LABELS.keys())
+
+
+def get_macro_yearly(db: Session) -> Dict[str, Any]:
+    """Return vn_macro_yearly data.
+
+    Response format:
+    {
+      "years": [2015, 2016, ...],
+      "indicators": [
+        {"key": "tang_truong_gdp", "label": "Tăng trưởng GDP (%)", "values": [6.7, 6.2, ...]},
+        ...
+      ]
+    }
+    Cached 1 hour — yearly data rarely changes.
+    """
+    cache_key = "macro_yearly"
+    cached = cache_get(cache_key)
+    if cached is not None:
+        return cached
+
+    sql = text("""
+        SELECT *
+        FROM hethong_phantich_chungkhoan.vn_macro_yearly
+        ORDER BY year ASC
+    """)
+    rows = db.execute(sql).mappings().all()
+
+    if not rows:
+        return {"years": [], "indicators": []}
+
+    import math
+    years = [int(r["year"]) for r in rows]
+    indicators = []
+    for col in _MACRO_YEARLY_COLS:
+        values = []
+        for r in rows:
+            v = r.get(col)
+            if v is None or (isinstance(v, float) and math.isnan(v)):
+                values.append(None)
+            else:
+                values.append(round(float(v), 2))
+        indicators.append({
+            "key": col,
+            "label": _MACRO_YEARLY_LABELS[col],
+            "values": values,
+        })
+
+    result = {"years": years, "indicators": indicators}
+    cache_set(cache_key, result, ttl=3600)
+    return result

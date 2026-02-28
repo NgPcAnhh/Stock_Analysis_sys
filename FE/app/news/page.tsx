@@ -1,21 +1,15 @@
 import HeroNewsSection from "@/components/news/HeroNewsSection";
-import NewsFeed from "@/components/news/NewsFeed";
 
 export default function NewsPage() {
     return (
         <div className="min-h-screen bg-gray-50">
-            <div className="max-w-[1200px] mx-auto p-6">
-                <div className="flex items-center justify-between mb-6">
-                    <h1 className="text-2xl font-bold text-gray-900">
-                        Tin tức & Sự kiện
-                    </h1>
-                </div>
+            <div className="max-w-[1200px] mx-auto px-6 py-8">
+                <h1 className="text-2xl font-bold text-gray-900 mb-6">
+                    Tin tức & Sự kiện
+                </h1>
 
-                {/* Component E: Hero News Section */}
+                {/* Single-row news slider — 8 latest articles */}
                 <HeroNewsSection />
-
-                {/* Component F: News Feed */}
-                <NewsFeed />
             </div>
 
             {/* Footer */}
