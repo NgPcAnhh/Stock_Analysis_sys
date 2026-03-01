@@ -1,4 +1,5 @@
-initialize: uvicorn app.main:app --reload
+initialize: 
+uvicorn app.main:app --reload
 
 
 api docs: 

@@ -83,5 +83,46 @@ class TrackResponse(BaseModel):
     message: str = "OK"
 
 
+# ── Screener schemas ──────────────────────────────────────────────
+
+class ScreenerItem(BaseModel):
+    """Một dòng trong bộ lọc cổ phiếu — camelCase cho FE."""
+    ticker: str
+    companyName: Optional[str] = None
+    sector: Optional[str] = None
+    exchange: Optional[str] = None
+    currentPrice: Optional[float] = None
+    priceChange: Optional[float] = None
+    priceChangePercent: Optional[float] = None
+    volume: Optional[int] = None
+    avgVolume10d: Optional[int] = None
+    marketCap: Optional[float] = None        # tỷ VND
+    pe: Optional[float] = None
+    pb: Optional[float] = None
+    eps: Optional[float] = None              # VND
+    roe: Optional[float] = None              # %
+    roa: Optional[float] = None              # %
+    debtToEquity: Optional[float] = None
+    dividendYield: Optional[float] = None    # %
+    revenueGrowth: Optional[float] = None    # %
+    profitGrowth: Optional[float] = None     # %
+    foreignOwnership: Optional[float] = None # %
+    foreignNetBuy: Optional[float] = None    # tỷ VND
+    weekChange52: Optional[float] = None     # %
+    high52w: Optional[float] = None          # VND
+    low52w: Optional[float] = None           # VND
+    beta: Optional[float] = None
+    rsi14: Optional[float] = None
+    macdSignal: Optional[str] = None
+    ma20Trend: Optional[str] = None
+    signal: Optional[str] = None
+    sparkline: List[float] = Field(default_factory=list)
+
+
+class ScreenerResponse(BaseModel):
+    data: List[ScreenerItem]
+    total: int
+
+
 # Update forward refs
 StockOverviewPaginatedResponse.model_rebuild()

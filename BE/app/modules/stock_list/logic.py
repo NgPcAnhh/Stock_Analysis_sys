@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import logging
 import math
+from collections import defaultdict
+from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy import text
@@ -17,20 +19,20 @@ logger = logging.getLogger(__name__)
 SCHEMA = "hethong_phantich_chungkhoan"
 SYSTEM_SCHEMA = "system"
 
-# Allowed sort fields → actual SQL expression
+# Allowed sort fields → actual SQL expression (use SELECT aliases for computed columns)
 SORT_MAP = {
     "ticker": "hp.ticker",
     "current_price": "hp.close",
     "price_change_percent": "price_change_percent",
     "volume": "hp.volume",
-    "market_cap": "fr.market_cap",
-    "pe": "fr.pe",
-    "pb": "fr.pb",
-    "eps": "fr.eps",
-    "roe": "fr.roe",
-    "roa": "fr.roa",
-    "dividend_yield": "fr.dividend_yield",
-    "debt_to_equity": "fr.debt_to_equity",
+    "market_cap": "market_cap",
+    "pe": "pe",
+    "pb": "pb",
+    "eps": "eps",
+    "roe": "roe",
+    "roa": "roa",
+    "dividend_yield": "dividend_yield",
+    "debt_to_equity": "debt_to_equity",
 }
 
 
@@ -127,7 +129,7 @@ async def get_stock_overview(
     offset = (page - 1) * page_size
 
     # ── Main query ──
-    # Join latest financial_ratio (latest year+quarter per ticker)
+    # Join latest financial_ratio + BCTC-computed P/E, P/B, EPS, market_cap
     main_sql = text(f"""
         WITH latest_fr AS (
             SELECT DISTINCT ON (ticker)
@@ -135,6 +137,42 @@ async def get_stock_overview(
                 dividend_yield, debt_to_equity, outstanding_shares
             FROM {SCHEMA}.financial_ratio
             ORDER BY ticker, year DESC, quarter DESC
+        ),
+        -- BCTC: outstanding shares (latest) — fallback to contributed capital for banks
+        bctc_shares AS (
+            SELECT DISTINCT ON (ticker)
+                ticker, value / 10000.0 AS shares
+            FROM (
+                SELECT ticker, value, year, quarter, 1 AS priority
+                FROM {SCHEMA}.bctc
+                WHERE ind_code = 'C_PHI_U_PH_TH_NG_NG' AND value IS NOT NULL AND value > 0
+                UNION ALL
+                SELECT ticker, value, year, quarter, 2 AS priority
+                FROM {SCHEMA}.bctc
+                WHERE ind_code = 'V_N_G_P_C_A_CH_S_H_U_NG' AND value IS NOT NULL AND value > 0
+            ) combined
+            ORDER BY ticker, priority, year DESC, quarter DESC
+        ),
+        -- BCTC: equity (latest)
+        bctc_equity AS (
+            SELECT DISTINCT ON (ticker)
+                ticker, value AS equity
+            FROM {SCHEMA}.bctc
+            WHERE ind_code = 'V_N_CH_S_H_U_NG' AND value IS NOT NULL AND value > 0
+            ORDER BY ticker, year DESC, quarter DESC
+        ),
+        -- BCTC: TTM net income (sum of last 4 quarters)
+        ranked_ni AS (
+            SELECT ticker, value,
+                ROW_NUMBER() OVER (PARTITION BY ticker ORDER BY year DESC, quarter DESC) AS rn
+            FROM {SCHEMA}.bctc
+            WHERE ind_code = 'L_I_NHU_N_SAU_THU_C_A_C_NG_C_NG_TY_M_NG'
+              AND value IS NOT NULL AND value != 0
+        ),
+        ttm_ni AS (
+            SELECT ticker, SUM(value) AS ttm_ni
+            FROM ranked_ni WHERE rn <= 4
+            GROUP BY ticker HAVING COUNT(*) >= 2
         ),
         co_dedup AS (
             SELECT DISTINCT ON (ticker)
@@ -166,19 +204,61 @@ async def get_stock_overview(
                 ELSE 0
             END AS price_change_percent,
             hp.volume,
-            fr.market_cap,
-            fr.pe,
-            fr.pb,
-            fr.eps,
-            fr.roe,
-            fr.roa,
-            fr.debt_to_equity,
-            fr.dividend_yield
+            -- market_cap (VND): BCTC-computed first, then FR fallback
+            COALESCE(
+                CASE WHEN sh.shares > 0 AND hp.close > 0
+                     THEN ROUND((hp.close * 1000 * sh.shares)::numeric, 0) END,
+                fr.market_cap
+            ) AS market_cap,
+            -- P/E: BCTC-computed first (price / EPS), then FR fallback
+            COALESCE(
+                CASE WHEN ni.ttm_ni IS NOT NULL AND sh.shares > 0
+                          AND (ni.ttm_ni / sh.shares) > 0
+                          AND (hp.close * 1000 / (ni.ttm_ni / sh.shares)) BETWEEN 0.1 AND 500
+                     THEN ROUND((hp.close * 1000 / (ni.ttm_ni / sh.shares))::numeric, 2) END,
+                fr.pe
+            ) AS pe,
+            -- P/B: BCTC-computed first (price*shares / equity), then FR fallback
+            COALESCE(
+                CASE WHEN eq.equity > 0 AND sh.shares > 0
+                          AND (hp.close * 1000 * sh.shares / eq.equity) BETWEEN 0.01 AND 100
+                     THEN ROUND((hp.close * 1000 * sh.shares / eq.equity)::numeric, 2) END,
+                fr.pb
+            ) AS pb,
+            -- EPS (VND): BCTC-computed first (TTM NI / shares), then FR fallback
+            COALESCE(
+                CASE WHEN ni.ttm_ni IS NOT NULL AND sh.shares > 0
+                     THEN ROUND((ni.ttm_ni / sh.shares)::numeric, 0) END,
+                fr.eps
+            ) AS eps,
+            COALESCE(fr.roe,
+                (SELECT fr2.roe FROM {SCHEMA}.financial_ratio fr2
+                 WHERE fr2.ticker = hp.ticker AND fr2.roe IS NOT NULL
+                 ORDER BY fr2.year DESC, fr2.quarter DESC LIMIT 1)
+            ) AS roe,
+            COALESCE(fr.roa,
+                (SELECT fr2.roa FROM {SCHEMA}.financial_ratio fr2
+                 WHERE fr2.ticker = hp.ticker AND fr2.roa IS NOT NULL
+                 ORDER BY fr2.year DESC, fr2.quarter DESC LIMIT 1)
+            ) AS roa,
+            COALESCE(fr.debt_to_equity,
+                (SELECT fr2.debt_to_equity FROM {SCHEMA}.financial_ratio fr2
+                 WHERE fr2.ticker = hp.ticker AND fr2.debt_to_equity IS NOT NULL
+                 ORDER BY fr2.year DESC, fr2.quarter DESC LIMIT 1)
+            ) AS debt_to_equity,
+            COALESCE(fr.dividend_yield,
+                (SELECT fr2.dividend_yield FROM {SCHEMA}.financial_ratio fr2
+                 WHERE fr2.ticker = hp.ticker AND fr2.dividend_yield IS NOT NULL
+                 ORDER BY fr2.year DESC, fr2.quarter DESC LIMIT 1)
+            ) AS dividend_yield
         FROM {SCHEMA}.history_price hp
         LEFT JOIN co_dedup co ON co.ticker = hp.ticker
         LEFT JOIN {SCHEMA}.history_price hp_prev ON hp_prev.ticker = hp.ticker
             AND hp_prev.trading_date = :prev_date
         LEFT JOIN latest_fr fr ON fr.ticker = hp.ticker
+        LEFT JOIN bctc_shares sh ON sh.ticker = hp.ticker
+        LEFT JOIN bctc_equity eq ON eq.ticker = hp.ticker
+        LEFT JOIN ttm_ni ni ON ni.ticker = hp.ticker
         WHERE hp.trading_date = :latest_date AND {where_clause}
         ORDER BY {sort_col} {sort_direction} NULLS LAST
         LIMIT :limit OFFSET :offset
@@ -549,17 +629,48 @@ async def _get_market_summary(
     res = await db.execute(sql, {"latest_date": latest_date, "prev_date": prev_date})
     row = res.mappings().first()
 
-    # Average PE
+    # Average PE — compute from BCTC (price/EPS) with FR fallback
     pe_sql = text(f"""
-        SELECT AVG(pe) AS avg_pe
-        FROM (
-            SELECT DISTINCT ON (ticker) pe
-            FROM {SCHEMA}.financial_ratio
-            WHERE pe IS NOT NULL AND pe > 0 AND pe < 200
-            ORDER BY ticker, year DESC, quarter DESC
-        ) sub
+        WITH bctc_shares AS (
+            SELECT DISTINCT ON (ticker)
+                ticker, value / 10000.0 AS shares
+            FROM (
+                SELECT ticker, value, year, quarter, 1 AS priority
+                FROM {SCHEMA}.bctc
+                WHERE ind_code = 'C_PHI_U_PH_TH_NG_NG' AND value IS NOT NULL AND value > 0
+                UNION ALL
+                SELECT ticker, value, year, quarter, 2 AS priority
+                FROM {SCHEMA}.bctc
+                WHERE ind_code = 'V_N_G_P_C_A_CH_S_H_U_NG' AND value IS NOT NULL AND value > 0
+            ) combined
+            ORDER BY ticker, priority, year DESC, quarter DESC
+        ),
+        ranked_ni AS (
+            SELECT ticker, value,
+                ROW_NUMBER() OVER (PARTITION BY ticker ORDER BY year DESC, quarter DESC) AS rn
+            FROM {SCHEMA}.bctc
+            WHERE ind_code = 'L_I_NHU_N_SAU_THU_C_A_C_NG_C_NG_TY_M_NG'
+              AND value IS NOT NULL AND value != 0
+        ),
+        ttm_ni AS (
+            SELECT ticker, SUM(value) AS ttm_ni
+            FROM ranked_ni WHERE rn <= 4
+            GROUP BY ticker HAVING COUNT(*) >= 2
+        ),
+        computed_pe AS (
+            SELECT hp.ticker,
+                CASE WHEN ni.ttm_ni > 0 AND sh.shares > 0
+                          AND (hp.close * 1000 / (ni.ttm_ni / sh.shares)) BETWEEN 0.1 AND 200
+                     THEN hp.close * 1000 / (ni.ttm_ni / sh.shares)
+                     ELSE NULL END AS pe
+            FROM {SCHEMA}.history_price hp
+            JOIN bctc_shares sh ON sh.ticker = hp.ticker
+            JOIN ttm_ni ni ON ni.ticker = hp.ticker
+            WHERE hp.trading_date = :latest_date
+        )
+        SELECT AVG(pe) AS avg_pe FROM computed_pe WHERE pe IS NOT NULL
     """)
-    pe_res = await db.execute(pe_sql)
+    pe_res = await db.execute(pe_sql, {"latest_date": latest_date})
     avg_pe = pe_res.scalar()
 
     summary = {
@@ -586,3 +697,519 @@ def _empty_response(page: int, page_size: int) -> Dict[str, Any]:
             "total_unchanged": 0, "total_volume": 0, "avg_pe": None,
         },
     }
+
+
+# ════════════════════════════════════════════════════════════════════
+# 7. Stock Screener — full dataset with all metrics
+# ════════════════════════════════════════════════════════════════════
+
+def _compute_rsi(closes: List[float], period: int = 14) -> Optional[float]:
+    """Compute RSI (Relative Strength Index) from a list of close prices."""
+    if len(closes) < period + 1:
+        return None
+    changes = [closes[i] - closes[i - 1] for i in range(1, len(closes))]
+    gains = [max(c, 0) for c in changes]
+    losses = [max(-c, 0) for c in changes]
+
+    avg_gain = sum(gains[:period]) / period
+    avg_loss = sum(losses[:period]) / period
+
+    for i in range(period, len(changes)):
+        avg_gain = (avg_gain * (period - 1) + gains[i]) / period
+        avg_loss = (avg_loss * (period - 1) + losses[i]) / period
+
+    if avg_loss == 0:
+        return 100.0
+    rs = avg_gain / avg_loss
+    return 100 - 100 / (1 + rs)
+
+
+def _compute_ema(data: List[float], period: int) -> List[float]:
+    """Compute Exponential Moving Average."""
+    if not data:
+        return []
+    k = 2 / (period + 1)
+    result = [data[0]]
+    for i in range(1, len(data)):
+        result.append(data[i] * k + result[-1] * (1 - k))
+    return result
+
+
+def _compute_macd_signal(closes: List[float]) -> str:
+    """Compute MACD signal: 'Mua', 'Bán', or 'Trung tính'."""
+    if len(closes) < 35:
+        return "Trung tính"
+
+    ema12 = _compute_ema(closes, 12)
+    ema26 = _compute_ema(closes, 26)
+    macd_line = [ema12[i] - ema26[i] for i in range(len(closes))]
+    signal_line = _compute_ema(macd_line, 9)
+
+    if macd_line[-1] > signal_line[-1]:
+        return "Mua"
+    elif macd_line[-1] < signal_line[-1]:
+        return "Bán"
+    return "Trung tính"
+
+
+def _determine_signal(
+    rsi: Optional[float], macd: Optional[str], ma_trend: Optional[str]
+) -> str:
+    """Derive overall signal from RSI, MACD, and MA20 trend."""
+    buy = 0
+    sell = 0
+    if macd == "Mua":
+        buy += 1
+    elif macd == "Bán":
+        sell += 1
+    if ma_trend == "Trên MA20":
+        buy += 1
+    elif ma_trend == "Dưới MA20":
+        sell += 1
+    if rsi is not None:
+        if rsi > 70:
+            sell += 1
+        elif rsi < 30:
+            buy += 1
+
+    if buy >= 2 and sell == 0:
+        return "Mua"
+    elif sell >= 2 and buy == 0:
+        return "Bán"
+    elif buy > sell:
+        return "Theo dõi"
+    return "Nắm giữ"
+
+
+async def get_screener_data(db: AsyncSession) -> Dict[str, Any]:
+    """
+    Return full stock screener dataset.
+    Computes P/E, P/B, EPS from BCTC; growth from YoY BCTC;
+    technical indicators (RSI14, MACD, MA20) from price history.
+    """
+    cache_key = "stock_list:screener"
+    cached = await cache_get(cache_key)
+    if cached is not None:
+        return cached
+
+    # ── Latest & previous trading dates ──
+    date_sql = text(f"""
+        SELECT
+            (SELECT MAX(trading_date) FROM {SCHEMA}.history_price) AS latest,
+            (SELECT MAX(trading_date) FROM {SCHEMA}.history_price
+             WHERE trading_date < (SELECT MAX(trading_date) FROM {SCHEMA}.history_price)) AS prev
+    """)
+    res = await db.execute(date_sql)
+    dates = res.first()
+    if not dates or not dates.latest:
+        return {"data": [], "total": 0}
+
+    latest_date = dates.latest
+    prev_date = dates.prev
+
+    # Compute date boundaries
+    try:
+        dt = datetime.strptime(str(latest_date), "%Y-%m-%d")
+    except Exception:
+        dt = datetime.now()
+    date_1y_ago = (dt - timedelta(days=365)).strftime("%Y-%m-%d")
+    date_90d_ago = (dt - timedelta(days=120)).strftime("%Y-%m-%d")  # ~60 trading days
+
+    # ── Main query: price + company + BCTC valuations + financial ratios + foreign ──
+    main_sql = text(f"""
+        WITH bctc_data AS (
+            SELECT ticker, year, quarter, ind_code, value
+            FROM {SCHEMA}.bctc
+            WHERE ind_code IN (
+                'C_PHI_U_PH_TH_NG_NG',
+                'V_N_CH_S_H_U_NG',
+                'N_PH_I_TR_NG',
+                'L_I_NHU_N_SAU_THU_C_A_C_NG_C_NG_TY_M_NG',
+                'DOANH_THU_THU_N',
+                'C_T_C_TR'
+            ) AND value IS NOT NULL AND value != 0
+        ),
+        shares AS (
+            SELECT DISTINCT ON (ticker)
+                ticker, value / 10000.0 AS shares
+            FROM bctc_data
+            WHERE ind_code = 'C_PHI_U_PH_TH_NG_NG' AND value > 0
+            ORDER BY ticker, year DESC, quarter DESC
+        ),
+        equity AS (
+            SELECT DISTINCT ON (ticker)
+                ticker, value AS equity
+            FROM bctc_data
+            WHERE ind_code = 'V_N_CH_S_H_U_NG' AND value > 0
+            ORDER BY ticker, year DESC, quarter DESC
+        ),
+        total_liabilities AS (
+            SELECT DISTINCT ON (ticker)
+                ticker, value AS liabilities
+            FROM bctc_data
+            WHERE ind_code = 'N_PH_I_TR_NG'
+            ORDER BY ticker, year DESC, quarter DESC
+        ),
+        ranked_div AS (
+            SELECT ticker, value,
+                ROW_NUMBER() OVER (PARTITION BY ticker ORDER BY year DESC, quarter DESC) AS rn
+            FROM bctc_data
+            WHERE ind_code = 'C_T_C_TR'
+        ),
+        ttm_div AS (
+            SELECT ticker, SUM(ABS(value)) AS ttm_div
+            FROM ranked_div WHERE rn <= 4
+            GROUP BY ticker HAVING COUNT(*) >= 2
+        ),
+        ranked_ni AS (
+            SELECT ticker, value,
+                ROW_NUMBER() OVER (PARTITION BY ticker ORDER BY year DESC, quarter DESC) AS rn
+            FROM bctc_data
+            WHERE ind_code = 'L_I_NHU_N_SAU_THU_C_A_C_NG_C_NG_TY_M_NG'
+        ),
+        ttm_ni AS (
+            SELECT ticker, SUM(value) AS ttm_ni
+            FROM ranked_ni WHERE rn <= 4
+            GROUP BY ticker HAVING COUNT(*) >= 2
+        ),
+        prev_ni AS (
+            SELECT ticker, SUM(value) AS prev_ni
+            FROM ranked_ni WHERE rn BETWEEN 5 AND 8
+            GROUP BY ticker HAVING COUNT(*) = 4
+        ),
+        ranked_rev AS (
+            SELECT ticker, value,
+                ROW_NUMBER() OVER (PARTITION BY ticker ORDER BY year DESC, quarter DESC) AS rn
+            FROM bctc_data
+            WHERE ind_code = 'DOANH_THU_THU_N'
+        ),
+        ttm_rev AS (
+            SELECT ticker, SUM(value) AS ttm_rev
+            FROM ranked_rev WHERE rn <= 4
+            GROUP BY ticker HAVING COUNT(*) >= 2
+        ),
+        prev_rev AS (
+            SELECT ticker, SUM(value) AS prev_rev
+            FROM ranked_rev WHERE rn BETWEEN 5 AND 8
+            GROUP BY ticker HAVING COUNT(*) = 4
+        ),
+        latest_fr AS (
+            SELECT DISTINCT ON (ticker)
+                ticker, roe, roa, debt_to_equity, dividend_yield, pe AS fr_pe, pb AS fr_pb, eps AS fr_eps
+            FROM {SCHEMA}.financial_ratio
+            ORDER BY ticker, year DESC, quarter DESC
+        ),
+        co_dedup AS (
+            SELECT DISTINCT ON (ticker)
+                ticker,
+                CASE
+                    WHEN organ_short_name IS NOT NULL AND organ_short_name != 'NaN'
+                        THEN organ_short_name
+                    WHEN organ_name IS NOT NULL AND organ_name != 'NaN'
+                        THEN organ_name
+                    ELSE NULL
+                END AS company_name,
+                icb_name2 AS sector,
+                exchange
+            FROM {SCHEMA}.company_overview
+            WHERE exchange IS NOT NULL AND exchange != 'NaN' AND exchange != 'DELISTED'
+            ORDER BY ticker,
+                CASE WHEN organ_short_name IS NOT NULL AND organ_short_name != 'NaN' THEN 0 ELSE 1 END,
+                exchange
+        ),
+        latest_eb AS (
+            SELECT DISTINCT ON (ticker)
+                ticker,
+                COALESCE(foreign_buy_volume, 0) AS foreign_buy,
+                COALESCE(foreign_sell_volume, 0) AS foreign_sell,
+                CASE WHEN match_price > 0 THEN match_price ELSE ref_price END AS eb_price
+            FROM {SCHEMA}.electric_board
+            WHERE match_price > 0 OR ref_price > 0
+            ORDER BY ticker, trading_date DESC
+        ),
+        week52 AS (
+            SELECT ticker,
+                MAX(high) AS high_52w,
+                MIN(low) AS low_52w
+            FROM {SCHEMA}.history_price
+            WHERE trading_date >= :date_1y_ago
+            GROUP BY ticker
+        )
+        SELECT
+            hp.ticker,
+            co.company_name,
+            co.sector,
+            co.exchange,
+            hp.close AS close_raw,
+            hp_prev.close AS prev_close_raw,
+            hp.volume,
+            sh.shares,
+            eq.equity,
+            ni.ttm_ni,
+            pn.prev_ni,
+            tr.ttm_rev,
+            pr.prev_rev,
+            fr.roe,
+            fr.roa,
+            fr.debt_to_equity,
+            fr.dividend_yield,
+            fr.fr_pe,
+            fr.fr_pb,
+            fr.fr_eps,
+            tl.liabilities AS total_liabilities,
+            dv.ttm_div,
+            eb.foreign_buy,
+            eb.foreign_sell,
+            eb.eb_price,
+            w52.high_52w,
+            w52.low_52w
+        FROM {SCHEMA}.history_price hp
+        LEFT JOIN co_dedup co ON co.ticker = hp.ticker
+        LEFT JOIN {SCHEMA}.history_price hp_prev
+            ON hp_prev.ticker = hp.ticker AND hp_prev.trading_date = :prev_date
+        LEFT JOIN shares sh ON sh.ticker = hp.ticker
+        LEFT JOIN equity eq ON eq.ticker = hp.ticker
+        LEFT JOIN ttm_ni ni ON ni.ticker = hp.ticker
+        LEFT JOIN prev_ni pn ON pn.ticker = hp.ticker
+        LEFT JOIN ttm_rev tr ON tr.ticker = hp.ticker
+        LEFT JOIN prev_rev pr ON pr.ticker = hp.ticker
+        LEFT JOIN latest_fr fr ON fr.ticker = hp.ticker
+        LEFT JOIN total_liabilities tl ON tl.ticker = hp.ticker
+        LEFT JOIN ttm_div dv ON dv.ticker = hp.ticker
+        LEFT JOIN latest_eb eb ON eb.ticker = hp.ticker
+        LEFT JOIN week52 w52 ON w52.ticker = hp.ticker
+        WHERE hp.trading_date = :latest_date
+        ORDER BY
+            CASE WHEN sh.shares > 0 THEN hp.close * sh.shares ELSE 0 END DESC NULLS LAST
+    """)
+
+    try:
+        res = await db.execute(main_sql, {
+            "latest_date": latest_date,
+            "prev_date": prev_date,
+            "date_1y_ago": date_1y_ago,
+        })
+        base_rows = res.mappings().all()
+    except Exception as exc:
+        logger.error("screener main query error: %s", exc)
+        return {"data": [], "total": 0}
+
+    if not base_rows:
+        return {"data": [], "total": 0}
+
+    # ── Price history (last ~60 trading days) for technical indicators ──
+    history_sql = text(f"""
+        SELECT ticker, trading_date, close, volume
+        FROM {SCHEMA}.history_price
+        WHERE trading_date >= :date_90d_ago AND trading_date <= :latest_date
+        ORDER BY ticker, trading_date ASC
+    """)
+    try:
+        res = await db.execute(history_sql, {
+            "date_90d_ago": date_90d_ago,
+            "latest_date": latest_date,
+        })
+        history_rows = res.fetchall()
+    except Exception as exc:
+        logger.warning("screener history query error: %s", exc)
+        history_rows = []
+
+    # Build per-ticker price & volume series
+    price_series: Dict[str, List[float]] = defaultdict(list)
+    vol_series: Dict[str, List[int]] = defaultdict(list)
+    for row in history_rows:
+        ticker = row[0]
+        close_val = float(row[2]) if row[2] else 0
+        vol_val = int(row[3]) if row[3] else 0
+        price_series[ticker].append(close_val)
+        vol_series[ticker].append(vol_val)
+
+    # ── Compute technical indicators per ticker ──
+    tech_map: Dict[str, Dict[str, Any]] = {}
+    for ticker, closes in price_series.items():
+        # RSI14
+        rsi14 = _compute_rsi(closes, 14)
+
+        # MA20 trend
+        ma20 = sum(closes[-20:]) / 20 if len(closes) >= 20 else None
+        ma20_trend = None
+        if ma20 and closes:
+            ma20_trend = "Trên MA20" if closes[-1] > ma20 else "Dưới MA20"
+
+        # MACD signal
+        macd_signal = _compute_macd_signal(closes)
+
+        # Sparkline (last 20 closes × 1000 → VND)
+        sparkline = [round(c * 1000, 0) for c in closes[-20:]]
+
+        # Avg volume 10d
+        vols = vol_series.get(ticker, [])
+        avg_vol_10d = round(sum(vols[-10:]) / min(len(vols[-10:]), 10)) if vols else None
+
+        tech_map[ticker] = {
+            "rsi14": round(rsi14, 1) if rsi14 is not None else None,
+            "ma20_trend": ma20_trend,
+            "macd_signal": macd_signal,
+            "sparkline": sparkline,
+            "avg_vol_10d": avg_vol_10d,
+        }
+
+    # ── Build final response items ──
+    data: List[Dict[str, Any]] = []
+    for r in base_rows:
+        t = r["ticker"]
+        tech = tech_map.get(t, {})
+
+        close_raw = float(r["close_raw"]) if r["close_raw"] else None
+        prev_raw = float(r["prev_close_raw"]) if r["prev_close_raw"] else None
+        shares = float(r["shares"]) if r["shares"] else None
+        equity_val = float(r["equity"]) if r["equity"] else None
+        ttm_ni_val = float(r["ttm_ni"]) if r["ttm_ni"] else None
+        prev_ni_val = float(r["prev_ni"]) if r["prev_ni"] else None
+        ttm_rev_val = float(r["ttm_rev"]) if r["ttm_rev"] else None
+        prev_rev_val = float(r["prev_rev"]) if r["prev_rev"] else None
+
+        # Current price (VND)
+        current_price = round(close_raw * 1000, 0) if close_raw else None
+
+        # Price change
+        price_change = None
+        price_change_pct = None
+        if close_raw and prev_raw and prev_raw > 0:
+            price_change = round((close_raw - prev_raw) * 1000, 0)
+            price_change_pct = round((close_raw - prev_raw) / prev_raw * 100, 2)
+
+        # Market cap (tỷ VND)
+        market_cap = None
+        if close_raw and shares and shares > 0:
+            market_cap = round(close_raw * 1000 * shares / 1e9, 1)
+
+        # EPS (VND) — BCTC-computed, fallback to FR
+        eps = None
+        if ttm_ni_val is not None and shares and shares > 0:
+            eps = round(ttm_ni_val / shares, 0)
+        if eps is None and r["fr_eps"]:
+            eps = round(float(r["fr_eps"]), 0)
+
+        # P/E — BCTC-computed, fallback to FR
+        pe = None
+        if eps and eps > 0 and current_price:
+            pe_val = current_price / eps
+            if 0 < pe_val < 500:
+                pe = round(pe_val, 2)
+        if pe is None and r["fr_pe"]:
+            fr_pe_val = float(r["fr_pe"])
+            if 0 < fr_pe_val < 500:
+                pe = round(fr_pe_val, 2)
+
+        # P/B — BCTC-computed, fallback to FR
+        pb = None
+        if close_raw and shares and shares > 0 and equity_val and equity_val > 0:
+            pb_val = close_raw * 1000 * shares / equity_val
+            if 0 < pb_val < 100:
+                pb = round(pb_val, 2)
+        if pb is None and r["fr_pb"]:
+            fr_pb_val = float(r["fr_pb"])
+            if 0 < fr_pb_val < 100:
+                pb = round(fr_pb_val, 2)
+
+        # ROE, ROA (stored as ratios → convert to %)
+        roe = round(float(r["roe"]) * 100, 2) if r["roe"] else None
+        roa = round(float(r["roa"]) * 100, 2) if r["roa"] else None
+
+        # Debt to equity — compute from BCTC (liabilities / equity), fallback to financial_ratio
+        dte = None
+        total_liab = float(r["total_liabilities"]) if r["total_liabilities"] else None
+        if total_liab is not None and equity_val and equity_val > 0:
+            dte = round(total_liab / equity_val, 2)
+        elif r["debt_to_equity"]:
+            dte = round(float(r["debt_to_equity"]), 2)
+
+        # Dividend yield — compute from BCTC TTM dividends / market_cap, fallback to FR
+        div_yield = None
+        ttm_div_val = float(r["ttm_div"]) if r["ttm_div"] else None
+        if ttm_div_val and ttm_div_val > 0 and close_raw and shares and shares > 0:
+            mkt = close_raw * 1000 * shares
+            if mkt > 0:
+                div_yield = round(ttm_div_val / mkt * 100, 2)
+        if div_yield is None and r["dividend_yield"]:
+            div_yield = round(float(r["dividend_yield"]) * 100, 2)
+
+        # Revenue growth (TTM vs prev TTM, %)
+        revenue_growth = None
+        if ttm_rev_val is not None and prev_rev_val and prev_rev_val != 0:
+            revenue_growth = round(
+                (ttm_rev_val - prev_rev_val) / abs(prev_rev_val) * 100, 1
+            )
+
+        # Profit growth (TTM vs prev TTM, %)
+        profit_growth = None
+        if ttm_ni_val is not None and prev_ni_val and prev_ni_val != 0:
+            profit_growth = round(
+                (ttm_ni_val - prev_ni_val) / abs(prev_ni_val) * 100, 1
+            )
+
+        # Foreign net buy (tỷ VND)
+        foreign_net_buy = None
+        if r["foreign_buy"] is not None and r["foreign_sell"] is not None and r["eb_price"]:
+            eb_price = float(r["eb_price"])
+            if eb_price > 0:
+                net_vol = int(r["foreign_buy"]) - int(r["foreign_sell"])
+                foreign_net_buy = round(net_vol * eb_price / 1e9, 2)
+
+        # 52-week high/low (× 1000 → VND)
+        high_52w = round(float(r["high_52w"]) * 1000, 0) if r["high_52w"] else None
+        low_52w = round(float(r["low_52w"]) * 1000, 0) if r["low_52w"] else None
+
+        # 52-week change
+        week_change_52 = None
+        if current_price and low_52w and low_52w > 0:
+            week_change_52 = round((current_price - low_52w) / low_52w * 100, 2)
+
+        # Signal
+        rsi14 = tech.get("rsi14")
+        macd_sig = tech.get("macd_signal", "Trung tính")
+        ma20_tr = tech.get("ma20_trend", "Dưới MA20")
+        signal = _determine_signal(rsi14, macd_sig, ma20_tr)
+
+        # Normalize exchange: HSX → HOSE
+        raw_exchange = r["exchange"]
+        if raw_exchange == "HSX":
+            raw_exchange = "HOSE"
+
+        data.append({
+            "ticker": t,
+            "companyName": r["company_name"],
+            "sector": r["sector"],
+            "exchange": raw_exchange,
+            "currentPrice": current_price,
+            "priceChange": price_change,
+            "priceChangePercent": price_change_pct,
+            "volume": int(r["volume"]) if r["volume"] else None,
+            "avgVolume10d": tech.get("avg_vol_10d"),
+            "marketCap": market_cap,
+            "pe": pe,
+            "pb": pb,
+            "eps": eps,
+            "roe": roe,
+            "roa": roa,
+            "debtToEquity": dte,
+            "dividendYield": div_yield,
+            "revenueGrowth": revenue_growth,
+            "profitGrowth": profit_growth,
+            "foreignOwnership": None,   # Not available in current data
+            "foreignNetBuy": foreign_net_buy,
+            "weekChange52": week_change_52,
+            "high52w": high_52w,
+            "low52w": low_52w,
+            "beta": None,               # Requires index correlation, not implemented
+            "rsi14": rsi14,
+            "macdSignal": macd_sig,
+            "ma20Trend": ma20_tr,
+            "signal": signal,
+            "sparkline": tech.get("sparkline", []),
+        })
+
+    result = {"data": data, "total": len(data)}
+    await cache_set(cache_key, result, ttl=300)
+    return result

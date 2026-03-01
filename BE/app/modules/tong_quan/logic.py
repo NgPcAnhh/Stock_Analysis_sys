@@ -1021,11 +1021,30 @@ async def get_valuation_pe(db: AsyncSession) -> List[Dict[str, Any]]:
         return cached
 
     sql = text("""
+        WITH quarterly_pe AS (
+            -- For each ticker+quarter, use that quarter's pe;
+            -- if null, fall back to the latest non-null pe from a prior quarter
+            SELECT
+                fr.ticker,
+                fr.year,
+                fr.quarter,
+                COALESCE(
+                    fr.pe,
+                    (SELECT fr2.pe
+                     FROM hethong_phantich_chungkhoan.financial_ratio fr2
+                     WHERE fr2.ticker = fr.ticker
+                       AND fr2.pe IS NOT NULL AND fr2.pe > 0 AND fr2.pe < 200
+                       AND (fr2.year, fr2.quarter) < (fr.year, fr.quarter)
+                     ORDER BY fr2.year DESC, fr2.quarter DESC
+                     LIMIT 1)
+                ) AS pe
+            FROM hethong_phantich_chungkhoan.financial_ratio fr
+        )
         SELECT
             year,
             quarter,
             ROUND(AVG(pe)::numeric, 2) AS avg_pe
-        FROM hethong_phantich_chungkhoan.financial_ratio
+        FROM quarterly_pe
         WHERE pe IS NOT NULL AND pe > 0 AND pe < 200
         GROUP BY year, quarter
         ORDER BY year DESC, quarter DESC

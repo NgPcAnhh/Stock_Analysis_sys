@@ -10,6 +10,7 @@ from app.modules.stock_list import logic
 from app.modules.stock_list.schemas import (
     HotStockSearchItem,
     MostViewedStock,
+    ScreenerResponse,
     SectorItem,
     StockOverviewPaginatedResponse,
     TrackResponse,
@@ -26,6 +27,13 @@ def _client_ip(request: Request) -> str:
     if forwarded:
         return forwarded.split(",")[0].strip()
     return request.client.host if request.client else "unknown"
+
+
+# ── 0. Stock Screener (full dataset) ──────────────────────────────
+@router.get("/screener", response_model=ScreenerResponse)
+async def screener(db: AsyncSession = Depends(get_db)):
+    """Bộ lọc cổ phiếu — trả về toàn bộ dataset với đầy đủ chỉ số tài chính & kỹ thuật."""
+    return await logic.get_screener_data(db)
 
 
 # ── 1. Stock overview list (paginated, 30 records default) ─────────

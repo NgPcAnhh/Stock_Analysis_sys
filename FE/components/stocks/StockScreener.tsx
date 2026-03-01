@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import Link from "next/link";
 import {
-  STOCK_LIST_DATA,
   STOCK_SECTORS,
   STOCK_EXCHANGES,
   type StockListItem,
@@ -32,6 +31,46 @@ import {
   Activity, Trophy, ChevronLeft, ChevronsLeft, ChevronsRight,
   Star, Eye,
 } from "lucide-react";
+
+// ─── API config ──────────────────────────────────────────
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+function mapApiToStockItem(item: any): StockListItem {
+  return {
+    ticker: item.ticker ?? "",
+    companyName: item.companyName ?? "",
+    sector: item.sector ?? "Khác",
+    exchange: item.exchange ?? "HOSE",
+    currentPrice: item.currentPrice ?? 0,
+    priceChange: item.priceChange ?? 0,
+    priceChangePercent: item.priceChangePercent ?? 0,
+    volume: item.volume ?? 0,
+    avgVolume10d: item.avgVolume10d ?? 0,
+    marketCap: item.marketCap ?? 0,
+    pe: item.pe ?? null,
+    pb: item.pb ?? 0,
+    eps: item.eps ?? 0,
+    roe: item.roe ?? 0,
+    roa: item.roa ?? 0,
+    debtToEquity: item.debtToEquity ?? 0,
+    revenueGrowth: item.revenueGrowth ?? 0,
+    profitGrowth: item.profitGrowth ?? 0,
+    dividendYield: item.dividendYield ?? 0,
+    foreignOwnership: item.foreignOwnership ?? 0,
+    foreignNetBuy: item.foreignNetBuy ?? 0,
+    weekChange52: item.weekChange52 ?? 0,
+    high52w: item.high52w ?? 0,
+    low52w: item.low52w ?? 0,
+    beta: item.beta ?? 0,
+    rsi14: item.rsi14 ?? 50,
+    macdSignal: item.macdSignal ?? "Trung tính",
+    ma20Trend: item.ma20Trend ?? "Dưới MA20",
+    signal: item.signal ?? "Nắm giữ",
+    sparkline: item.sparkline ?? [],
+  };
+}
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 // ─── helpers ──────────────────────────────────────────
 const fmt = (n: number) => n.toLocaleString("vi-VN");
@@ -126,6 +165,9 @@ function countActiveFilters(f: ScreenerFilters): number {
 
 // ─── main component ──────────────────────────────────
 export default function StockScreener() {
+  const [allStocks, setAllStocks] = useState<StockListItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [filters, setFilters] = useState<ScreenerFilters>({ ...DEFAULT_FILTERS });
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("marketCap");
@@ -137,6 +179,47 @@ export default function StockScreener() {
   const [showFilters, setShowFilters] = useState(true);
   const [viewMode, setViewMode] = useState<"table" | "card">("table");
   const [watchlist, setWatchlist] = useState<Set<string>>(new Set());
+
+  // ─── Fetch screener data from API ──────────────────
+  useEffect(() => {
+    let cancelled = false;
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setFetchError(null);
+        const res = await fetch(`${API}/stock-list/screener`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        if (!cancelled) {
+          const mapped: StockListItem[] = (json.data || []).map(mapApiToStockItem);
+          setAllStocks(mapped);
+        }
+      } catch (err: unknown) {
+        if (!cancelled) {
+          const msg = err instanceof Error ? err.message : "Lỗi tải dữ liệu";
+          console.error("Screener fetch error:", err);
+          setFetchError(msg);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    fetchData();
+    return () => { cancelled = true; };
+  }, []);
+
+  // ─── Dynamic sector & exchange lists from data ─────
+  const dynamicSectors = useMemo(() => {
+    if (allStocks.length === 0) return STOCK_SECTORS;
+    const set = new Set(allStocks.map((s) => s.sector).filter(Boolean));
+    return [...set].sort();
+  }, [allStocks]);
+
+  const dynamicExchanges = useMemo(() => {
+    if (allStocks.length === 0) return STOCK_EXCHANGES;
+    const set = new Set(allStocks.map((s) => s.exchange).filter(Boolean));
+    return [...set].sort();
+  }, [allStocks]);
 
   // — toggle category
   const toggleCategory = useCallback((id: string) => {
@@ -219,7 +302,7 @@ export default function StockScreener() {
 
   // ─── FILTER LOGIC ──────────────────────────────────
   const filtered = useMemo(() => {
-    let list = [...STOCK_LIST_DATA];
+    let list = [...allStocks];
 
     // Search
     if (search) {
@@ -304,7 +387,7 @@ export default function StockScreener() {
                 Sàn giao dịch
               </label>
               <div className="flex flex-wrap gap-2">
-                {STOCK_EXCHANGES.map((ex) => (
+                {dynamicExchanges.map((ex) => (
                   <button
                     key={ex}
                     onClick={() => toggleArrayFilter("exchanges", ex)}
@@ -325,7 +408,7 @@ export default function StockScreener() {
                 Ngành
               </label>
               <div className="flex flex-wrap gap-1.5">
-                {STOCK_SECTORS.map((s) => (
+                {dynamicSectors.map((s) => (
                   <button
                     key={s}
                     onClick={() => toggleArrayFilter("sectors", s)}
@@ -656,7 +739,28 @@ export default function StockScreener() {
           </div>
 
           {/* ════ TABLE VIEW ════ */}
-          {viewMode === "table" ? (
+          {loading ? (
+            <Card className="shadow-sm border-gray-200">
+              <CardContent className="flex flex-col items-center justify-center py-20">
+                <div className="w-8 h-8 border-3 border-orange-500 border-t-transparent rounded-full animate-spin mb-4" />
+                <p className="text-sm text-gray-500 font-medium">Đang tải dữ liệu bộ lọc...</p>
+                <p className="text-xs text-gray-400 mt-1">Có thể mất vài giây</p>
+              </CardContent>
+            </Card>
+          ) : fetchError ? (
+            <Card className="shadow-sm border-gray-200">
+              <CardContent className="flex flex-col items-center justify-center py-20">
+                <p className="text-sm text-red-600 font-medium mb-2">Lỗi tải dữ liệu</p>
+                <p className="text-xs text-gray-500 mb-4">{fetchError}</p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="px-4 py-2 text-xs bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                >
+                  Thử lại
+                </button>
+              </CardContent>
+            </Card>
+          ) : viewMode === "table" ? (
             <Card className="shadow-sm border-gray-200">
               <CardContent className="p-0">
                 <div className="overflow-x-auto">

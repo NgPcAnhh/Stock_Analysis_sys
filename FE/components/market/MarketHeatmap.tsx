@@ -6,7 +6,7 @@ import * as echarts from "echarts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { RefreshCw, Loader2 } from "lucide-react";
+import { RefreshCw, Loader2, ZoomIn, ZoomOut, Home, ChevronRight } from "lucide-react";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -38,7 +38,9 @@ const MarketHeatmap = () => {
     const [data, setData] = useState<HeatmapSector[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [zoomedSector, setZoomedSector] = useState<string | null>(null);
     const fetchRef = useRef(0);
+    const chartRef = useRef<ReactECharts>(null);
 
     const fetchData = useCallback(async () => {
         const id = ++fetchRef.current;
@@ -59,6 +61,7 @@ const MarketHeatmap = () => {
 
     useEffect(() => {
         setLoading(true);
+        setZoomedSector(null);
         fetchData();
     }, [fetchData]);
 
@@ -66,6 +69,42 @@ const MarketHeatmap = () => {
         const interval = setInterval(fetchData, 120_000);
         return () => clearInterval(interval);
     }, [fetchData]);
+
+    // Keyboard: Escape to zoom out
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape" && zoomedSector) {
+                setZoomedSector(null);
+            }
+        };
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [zoomedSector]);
+
+    // Build treemap data based on zoom state
+    const chartData = useMemo(() => {
+        const mapStock = (stock: HeatmapStock) => ({
+            name: stock.name,
+            value: [stock.value, stock.pChange, stock.volume],
+            itemStyle: { color: getStockColor(stock.pChange) },
+        });
+
+        if (!zoomedSector) {
+            return data.map((sector) => ({
+                name: sector.name,
+                children: sector.children.map(mapStock),
+            }));
+        }
+
+        const sector = data.find((s) => s.name === zoomedSector);
+        if (!sector) return [];
+
+        // When zoomed: show the single sector so its stocks fill the whole area
+        return [{
+            name: sector.name,
+            children: sector.children.map(mapStock),
+        }];
+    }, [data, zoomedSector]);
 
     const option = useMemo(() => ({
         tooltip: {
@@ -95,6 +134,8 @@ const MarketHeatmap = () => {
                     </div>`;
             },
         },
+        animationDurationUpdate: 600,
+        animationEasingUpdate: "cubicInOut" as const,
         series: [
             {
                 name: "Market Heatmap",
@@ -102,6 +143,8 @@ const MarketHeatmap = () => {
                 roam: false,
                 nodeClick: false,
                 breadcrumb: { show: false },
+                animationDurationUpdate: 600,
+                animationEasing: "cubicInOut",
                 label: {
                     show: true,
                     formatter: (params: any) => {
@@ -110,23 +153,23 @@ const MarketHeatmap = () => {
                         return `${params.name}\n${change > 0 ? "+" : ""}${change}%`;
                     },
                     color: "#fff",
-                    fontSize: 13,
+                    fontSize: zoomedSector ? 14 : 13,
                     fontWeight: "bold",
                     textShadowColor: "rgba(0,0,0,0.4)",
                     textShadowBlur: 3,
                 },
                 upperLabel: {
                     show: true,
-                    height: 28,
+                    height: zoomedSector ? 32 : 28,
                     color: "#1a1a1a",
-                    fontSize: 13,
+                    fontSize: zoomedSector ? 15 : 13,
                     fontWeight: "bold",
                     borderColor: "transparent",
-                },                
+                },
                 itemStyle: {
                     borderColor: "rgba(255,255,255,0.6)",
                     borderWidth: 1.5,
-                    gapWidth: 2,
+                    gapWidth: zoomedSector ? 3 : 2,
                 },
                 levels: [
                     {
@@ -138,9 +181,9 @@ const MarketHeatmap = () => {
                         },
                         upperLabel: {
                             show: true,
-                            height: 30,
+                            height: zoomedSector ? 34 : 30,
                             padding: [4, 8],
-                            fontSize: 13,
+                            fontSize: zoomedSector ? 15 : 13,
                             fontWeight: "bold",
                             color: "#1a1a1a",
                             backgroundColor: "rgba(255,255,255,0.6)",
@@ -152,31 +195,60 @@ const MarketHeatmap = () => {
                         itemStyle: {
                             borderColor: "rgba(255,255,255,0.4)",
                             borderWidth: 1,
-                            gapWidth: 1,
+                            gapWidth: zoomedSector ? 2 : 1,
                         },
                         label: {
                             show: true,
+                            fontSize: zoomedSector ? 14 : undefined,
                         },
                     },
                 ],
-                data: data.map((sector) => ({
-                    name: sector.name,
-                    children: sector.children.map((stock) => ({
-                        name: stock.name,
-                        value: [stock.value, stock.pChange, stock.volume],
-                        itemStyle: {
-                            color: getStockColor(stock.pChange),
-                        },
-                    })),
-                })),
+                data: chartData,
             },
         ],
-    }), [data]);
+    }), [chartData, zoomedSector]);
+
+    // Click handler: detect sector click → zoom in
+    const onChartClick = useCallback((params: any) => {
+        if (!params.treePathInfo || params.treePathInfo.length < 2) return;
+
+        // treePathInfo[0] = root, [1] = sector, [2] = stock
+        const sectorName = params.treePathInfo[1]?.name;
+        if (!sectorName) return;
+
+        if (!zoomedSector) {
+            // Currently showing all sectors → zoom into the clicked sector
+            setZoomedSector(sectorName);
+        }
+        // When already zoomed, clicking a stock does nothing (tooltip still works)
+    }, [zoomedSector]);
+
+    const onChartEvents = useMemo(() => ({
+        click: onChartClick,
+    }), [onChartClick]);
+
+    const handleZoomOut = useCallback(() => {
+        setZoomedSector(null);
+    }, []);
 
     const allStocks = data.flatMap((s) => s.children);
     const up = allStocks.filter((s) => s.pChange > 0).length;
     const down = allStocks.filter((s) => s.pChange < 0).length;
     const unchanged = allStocks.filter((s) => s.pChange === 0).length;
+
+    // Stats for zoomed sector
+    const zoomedStats = useMemo(() => {
+        if (!zoomedSector) return null;
+        const sector = data.find((s) => s.name === zoomedSector);
+        if (!sector) return null;
+        const stocks = sector.children;
+        return {
+            total: stocks.length,
+            up: stocks.filter((s) => s.pChange > 0).length,
+            down: stocks.filter((s) => s.pChange < 0).length,
+            unchanged: stocks.filter((s) => s.pChange === 0).length,
+        };
+    }, [data, zoomedSector]);
 
     return (
         <Card className="shadow-sm border-gray-200">
@@ -189,15 +261,15 @@ const MarketHeatmap = () => {
                         <div className="flex items-center gap-3 text-xs">
                             <span className="flex items-center gap-1">
                                 <span className="w-2.5 h-2.5 rounded-sm bg-green-500" />
-                                Tăng: <b className="text-green-600">{up}</b>
+                                Tăng: <b className="text-green-600">{zoomedStats ? zoomedStats.up : up}</b>
                             </span>
                             <span className="flex items-center gap-1">
                                 <span className="w-2.5 h-2.5 rounded-sm bg-red-500" />
-                                Giảm: <b className="text-red-600">{down}</b>
+                                Giảm: <b className="text-red-600">{zoomedStats ? zoomedStats.down : down}</b>
                             </span>
                             <span className="flex items-center gap-1">
                                 <span className="w-2.5 h-2.5 rounded-sm bg-yellow-500" />
-                                TC: <b className="text-yellow-600">{unchanged}</b>
+                                TC: <b className="text-yellow-600">{zoomedStats ? zoomedStats.unchanged : unchanged}</b>
                             </span>
                             <button
                                 onClick={fetchData}
@@ -229,6 +301,43 @@ const MarketHeatmap = () => {
                     <span className="px-2 py-0.5 rounded text-white font-semibold" style={{ background: "#16a34a" }}>Tăng mạnh</span>
                     <span className="px-2 py-0.5 rounded text-white font-semibold" style={{ background: "#c026d3" }}>Trần</span>
                 </div>
+
+                {/* Breadcrumb navigation when zoomed */}
+                {zoomedSector && !loading && (
+                    <div className="flex items-center gap-1.5 mb-2 px-1 animate-in fade-in slide-in-from-left-2 duration-300">
+                        <button
+                            onClick={handleZoomOut}
+                            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-orange-50 hover:text-orange-600 rounded-md transition-colors border border-gray-200 hover:border-orange-300"
+                            title="Quay lại tổng quan (Esc)"
+                        >
+                            <ZoomOut className="h-3 w-3" />
+                            Thu nhỏ
+                        </button>
+                        <div className="flex items-center gap-1 text-xs text-gray-500">
+                            <button
+                                onClick={handleZoomOut}
+                                className="hover:text-orange-600 transition-colors flex items-center gap-1"
+                            >
+                                <Home className="h-3 w-3" />
+                                Tất cả ngành
+                            </button>
+                            <ChevronRight className="h-3 w-3 text-gray-400" />
+                            <span className="font-semibold text-orange-600">{zoomedSector}</span>
+                            {zoomedStats && (
+                                <span className="text-gray-400 ml-1">({zoomedStats.total} mã)</span>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {/* Zoom hint when not zoomed */}
+                {!zoomedSector && !loading && !error && (
+                    <div className="flex items-center justify-center gap-1 mb-1 text-[10px] text-gray-400">
+                        <ZoomIn className="h-3 w-3" />
+                        <span>Click vào nhóm ngành để phóng to</span>
+                    </div>
+                )}
+
                 {loading ? (
                     <div className="h-[520px] w-full rounded-lg relative overflow-hidden">
                         <Skeleton className="h-full w-full" />
@@ -243,7 +352,15 @@ const MarketHeatmap = () => {
                         <button onClick={fetchData} className="text-xs text-blue-500 hover:underline">Thử lại</button>
                     </div>
                 ) : (
-                    <ReactECharts option={option} style={{ height: "520px", width: "100%" }} notMerge />
+                    <div className={zoomedSector ? "cursor-default" : "cursor-pointer"}>
+                        <ReactECharts
+                            ref={chartRef}
+                            option={option}
+                            style={{ height: "520px", width: "100%" }}
+                            notMerge
+                            onEvents={onChartEvents}
+                        />
+                    </div>
                 )}
             </CardContent>
         </Card>
