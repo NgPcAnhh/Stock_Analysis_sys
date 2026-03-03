@@ -13,6 +13,8 @@ export interface OHLCVItem {
 export interface IndicatorData {
   sma20: (number | null)[];
   sma50: (number | null)[];
+  sma100: (number | null)[];
+  sma200: (number | null)[];
   ema12: (number | null)[];
   ema26: (number | null)[];
   bollingerUpper: (number | null)[];
@@ -29,6 +31,7 @@ export interface IndicatorData {
   williamsR: (number | null)[];
   cci: (number | null)[];
   adx: (number | null)[];
+  vwap: (number | null)[];
   ichimokuTenkan: (number | null)[];
   ichimokuKijun: (number | null)[];
   ichimokuSenkouA: (number | null)[];
@@ -44,6 +47,8 @@ export interface TechnicalSignal {
 
 export interface AnalysisSummaryData {
   overallSignal: 'Mua mạnh' | 'Mua' | 'Trung lập' | 'Bán' | 'Bán mạnh';
+  /** Weighted score from -100 (Bán mạnh) to +100 (Mua mạnh) */
+  scorePercent: number;
   buyCount: number;
   sellCount: number;
   neutralCount: number;
@@ -109,33 +114,31 @@ function calculateEMA(data: number[], period: number): (number | null)[] {
 
 function calculateRSI(data: number[], period: number = 14): (number | null)[] {
   const result: (number | null)[] = [];
-  const gains: number[] = [];
-  const losses: number[] = [];
+  let avgGain = 0;
+  let avgLoss = 0;
 
   for (let i = 0; i < data.length; i++) {
     if (i === 0) {
       result.push(null);
       continue;
     }
+
     const change = data[i] - data[i - 1];
-    gains.push(change > 0 ? change : 0);
-    losses.push(change < 0 ? -change : 0);
+    const gain = change > 0 ? change : 0;
+    const loss = change < 0 ? -change : 0;
 
     if (i < period) {
+      avgGain += gain;
+      avgLoss += loss;
       result.push(null);
     } else if (i === period) {
-      const avgGain = gains.slice(0, period).reduce((a, b) => a + b, 0) / period;
-      const avgLoss = losses.slice(0, period).reduce((a, b) => a + b, 0) / period;
+      avgGain = (avgGain + gain) / period;
+      avgLoss = (avgLoss + loss) / period;
       const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
       result.push(Math.round((100 - 100 / (1 + rs)) * 100) / 100);
     } else {
-      const prevRSI = result[i - 1]!;
-      const prevAvgGain = (100 / (100 - prevRSI) - 1) > 0
-        ? gains[gains.length - 2] : 0;
-      const currentGain = gains[gains.length - 1];
-      const currentLoss = losses[losses.length - 1];
-      const avgGain = (prevAvgGain * (period - 1) + currentGain) / period;
-      const avgLoss = ((prevAvgGain > 0 ? prevAvgGain : losses.slice(-period - 1, -1).reduce((a, b) => a + b, 0) / period) * (period - 1) + currentLoss) / period;
+      avgGain = (avgGain * (period - 1) + gain) / period;
+      avgLoss = (avgLoss * (period - 1) + loss) / period;
       const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
       result.push(Math.round((100 - 100 / (1 + rs)) * 100) / 100);
     }
@@ -291,7 +294,7 @@ function generateOHLCV(ticker: string, days: number = 365): OHLCVItem[] {
 
 // ===== Calculate All Indicators =====
 
-function calculateIndicators(ohlcv: OHLCVItem[]): IndicatorData {
+export function calculateIndicators(ohlcv: OHLCVItem[]): IndicatorData {
   const closes = ohlcv.map((d) => d.close);
   const highs = ohlcv.map((d) => d.high);
   const lows = ohlcv.map((d) => d.low);
@@ -299,12 +302,25 @@ function calculateIndicators(ohlcv: OHLCVItem[]): IndicatorData {
 
   const sma20 = calculateSMA(closes, 20);
   const sma50 = calculateSMA(closes, 50);
+  const sma100 = calculateSMA(closes, 100);
+  const sma200 = calculateSMA(closes, 200);
   const ema12 = calculateEMA(closes, 12);
   const ema26 = calculateEMA(closes, 26);
   const bollinger = calculateBollingerBands(closes, 20, 2);
   const rsi = calculateRSI(closes, 14);
   const macd = calculateMACD(closes);
   const stoch = calculateStochastic(highs, lows, closes, 14, 3);
+
+  // VWAP — cumulative (typical price × volume) / cumulative volume
+  const vwap: (number | null)[] = [];
+  let cumTPV = 0;
+  let cumVol = 0;
+  for (let i = 0; i < ohlcv.length; i++) {
+    const tp = (highs[i] + lows[i] + closes[i]) / 3;
+    cumTPV += tp * volumes[i];
+    cumVol += volumes[i];
+    vwap.push(cumVol === 0 ? null : Math.round((cumTPV / cumVol) * 100) / 100);
+  }
 
   // ATR (simplified)
   const atr: (number | null)[] = [];
@@ -364,27 +380,68 @@ function calculateIndicators(ohlcv: OHLCVItem[]): IndicatorData {
     }
   }
 
-  // ADX (simplified)
+  // ADX (Wilder's smoothing, period=14)
+  const adxPeriod = 14;
   const adx: (number | null)[] = [];
+  const plusDMs: number[] = [0];
+  const minusDMs: number[] = [0];
+  const trVals: number[] = [ohlcv[0] ? ohlcv[0].high - ohlcv[0].low : 0];
+
+  for (let i = 1; i < ohlcv.length; i++) {
+    const upMove = ohlcv[i].high - ohlcv[i - 1].high;
+    const downMove = ohlcv[i - 1].low - ohlcv[i].low;
+    plusDMs.push(upMove > downMove && upMove > 0 ? upMove : 0);
+    minusDMs.push(downMove > upMove && downMove > 0 ? downMove : 0);
+    trVals.push(
+      Math.max(
+        ohlcv[i].high - ohlcv[i].low,
+        Math.abs(ohlcv[i].high - ohlcv[i - 1].close),
+        Math.abs(ohlcv[i].low - ohlcv[i - 1].close)
+      )
+    );
+  }
+
+  let smPlusDM = 0,
+    smMinusDM = 0,
+    smTR = 0;
+  const dxArr: number[] = [];
+  let prevADX = 0;
+
   for (let i = 0; i < ohlcv.length; i++) {
-    if (i < 28) {
+    if (i < adxPeriod) {
+      smPlusDM += plusDMs[i];
+      smMinusDM += minusDMs[i];
+      smTR += trVals[i];
+      adx.push(null);
+    } else if (i === adxPeriod) {
+      smPlusDM += plusDMs[i];
+      smMinusDM += minusDMs[i];
+      smTR += trVals[i];
+      // First smoothed values = sum of first (period+1)
+      // Then Wilder smooth from next bar onwards
+      const diP = smTR === 0 ? 0 : (smPlusDM / smTR) * 100;
+      const diM = smTR === 0 ? 0 : (smMinusDM / smTR) * 100;
+      const diSum = diP + diM;
+      dxArr.push(diSum === 0 ? 0 : (Math.abs(diP - diM) / diSum) * 100);
       adx.push(null);
     } else {
-      // Simplified ADX calculation
-      const slice = ohlcv.slice(i - 27, i + 1);
-      let sumDX = 0;
-      for (let j = 1; j < slice.length; j++) {
-        const plusDM = slice[j].high - slice[j - 1].high;
-        const minusDM = slice[j - 1].low - slice[j].low;
-        const tr = Math.max(
-          slice[j].high - slice[j].low,
-          Math.abs(slice[j].high - slice[j - 1].close),
-          Math.abs(slice[j].low - slice[j - 1].close)
-        );
-        const di = tr === 0 ? 0 : Math.abs(plusDM - minusDM) / tr * 100;
-        sumDX += di;
+      smPlusDM = smPlusDM - smPlusDM / adxPeriod + plusDMs[i];
+      smMinusDM = smMinusDM - smMinusDM / adxPeriod + minusDMs[i];
+      smTR = smTR - smTR / adxPeriod + trVals[i];
+      const diP = smTR === 0 ? 0 : (smPlusDM / smTR) * 100;
+      const diM = smTR === 0 ? 0 : (smMinusDM / smTR) * 100;
+      const diSum = diP + diM;
+      dxArr.push(diSum === 0 ? 0 : (Math.abs(diP - diM) / diSum) * 100);
+
+      if (dxArr.length < adxPeriod) {
+        adx.push(null);
+      } else if (dxArr.length === adxPeriod) {
+        prevADX = dxArr.reduce((s, v) => s + v, 0) / adxPeriod;
+        adx.push(Math.round(prevADX * 100) / 100);
+      } else {
+        prevADX = (prevADX * (adxPeriod - 1) + dxArr[dxArr.length - 1]) / adxPeriod;
+        adx.push(Math.round(prevADX * 100) / 100);
       }
-      adx.push(Math.round((sumDX / 27) * 100) / 100);
     }
   }
 
@@ -426,6 +483,8 @@ function calculateIndicators(ohlcv: OHLCVItem[]): IndicatorData {
   return {
     sma20,
     sma50,
+    sma100,
+    sma200,
     ema12,
     ema26,
     bollingerUpper: bollinger.upper,
@@ -442,6 +501,7 @@ function calculateIndicators(ohlcv: OHLCVItem[]): IndicatorData {
     williamsR,
     cci,
     adx,
+    vwap,
     ichimokuTenkan,
     ichimokuKijun,
     ichimokuSenkouA,
@@ -451,13 +511,21 @@ function calculateIndicators(ohlcv: OHLCVItem[]): IndicatorData {
 
 // ===== Generate Signals =====
 
-function generateSignals(ohlcv: OHLCVItem[], indicators: IndicatorData): TechnicalSignal[] {
+/** Helper: safe value at index, or null */
+function _v(arr: (number | null)[], idx: number): number | null {
+  return idx >= 0 && idx < arr.length ? arr[idx] : null;
+}
+
+export function generateSignals(ohlcv: OHLCVItem[], indicators: IndicatorData): TechnicalSignal[] {
   const lastIdx = ohlcv.length - 1;
   const price = ohlcv[lastIdx].close;
+  const prevPrice = lastIdx > 0 ? ohlcv[lastIdx - 1].close : price;
   const signals: TechnicalSignal[] = [];
 
-  // SMA signals
-  const sma20Val = indicators.sma20[lastIdx];
+  // ----- MOVING AVERAGE SIGNALS -----
+
+  // SMA 20 — short-term trend
+  const sma20Val = _v(indicators.sma20, lastIdx);
   if (sma20Val !== null) {
     signals.push({
       indicator: 'SMA (20)',
@@ -467,7 +535,8 @@ function generateSignals(ohlcv: OHLCVItem[], indicators: IndicatorData): Technic
     });
   }
 
-  const sma50Val = indicators.sma50[lastIdx];
+  // SMA 50 — medium-term trend
+  const sma50Val = _v(indicators.sma50, lastIdx);
   if (sma50Val !== null) {
     signals.push({
       indicator: 'SMA (50)',
@@ -477,29 +546,140 @@ function generateSignals(ohlcv: OHLCVItem[], indicators: IndicatorData): Technic
     });
   }
 
-  // EMA signals
-  const ema12Val = indicators.ema12[lastIdx];
+  // SMA 100 — intermediate trend
+  const sma100Val = _v(indicators.sma100, lastIdx);
+  if (sma100Val !== null) {
+    signals.push({
+      indicator: 'SMA (100)',
+      value: sma100Val.toLocaleString(),
+      signal: price > sma100Val ? 'Mua' : 'Bán',
+      strength: Math.abs(price - sma100Val) / price > 0.08 ? 'Mạnh' : 'Trung bình',
+    });
+  }
+
+  // SMA 200 — long-term trend
+  const sma200Val = _v(indicators.sma200, lastIdx);
+  if (sma200Val !== null) {
+    signals.push({
+      indicator: 'SMA (200)',
+      value: sma200Val.toLocaleString(),
+      signal: price > sma200Val ? 'Mua' : 'Bán',
+      strength: Math.abs(price - sma200Val) / price > 0.10 ? 'Mạnh' : 'Trung bình',
+    });
+  }
+
+  // Golden Cross / Death Cross (SMA 50 vs SMA 200)
+  const sma50Prev = _v(indicators.sma50, lastIdx - 1);
+  const sma200Prev = _v(indicators.sma200, lastIdx - 1);
+  if (sma50Val !== null && sma200Val !== null && sma50Prev !== null && sma200Prev !== null) {
+    const crossUp = sma50Prev <= sma200Prev && sma50Val > sma200Val;
+    const crossDown = sma50Prev >= sma200Prev && sma50Val < sma200Val;
+    if (crossUp) {
+      signals.push({
+        indicator: 'Golden Cross (50/200)',
+        value: `${sma50Val.toLocaleString()} > ${sma200Val.toLocaleString()}`,
+        signal: 'Mua',
+        strength: 'Mạnh',
+      });
+    } else if (crossDown) {
+      signals.push({
+        indicator: 'Death Cross (50/200)',
+        value: `${sma50Val.toLocaleString()} < ${sma200Val.toLocaleString()}`,
+        signal: 'Bán',
+        strength: 'Mạnh',
+      });
+    } else {
+      signals.push({
+        indicator: 'SMA Cross (50/200)',
+        value: sma50Val > sma200Val ? 'SMA50 > SMA200' : 'SMA50 < SMA200',
+        signal: sma50Val > sma200Val ? 'Mua' : 'Bán',
+        strength: 'Trung bình',
+      });
+    }
+  }
+
+  // EMA 12
+  const ema12Val = _v(indicators.ema12, lastIdx);
   if (ema12Val !== null) {
     signals.push({
       indicator: 'EMA (12)',
       value: ema12Val.toLocaleString(),
       signal: price > ema12Val ? 'Mua' : 'Bán',
-      strength: 'Trung bình',
+      strength: Math.abs(price - ema12Val) / price > 0.02 ? 'Mạnh' : 'Trung bình',
     });
   }
 
-  const ema26Val = indicators.ema26[lastIdx];
+  // EMA 26
+  const ema26Val = _v(indicators.ema26, lastIdx);
   if (ema26Val !== null) {
     signals.push({
       indicator: 'EMA (26)',
       value: ema26Val.toLocaleString(),
       signal: price > ema26Val ? 'Mua' : 'Bán',
-      strength: 'Trung bình',
+      strength: Math.abs(price - ema26Val) / price > 0.03 ? 'Mạnh' : 'Trung bình',
     });
   }
 
-  // RSI signal
-  const rsiVal = indicators.rsi[lastIdx];
+  // EMA Crossover (12 vs 26)
+  const ema12Prev = _v(indicators.ema12, lastIdx - 1);
+  const ema26Prev = _v(indicators.ema26, lastIdx - 1);
+  if (ema12Val !== null && ema26Val !== null && ema12Prev !== null && ema26Prev !== null) {
+    const bullishCross = ema12Prev <= ema26Prev && ema12Val > ema26Val;
+    const bearishCross = ema12Prev >= ema26Prev && ema12Val < ema26Val;
+    if (bullishCross || bearishCross) {
+      signals.push({
+        indicator: 'EMA Cross (12/26)',
+        value: bullishCross ? 'EMA12 cắt lên EMA26' : 'EMA12 cắt xuống EMA26',
+        signal: bullishCross ? 'Mua' : 'Bán',
+        strength: 'Mạnh',
+      });
+    }
+  }
+
+  // VWAP — Volume Weighted Average Price
+  const vwapVal = _v(indicators.vwap, lastIdx);
+  if (vwapVal !== null) {
+    const deviation = (price - vwapVal) / vwapVal;
+    signals.push({
+      indicator: 'VWAP',
+      value: vwapVal.toLocaleString(),
+      signal: price > vwapVal ? 'Mua' : price < vwapVal ? 'Bán' : 'Trung lập',
+      strength: Math.abs(deviation) > 0.05 ? 'Mạnh' : 'Trung bình',
+    });
+  }
+
+  // Ichimoku Cloud signal
+  const tenkan = _v(indicators.ichimokuTenkan, lastIdx);
+  const kijun = _v(indicators.ichimokuKijun, lastIdx);
+  const senkouA = _v(indicators.ichimokuSenkouA, lastIdx);
+  const senkouB = _v(indicators.ichimokuSenkouB, lastIdx);
+  if (tenkan !== null && kijun !== null && senkouA !== null && senkouB !== null) {
+    const cloudTop = Math.max(senkouA, senkouB);
+    const cloudBottom = Math.min(senkouA, senkouB);
+    let ichSignal: 'Mua' | 'Bán' | 'Trung lập' = 'Trung lập';
+    let ichStrength: 'Mạnh' | 'Trung bình' | 'Yếu' = 'Yếu';
+    if (price > cloudTop && tenkan > kijun) {
+      ichSignal = 'Mua';
+      ichStrength = price > cloudTop * 1.02 ? 'Mạnh' : 'Trung bình';
+    } else if (price < cloudBottom && tenkan < kijun) {
+      ichSignal = 'Bán';
+      ichStrength = price < cloudBottom * 0.98 ? 'Mạnh' : 'Trung bình';
+    } else if (price > cloudTop || price < cloudBottom) {
+      ichSignal = price > cloudTop ? 'Mua' : 'Bán';
+      ichStrength = 'Yếu';
+    }
+    signals.push({
+      indicator: 'Ichimoku Cloud',
+      value: `${cloudBottom.toLocaleString()} - ${cloudTop.toLocaleString()}`,
+      signal: ichSignal,
+      strength: ichStrength,
+    });
+  }
+
+  // ----- TECHNICAL INDICATOR SIGNALS -----
+
+  // RSI
+  const rsiVal = _v(indicators.rsi, lastIdx);
   if (rsiVal !== null) {
     signals.push({
       indicator: 'RSI (14)',
@@ -509,43 +689,139 @@ function generateSignals(ohlcv: OHLCVItem[], indicators: IndicatorData): Technic
     });
   }
 
-  // MACD signal
-  const macdVal = indicators.macdLine[lastIdx];
-  const macdSig = indicators.macdSignal[lastIdx];
+  // RSI Divergence — price makes new low but RSI makes higher low (bullish) or vice versa
+  if (rsiVal !== null && lastIdx >= 20) {
+    const lookback = Math.min(20, lastIdx);
+    const recentPrices = ohlcv.slice(lastIdx - lookback, lastIdx + 1).map(d => d.close);
+    const recentRSI = indicators.rsi.slice(lastIdx - lookback, lastIdx + 1).filter(v => v !== null) as number[];
+    if (recentRSI.length >= 10) {
+      const priceMin = Math.min(...recentPrices);
+      const rsiMin = Math.min(...recentRSI);
+      const priceMax = Math.max(...recentPrices);
+      const rsiMax = Math.max(...recentRSI);
+      // Bullish divergence: price near recent low but RSI higher than its recent low
+      if (price <= priceMin * 1.01 && rsiVal > rsiMin * 1.05 && rsiVal < 40) {
+        signals.push({
+          indicator: 'RSI Phân kỳ tăng',
+          value: `RSI ${rsiVal.toFixed(1)} (đáy RSI trước: ${rsiMin.toFixed(1)})`,
+          signal: 'Mua',
+          strength: 'Mạnh',
+        });
+      }
+      // Bearish divergence: price near recent high but RSI lower than its recent high
+      if (price >= priceMax * 0.99 && rsiVal < rsiMax * 0.95 && rsiVal > 60) {
+        signals.push({
+          indicator: 'RSI Phân kỳ giảm',
+          value: `RSI ${rsiVal.toFixed(1)} (đỉnh RSI trước: ${rsiMax.toFixed(1)})`,
+          signal: 'Bán',
+          strength: 'Mạnh',
+        });
+      }
+    }
+  }
+
+  // MACD
+  const macdVal = _v(indicators.macdLine, lastIdx);
+  const macdSig = _v(indicators.macdSignal, lastIdx);
   if (macdVal !== null && macdSig !== null) {
     signals.push({
       indicator: 'MACD (12,26,9)',
       value: macdVal.toFixed(2),
       signal: macdVal > macdSig ? 'Mua' : 'Bán',
-      strength: Math.abs(macdVal - macdSig) > 500 ? 'Mạnh' : 'Trung bình',
+      strength: Math.abs(macdVal - macdSig) / price > 0.005 ? 'Mạnh' : 'Trung bình',
     });
   }
 
-  // Stochastic signal
-  const stochKVal = indicators.stochK[lastIdx];
+  // MACD Histogram trend — 3 consecutive increasing/decreasing histogram bars
+  if (lastIdx >= 3) {
+    const h0 = _v(indicators.macdHistogram, lastIdx);
+    const h1 = _v(indicators.macdHistogram, lastIdx - 1);
+    const h2 = _v(indicators.macdHistogram, lastIdx - 2);
+    if (h0 !== null && h1 !== null && h2 !== null) {
+      if (h0 > h1 && h1 > h2) {
+        signals.push({
+          indicator: 'MACD Histogram xu hướng',
+          value: `${h0.toFixed(0)} (tăng 3 phiên)`,
+          signal: 'Mua',
+          strength: h0 > 0 ? 'Mạnh' : 'Trung bình',
+        });
+      } else if (h0 < h1 && h1 < h2) {
+        signals.push({
+          indicator: 'MACD Histogram xu hướng',
+          value: `${h0.toFixed(0)} (giảm 3 phiên)`,
+          signal: 'Bán',
+          strength: h0 < 0 ? 'Mạnh' : 'Trung bình',
+        });
+      }
+    }
+  }
+
+  // Stochastic
+  const stochKVal = _v(indicators.stochK, lastIdx);
+  const stochDVal = _v(indicators.stochD, lastIdx);
   if (stochKVal !== null) {
+    let stochSignal: 'Mua' | 'Bán' | 'Trung lập' = 'Trung lập';
+    let stochStrength: 'Mạnh' | 'Trung bình' | 'Yếu' = 'Trung bình';
+    // Classic overbought/oversold + K/D crossover
+    if (stochKVal < 20) {
+      stochSignal = 'Mua';
+      stochStrength = stochKVal < 10 ? 'Mạnh' : 'Trung bình';
+      // Confirm with K crossing above D
+      if (stochDVal !== null && stochKVal > stochDVal) stochStrength = 'Mạnh';
+    } else if (stochKVal > 80) {
+      stochSignal = 'Bán';
+      stochStrength = stochKVal > 90 ? 'Mạnh' : 'Trung bình';
+      if (stochDVal !== null && stochKVal < stochDVal) stochStrength = 'Mạnh';
+    }
     signals.push({
       indicator: 'Stochastic (14,3)',
       value: stochKVal.toFixed(2),
-      signal: stochKVal < 20 ? 'Mua' : stochKVal > 80 ? 'Bán' : 'Trung lập',
-      strength: stochKVal < 10 || stochKVal > 90 ? 'Mạnh' : 'Trung bình',
+      signal: stochSignal,
+      strength: stochStrength,
     });
   }
 
-  // Bollinger signal
-  const bbUpper = indicators.bollingerUpper[lastIdx];
-  const bbLower = indicators.bollingerLower[lastIdx];
-  if (bbUpper !== null && bbLower !== null) {
+  // Bollinger Bands — price position within bands + squeeze detection
+  const bbUpper = _v(indicators.bollingerUpper, lastIdx);
+  const bbLower = _v(indicators.bollingerLower, lastIdx);
+  const bbMiddle = _v(indicators.bollingerMiddle, lastIdx);
+  if (bbUpper !== null && bbLower !== null && bbMiddle !== null) {
+    const bandWidth = (bbUpper - bbLower) / bbMiddle;
+    let bbSignal: 'Mua' | 'Bán' | 'Trung lập' = 'Trung lập';
+    let bbStrength: 'Mạnh' | 'Trung bình' | 'Yếu' = 'Trung bình';
+    if (price <= bbLower) {
+      bbSignal = 'Mua';
+      bbStrength = 'Mạnh';
+    } else if (price >= bbUpper) {
+      bbSignal = 'Bán';
+      bbStrength = 'Mạnh';
+    } else if (price < bbMiddle) {
+      bbSignal = 'Mua';
+      bbStrength = 'Yếu';
+    } else {
+      bbSignal = 'Bán';
+      bbStrength = 'Yếu';
+    }
     signals.push({
       indicator: 'Bollinger Bands (20,2)',
       value: `${bbLower.toLocaleString()} - ${bbUpper.toLocaleString()}`,
-      signal: price < bbLower ? 'Mua' : price > bbUpper ? 'Bán' : 'Trung lập',
-      strength: 'Trung bình',
+      signal: bbSignal,
+      strength: bbStrength,
     });
+
+    // Bollinger Squeeze — narrow bands indicate upcoming breakout
+    if (bandWidth < 0.04) {
+      signals.push({
+        indicator: 'BB Squeeze (siết dải)',
+        value: `BW ${(bandWidth * 100).toFixed(1)}%`,
+        signal: price > bbMiddle ? 'Mua' : 'Bán',
+        strength: 'Trung bình',
+      });
+    }
   }
 
   // Williams %R
-  const wrVal = indicators.williamsR[lastIdx];
+  const wrVal = _v(indicators.williamsR, lastIdx);
   if (wrVal !== null) {
     signals.push({
       indicator: 'Williams %R (14)',
@@ -556,7 +832,7 @@ function generateSignals(ohlcv: OHLCVItem[], indicators: IndicatorData): Technic
   }
 
   // CCI
-  const cciVal = indicators.cci[lastIdx];
+  const cciVal = _v(indicators.cci, lastIdx);
   if (cciVal !== null) {
     signals.push({
       indicator: 'CCI (20)',
@@ -566,15 +842,80 @@ function generateSignals(ohlcv: OHLCVItem[], indicators: IndicatorData): Technic
     });
   }
 
-  // ADX
-  const adxVal = indicators.adx[lastIdx];
+  // ADX — trend strength (not direction; direction from DI+/DI-)
+  const adxVal = _v(indicators.adx, lastIdx);
   if (adxVal !== null) {
     signals.push({
       indicator: 'ADX (14)',
       value: adxVal.toFixed(2),
-      signal: adxVal > 25 ? (price > (indicators.sma20[lastIdx] ?? price) ? 'Mua' : 'Bán') : 'Trung lập',
+      signal: adxVal > 25
+        ? (price > (sma20Val ?? price) ? 'Mua' : 'Bán')
+        : 'Trung lập',
       strength: adxVal > 50 ? 'Mạnh' : adxVal > 25 ? 'Trung bình' : 'Yếu',
     });
+  }
+
+  // ATR — volatility context (informational)
+  const atrVal = _v(indicators.atr, lastIdx);
+  if (atrVal !== null) {
+    const atrPct = (atrVal / price) * 100;
+    signals.push({
+      indicator: 'ATR (14)',
+      value: `${atrVal.toLocaleString()} (${atrPct.toFixed(1)}%)`,
+      signal: 'Trung lập',
+      strength: atrPct > 3 ? 'Mạnh' : atrPct > 1.5 ? 'Trung bình' : 'Yếu',
+    });
+  }
+
+  // Volume analysis — current volume vs 20-day average
+  if (ohlcv.length >= 21) {
+    const vol20 = ohlcv.slice(-21, -1).reduce((s, d) => s + d.volume, 0) / 20;
+    const curVol = ohlcv[lastIdx].volume;
+    const volRatio = curVol / vol20;
+    const priceUp = price > prevPrice;
+    if (volRatio > 1.5) {
+      // High volume + price direction = strong signal
+      signals.push({
+        indicator: 'Khối lượng đột biến',
+        value: `${(volRatio * 100).toFixed(0)}% so với TB20`,
+        signal: priceUp ? 'Mua' : 'Bán',
+        strength: volRatio > 2 ? 'Mạnh' : 'Trung bình',
+      });
+    } else if (volRatio < 0.5) {
+      signals.push({
+        indicator: 'Khối lượng thấp',
+        value: `${(volRatio * 100).toFixed(0)}% so với TB20`,
+        signal: 'Trung lập',
+        strength: 'Yếu',
+      });
+    }
+  }
+
+  // OBV trend — compare OBV direction with price direction (5-day lookback)
+  if (lastIdx >= 5) {
+    const obv0 = _v(indicators.obv, lastIdx);
+    const obv5 = _v(indicators.obv, lastIdx - 5);
+    if (obv0 !== null && obv5 !== null) {
+      const obvUp = obv0 > obv5;
+      const priceUp5 = price > ohlcv[lastIdx - 5].close;
+      // Divergence: OBV up but price down = accumulation (bullish)
+      // OBV down but price up = distribution (bearish)
+      if (obvUp && !priceUp5) {
+        signals.push({
+          indicator: 'OBV Phân kỳ (tích lũy)',
+          value: `OBV tăng, giá giảm`,
+          signal: 'Mua',
+          strength: 'Trung bình',
+        });
+      } else if (!obvUp && priceUp5) {
+        signals.push({
+          indicator: 'OBV Phân kỳ (phân phối)',
+          value: `OBV giảm, giá tăng`,
+          signal: 'Bán',
+          strength: 'Trung bình',
+        });
+      }
+    }
   }
 
   return signals;
@@ -582,17 +923,37 @@ function generateSignals(ohlcv: OHLCVItem[], indicators: IndicatorData): Technic
 
 // ===== Generate Summary =====
 
-function generateSummary(signals: TechnicalSignal[], ohlcv: OHLCVItem[]): AnalysisSummaryData {
+/** Weighted scoring for overall signal */
+function _strengthWeight(s: 'Mạnh' | 'Trung bình' | 'Yếu'): number {
+  if (s === 'Mạnh') return 3;
+  if (s === 'Trung bình') return 2;
+  return 1; // Yếu
+}
+
+export function generateSummary(signals: TechnicalSignal[], ohlcv: OHLCVItem[]): AnalysisSummaryData {
   const buyCount = signals.filter((s) => s.signal === 'Mua').length;
   const sellCount = signals.filter((s) => s.signal === 'Bán').length;
   const neutralCount = signals.filter((s) => s.signal === 'Trung lập').length;
 
+  // Weighted score: Mua → +weight, Bán → −weight, Trung lập → 0
+  let totalScore = 0;
+  let maxScore = 0;
+  for (const sig of signals) {
+    const w = _strengthWeight(sig.strength);
+    maxScore += w;
+    if (sig.signal === 'Mua') totalScore += w;
+    else if (sig.signal === 'Bán') totalScore -= w;
+    // Trung lập contributes 0 to score but still adds to maxScore
+  }
+
+  // Normalize to [-100, +100] range
+  const pct = maxScore > 0 ? (totalScore / maxScore) * 100 : 0;
+
   let overallSignal: AnalysisSummaryData['overallSignal'];
-  const diff = buyCount - sellCount;
-  if (diff >= 5) overallSignal = 'Mua mạnh';
-  else if (diff >= 2) overallSignal = 'Mua';
-  else if (diff <= -5) overallSignal = 'Bán mạnh';
-  else if (diff <= -2) overallSignal = 'Bán';
+  if (pct >= 40) overallSignal = 'Mua mạnh';
+  else if (pct >= 15) overallSignal = 'Mua';
+  else if (pct <= -40) overallSignal = 'Bán mạnh';
+  else if (pct <= -15) overallSignal = 'Bán';
   else overallSignal = 'Trung lập';
 
   const lastItem = ohlcv[ohlcv.length - 1];
@@ -606,15 +967,20 @@ function generateSummary(signals: TechnicalSignal[], ohlcv: OHLCVItem[]): Analys
 
   return {
     overallSignal,
+    scorePercent: Math.round(pct * 10) / 10,
     buyCount,
     sellCount,
     neutralCount,
-    movingAverages: signals.filter((s) =>
-      s.indicator.includes('SMA') || s.indicator.includes('EMA')
-    ),
-    oscillators: signals.filter((s) =>
-      !s.indicator.includes('SMA') && !s.indicator.includes('EMA')
-    ),
+    movingAverages: signals.filter((s) => {
+      const n = s.indicator;
+      return n.includes('SMA') || n.includes('EMA') || n.includes('VWAP')
+        || n.includes('Ichimoku') || n.includes('Golden') || n.includes('Death');
+    }),
+    oscillators: signals.filter((s) => {
+      const n = s.indicator;
+      return !(n.includes('SMA') || n.includes('EMA') || n.includes('VWAP')
+        || n.includes('Ichimoku') || n.includes('Golden') || n.includes('Death'));
+    }),
     pivotPoints: [
       {
         type: 'Classic',

@@ -384,9 +384,8 @@ export const NAVIGATION_TABS = [
     { id: 'overview', label: 'Tổng quan', active: true },
     { id: 'news', label: 'Tin tức & Sự kiện', active: false },
     { id: 'financials', label: 'Số liệu tài chính', active: false },
-    { id: 'analysis', label: 'Dashboard', active: false },
-    { id: 'compare', label: 'So sánh', active: false },
-    { id: 'reports', label: 'Tải báo cáo', active: false },
+    { id: 'analysis', label: 'Dashboard TCDN', active: false },
+    { id: 'compare', label: 'So sánh cổ phiếu', active: false },
     { id: 'profile', label: 'Hồ sơ doanh nghiệp', active: false },
 ];
 

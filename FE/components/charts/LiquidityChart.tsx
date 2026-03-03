@@ -64,7 +64,7 @@ export const LiquidityChart = () => {
             splitLine: { lineStyle: { type: "dashed" as const, color: "#e5e7eb" } },
         },
         dataZoom: [
-            { type: "inside", start: 0, end: 100 },
+            { type: "inside", start: 50, end: 100 },
             { type: "slider", start: 50, end: 100, height: 18, bottom: 4 },
         ],
         series: [

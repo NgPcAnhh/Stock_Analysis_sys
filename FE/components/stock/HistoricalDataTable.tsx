@@ -28,7 +28,7 @@ const HistoricalDataTable = () => {
             </CardHeader>
             <CardContent className="p-0 flex-1">
                 {/* Table */}
-                <div className="overflow-x-auto overflow-y-auto max-h-[500px]">
+                <div className="overflow-x-auto overflow-y-auto max-h-[320px]">
                     <table className="w-full text-sm">
                         <thead className="sticky top-0 z-10">
                             <tr className="bg-gray-50 border-y border-gray-100">

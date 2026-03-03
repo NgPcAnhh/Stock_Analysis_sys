@@ -63,14 +63,12 @@ def _slugify(name: str) -> str:
 
 
 def _fmt_market_cap(v: float) -> str:
-    """Format market cap (VND) to readable Vietnamese string."""
-    if v >= 1e15:  # >= 1 triệu tỷ
-        return f"{v / 1e12:,.0f} N tỷ"
-    if v >= 1e12:  # >= 1 nghìn tỷ
-        return f"{v / 1e12:,.0f} N tỷ"
-    if v >= 1e9:   # >= 1 tỷ
-        return f"{v / 1e9:,.0f} tỷ"
-    return f"{v:,.0f}"
+    """Format market cap in tỷ VND."""
+    if v >= 1_000_000:
+        return f"{v / 1_000:,.0f}T"
+    if v >= 1_000:
+        return f"{v:,.0f}T"
+    return f"{v:,.0f}T"
 
 
 # ────────────────────────────────────────────────────────────────────
@@ -316,8 +314,7 @@ async def get_sector_overview(db: AsyncSession) -> List[Dict[str, Any]]:
 
 # ────────────────────────────────────────────────────────────────────
 # 6. Sector Analysis Table — P/E, P/B, market cap, price changes
-#    Uses LEFT JOINs on financial_ratio; gracefully handles NULL metrics.
-#    Market cap estimated from close * volume when FR data unavailable.
+#    P/E & P/B computed from BCTC data (weighted: Σmarket_cap / Σearnings|equity).
 # ────────────────────────────────────────────────────────────────────
 @cached("market:sector_analysis", ttl=300)
 async def get_sector_analysis(db: AsyncSession) -> List[Dict[str, Any]]:
@@ -345,102 +342,65 @@ async def get_sector_analysis(db: AsyncSession) -> List[Dict[str, Any]]:
             WHERE close IS NOT NULL
               AND trading_date <= ((SELECT td FROM latest_date)::date - INTERVAL '3 years')::text
         ),
-        latest_ratio AS (
-            SELECT DISTINCT ON (ticker)
-                ticker, pe, pb, dividend_yield, market_cap
-            FROM {SCHEMA}.financial_ratio
-            ORDER BY ticker, year DESC, quarter DESC
+        -- BCTC data for computing P/E, P/B
+        bctc_data AS (
+            SELECT ticker, year, quarter, ind_code, value
+            FROM {SCHEMA}.bctc
+            WHERE ind_code IN (
+                'C_PHI_U_PH_TH_NG_NG',
+                'V_N_CH_S_H_U_NG',
+                'L_I_NHU_N_SAU_THU_C_A_C_NG_C_NG_TY_M_NG'
+            ) AND value IS NOT NULL AND value != 0
         ),
-        -- BCTC: outstanding shares (latest) — fallback to contributed capital for banks
-        bctc_shares AS (
+        shares AS (
             SELECT DISTINCT ON (ticker)
                 ticker, value / 10000.0 AS shares
-            FROM (
-                SELECT ticker, value, year, quarter, 1 AS priority
-                FROM {SCHEMA}.bctc
-                WHERE ind_code = 'C_PHI_U_PH_TH_NG_NG' AND value IS NOT NULL AND value > 0
-                UNION ALL
-                SELECT ticker, value, year, quarter, 2 AS priority
-                FROM {SCHEMA}.bctc
-                WHERE ind_code = 'V_N_G_P_C_A_CH_S_H_U_NG' AND value IS NOT NULL AND value > 0
-            ) combined
-            ORDER BY ticker, priority, year DESC, quarter DESC
-        ),
-        -- BCTC: equity (latest)
-        bctc_equity AS (
-            SELECT DISTINCT ON (ticker)
-                ticker, value AS equity
-            FROM {SCHEMA}.bctc
-            WHERE ind_code = 'V_N_CH_S_H_U_NG' AND value IS NOT NULL AND value > 0
+            FROM bctc_data
+            WHERE ind_code = 'C_PHI_U_PH_TH_NG_NG' AND value > 0
             ORDER BY ticker, year DESC, quarter DESC
         ),
-        -- BCTC: TTM net income (sum of last 4 quarters)
+        equity AS (
+            SELECT DISTINCT ON (ticker)
+                ticker, value AS equity
+            FROM bctc_data
+            WHERE ind_code = 'V_N_CH_S_H_U_NG' AND value > 0
+            ORDER BY ticker, year DESC, quarter DESC
+        ),
         ranked_ni AS (
             SELECT ticker, value,
                 ROW_NUMBER() OVER (PARTITION BY ticker ORDER BY year DESC, quarter DESC) AS rn
-            FROM {SCHEMA}.bctc
+            FROM bctc_data
             WHERE ind_code = 'L_I_NHU_N_SAU_THU_C_A_C_NG_C_NG_TY_M_NG'
-              AND value IS NOT NULL AND value != 0
         ),
         ttm_ni AS (
             SELECT ticker, SUM(value) AS ttm_ni
             FROM ranked_ni WHERE rn <= 4
             GROUP BY ticker HAVING COUNT(*) >= 2
         ),
-        earnings_growth AS (
-            SELECT
-                b_cur.ticker,
-                CASE WHEN b_prev.value > 0
-                     THEN ROUND(((b_cur.value - b_prev.value) / ABS(b_prev.value) * 100)::numeric, 2)
-                     ELSE 0 END AS lnst_growth_3y
-            FROM (
-                SELECT DISTINCT ON (ticker) ticker, value
-                FROM {SCHEMA}.bctc
-                WHERE ind_code = 'IS24' AND value IS NOT NULL
-                ORDER BY ticker, year DESC, quarter DESC
-            ) b_cur
-            LEFT JOIN (
-                SELECT DISTINCT ON (ticker) ticker, value
-                FROM {SCHEMA}.bctc
-                WHERE ind_code = 'IS24' AND value IS NOT NULL
-                  AND year <= EXTRACT(YEAR FROM CURRENT_DATE)::int - 3
-                ORDER BY ticker, year DESC, quarter DESC
-            ) b_prev ON b_prev.ticker = b_cur.ticker
+        latest_fr AS (
+            SELECT DISTINCT ON (ticker)
+                ticker, market_cap
+            FROM {SCHEMA}.financial_ratio
+            ORDER BY ticker, year DESC, quarter DESC
         ),
         stock_data AS (
             SELECT
                 co.icb_name2 AS sector,
                 co.ticker,
-                -- P/E: BCTC-computed first, then FR fallback
-                COALESCE(
-                    CASE WHEN ni.ttm_ni IS NOT NULL AND sh.shares > 0
-                              AND (ni.ttm_ni / sh.shares) > 0
-                              AND (cur.close * 1000 / (ni.ttm_ni / sh.shares)) BETWEEN 0.1 AND 500
-                         THEN cur.close * 1000 / (ni.ttm_ni / sh.shares)
-                         ELSE NULL END,
-                    fr.pe
-                ) AS pe,
-                -- P/B: BCTC-computed first, then FR fallback
-                COALESCE(
-                    CASE WHEN eq.equity > 0 AND sh.shares > 0
-                              AND (cur.close * 1000 * sh.shares / eq.equity) BETWEEN 0.01 AND 100
-                         THEN cur.close * 1000 * sh.shares / eq.equity
-                         ELSE NULL END,
-                    fr.pb
-                ) AS pb,
-                COALESCE(fr.dividend_yield,
-                    (SELECT fr2.dividend_yield FROM {SCHEMA}.financial_ratio fr2
-                     WHERE fr2.ticker = co.ticker AND fr2.dividend_yield IS NOT NULL
-                     ORDER BY fr2.year DESC, fr2.quarter DESC LIMIT 1)
-                ) AS dividend_yield,
-                -- Market cap: BCTC-computed first, then FR, then estimate
-                COALESCE(
-                    CASE WHEN sh.shares > 0 AND cur.close > 0
-                         THEN cur.close * 1000 * sh.shares END,
-                    fr.market_cap,
-                    cur.close * cur.volume
-                ) AS market_cap,
-                eg.lnst_growth_3y,
+                -- Raw market cap for P/E, P/B aggregation (VND-based)
+                CASE WHEN sh.shares > 0 AND cur.close > 0
+                    THEN cur.close * 1000 * sh.shares
+                    ELSE NULL
+                END AS mcap_raw,
+                -- Market cap in tỷ for display / sorting
+                CASE WHEN sh.shares > 0 AND cur.close > 0
+                    THEN cur.close * 1000 * sh.shares / 1e9
+                    ELSE COALESCE(fr.market_cap, cur.close * cur.volume)
+                END AS market_cap,
+                -- TTM net income (positive only, for sector P/E)
+                CASE WHEN ni.ttm_ni > 0 THEN ni.ttm_ni ELSE NULL END AS ttm_ni_pos,
+                -- Equity (positive only, for sector P/B)
+                CASE WHEN eq.equity > 0 THEN eq.equity ELSE NULL END AS equity_pos,
                 CASE WHEN prev.close > 0
                      THEN (cur.close - prev.close) / prev.close * 100
                      ELSE 0 END AS change_1d,
@@ -475,11 +435,10 @@ async def get_sector_analysis(db: AsyncSession) -> List[Dict[str, Any]]:
             LEFT JOIN {SCHEMA}.history_price y3
                 ON y3.ticker = co.ticker
                 AND y3.trading_date = (SELECT td FROM date_3y)
-            LEFT JOIN latest_ratio fr ON fr.ticker = co.ticker
-            LEFT JOIN bctc_shares sh ON sh.ticker = co.ticker
-            LEFT JOIN bctc_equity eq ON eq.ticker = co.ticker
+            LEFT JOIN shares sh ON sh.ticker = co.ticker
+            LEFT JOIN equity eq ON eq.ticker = co.ticker
             LEFT JOIN ttm_ni ni ON ni.ticker = co.ticker
-            LEFT JOIN earnings_growth eg ON eg.ticker = co.ticker
+            LEFT JOIN latest_fr fr ON fr.ticker = co.ticker
             WHERE cur.close IS NOT NULL
               AND prev.close > 0
               AND co.icb_name2 IS NOT NULL
@@ -488,10 +447,26 @@ async def get_sector_analysis(db: AsyncSession) -> List[Dict[str, Any]]:
             sector AS name,
             COUNT(*)::int AS stock_count,
             ROUND(COALESCE(SUM(market_cap), 0)::numeric, 0) AS market_cap,
-            ROUND(AVG(pe) FILTER (WHERE pe IS NOT NULL AND pe > 0 AND pe < 200)::numeric, 2) AS pe,
-            ROUND(AVG(pb) FILTER (WHERE pb IS NOT NULL AND pb > 0 AND pb < 50)::numeric, 2) AS pb,
-            ROUND(AVG(dividend_yield) FILTER (WHERE dividend_yield IS NOT NULL AND dividend_yield >= 0)::numeric, 2) AS dividend_yield,
-            ROUND(AVG(lnst_growth_3y)::numeric, 2) AS lnst_growth_3y,
+            -- Sector P/E = Σ market_cap / Σ TTM_net_income (weighted)
+            CASE WHEN SUM(CASE WHEN ttm_ni_pos IS NOT NULL AND mcap_raw IS NOT NULL
+                             THEN ttm_ni_pos ELSE 0 END) > 0
+                THEN ROUND(
+                    (SUM(CASE WHEN ttm_ni_pos IS NOT NULL AND mcap_raw IS NOT NULL
+                              THEN mcap_raw ELSE 0 END)::numeric
+                     / SUM(CASE WHEN ttm_ni_pos IS NOT NULL AND mcap_raw IS NOT NULL
+                               THEN ttm_ni_pos ELSE 0 END)::numeric
+                    ), 2)
+                ELSE NULL END AS pe,
+            -- Sector P/B = Σ market_cap / Σ equity (weighted)
+            CASE WHEN SUM(CASE WHEN equity_pos IS NOT NULL AND mcap_raw IS NOT NULL
+                             THEN equity_pos ELSE 0 END) > 0
+                THEN ROUND(
+                    (SUM(CASE WHEN equity_pos IS NOT NULL AND mcap_raw IS NOT NULL
+                              THEN mcap_raw ELSE 0 END)::numeric
+                     / SUM(CASE WHEN equity_pos IS NOT NULL AND mcap_raw IS NOT NULL
+                               THEN equity_pos ELSE 0 END)::numeric
+                    ), 2)
+                ELSE NULL END AS pb,
             ROUND(AVG(change_1d)::numeric, 2) AS change_1d,
             ROUND(AVG(change_7d)::numeric, 2) AS change_7d,
             ROUND(AVG(change_ytd)::numeric, 2) AS change_ytd,
@@ -511,8 +486,6 @@ async def get_sector_analysis(db: AsyncSession) -> List[Dict[str, Any]]:
             "marketCap": _fmt_market_cap(float(r["market_cap"] or 0)),
             "pe": float(r["pe"]) if r["pe"] is not None else 0,
             "pb": float(r["pb"]) if r["pb"] is not None else 0,
-            "dividendYield": float(r["dividend_yield"]) if r["dividend_yield"] is not None else 0,
-            "lnstGrowth3Y": float(r["lnst_growth_3y"]) if r["lnst_growth_3y"] is not None else 0,
             "priceChange1D": float(r["change_1d"]) if r["change_1d"] is not None else 0,
             "priceChange7D": float(r["change_7d"]) if r["change_7d"] is not None else 0,
             "priceChangeYTD": float(r["change_ytd"]) if r["change_ytd"] is not None else 0,

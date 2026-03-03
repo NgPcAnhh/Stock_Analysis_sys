@@ -32,8 +32,11 @@ interface IndicatorSelectorProps {
 const overlayIndicators: IndicatorConfig[] = [
   { id: "sma20", name: "SMA 20", icon: <LineChart size={14} />, description: "Đường trung bình giản đơn 20 phiên" },
   { id: "sma50", name: "SMA 50", icon: <LineChart size={14} />, description: "Đường trung bình giản đơn 50 phiên" },
+  { id: "sma100", name: "SMA 100", icon: <LineChart size={14} />, description: "Đường trung bình giản đơn 100 phiên" },
+  { id: "sma200", name: "SMA 200", icon: <LineChart size={14} />, description: "Đường trung bình giản đơn 200 phiên" },
   { id: "ema12", name: "EMA 12", icon: <TrendingUp size={14} />, description: "Đường trung bình hàm mũ 12 phiên" },
   { id: "ema26", name: "EMA 26", icon: <TrendingUp size={14} />, description: "Đường trung bình hàm mũ 26 phiên" },
+  { id: "vwap", name: "VWAP", icon: <Activity size={14} />, description: "Giá trung bình theo khối lượng" },
   { id: "bollinger", name: "Bollinger Bands", icon: <ArrowLeftRight size={14} />, description: "Dải Bollinger (20, 2)" },
   { id: "ichimoku", name: "Ichimoku Cloud", icon: <Mountain size={14} />, description: "Mây Ichimoku" },
 ];

@@ -14,7 +14,7 @@ const PeerComparison = () => {
                     Công ty cùng ngành
                 </CardTitle>
             </CardHeader>
-            <CardContent className="p-0 flex-1 overflow-y-auto">
+            <CardContent className="p-0 flex-1 overflow-y-auto max-h-[320px]">
                 {/* Table Header */}
                 <div className="grid grid-cols-4 gap-2 px-4 py-2.5 bg-gray-50 text-sm font-medium text-gray-500 border-y border-gray-100 sticky top-0 z-10">
                     <span>Mã</span>

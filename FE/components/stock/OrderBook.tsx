@@ -49,13 +49,9 @@ const OrderBook = () => {
                                         {order.time}
                                     </span>
 
-                                    {/* Volume with background bar */}
-                                    <div className="relative text-right">
-                                        <div
-                                            className={`absolute right-0 top-0 h-full ${isBuy ? 'bg-green-50' : 'bg-red-50'}`}
-                                            style={{ width: `${barWidth}%` }}
-                                        />
-                                        <span className="relative z-10 font-semibold font-[var(--font-roboto-mono)] text-gray-900">
+                                    {/* Volume — plain, no color bar */}
+                                    <div className="text-right">
+                                        <span className="font-semibold font-[var(--font-roboto-mono)] text-gray-900">
                                             {order.volume.toLocaleString()}
                                         </span>
                                     </div>

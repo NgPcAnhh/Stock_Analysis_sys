@@ -100,6 +100,8 @@ _CACHE_RULES: list[Tuple[str, int]] = [
     ("/api/v1/indices/market", 300),
     ("/api/v1/indices/macro-yearly", 3600),
     ("/api/v1/stock-list/sectors", 600),
+    # Stock Detail endpoints
+    ("/api/v1/stock/", 60),
 ]
 
 

@@ -55,8 +55,6 @@ class SectorAnalysisItem(BaseModel):
     marketCap: str = Field(..., description="Formatted market cap, e.g. '3,550,712T'")
     pe: float
     pb: float
-    dividendYield: float
-    lnstGrowth3Y: float
     priceChange1D: float
     priceChange7D: float
     priceChangeYTD: float

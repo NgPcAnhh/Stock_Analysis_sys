@@ -63,8 +63,6 @@ export interface SectorTableRow {
     marketCap: string;
     pe: number;
     pb: number;
-    dividendYield: number;
-    lnstGrowth3Y: number;
     priceChange1D: number;
     priceChange7D: number;
     priceChangeYTD: number;
@@ -73,16 +71,16 @@ export interface SectorTableRow {
 }
 
 export const SECTOR_TABLE_DATA: SectorTableRow[] = [
-    { name: "Tài chính", stockCount: 83, marketCap: "3,550,712T", pe: 12.21, pb: 1.85, dividendYield: 1.59, lnstGrowth3Y: 6.92, priceChange1D: -0.72, priceChange7D: 1.60, priceChangeYTD: 6.93, priceChange1Y: 32.56, priceChange3Y: 109.17 },
-    { name: "Bất động sản", stockCount: 129, marketCap: "2,277,416T", pe: 13.95, pb: 2.02, dividendYield: 0.63, lnstGrowth3Y: 2.12, priceChange1D: -0.13, priceChange7D: 6.34, priceChangeYTD: -5.22, priceChange1Y: 101.18, priceChange3Y: 92.53 },
-    { name: "Công nghiệp", stockCount: 458, marketCap: "997,449T", pe: 14.92, pb: 4.23, dividendYield: 4.22, lnstGrowth3Y: 12.10, priceChange1D: -1.04, priceChange7D: 3.16, priceChangeYTD: 3.51, priceChange1Y: 34.86, priceChange3Y: 135.24 },
-    { name: "Hàng hóa thiết yếu", stockCount: 184, marketCap: "796,585T", pe: 20.46, pb: 5.12, dividendYield: 4.04, lnstGrowth3Y: 10.03, priceChange1D: -0.02, priceChange7D: -0.37, priceChangeYTD: -0.93, priceChange1Y: 19.73, priceChange3Y: 111.91 },
-    { name: "Hàng hóa không thiết yếu", stockCount: 194, marketCap: "706,944T", pe: 19.60, pb: 3.11, dividendYield: 2.08, lnstGrowth3Y: 20.11, priceChange1D: -1.22, priceChange7D: 0.92, priceChangeYTD: 17.23, priceChange1Y: 36.44, priceChange3Y: 127.02 },
-    { name: "Công nghệ", stockCount: 36, marketCap: "574,218T", pe: 17.50, pb: 4.57, dividendYield: 3.10, lnstGrowth3Y: 10.01, priceChange1D: -1.08, priceChange7D: -2.35, priceChangeYTD: 7.12, priceChange1Y: -4.59, priceChange3Y: 135.36 },
-    { name: "Năng lượng", stockCount: 80, marketCap: "540,415T", pe: 20.40, pb: 2.83, dividendYield: 1.53, lnstGrowth3Y: -5.89, priceChange1D: -0.52, priceChange7D: -6.19, priceChangeYTD: 38.99, priceChange1Y: 65.92, priceChange3Y: 99.47 },
-    { name: "Nguyên vật liệu", stockCount: 259, marketCap: "509,213T", pe: 13.31, pb: 1.98, dividendYield: 1.81, lnstGrowth3Y: 1.14, priceChange1D: -1.31, priceChange7D: 0.71, priceChangeYTD: 8.76, priceChange1Y: 12.32, priceChange3Y: 106.97 },
-    { name: "Tiện ích", stockCount: 107, marketCap: "278,694T", pe: 10.44, pb: 1.72, dividendYield: 3.76, lnstGrowth3Y: 2.43, priceChange1D: 0.16, priceChange7D: 0.51, priceChangeYTD: 4.49, priceChange1Y: 4.05, priceChange3Y: 42.11 },
-    { name: "Y tế", stockCount: 62, marketCap: "156,320T", pe: 18.75, pb: 3.45, dividendYield: 2.15, lnstGrowth3Y: 8.34, priceChange1D: 0.45, priceChange7D: 1.23, priceChangeYTD: 5.67, priceChange1Y: 15.89, priceChange3Y: 78.45 },
+    { name: "Tài chính", stockCount: 83, marketCap: "3,550,712T", pe: 12.21, pb: 1.85, priceChange1D: -0.72, priceChange7D: 1.60, priceChangeYTD: 6.93, priceChange1Y: 32.56, priceChange3Y: 109.17 },
+    { name: "Bất động sản", stockCount: 129, marketCap: "2,277,416T", pe: 13.95, pb: 2.02, priceChange1D: -0.13, priceChange7D: 6.34, priceChangeYTD: -5.22, priceChange1Y: 101.18, priceChange3Y: 92.53 },
+    { name: "Công nghiệp", stockCount: 458, marketCap: "997,449T", pe: 14.92, pb: 4.23, priceChange1D: -1.04, priceChange7D: 3.16, priceChangeYTD: 3.51, priceChange1Y: 34.86, priceChange3Y: 135.24 },
+    { name: "Hàng hóa thiết yếu", stockCount: 184, marketCap: "796,585T", pe: 20.46, pb: 5.12, priceChange1D: -0.02, priceChange7D: -0.37, priceChangeYTD: -0.93, priceChange1Y: 19.73, priceChange3Y: 111.91 },
+    { name: "Hàng hóa không thiết yếu", stockCount: 194, marketCap: "706,944T", pe: 19.60, pb: 3.11, priceChange1D: -1.22, priceChange7D: 0.92, priceChangeYTD: 17.23, priceChange1Y: 36.44, priceChange3Y: 127.02 },
+    { name: "Công nghệ", stockCount: 36, marketCap: "574,218T", pe: 17.50, pb: 4.57, priceChange1D: -1.08, priceChange7D: -2.35, priceChangeYTD: 7.12, priceChange1Y: -4.59, priceChange3Y: 135.36 },
+    { name: "Năng lượng", stockCount: 80, marketCap: "540,415T", pe: 20.40, pb: 2.83, priceChange1D: -0.52, priceChange7D: -6.19, priceChangeYTD: 38.99, priceChange1Y: 65.92, priceChange3Y: 99.47 },
+    { name: "Nguyên vật liệu", stockCount: 259, marketCap: "509,213T", pe: 13.31, pb: 1.98, priceChange1D: -1.31, priceChange7D: 0.71, priceChangeYTD: 8.76, priceChange1Y: 12.32, priceChange3Y: 106.97 },
+    { name: "Tiện ích", stockCount: 107, marketCap: "278,694T", pe: 10.44, pb: 1.72, priceChange1D: 0.16, priceChange7D: 0.51, priceChangeYTD: 4.49, priceChange1Y: 4.05, priceChange3Y: 42.11 },
+    { name: "Y tế", stockCount: 62, marketCap: "156,320T", pe: 18.75, pb: 3.45, priceChange1D: 0.45, priceChange7D: 1.23, priceChangeYTD: 5.67, priceChange1Y: 15.89, priceChange3Y: 78.45 },
 ];
 
 export const MARKET_HEATMAP_DATA = [

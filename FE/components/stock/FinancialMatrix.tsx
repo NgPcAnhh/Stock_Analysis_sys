@@ -9,103 +9,69 @@ const FinancialMatrix = () => {
     const { metrics, evaluation } = stockInfo;
 
     return (
-        <div className="flex flex-col gap-3">
-            {/* 4-Column Metrics Grid */}
-            <div className="grid grid-cols-4 gap-4">
-                {/* Column 1: Market Cap */}
-                <div className="space-y-3">
-                    <MetricItem
-                        label="Vốn hóa"
-                        value={metrics.marketCap}
-                        subtext={`Xếp hạng vốn hóa: ${metrics.marketCapRank}`}
-                        hasInfo
-                    />
-                </div>
+        <div className="flex gap-6">
+            {/* ── Left: 3-Column Metrics Grid ── */}
+            <div className="flex-1 grid grid-cols-3 gap-x-6 gap-y-4">
+                {/* Row 1 */}
+                <MetricItem label="Vốn hóa" value={metrics.marketCap} hasInfo />
+                <MetricItem label="P/E" value={metrics.pe} hasInfo />
+                <MetricItem label="EPS" value={metrics.eps} hasInfo />
 
-                {/* Column 2: KLGD, P/E */}
-                <div className="space-y-3">
-                    <MetricItem
-                        label="Khối lượng giao dịch"
-                        value={metrics.volume}
-                        hasInfo
-                    />
-                    <MetricItem
-                        label="P/E"
-                        value={metrics.pe}
-                        hasInfo
-                    />
-                </div>
+                {/* Row 2 */}
+                <MetricItem label="Khối lượng giao dịch" value={metrics.volume} hasInfo />
+                <MetricItem label="P/B" value={metrics.pb} hasInfo />
+                <MetricItem label="Giá trị sổ sách" value={metrics.bvps} hasInfo />
 
-                {/* Column 3: P/B, EV/EBITDA */}
-                <div className="space-y-3">
-                    <MetricItem
-                        label="P/B"
-                        value={metrics.pb}
-                        hasInfo
-                    />
-                    <MetricItem
-                        label="EV/EBITDA"
-                        value={metrics.evEbitda}
-                        hasInfo
-                    />
-                </div>
-
-                {/* Column 4: EPS, Shares */}
-                <div className="space-y-3">
-                    <MetricItem
-                        label="EPS"
-                        value={metrics.eps}
-                        hasInfo
-                    />
-                    <MetricItem
-                        label="Giá trị sổ sách"
-                        value={metrics.roe}
-                        hasInfo
-                    />
-                </div>
+                {/* Row 3 */}
+                <MetricItem label="Số lượng cổ phiếu lưu hành" value={metrics.outstandingShares} hasInfo />
+                <MetricItem label="EV/EBITDA" value={metrics.evEbitda} hasInfo />
+                <div /> {/* empty cell */}
             </div>
 
-            {/* Evaluation Section */}
-            <div className="border-t border-gray-100 pt-3 mt-1">
+            {/* ── Vertical divider ── */}
+            <div className="hidden lg:block border-l border-gray-100" />
+
+            {/* ── Right: Evaluation Section ── */}
+            <div className="w-56 flex-shrink-0 flex flex-col gap-3">
                 <div className="grid grid-cols-2 gap-4">
                     {/* Fundamental Analysis */}
                     <div>
-                        <div className="flex items-center gap-1 text-xs text-gray-500 mb-1.5">
+                        <div className="flex items-center gap-1 text-[10px] text-gray-500 uppercase mb-1.5">
                             Phân tích cơ bản
                             <Info className="w-3 h-3 text-gray-400" />
                         </div>
-                        <div className="flex flex-wrap gap-1.5 mb-1">
-                            <EvaluationBadge
-                                label={`Rủi ro`}
-                                value={evaluation.risk}
-                                variant={evaluation.risk === 'Cao' ? 'danger' : 'success'}
-                            />
-                        </div>
-                        <span className="text-xs text-gray-500">{evaluation.fundamentalAnalysis}</span>
+                        <span className="text-xs font-medium text-gray-700">{evaluation.fundamentalAnalysis || "N/A"}</span>
                     </div>
 
                     {/* Valuation */}
                     <div>
-                        <div className="flex items-center gap-1 text-xs text-gray-500 mb-1.5">
+                        <div className="flex items-center gap-1 text-[10px] text-gray-500 uppercase mb-1.5">
                             Định giá
                             <Info className="w-3 h-3 text-gray-400" />
                         </div>
-                        <div className="flex flex-wrap gap-1.5">
-                            <EvaluationBadge
-                                label=""
-                                value={evaluation.valuation}
-                                variant={evaluation.valuation === 'Hấp dẫn' ? 'success' : 'danger'}
-                            />
-                        </div>
+                        <span className="text-xs font-medium text-gray-700">{evaluation.valuation || "N/A"}</span>
                     </div>
                 </div>
-            </div>
 
-            {/* Details Link */}
-            <button className="flex items-center gap-0.5 text-xs text-blue-600 hover:underline self-start">
-                Chi tiết
-                <ChevronRight className="w-3 h-3" />
-            </button>
+                {/* Risk */}
+                <div>
+                    <div className="flex items-center gap-1 text-[10px] text-gray-500 uppercase mb-1.5">
+                        Rủi ro
+                        <Info className="w-3 h-3 text-gray-400" />
+                    </div>
+                    <EvaluationBadge
+                        label=""
+                        value={evaluation.risk || "N/A"}
+                        variant={evaluation.risk === "Cao" ? "danger" : evaluation.risk === "Thấp" ? "success" : "warning"}
+                    />
+                </div>
+
+                {/* Details Link */}
+                <button className="flex items-center gap-0.5 text-xs text-blue-600 hover:underline self-end mt-auto">
+                    Chi tiết
+                    <ChevronRight className="w-3 h-3" />
+                </button>
+            </div>
         </div>
     );
 };

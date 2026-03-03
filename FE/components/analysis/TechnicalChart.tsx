@@ -72,6 +72,28 @@ const TechnicalChart: React.FC<TechnicalChartProps> = ({ data, overlays, subIndi
         z: 5,
       });
     }
+    if (overlays.includes("sma100")) {
+      series.push({
+        name: "SMA 100",
+        type: "line",
+        data: sliceIndicator(data.indicators.sma100),
+        smooth: false,
+        symbol: "none",
+        lineStyle: { color: "#14B8A6", width: 1.5 },
+        z: 5,
+      });
+    }
+    if (overlays.includes("sma200")) {
+      series.push({
+        name: "SMA 200",
+        type: "line",
+        data: sliceIndicator(data.indicators.sma200),
+        smooth: false,
+        symbol: "none",
+        lineStyle: { color: "#EF4444", width: 2 },
+        z: 5,
+      });
+    }
     if (overlays.includes("ema12")) {
       series.push({
         name: "EMA 12",
@@ -91,6 +113,17 @@ const TechnicalChart: React.FC<TechnicalChartProps> = ({ data, overlays, subIndi
         smooth: false,
         symbol: "none",
         lineStyle: { color: "#EC4899", width: 1.5 },
+        z: 5,
+      });
+    }
+    if (overlays.includes("vwap")) {
+      series.push({
+        name: "VWAP",
+        type: "line",
+        data: sliceIndicator(data.indicators.vwap),
+        smooth: false,
+        symbol: "none",
+        lineStyle: { color: "#F97316", width: 2, type: "dotted" },
         z: 5,
       });
     }

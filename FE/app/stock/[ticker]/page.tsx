@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, use } from "react";
+import React, { useState, use, useMemo } from "react";
 import StockDetailHeader from "@/components/stock/StockDetailHeader";
 import NavigationTabs from "@/components/stock/NavigationTabs";
 import PriceHistoryChart from "@/components/stock/PriceHistoryChart";
@@ -11,27 +11,54 @@ import ShareholderList from "@/components/stock/ShareholderList";
 import ShareholderDonutChart from "@/components/stock/ShareholderDonutChart";
 import CorporateNews from "@/components/stock/CorporateNews";
 import RecommendationsSection from "@/components/stock/RecommendationsSection";
-import FinancialMetricsTab from "@/components/stock/FinancialMetricsTab";
-import FinancialReportsTab from "@/components/stock/FinancialReportsTab";
 import CompanyProfileTab from "@/components/stock/CompanyProfileTab";
 import StockComparisonTab from "@/components/stock/StockComparisonTab";
-import BalanceSheetTab from "@/components/stock/BalanceSheetTab";
+import QuantAnalysisTab from "@/components/stock/QuantAnalysisTab";
+import ValuationForecastTab from "@/components/stock/ValuationForecastTab";
+import FinancialReportsTab from "@/components/stock/FinancialReportsTab";
 import { Card, CardContent } from "@/components/ui/card";
 import { Footer } from "@/components/layout/Footer";
-import { getStockDetailData } from "@/lib/stockDetailMockData";
-import { StockDetailProvider } from "@/lib/StockDetailContext";
+import { useStockOverview } from "@/hooks/useStockData";
+import { StockDetailProvider, type StockDetailData } from "@/lib/StockDetailContext";
 
 interface StockDetailPageProps {
     params: Promise<{ ticker: string }>;
 }
 
+/* ── Skeleton placeholder while overview loads ── */
+function OverviewSkeleton() {
+    return (
+        <div className="animate-pulse space-y-4">
+            <div className="h-28 bg-gray-200 rounded-xl" />
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+                <div className="lg:col-span-8 h-72 bg-gray-200 rounded-xl" />
+                <div className="lg:col-span-4 h-72 bg-gray-200 rounded-xl" />
+            </div>
+        </div>
+    );
+}
+
+const EMPTY_OVERVIEW: StockDetailData = {
+    stockInfo: { ticker: "", exchange: "", companyName: "", companyNameFull: "", overview: "", logoUrl: "", tags: [], website: "", currentPrice: 0, priceChange: 0, priceChangePercent: 0, dayLow: 0, dayHigh: 0, referencePrice: 0, ceilingPrice: 0, floorPrice: 0, metrics: { marketCap: "0", marketCapRank: 0, volume: "0", pe: "0", peRank: 0, eps: "0", pb: "0", evEbitda: "0", outstandingShares: "0", roe: "0", bvps: "0" }, evaluation: { risk: "", valuation: "", fundamentalAnalysis: "", technicalAnalysis: "" } },
+    priceHistory: [], orderBook: [], historicalData: [], shareholders: [],
+    shareholderStructure: [],
+    peerStocks: [], corporateNews: [], recommendations: [],
+    ticker: "", loading: true, error: null,
+};
+
 export default function StockDetailPage({ params }: StockDetailPageProps) {
     const { ticker } = use(params);
-    const data = getStockDetailData(ticker.toUpperCase());
+    const upperTicker = ticker.toUpperCase();
+    const { data: apiData, loading, error } = useStockOverview(upperTicker);
     const [activeTab, setActiveTab] = useState("overview");
 
+    const contextValue: StockDetailData = useMemo(() => {
+        if (!apiData) return { ...EMPTY_OVERVIEW, ticker: upperTicker, loading, error, onTabChange: setActiveTab };
+        return { ...apiData, ticker: upperTicker, loading, error, onTabChange: setActiveTab };
+    }, [apiData, upperTicker, loading, error]);
+
     return (
-        <StockDetailProvider data={data}>
+        <StockDetailProvider data={contextValue}>
             <div className="min-h-screen bg-[#F3F4F6]">
                 <div className="max-w-[1440px] mx-auto px-4 py-4 space-y-6">
 
@@ -39,7 +66,15 @@ export default function StockDetailPage({ params }: StockDetailPageProps) {
                 <StockDetailHeader />
 
                 {/* Navigation Tabs */}
-                <NavigationTabs activeTab={activeTab} onTabChange={setActiveTab} />
+                <NavigationTabs activeTab={activeTab} onTabChange={setActiveTab} ticker={upperTicker} />
+
+                {/* Loading / Error states */}
+                {loading && !apiData && <OverviewSkeleton />}
+                {error && !apiData && (
+                    <div className="text-center py-12 text-red-500">
+                        Không thể tải dữ liệu: {error}
+                    </div>
+                )}
 
                 {activeTab === "overview" && (
                     <>
@@ -101,7 +136,7 @@ export default function StockDetailPage({ params }: StockDetailPageProps) {
                                 <span className="w-1 h-5 bg-purple-500 rounded-full" />
                                 Tin tức doanh nghiệp
                             </h2>
-                            <CorporateNews />
+                            <CorporateNews mode="overview" />
                         </section>
 
                         {/* ── Khuyến nghị ── */}
@@ -116,20 +151,12 @@ export default function StockDetailPage({ params }: StockDetailPageProps) {
                 )}
 
                 {activeTab === "news" && (
-                    <div className="py-4">
-                        <CorporateNews />
-                    </div>
-                )}
-
-                {activeTab === "financials" && (
-                    <div className="py-4">
-                        <FinancialMetricsTab />
-                    </div>
-                )}
-
-                {activeTab === "reports" && (
-                    <div className="py-4">
-                        <FinancialReportsTab />
+                    <div className="py-4 space-y-3">
+                        <h2 className="text-base font-semibold text-gray-600 flex items-center gap-2">
+                            <span className="w-1 h-5 bg-purple-500 rounded-full" />
+                            Tin tức doanh nghiệp
+                        </h2>
+                        <CorporateNews mode="full" />
                     </div>
                 )}
 
@@ -145,11 +172,25 @@ export default function StockDetailPage({ params }: StockDetailPageProps) {
                     </div>
                 )}
 
-                {activeTab === "analysis" && (
+                {activeTab === "quant" && (
                     <div className="py-4">
-                        <BalanceSheetTab />
+                        <QuantAnalysisTab />
                     </div>
                 )}
+
+                {activeTab === "valuation" && (
+                    <div className="py-4">
+                        <ValuationForecastTab />
+                    </div>
+                )}
+
+                {activeTab === "financials" && (
+                    <div className="py-4">
+                        <FinancialReportsTab />
+                    </div>
+                )}
+
+
 
             </div>
 

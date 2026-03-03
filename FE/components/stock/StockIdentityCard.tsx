@@ -1,11 +1,12 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { useStockDetail } from "@/lib/StockDetailContext";
 import { Globe, Calendar, Users, FileText, Star, Share2, MessageCircle } from "lucide-react";
 
 const StockIdentityCard = () => {
-    const { stockInfo: stock } = useStockDetail();
+    const { stockInfo: stock, onTabChange } = useStockDetail();
 
     return (
         <div className="flex gap-4">
@@ -13,9 +14,18 @@ const StockIdentityCard = () => {
             <div className="flex-1 flex flex-col gap-2">
                 {/* Row 1: Logo, Ticker, Exchange, Star, Share */}
                 <div className="flex items-center gap-3">
-                    {/* Logo - Red circle with VIC text */}
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center text-white font-bold text-sm shadow-md">
-                        VIC
+                    {/* Logo */}
+                    <div className="w-10 h-10 rounded-full overflow-hidden shadow-md bg-gray-100 flex-shrink-0 flex items-center justify-center">
+                        <img
+                            src={stock.logoUrl}
+                            alt={stock.ticker}
+                            className="w-full h-full object-contain"
+                            onError={(e) => {
+                                const el = e.target as HTMLImageElement;
+                                el.style.display = 'none';
+                                el.parentElement!.innerHTML = `<span class="text-xs font-bold text-gray-500">${stock.ticker}</span>`;
+                            }}
+                        />
                     </div>
                     <div className="flex items-center gap-2">
                         <h1 className="text-2xl font-extrabold text-gray-900">{stock.ticker}</h1>
@@ -30,10 +40,10 @@ const StockIdentityCard = () => {
                     </div>
                 </div>
 
-                {/* Row 2: Company Name */}
-                <h2 className="text-base font-semibold text-gray-800">{stock.companyName}</h2>
+                {/* Row 2: Company Full Name (organ_name) */}
+                <h2 className="text-base font-semibold text-gray-800">{stock.companyNameFull || stock.companyName}</h2>
 
-                {/* Row 3: Industry Tags */}
+                {/* Row 3: Tags - Exchange + ICB Name 2 + ICB Name 3 */}
                 <div className="flex flex-wrap items-center gap-2 text-xs">
                     {stock.tags.map((tag, index) => (
                         <span
@@ -45,11 +55,18 @@ const StockIdentityCard = () => {
                     ))}
                 </div>
 
-                {/* Row 4: Description */}
-                <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">
-                    {stock.companyNameFull}
-                    <button className="text-blue-600 hover:underline ml-1">Xem thêm</button>
-                </p>
+                {/* Row 4: Company Overview (from DB) with "Xem thêm" → profile tab */}
+                <div className="text-xs text-gray-500 leading-relaxed">
+                    <p className="line-clamp-5">
+                        {stock.overview || stock.companyNameFull}
+                    </p>
+                    <button
+                        className="text-blue-600 hover:underline mt-0.5 inline-block"
+                        onClick={() => onTabChange?.("profile")}
+                    >
+                        Xem thêm
+                    </button>
+                </div>
 
                 {/* Row 5: Action Buttons */}
                 <div className="flex flex-wrap gap-2 mt-1">
@@ -72,9 +89,12 @@ const StockIdentityCard = () => {
                             <p className="text-xs text-blue-600 mt-1">
                                 Sử dụng Biểu đồ kỹ thuật của Simplize để được cập nhật dữ liệu từng ngày thông qua AI!
                             </p>
-                            <button className="text-xs text-blue-700 font-medium mt-2 hover:underline">
-                                Xem Biểu đồ kỹ thuật của VIC →
-                            </button>
+                            <Link
+                                href={`/analysis/${stock.ticker}`}
+                                className="text-xs text-blue-700 font-medium mt-2 hover:underline inline-flex items-center gap-1"
+                            >
+                                Xem Biểu đồ kỹ thuật của {stock.ticker} →
+                            </Link>
                         </div>
                     </div>
                 </div>

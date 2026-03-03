@@ -3,7 +3,7 @@
 import React from "react";
 import ReactECharts from "echarts-for-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getFinancialReportData } from "@/lib/financialReportData";
+import { useFinancialReports } from "@/hooks/useStockData";
 import { useStockDetail } from "@/lib/StockDetailContext";
 
 const formatBillion = (val: number) => {
@@ -22,12 +22,16 @@ function SectionHeading({ icon, color, title }: { icon: string; color: string; t
 }
 
 export default function FinancialMetricsTab() {
-    const { stockInfo } = useStockDetail();
-    const data = getFinancialReportData(stockInfo.ticker);
+    const { stockInfo, ticker } = useStockDetail();
+    const { data: reportData, loading, error } = useFinancialReports(ticker);
 
-    const statements = data.incomeStatements;
-    const balanceSheets = data.balanceSheets;
-    const cashFlows = data.cashFlows;
+    if (loading && !reportData) return <div className="text-center py-12 text-gray-400 animate-pulse">Đang tải chỉ số tài chính…</div>;
+    if (error && !reportData) return <div className="text-center py-12 text-red-500">Lỗi: {error}</div>;
+    if (!reportData) return null;
+
+    const statements = reportData.incomeStatement;
+    const balanceSheets = reportData.balanceSheet;
+    const cashFlows = reportData.cashFlow;
 
     const sorted = [...statements].reverse();
     const sortedBS = [...balanceSheets].reverse();

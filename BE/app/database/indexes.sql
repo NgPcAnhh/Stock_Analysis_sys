@@ -82,3 +82,37 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_news_published
 -- CREATE EXTENSION IF NOT EXISTS pg_trgm;
 -- CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_news_title_trgm
 --     ON news USING gin (title gin_trgm_ops);
+
+-- ────────────────────────────────────────────────────────────
+-- Stock Detail module — additional indexes
+-- ────────────────────────────────────────────────────────────
+-- bctc: For ticker-specific financial statements — covering index
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_bctc_ticker_period
+    ON bctc (ticker, year DESC, quarter DESC)
+    INCLUDE (ind_code, value);
+
+-- owner: For shareholder lookup by ticker
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_owner_ticker
+    ON owner (ticker);
+
+-- event: For event lookup by ticker (stored in 'id' column)
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_event_ticker
+    ON event (id);
+
+-- realtime_quotes: For order book lookup by symbol
+-- (already has idx_realtime_quotes_symbol_ts)
+
+-- financial_ratio: Broader covering index for stock detail
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_fr_ticker_full
+    ON financial_ratio (ticker, year DESC, quarter DESC)
+    INCLUDE (pe, pb, ps, eps, bvps, roe, roa, roic,
+             gross_margin, net_margin, ebit_margin,
+             debt_to_equity, current_ratio, quick_ratio, cash_ratio,
+             interest_coverage_ratio, asset_turnover, inventory_turnover,
+             market_cap, outstanding_shares, ev_ebitda, dividend_yield,
+             p_cashflow, financial_leverage);
+
+-- history_price: Full OHLCV covering index for stock detail charts
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_hp_ticker_ohlcv
+    ON history_price (ticker, trading_date DESC)
+    INCLUDE (open, high, low, close, volume);

@@ -1,34 +1,30 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useStockDetail } from "@/lib/StockDetailContext";
 import {
-    getCompanyProfileData,
-    type BoardMember,
-    type Subsidiary,
-    type Milestone,
-    type DividendHistory,
-    type CompanyOverview,
-} from "@/lib/companyProfileData";
+    useCompanyProfile,
+    type CompanyProfileData,
+    type Shareholder,
+} from "@/hooks/useStockData";
 import {
     Building2,
     Globe,
-    Phone,
-    Mail,
-    MapPin,
     Users,
     CalendarDays,
-    Landmark,
-    ShieldCheck,
-    TrendingUp,
     ExternalLink,
-    Banknote,
-    Factory,
-    Award,
-    GitBranch,
-    CircleDot,
+    ChevronDown,
+    ChevronUp,
+    ChevronLeft,
+    ChevronRight,
+    ArrowUpDown,
+    ArrowUp,
+    ArrowDown,
+    Search,
+    Network,
 } from "lucide-react";
+import OrgChart from "@/components/stock/OrgChart";
 
 // ==================== HELPER COMPONENTS ====================
 
@@ -86,7 +82,7 @@ function Badge({ text, variant }: { text: string; variant: "blue" | "green" | "a
 
 // ====================== SECTIONS ==========================
 
-function CompanyOverviewSection({ data }: { data: CompanyOverview }) {
+function CompanyOverviewSection({ data }: { data: CompanyProfileData["overview"] }) {
     return (
         <Card className="shadow-sm border-gray-200">
             <CardHeader className="pb-2">
@@ -96,424 +92,291 @@ function CompanyOverviewSection({ data }: { data: CompanyOverview }) {
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-                {/* Description */}
-                <p className="text-xs text-gray-600 leading-relaxed">{data.description}</p>
+                <p className="text-xs text-gray-600 leading-relaxed">
+                    {data.description || "Chưa có thông tin giới thiệu."}
+                </p>
 
-                {/* Key info grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Left card */}
                     <div className="bg-gray-50 rounded-lg p-3 space-y-0.5">
                         <h4 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">
                             Thông tin doanh nghiệp
                         </h4>
-                        <InfoRow label="Tên tiếng Anh" value={data.companyNameEn} />
+                        <InfoRow label="Tên đầy đủ" value={data.companyNameFull} />
                         <InfoRow label="Mã số thuế" value={data.taxCode} mono />
                         <InfoRow label="Ngành" value={data.industry} />
                         <InfoRow label="Ngành phụ" value={data.subIndustry} />
-                        <InfoRow label="Ngày thành lập" value={data.foundedDate} />
-                        <InfoRow label="Số nhân viên" value={data.employees.toLocaleString("vi-VN")} />
-                        <InfoRow label="Số chi nhánh" value={data.branches} />
-                        <InfoRow label="Kiểm toán" value={data.auditor} />
                     </div>
 
-                    {/* Right card */}
                     <div className="bg-gray-50 rounded-lg p-3 space-y-0.5">
                         <h4 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">
-                            Thông tin liên hệ
+                            Thông tin niêm yết
                         </h4>
-                        <div className="flex items-start gap-2 py-2 border-b border-gray-100">
-                            <MapPin className="w-3.5 h-3.5 text-gray-400 mt-0.5 shrink-0" />
-                            <span className="text-xs text-gray-700">{data.headOffice}</span>
-                        </div>
-                        <div className="flex items-center gap-2 py-2 border-b border-gray-100">
-                            <Phone className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                            <span className="text-xs text-gray-700">{data.phone}</span>
-                        </div>
-                        <div className="flex items-center gap-2 py-2 border-b border-gray-100">
-                            <Phone className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                            <span className="text-xs text-gray-500">Fax: {data.fax}</span>
-                        </div>
-                        <div className="flex items-center gap-2 py-2 border-b border-gray-100">
-                            <Mail className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                            <span className="text-xs text-blue-600">{data.email}</span>
-                        </div>
-                        <div className="flex items-center gap-2 py-2">
-                            <Globe className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                            <a
-                                href={data.website}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-xs text-blue-600 hover:underline flex items-center gap-1"
-                            >
-                                {data.website}
-                                <ExternalLink className="w-3 h-3" />
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
-    );
-}
-
-function ListingInfoSection({ data }: { data: CompanyOverview }) {
-    const foreignPct = data.foreignOwnership;
-    const foreignLimit = data.foreignOwnershipLimit;
-    const foreignBarWidth = foreignLimit > 0 ? (foreignPct / foreignLimit) * 100 : 0;
-
-    return (
-        <Card className="shadow-sm border-gray-200">
-            <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-                    <Landmark className="w-4 h-4 text-green-500" />
-                    Thông tin niêm yết
-                </CardTitle>
-            </CardHeader>
-            <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                    {[
-                        { label: "Sàn giao dịch", value: data.exchange, icon: "🏛️" },
-                        { label: "Ngày niêm yết", value: data.listingDate, icon: "📅" },
-                        { label: "Vốn điều lệ", value: data.charterCapital, icon: "💰" },
-                        { label: "Mệnh giá", value: `${data.parValue.toLocaleString("vi-VN")} VND`, icon: "📄" },
-                    ].map((item) => (
-                        <div key={item.label} className="bg-gradient-to-br from-gray-50 to-white border border-gray-100 rounded-lg p-3 text-center">
-                            <div className="text-lg mb-1">{item.icon}</div>
-                            <div className="text-[10px] text-gray-500 mb-0.5">{item.label}</div>
-                            <div className="text-xs font-bold text-gray-800">{item.value}</div>
-                        </div>
-                    ))}
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-                    {[
-                        { label: "CP lưu hành", value: data.outstandingShares },
-                        { label: "CP niêm yết", value: data.listedShares },
-                        { label: "CP quỹ", value: data.treasuryShares },
-                    ].map((item) => (
-                        <div key={item.label} className="flex justify-between bg-gray-50 rounded-lg px-3 py-2">
-                            <span className="text-xs text-gray-500">{item.label}</span>
-                            <span className="text-xs font-semibold text-gray-800 font-mono">{item.value}</span>
-                        </div>
-                    ))}
-                </div>
-
-                {/* Foreign ownership bar */}
-                <div className="bg-blue-50/50 border border-blue-100 rounded-lg p-3">
-                    <div className="flex justify-between items-center mb-2">
-                        <span className="text-xs font-medium text-gray-700">Tỷ lệ sở hữu nước ngoài</span>
-                        <span className="text-xs font-bold text-blue-600">
-                            {foreignPct}% / {foreignLimit}%
-                        </span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
-                        <div
-                            className="bg-gradient-to-r from-blue-400 to-blue-600 h-full rounded-full transition-all"
-                            style={{ width: `${Math.min(foreignBarWidth, 100)}%` }}
-                        />
-                    </div>
-                    <div className="flex justify-between mt-1">
-                        <span className="text-[10px] text-gray-400">0%</span>
-                        <span className="text-[10px] text-gray-400">Room: {foreignLimit}%</span>
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
-    );
-}
-
-function BoardMembersSection({ members }: { members: BoardMember[] }) {
-    const [filter, setFilter] = useState<"all" | "board" | "executive" | "supervisor">("all");
-
-    const filtered = filter === "all" ? members : members.filter((m) => m.type === filter);
-
-    const tabs: { id: typeof filter; label: string; count: number }[] = [
-        { id: "all", label: "Tất cả", count: members.length },
-        { id: "board", label: "HĐQT", count: members.filter((m) => m.type === "board").length },
-        { id: "executive", label: "Ban điều hành", count: members.filter((m) => m.type === "executive").length },
-        { id: "supervisor", label: "Ban kiểm soát", count: members.filter((m) => m.type === "supervisor").length },
-    ];
-
-    return (
-        <Card className="shadow-sm border-gray-200">
-            <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-                    <Users className="w-4 h-4 text-amber-500" />
-                    Ban lãnh đạo & Quản trị
-                </CardTitle>
-            </CardHeader>
-            <CardContent>
-                {/* Filter tabs */}
-                <div className="flex gap-1.5 mb-4">
-                    {tabs.map((tab) => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setFilter(tab.id)}
-                            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                                filter === tab.id
-                                    ? "bg-amber-500 text-white shadow-sm"
-                                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                            }`}
-                        >
-                            {tab.label}
-                            <span className="ml-1 opacity-70">({tab.count})</span>
-                        </button>
-                    ))}
-                </div>
-
-                {/* Members grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {filtered.map((member, idx) => (
-                        <div
-                            key={idx}
-                            className="flex gap-3 p-3 bg-white border border-gray-100 rounded-lg hover:shadow-sm transition-shadow"
-                        >
-                            {/* Avatar */}
-                            <div
-                                className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0 ${
-                                    member.type === "board"
-                                        ? "bg-gradient-to-br from-amber-400 to-amber-600"
-                                        : member.type === "executive"
-                                        ? "bg-gradient-to-br from-blue-400 to-blue-600"
-                                        : "bg-gradient-to-br from-gray-400 to-gray-600"
-                                }`}
-                            >
-                                {member.name.split(" ").pop()?.charAt(0)}
+                        <InfoRow label="Sàn giao dịch" value={data.exchange} />
+                        <InfoRow label="Vốn điều lệ" value={data.charterCapital != null ? `${(data.charterCapital / 1e9).toFixed(1)} tỷ` : "—"} />
+                        <InfoRow label="CP lưu hành" value={data.outstandingShares != null ? data.outstandingShares.toLocaleString("vi-VN") : "—"} />
+                        {data.website && (
+                            <div className="flex items-center gap-2 py-2">
+                                <Globe className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                                <a
+                                    href={data.website.startsWith("http") ? data.website : `https://${data.website}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                                >
+                                    {data.website}
+                                    <ExternalLink className="w-3 h-3" />
+                                </a>
                             </div>
-
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="text-xs font-bold text-gray-800 truncate">
-                                        {member.name}
-                                    </span>
-                                    <Badge
-                                        text={member.type === "board" ? "HĐQT" : member.type === "executive" ? "Điều hành" : "Kiểm soát"}
-                                        variant={member.type === "board" ? "amber" : member.type === "executive" ? "blue" : "gray"}
-                                    />
-                                </div>
-                                <p className="text-[11px] text-gray-500 mt-0.5">{member.position}</p>
-                                <div className="flex items-center gap-3 mt-1.5 text-[10px] text-gray-400">
-                                    <span>📅 Từ {member.startDate}</span>
-                                    <span>🎓 {member.education}</span>
-                                </div>
-                                <div className="flex items-center gap-3 mt-1 text-[10px] text-gray-400">
-                                    <span>📊 SH: {member.sharesOwned} CP ({member.sharesPercent}%)</span>
-                                    <span>{member.gender === "Nam" ? "👨" : "👩"} {member.yearOfBirth}</span>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
+                        )}
+                    </div>
                 </div>
             </CardContent>
         </Card>
     );
 }
 
-function SubsidiariesSection({ subsidiaries }: { subsidiaries: Subsidiary[] }) {
-    const conList = subsidiaries.filter((s) => s.type === "con");
-    const lkList = subsidiaries.filter((s) => s.type === "liên kết");
+type ShareholderSortKey = "name" | "role" | "percentage";
+type ShareholderSortDir = "asc" | "desc" | null;
+const SHAREHOLDERS_PAGE_SIZE = 10;
 
-    return (
-        <Card className="shadow-sm border-gray-200">
-            <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-                    <Factory className="w-4 h-4 text-purple-500" />
-                    Công ty con & Liên kết
-                </CardTitle>
-            </CardHeader>
-            <CardContent>
-                {/* Subsidiaries table */}
-                {conList.length > 0 && (
-                    <div className="mb-4">
-                        <h4 className="text-xs font-semibold text-purple-600 mb-2 flex items-center gap-1.5">
-                            <GitBranch className="w-3.5 h-3.5" />
-                            Công ty con ({conList.length})
-                        </h4>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-xs">
-                                <thead>
-                                    <tr className="bg-gray-50">
-                                        <th className="text-left py-2 px-3 font-semibold text-gray-600">Tên công ty</th>
-                                        <th className="text-right py-2 px-3 font-semibold text-gray-600">Vốn điều lệ</th>
-                                        <th className="text-right py-2 px-3 font-semibold text-gray-600">Tỷ lệ SH</th>
-                                        <th className="text-left py-2 px-3 font-semibold text-gray-600">Ngành</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {conList.map((s, i) => (
-                                        <tr key={i} className="border-b border-gray-50 hover:bg-blue-50/30">
-                                            <td className="py-2 px-3 font-medium text-gray-800">{s.name}</td>
-                                            <td className="py-2 px-3 text-right text-gray-600 font-mono">{s.charterCapital}</td>
-                                            <td className="py-2 px-3 text-right">
-                                                <span className={`font-semibold ${s.ownershipPercent >= 80 ? "text-green-600" : s.ownershipPercent >= 50 ? "text-blue-600" : "text-amber-600"}`}>
-                                                    {s.ownershipPercent}%
-                                                </span>
-                                            </td>
-                                            <td className="py-2 px-3 text-gray-500">{s.industry}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                )}
+function ShareholdersSection({ shareholders }: { shareholders: Shareholder[] }) {
+    const [search, setSearch] = useState("");
+    const [sortKey, setSortKey] = useState<ShareholderSortKey | null>(null);
+    const [sortDir, setSortDir] = useState<ShareholderSortDir>(null);
+    const [page, setPage] = useState(1);
 
-                {/* Associates */}
-                {lkList.length > 0 && (
-                    <div>
-                        <h4 className="text-xs font-semibold text-cyan-600 mb-2 flex items-center gap-1.5">
-                            <CircleDot className="w-3.5 h-3.5" />
-                            Công ty liên kết ({lkList.length})
-                        </h4>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-xs">
-                                <thead>
-                                    <tr className="bg-gray-50">
-                                        <th className="text-left py-2 px-3 font-semibold text-gray-600">Tên công ty</th>
-                                        <th className="text-right py-2 px-3 font-semibold text-gray-600">Vốn điều lệ</th>
-                                        <th className="text-right py-2 px-3 font-semibold text-gray-600">Tỷ lệ SH</th>
-                                        <th className="text-left py-2 px-3 font-semibold text-gray-600">Ngành</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {lkList.map((s, i) => (
-                                        <tr key={i} className="border-b border-gray-50 hover:bg-cyan-50/30">
-                                            <td className="py-2 px-3 font-medium text-gray-800">{s.name}</td>
-                                            <td className="py-2 px-3 text-right text-gray-600 font-mono">{s.charterCapital}</td>
-                                            <td className="py-2 px-3 text-right font-semibold text-amber-600">{s.ownershipPercent}%</td>
-                                            <td className="py-2 px-3 text-gray-500">{s.industry}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                )}
-            </CardContent>
-        </Card>
-    );
-}
-
-function MilestonesSection({ milestones }: { milestones: Milestone[] }) {
-    const categoryIcon: Record<string, { emoji: string; color: string }> = {
-        foundation: { emoji: "🏗️", color: "border-blue-400 bg-blue-50" },
-        listing: { emoji: "📈", color: "border-green-400 bg-green-50" },
-        expansion: { emoji: "🚀", color: "border-purple-400 bg-purple-50" },
-        dividend: { emoji: "💰", color: "border-amber-400 bg-amber-50" },
-        award: { emoji: "🏆", color: "border-red-400 bg-red-50" },
-        restructuring: { emoji: "🔄", color: "border-cyan-400 bg-cyan-50" },
+    const toggleSort = (key: ShareholderSortKey) => {
+        if (sortKey === key) {
+            const next = sortDir === "asc" ? "desc" : sortDir === "desc" ? null : "asc";
+            setSortDir(next);
+            if (next === null) setSortKey(null);
+        } else {
+            setSortKey(key);
+            setSortDir("asc");
+        }
+        setPage(1);
     };
 
-    const sorted = [...milestones].sort((a, b) => b.year - a.year);
+    const filtered = useMemo(() => {
+        if (!search.trim()) return shareholders;
+        const q = search.toLowerCase();
+        return shareholders.filter(
+            (s) => s.name.toLowerCase().includes(q) || s.role.toLowerCase().includes(q),
+        );
+    }, [shareholders, search]);
+
+    const sorted = useMemo(() => {
+        if (!sortKey || !sortDir) return filtered;
+        return [...filtered].sort((a, b) => {
+            let cmp = 0;
+            if (sortKey === "name") cmp = a.name.localeCompare(b.name, "vi");
+            else if (sortKey === "role") cmp = a.role.localeCompare(b.role, "vi");
+            else cmp = a.percentage - b.percentage;
+            return sortDir === "desc" ? -cmp : cmp;
+        });
+    }, [filtered, sortKey, sortDir]);
+
+    const totalPages = Math.max(1, Math.ceil(sorted.length / SHAREHOLDERS_PAGE_SIZE));
+    const pageData = sorted.slice((page - 1) * SHAREHOLDERS_PAGE_SIZE, page * SHAREHOLDERS_PAGE_SIZE);
+
+    const SortIcon = ({ col }: { col: ShareholderSortKey }) => {
+        if (sortKey !== col || !sortDir) return <ArrowUpDown className="w-3 h-3 text-gray-400" />;
+        return sortDir === "asc" ? <ArrowUp className="w-3 h-3 text-amber-600" /> : <ArrowDown className="w-3 h-3 text-amber-600" />;
+    };
+
+    if (!shareholders.length) {
+        return (
+            <Card className="shadow-sm border-gray-200">
+                <CardContent className="py-8 text-center text-xs text-gray-400">Chưa có dữ liệu cổ đông</CardContent>
+            </Card>
+        );
+    }
+
+    return (
+        <Card className="shadow-sm border-gray-200">
+            <CardHeader className="pb-2">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <CardTitle className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                        <Users className="w-4 h-4 text-amber-500" />
+                        Cổ đông & Lãnh đạo
+                        <span className="text-[11px] font-normal text-gray-400 ml-1">({shareholders.length})</span>
+                    </CardTitle>
+                    <div className="relative">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                        <input
+                            type="text"
+                            placeholder="Tìm theo tên hoặc chức vụ…"
+                            value={search}
+                            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                            className="pl-8 pr-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-400 focus:border-amber-400 w-full sm:w-56 bg-gray-50"
+                        />
+                    </div>
+                </div>
+            </CardHeader>
+            <CardContent className="px-0 pb-3">
+                {/* Table Header */}
+                <div className="grid grid-cols-12 gap-1 px-4 py-2.5 text-[11px] font-semibold text-gray-500 bg-gray-50 border-y border-gray-200 uppercase tracking-wide">
+                    <button className="col-span-1 text-center">#</button>
+                    <button className="col-span-4 flex items-center gap-1 hover:text-gray-700" onClick={() => toggleSort("name")}>
+                        Họ và tên <SortIcon col="name" />
+                    </button>
+                    <button className="col-span-4 flex items-center gap-1 hover:text-gray-700" onClick={() => toggleSort("role")}>
+                        Chức vụ <SortIcon col="role" />
+                    </button>
+                    <button className="col-span-3 flex items-center gap-1 justify-end hover:text-gray-700" onClick={() => toggleSort("percentage")}>
+                        Tỷ lệ (%) <SortIcon col="percentage" />
+                    </button>
+                </div>
+
+                {/* Table Body */}
+                <div className="divide-y divide-gray-100">
+                    {pageData.length === 0 ? (
+                        <div className="px-4 py-6 text-center text-xs text-gray-400">Không tìm thấy kết quả</div>
+                    ) : (
+                        pageData.map((s, idx) => (
+                            <div
+                                key={idx}
+                                className={`grid grid-cols-12 gap-1 px-4 py-2.5 text-xs hover:bg-amber-50/40 transition-colors ${idx % 2 === 0 ? "bg-white" : "bg-gray-50/30"}`}
+                            >
+                                <span className="col-span-1 text-center text-gray-400 font-mono">
+                                    {(page - 1) * SHAREHOLDERS_PAGE_SIZE + idx + 1}
+                                </span>
+                                <span className="col-span-4 text-gray-800 font-medium truncate">{s.name}</span>
+                                <span className="col-span-4 text-gray-500 truncate">{s.role}</span>
+                                <span className="col-span-3 text-right font-semibold text-gray-700 font-[var(--font-roboto-mono)]">
+                                    {`${s.percentage}%`}
+                                </span>
+                            </div>
+                        ))
+                    )}
+                </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                    <div className="flex items-center justify-between px-4 pt-3 border-t border-gray-200 mt-1">
+                        <span className="text-[11px] text-gray-400">
+                            Trang {page}/{totalPages} · {sorted.length} kết quả
+                        </span>
+                        <div className="flex items-center gap-1">
+                            <button
+                                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                                disabled={page === 1}
+                                className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                                <ChevronLeft className="w-4 h-4 text-gray-600" />
+                            </button>
+                            {Array.from({ length: totalPages }, (_, i) => i + 1)
+                                .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+                                .map((p, idx, arr) => (
+                                    <React.Fragment key={p}>
+                                        {idx > 0 && arr[idx - 1] !== p - 1 && (
+                                            <span className="text-[10px] text-gray-300 px-0.5">…</span>
+                                        )}
+                                        <button
+                                            onClick={() => setPage(p)}
+                                            className={`min-w-[24px] h-6 rounded text-[11px] font-medium transition-colors ${
+                                                p === page
+                                                    ? "bg-amber-500 text-white"
+                                                    : "text-gray-600 hover:bg-gray-100"
+                                            }`}
+                                        >
+                                            {p}
+                                        </button>
+                                    </React.Fragment>
+                                ))}
+                            <button
+                                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                                disabled={page === totalPages}
+                                className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                                <ChevronRight className="w-4 h-4 text-gray-600" />
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
+const EVENTS_PREVIEW_COUNT = 5;
+
+function EventsSection({ events }: { events: CompanyProfileData["events"] }) {
+    const [expanded, setExpanded] = useState(false);
+
+    if (!events.length) {
+        return (
+            <Card className="shadow-sm border-gray-200">
+                <CardContent className="py-8 text-center text-xs text-gray-400">Chưa có sự kiện</CardContent>
+            </Card>
+        );
+    }
+
+    const hasMore = events.length > EVENTS_PREVIEW_COUNT;
+    const visible = expanded ? events : events.slice(0, EVENTS_PREVIEW_COUNT);
 
     return (
         <Card className="shadow-sm border-gray-200">
             <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-semibold text-gray-800 flex items-center gap-2">
                     <CalendarDays className="w-4 h-4 text-red-500" />
-                    Lịch sử phát triển
+                    Sự kiện doanh nghiệp
+                    <span className="text-[11px] font-normal text-gray-400 ml-1">({events.length})</span>
                 </CardTitle>
             </CardHeader>
             <CardContent>
                 <div className="relative">
-                    {/* Timeline line */}
                     <div className="absolute left-[18px] top-0 bottom-0 w-0.5 bg-gray-200" />
-
                     <div className="space-y-3">
-                        {sorted.map((m, i) => {
-                            const cat = categoryIcon[m.category] || categoryIcon.expansion;
-                            return (
-                                <div key={i} className="flex gap-3 relative">
-                                    {/* Timeline dot */}
-                                    <div className={`w-9 h-9 rounded-full border-2 flex items-center justify-center shrink-0 z-10 text-sm ${cat.color}`}>
-                                        {cat.emoji}
-                                    </div>
-                                    {/* Content */}
-                                    <div className="flex-1 pb-3">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-xs font-bold text-gray-800">
-                                                {m.year}{m.quarter ? ` - ${m.quarter}` : ""}
-                                            </span>
-                                        </div>
-                                        <p className="text-xs text-gray-600 mt-0.5 leading-relaxed">{m.event}</p>
-                                    </div>
+                        {visible.map((e, i) => (
+                            <div key={i} className="flex gap-3 relative">
+                                <div className="w-9 h-9 rounded-full border-2 border-blue-400 bg-blue-50 flex items-center justify-center shrink-0 z-10 text-sm">
+                                    📅
                                 </div>
-                            );
-                        })}
+                                <div className="flex-1 pb-3">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="text-xs font-bold text-gray-800">{e.date}</span>
+                                        {e.category && <Badge text={e.category} variant="blue" />}
+                                    </div>
+                                    <p className="text-xs text-gray-600 mt-0.5 leading-relaxed">{e.title}</p>
+                                    {e.source && (
+                                        <span className="text-[10px] text-gray-400">Nguồn: {e.source}</span>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
+
+                {hasMore && (
+                    <button
+                        onClick={() => setExpanded(!expanded)}
+                        className="mt-3 w-full flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors border border-red-200 hover:border-red-300"
+                    >
+                        {expanded ? (
+                            <>Thu gọn <ChevronUp className="w-3.5 h-3.5" /></>
+                        ) : (
+                            <>Xem thêm ({events.length - EVENTS_PREVIEW_COUNT} sự kiện còn lại) <ChevronDown className="w-3.5 h-3.5" /></>
+                        )}
+                    </button>
+                )}
             </CardContent>
         </Card>
     );
 }
 
-function DividendHistorySection({ dividends }: { dividends: DividendHistory[] }) {
-    return (
-        <Card className="shadow-sm border-gray-200">
-            <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-                    <Banknote className="w-4 h-4 text-cyan-500" />
-                    Lịch sử cổ tức
-                </CardTitle>
-            </CardHeader>
-            <CardContent>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-xs">
-                        <thead>
-                            <tr className="bg-gray-50">
-                                <th className="text-left py-2.5 px-3 font-semibold text-gray-600">Năm</th>
-                                <th className="text-left py-2.5 px-3 font-semibold text-gray-600">Hình thức</th>
-                                <th className="text-right py-2.5 px-3 font-semibold text-gray-600">Tiền mặt (VND/CP)</th>
-                                <th className="text-center py-2.5 px-3 font-semibold text-gray-600">CP thưởng</th>
-                                <th className="text-center py-2.5 px-3 font-semibold text-gray-600">Ngày GDKHQ</th>
-                                <th className="text-center py-2.5 px-3 font-semibold text-gray-600">Ngày thanh toán</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {dividends.map((d, i) => (
-                                <tr key={i} className={`border-b border-gray-50 ${i === 0 ? "bg-blue-50/30" : "hover:bg-gray-50"}`}>
-                                    <td className="py-2.5 px-3 font-bold text-gray-800">{d.year}</td>
-                                    <td className="py-2.5 px-3">
-                                        <Badge
-                                            text={d.type}
-                                            variant={
-                                                d.type === "Tiền mặt"
-                                                    ? "green"
-                                                    : d.type === "Cổ phiếu"
-                                                    ? "blue"
-                                                    : d.type.includes("+")
-                                                    ? "amber"
-                                                    : d.type === "Không chia"
-                                                    ? "red"
-                                                    : "amber"
-                                            }
-                                        />
-                                    </td>
-                                    <td className="py-2.5 px-3 text-right font-mono font-semibold text-gray-800">
-                                        {d.cashPerShare > 0 ? d.cashPerShare.toLocaleString("vi-VN") : "-"}
-                                    </td>
-                                    <td className="py-2.5 px-3 text-center text-gray-600">{d.stockRatio}</td>
-                                    <td className="py-2.5 px-3 text-center text-gray-600">{d.exDate}</td>
-                                    <td className="py-2.5 px-3 text-center text-gray-600">{d.paymentDate}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </CardContent>
-        </Card>
-    );
-}
-
-// ==================== MAIN COMPONENT ====================
+// ==================== MAIN ====================
 
 export default function CompanyProfileTab() {
-    const { stockInfo } = useStockDetail();
-    const data = getCompanyProfileData(stockInfo.ticker);
+    const { stockInfo, ticker } = useStockDetail();
+    const { data, loading, error } = useCompanyProfile(ticker);
+
+    if (loading && !data) return <div className="text-center py-12 text-gray-400 animate-pulse">Đang tải hồ sơ doanh nghiệp…</div>;
+    if (error && !data) return <div className="text-center py-12 text-red-500">Lỗi: {error}</div>;
+    if (!data) return null;
 
     return (
         <div className="space-y-4">
-            {/* Page header */}
             <div>
                 <h2 className="text-lg font-bold text-gray-800">
                     Hồ sơ doanh nghiệp - {stockInfo.ticker}
@@ -523,29 +386,21 @@ export default function CompanyProfileTab() {
                 </p>
             </div>
 
-            {/* Section 1: Company Overview */}
             <SectionHeading icon={Building2} title="Giới thiệu doanh nghiệp" color="blue" />
             <CompanyOverviewSection data={data.overview} />
 
-            {/* Section 2: Listing Info */}
-            <SectionHeading icon={Landmark} title="Thông tin niêm yết" color="green" />
-            <ListingInfoSection data={data.overview} />
+            <SectionHeading icon={Network} title="Sơ đồ bộ máy tổ chức" color="cyan" />
+            <Card className="shadow-sm border-gray-200">
+                <CardContent className="p-4 sm:p-6">
+                    <OrgChart shareholders={data.shareholders} />
+                </CardContent>
+            </Card>
 
-            {/* Section 3: Board & Leadership */}
-            <SectionHeading icon={Users} title="Ban lãnh đạo & Quản trị" color="amber" />
-            <BoardMembersSection members={data.boardMembers} />
+            <SectionHeading icon={Users} title="Cổ đông & Lãnh đạo" color="amber" />
+            <ShareholdersSection shareholders={data.shareholders} />
 
-            {/* Section 4: Subsidiaries */}
-            <SectionHeading icon={Factory} title="Công ty con & Liên kết" color="purple" />
-            <SubsidiariesSection subsidiaries={data.subsidiaries} />
-
-            {/* Section 5: Milestones */}
-            <SectionHeading icon={TrendingUp} title="Lịch sử phát triển" color="red" />
-            <MilestonesSection milestones={data.milestones} />
-
-            {/* Section 6: Dividend History */}
-            <SectionHeading icon={Banknote} title="Lịch sử cổ tức" color="cyan" />
-            <DividendHistorySection dividends={data.dividendHistory} />
+            <SectionHeading icon={CalendarDays} title="Sự kiện doanh nghiệp" color="red" />
+            <EventsSection events={data.events} />
         </div>
     );
 }

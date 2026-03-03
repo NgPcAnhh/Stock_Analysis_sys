@@ -2,9 +2,8 @@
 
 import React from "react";
 import ReactECharts from "echarts-for-react";
-import { RecommendedStock } from "@/lib/stockDetailMockData";
+import type { RecommendedStock } from "@/hooks/useStockData";
 import { Card } from "@/components/ui/card";
-import { Star } from "lucide-react";
 
 interface StockRecommendationCardProps {
     stock: RecommendedStock;
@@ -76,9 +75,6 @@ const StockRecommendationCard = ({ stock }: StockRecommendationCardProps) => {
                                 {stock.ticker}
                             </span>
                             <span className="text-[10px] text-gray-400">({stock.exchange})</span>
-                            {stock.isFavorite && (
-                                <Star className="w-3.5 h-3.5 text-amber-500" fill="currentColor" />
-                            )}
                         </div>
                         <p className="text-[10px] text-gray-500 truncate">{stock.companyName}</p>
                     </div>

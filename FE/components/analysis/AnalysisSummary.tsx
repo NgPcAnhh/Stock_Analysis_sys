@@ -15,6 +15,7 @@ import {
 interface AnalysisSummaryProps {
   summary: AnalysisSummaryData;
   currentPrice: number;
+  className?: string;
 }
 
 const signalColors: Record<string, { bg: string; text: string; border: string }> = {
@@ -33,26 +34,31 @@ const SignalIcon: React.FC<{ signal: string; size?: number }> = ({ signal, size 
   return <Minus size={size} className="text-gray-400" />;
 };
 
-const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({ summary, currentPrice }) => {
+const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({ summary, currentPrice, className }) => {
   const overall = signalColors[summary.overallSignal] || signalColors["Trung lập"];
   const totalSignals = summary.buyCount + summary.sellCount + summary.neutralCount;
 
   return (
-    <div className="space-y-4">
+    <div className={`space-y-4 flex flex-col ${className || ''}`}>
       {/* Overall Signal */}
-      <Card className={`shadow-sm ${overall.border} border`}>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-3">
+      <Card className={`shadow-sm ${overall.border} border flex-1 flex flex-col`}>
+        <CardContent className="p-5 flex-1 flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-4">
             <span className="text-sm font-medium text-gray-500">Tín hiệu tổng hợp</span>
             <SignalIcon signal={summary.overallSignal} size={20} />
           </div>
-          <div className={`text-2xl font-bold ${overall.text} mb-3`}>
-            {summary.overallSignal}
+          <div className="flex items-end gap-2 mb-4">
+            <span className={`text-3xl font-bold ${overall.text}`}>
+              {summary.overallSignal}
+            </span>
+            <span className={`text-sm font-semibold ${summary.scorePercent >= 0 ? 'text-emerald-500' : 'text-red-500'} mb-0.5`}>
+              ({summary.scorePercent > 0 ? '+' : ''}{summary.scorePercent}%)
+            </span>
           </div>
 
           {/* Signal gauge */}
-          <div className="flex items-center gap-2 mb-2">
-            <div className="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden flex">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden flex">
               <div
                 className="bg-emerald-500 rounded-l-full transition-all"
                 style={{ width: `${(summary.buyCount / totalSignals) * 100}%` }}
@@ -85,107 +91,37 @@ const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({ summary, currentPrice
         </CardContent>
       </Card>
 
-      {/* Moving Averages */}
-      <Card className="shadow-sm border-gray-200">
-        <CardHeader className="pb-2 pt-3 px-4">
-          <CardTitle className="text-sm font-semibold text-gray-700">
-            Đường trung bình
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="px-4 pb-3">
-          <div className="space-y-1.5">
-            {summary.movingAverages.map((ma) => (
-              <div
-                key={ma.indicator}
-                className="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-0"
-              >
-                <span className="text-xs text-gray-600">{ma.indicator}</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono text-gray-500">{ma.value}</span>
-                  <span
-                    className={`text-xs font-medium px-1.5 py-0.5 rounded ${
-                      ma.signal === "Mua"
-                        ? "bg-emerald-50 text-emerald-600"
-                        : ma.signal === "Bán"
-                        ? "bg-red-50 text-red-600"
-                        : "bg-gray-50 text-gray-500"
-                    }`}
-                  >
-                    {ma.signal}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Oscillators */}
-      <Card className="shadow-sm border-gray-200">
-        <CardHeader className="pb-2 pt-3 px-4">
-          <CardTitle className="text-sm font-semibold text-gray-700">
-            Chỉ báo dao động
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="px-4 pb-3">
-          <div className="space-y-1.5">
-            {summary.oscillators.map((osc) => (
-              <div
-                key={osc.indicator}
-                className="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-0"
-              >
-                <span className="text-xs text-gray-600">{osc.indicator}</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono text-gray-500">{osc.value}</span>
-                  <span
-                    className={`text-xs font-medium px-1.5 py-0.5 rounded ${
-                      osc.signal === "Mua"
-                        ? "bg-emerald-50 text-emerald-600"
-                        : osc.signal === "Bán"
-                        ? "bg-red-50 text-red-600"
-                        : "bg-gray-50 text-gray-500"
-                    }`}
-                  >
-                    {osc.signal}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Pivot Points */}
       <Card className="shadow-sm border-gray-200">
-        <CardHeader className="pb-2 pt-3 px-4">
-          <CardTitle className="text-sm font-semibold text-gray-700">Điểm Pivot</CardTitle>
+        <CardHeader className="pb-1 pt-2 px-3">
+          <CardTitle className="text-xs font-semibold text-gray-700">Điểm Pivot</CardTitle>
         </CardHeader>
-        <CardContent className="px-4 pb-3">
+        <CardContent className="px-3 pb-2">
           <div className="overflow-x-auto">
-            <table className="w-full text-xs">
+            <table className="w-full text-[11px]">
               <thead>
                 <tr className="border-b border-gray-100">
-                  <th className="text-left py-1.5 text-gray-500 font-medium">Loại</th>
-                  <th className="text-right py-1.5 text-red-400 font-medium">S3</th>
-                  <th className="text-right py-1.5 text-red-400 font-medium">S2</th>
-                  <th className="text-right py-1.5 text-red-400 font-medium">S1</th>
-                  <th className="text-right py-1.5 text-gray-500 font-medium">Pivot</th>
-                  <th className="text-right py-1.5 text-emerald-400 font-medium">R1</th>
-                  <th className="text-right py-1.5 text-emerald-400 font-medium">R2</th>
-                  <th className="text-right py-1.5 text-emerald-400 font-medium">R3</th>
+                  <th className="text-left py-1 text-gray-500 font-medium">Loại</th>
+                  <th className="text-right py-1 text-red-400 font-medium">S3</th>
+                  <th className="text-right py-1 text-red-400 font-medium">S2</th>
+                  <th className="text-right py-1 text-red-400 font-medium">S1</th>
+                  <th className="text-right py-1 text-gray-500 font-medium">Pivot</th>
+                  <th className="text-right py-1 text-emerald-400 font-medium">R1</th>
+                  <th className="text-right py-1 text-emerald-400 font-medium">R2</th>
+                  <th className="text-right py-1 text-emerald-400 font-medium">R3</th>
                 </tr>
               </thead>
               <tbody>
                 {summary.pivotPoints.map((pp) => (
                   <tr key={pp.type} className="border-b border-gray-50 last:border-0">
-                    <td className="py-1.5 text-gray-600 font-medium">{pp.type}</td>
-                    <td className="py-1.5 text-right font-mono text-red-500">{pp.s3.toLocaleString()}</td>
-                    <td className="py-1.5 text-right font-mono text-red-500">{pp.s2.toLocaleString()}</td>
-                    <td className="py-1.5 text-right font-mono text-red-400">{pp.s1.toLocaleString()}</td>
-                    <td className="py-1.5 text-right font-mono text-gray-600 font-bold">{pp.pivot.toLocaleString()}</td>
-                    <td className="py-1.5 text-right font-mono text-emerald-400">{pp.r1.toLocaleString()}</td>
-                    <td className="py-1.5 text-right font-mono text-emerald-500">{pp.r2.toLocaleString()}</td>
-                    <td className="py-1.5 text-right font-mono text-emerald-500">{pp.r3.toLocaleString()}</td>
+                    <td className="py-1 text-gray-600 font-medium">{pp.type}</td>
+                    <td className="py-1 text-right font-mono text-red-500">{pp.s3.toLocaleString()}</td>
+                    <td className="py-1 text-right font-mono text-red-500">{pp.s2.toLocaleString()}</td>
+                    <td className="py-1 text-right font-mono text-red-400">{pp.s1.toLocaleString()}</td>
+                    <td className="py-1 text-right font-mono text-gray-600 font-bold">{pp.pivot.toLocaleString()}</td>
+                    <td className="py-1 text-right font-mono text-emerald-400">{pp.r1.toLocaleString()}</td>
+                    <td className="py-1 text-right font-mono text-emerald-500">{pp.r2.toLocaleString()}</td>
+                    <td className="py-1 text-right font-mono text-emerald-500">{pp.r3.toLocaleString()}</td>
                   </tr>
                 ))}
               </tbody>

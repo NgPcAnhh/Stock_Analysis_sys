@@ -21,8 +21,6 @@ interface SectorTableRow {
     marketCap: string;
     pe: number;
     pb: number;
-    dividendYield: number;
-    lnstGrowth3Y: number;
     priceChange1D: number;
     priceChange7D: number;
     priceChangeYTD: number;
@@ -113,7 +111,7 @@ export default function SectorAnalysisTable() {
                         {/* Header row */}
                         <div className="flex gap-3 py-2 border-b border-slate-200">
                             <Skeleton className="h-3 w-28" />
-                            {Array.from({ length: 10 }).map((_, i) => (
+                            {Array.from({ length: 9 }).map((_, i) => (
                                 <Skeleton key={i} className="h-3 w-14" />
                             ))}
                         </div>
@@ -121,7 +119,7 @@ export default function SectorAnalysisTable() {
                         {Array.from({ length: 12 }).map((_, i) => (
                             <div key={i} className="flex gap-3 py-2.5 border-b border-slate-50">
                                 <Skeleton className="h-3 w-28" />
-                                {Array.from({ length: 10 }).map((_, j) => (
+                                {Array.from({ length: 9 }).map((_, j) => (
                                     <Skeleton key={j} className="h-3 w-14" />
                                 ))}
                             </div>
@@ -163,8 +161,6 @@ export default function SectorAnalysisTable() {
                                 <SortableHead label="Vốn hóa" colKey="marketCap" />
                                 <SortableHead label="P/E" colKey="pe" />
                                 <SortableHead label="P/B" colKey="pb" />
-                                <SortableHead label="Tỷ suất cổ tức" colKey="dividendYield" />
-                                <SortableHead label="T.trưởng LNST 3 năm dự phóng" colKey="lnstGrowth3Y" />
                                 <SortableHead label="% Giá 1D" colKey="priceChange1D" />
                                 <SortableHead label="% Giá 7D" colKey="priceChange7D" />
                                 <SortableHead label="% Giá YTD" colKey="priceChangeYTD" />
@@ -182,10 +178,6 @@ export default function SectorAnalysisTable() {
                                     <TableCell className="text-right text-gray-700 font-medium">{row.marketCap}</TableCell>
                                     <TableCell className="text-right text-gray-700">{row.pe.toFixed(2)}</TableCell>
                                     <TableCell className="text-right text-gray-700">{row.pb.toFixed(2)}</TableCell>
-                                    <TableCell className="text-right text-gray-700">{row.dividendYield.toFixed(2)}%</TableCell>
-                                    <TableCell className={`text-right font-medium ${colorClass(row.lnstGrowth3Y)}`}>
-                                        {fmt(row.lnstGrowth3Y)}
-                                    </TableCell>
                                     <TableCell className={`text-right font-medium ${colorClass(row.priceChange1D)}`}>
                                         {fmt(row.priceChange1D)}
                                     </TableCell>

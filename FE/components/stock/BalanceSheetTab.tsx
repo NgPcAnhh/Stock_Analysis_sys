@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useMemo } from "react";
 import ReactECharts from "echarts-for-react";
@@ -6,39 +6,19 @@ import IncomeStatementTab from "@/components/stock/IncomeStatementTab";
 import CashFlowTab from "@/components/stock/CashFlowTab";
 import QuantAnalysisTab from "@/components/stock/QuantAnalysisTab";
 import ValuationForecastTab from "@/components/stock/ValuationForecastTab";
-import {
-  overviewStats,
-  altmanZScore,
-  healthIndicators,
-  assetStructure,
-  capitalStructure,
-  trendData,
-  trendInsights,
-  inventoryItems,
-  inventoryStats,
-  leverageItems,
-  cccData,
-  liquidityData,
-  balanceSheetTableData,
-  tableYears,
-  tableCompareLabel,
-} from "@/lib/balanceSheetMockData";
 import { useStockDetail } from "@/lib/StockDetailContext";
+import {
+  useDeepAnalysis,
+  useFinancialRatios,
+  type DeepAnalysisData,
+  type OverviewStat,
+  type HealthIndicator,
+  type TrendYear,
+} from "@/hooks/useStockData";
 
 // ==================== HELPER FUNCTIONS ====================
-const formatNumber = (n: number) =>
-  n.toLocaleString("vi-VN");
-
-const YoYBadge = ({ value, direction }: { value: number; direction?: "up" | "down" }) => {
-  const isUp = direction === "up" || value > 0;
-  const color = isUp ? "text-[#00C076]" : "text-[#EF4444]";
-  const arrow = isUp ? "↗" : "↘";
-  return (
-    <span className={`text-xs font-medium ${color}`}>
-      {arrow} +{value}% YoY
-    </span>
-  );
-};
+const formatNumber = (n: number) => n.toLocaleString("vi-VN");
+const monoFont = "font-[var(--font-roboto-mono)]";
 
 // ==================== ROW 0: PAGE HEADER (SHARED) ====================
 type SubTab = "balance" | "income" | "cashflow" | "quant" | "valuation";
@@ -53,7 +33,6 @@ function PageHeader({
   onSubTabChange: (tab: SubTab) => void;
 }) {
   const [period, setPeriod] = useState("Năm 2024 (Kiểm toán)");
-
   const subTabs: { id: SubTab; icon: string; label: string }[] = [
     { id: "balance", icon: "📊", label: "Bảng Cân Đối Kế Toán" },
     { id: "income", icon: "📈", label: "Kết Quả Kinh Doanh" },
@@ -61,24 +40,18 @@ function PageHeader({
     { id: "quant", icon: "📐", label: "Phân tích 360" },
     { id: "valuation", icon: "💰", label: "Định giá & Dự phóng" },
   ];
-
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-      {/* Top bar */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between px-6 py-4 border-b border-gray-100">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center text-orange-600">
             <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <rect x="3" y="3" width="18" height="18" rx="3" />
-              <path d="M9 3v18M3 9h18" />
+              <rect x="3" y="3" width="18" height="18" rx="3" /><path d="M9 3v18M3 9h18" />
             </svg>
           </div>
           <div>
-            <h1 className="text-lg font-bold">
-              Financial Analysis{" "}
-              <span className="text-[#F97316]">DeepDive</span>
-            </h1>
-            <p className="text-xs text-gray-500">Báo cáo chuyên sâu một kỳ</p>
+            <h1 className="text-lg font-bold">Financial Analysis <span className="text-[#F97316]">DeepDive</span></h1>
+            <p className="text-xs text-gray-500">Báo cáo chuyên sâu</p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-6 mt-3 md:mt-0">
@@ -88,14 +61,9 @@ function PageHeader({
           </div>
           <div className="flex flex-col">
             <span className="text-[10px] text-gray-400 uppercase tracking-wider">Kỳ báo cáo</span>
-            <select
-              value={period}
-              onChange={(e) => setPeriod(e.target.value)}
-              className="text-sm font-semibold text-[#F97316] bg-transparent border-none cursor-pointer focus:outline-none"
-            >
-              <option>Năm 2024 (Kiểm toán)</option>
-              <option>Năm 2023 (Kiểm toán)</option>
-              <option>Q4 2024</option>
+            <select value={period} onChange={(e) => setPeriod(e.target.value)}
+              className="text-sm font-semibold text-[#F97316] bg-transparent border-none cursor-pointer focus:outline-none">
+              <option>Năm 2024 (Kiểm toán)</option><option>Năm 2023 (Kiểm toán)</option><option>Q4 2024</option>
             </select>
           </div>
           <div className="flex flex-col">
@@ -104,18 +72,12 @@ function PageHeader({
           </div>
         </div>
       </div>
-      {/* Tabs */}
-      <div className="flex items-center gap-0 px-6">
+      <div className="flex items-center gap-0 px-6 overflow-x-auto">
         {subTabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => onSubTabChange(tab.id)}
+          <button key={tab.id} onClick={() => onSubTabChange(tab.id)}
             className={`px-5 py-3 text-sm font-semibold border-b-[3px] transition-colors whitespace-nowrap ${
-              activeSubTab === tab.id
-                ? "text-[#F97316] border-[#F97316]"
-                : "text-gray-500 border-transparent hover:text-gray-700"
-            }`}
-          >
+              activeSubTab === tab.id ? "text-[#F97316] border-[#F97316]" : "text-gray-500 border-transparent hover:text-gray-700"
+            }`}>
             {tab.icon} {tab.label}
           </button>
         ))}
@@ -125,38 +87,20 @@ function PageHeader({
 }
 
 // ==================== ROW 1: KEY METRIC CARDS ====================
-function KeyMetricCards() {
+function KeyMetricCards({ stats }: { stats: OverviewStat[] }) {
+  const borderColors = ["border-t-orange-500", "border-t-orange-400", "border-t-red-500", "border-t-blue-500"];
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {overviewStats.map((stat, idx) => (
-        <div
-          key={idx}
-          className={`bg-white rounded-xl shadow-sm border border-gray-100 border-t-4 ${stat.borderColor} p-5`}
-        >
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-            {stat.label}
-          </p>
-          <p className="text-3xl font-extrabold text-gray-900 font-[var(--font-roboto-mono)]">
-            {formatNumber(stat.value)}
-          </p>
-          <div className="flex items-center gap-3 mt-2">
-            {stat.yoyPercent !== undefined && stat.yoyDirection && (
-              <YoYBadge value={stat.yoyPercent} direction={stat.yoyDirection} />
-            )}
-            <span
-              className={`text-xs ${
-                stat.subLabelColor === "green"
-                  ? "text-[#00C076]"
-                  : stat.subLabelColor === "red"
-                  ? "text-[#EF4444]"
-                  : stat.subLabelColor === "purple"
-                  ? "text-purple-500"
-                  : "text-gray-500"
-              }`}
-            >
-              {stat.subLabel}
+      {stats.map((stat, idx) => (
+        <div key={idx} className={`bg-white rounded-xl shadow-sm border border-gray-100 border-t-4 ${borderColors[idx % borderColors.length]} p-5`}>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{stat.label}</p>
+          <p className={`text-2xl font-extrabold text-gray-900 ${monoFont}`}>{stat.value}</p>
+          {stat.subLabel && <p className="text-xs text-gray-400 mt-1">{stat.subLabel}</p>}
+          {stat.trend && (
+            <span className={`text-xs font-medium ${stat.trend === "up" ? "text-[#00C076]" : stat.trend === "down" ? "text-[#EF4444]" : "text-gray-500"}`}>
+              {stat.trend === "up" ? "↗" : stat.trend === "down" ? "↘" : ""} {stat.trend}
             </span>
-          </div>
+          )}
         </div>
       ))}
     </div>
@@ -164,378 +108,154 @@ function KeyMetricCards() {
 }
 
 // ==================== ROW 2: FINANCIAL HEALTH ====================
-function FinancialHealthSection() {
-  const gaugeOption = useMemo(
-    () => ({
-      series: [
-        {
-          type: "gauge",
-          startAngle: 200,
-          endAngle: -20,
-          min: 0,
-          max: 5,
-          splitNumber: 5,
-          itemStyle: { color: "#00C076" },
-          progress: {
-            show: true,
-            roundCap: true,
-            width: 14,
-          },
-          pointer: { show: false },
-          axisLine: {
-            roundCap: true,
-            lineStyle: {
-              width: 14,
-              color: [
-                [0.33, "#EF4444"],
-                [0.6, "#FBBF24"],
-                [1, "#00C076"],
-              ],
-            },
-          },
-          axisTick: { show: false },
-          splitLine: { show: false },
-          axisLabel: { show: false },
-          title: { show: false },
-          detail: {
-            fontSize: 36,
-            fontWeight: 800,
-            fontFamily: "var(--font-roboto-mono), monospace",
-            offsetCenter: [0, "10%"],
-            formatter: "{value}",
-            color: "#1F2937",
-          },
-          data: [{ value: altmanZScore.value }],
-        },
-      ],
-    }),
-    []
-  );
-
+function FinancialHealthSection({ indicators }: { indicators: HealthIndicator[] }) {
+  const statusColors: Record<string, string> = { good: "text-[#00C076]", warning: "text-[#F59E0B]", danger: "text-[#EF4444]" };
+  const barColors: Record<string, string> = { good: "bg-green-500", warning: "bg-yellow-500", danger: "bg-red-500" };
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
       <h2 className="text-base font-bold text-gray-800 flex items-center gap-2 mb-5">
-        <span className="text-lg">🛡️</span>
-        Sức Khỏe Tài Chính & Rủi Ro (Financial Health)
+        <span className="text-lg">🛡️</span> Sức Khỏe Tài Chính & Rủi Ro
       </h2>
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left: Gauge */}
-        <div className="lg:col-span-4 flex flex-col items-center justify-center">
-          <p className="text-sm font-semibold text-gray-600 mb-1">Altman Z-Score (Nguy cơ phá sản)</p>
-          <ReactECharts option={gaugeOption} style={{ height: 220, width: "100%" }} />
-          <p className="text-sm font-semibold text-[#00C076] -mt-2">
-            {altmanZScore.value} — {altmanZScore.label}
-          </p>
-        </div>
-        {/* Right: 2x2 grid */}
-        <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {healthIndicators.map((item, idx) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {indicators.map((item, idx) => {
+          const barPct = item.value > 0 ? Math.min((item.value / 3) * 100, 100) : 0;
+          return (
             <div key={idx} className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-              <p className="text-xs font-semibold text-gray-500 mb-1">{item.title}</p>
-              <p className="text-2xl font-extrabold text-gray-900 font-[var(--font-roboto-mono)]">
-                {item.value}
-                <span className="text-base font-semibold text-gray-500">{item.suffix}</span>
-              </p>
+              <p className="text-xs font-semibold text-gray-500 mb-1">{item.name}</p>
+              <p className={`text-2xl font-extrabold text-gray-900 ${monoFont}`}>{item.value.toFixed(2)}</p>
               <div className="w-full h-2 bg-gray-200 rounded-full mt-2 mb-1">
-                <div
-                  className={`h-2 rounded-full ${item.barColor}`}
-                  style={{ width: `${Math.min(item.barPercent, 100)}%` }}
-                />
+                <div className={`h-2 rounded-full ${barColors[item.status] ?? "bg-gray-400"}`} style={{ width: `${barPct}%` }} />
               </div>
-              <p className={`text-[11px] ${item.statusColor}`}>{item.status}</p>
+              <p className={`text-[11px] ${statusColors[item.status] ?? "text-gray-500"}`}>{item.description}</p>
+              <p className="text-[10px] text-gray-400 mt-0.5">Ngưỡng: {item.threshold}</p>
             </div>
-          ))}
-        </div>
+          );
+        })}
       </div>
     </div>
   );
 }
 
 // ==================== ROW 3: ASSET & CAPITAL STRUCTURE ====================
-function AssetCapitalStructure() {
-  const assetDonutOption = useMemo(
-    () => ({
-      tooltip: { trigger: "item" },
-      legend: { show: false },
-      series: [
-        {
-          type: "pie",
-          radius: ["50%", "75%"],
-          avoidLabelOverlap: false,
-          label: { show: false },
-          data: [
-            { value: assetStructure.shortTerm, name: "Tài sản Ngắn hạn", itemStyle: { color: "#F97316" } },
-            { value: assetStructure.longTerm, name: "Tài sản Dài hạn", itemStyle: { color: "#8B5CF6" } },
-          ],
-        },
-      ],
-    }),
-    []
-  );
+function AssetCapitalStructure({ trends }: { trends: TrendYear[] }) {
+  const latest = trends.length > 0 ? trends[trends.length - 1] : null;
+  const totalAssets = latest?.totalAssets ?? 0;
+  const currentAssets = latest?.currentAssets ?? 0;
+  const nonCurrentAssets = latest?.nonCurrentAssets ?? 0;
+  const equity = latest?.equity ?? 0;
+  const totalLiab = latest?.totalLiabilities ?? 0;
+  const shortTermPct = totalAssets > 0 ? Math.round((currentAssets / totalAssets) * 100) : 0;
+  const longTermPct = 100 - shortTermPct;
+  const equityPct = (equity + totalLiab) > 0 ? Math.round((equity / (equity + totalLiab)) * 100) : 0;
+  const liabPct = 100 - equityPct;
 
-  const capitalDonutOption = useMemo(
-    () => ({
-      tooltip: { trigger: "item" },
-      legend: { show: false },
-      series: [
-        {
-          type: "pie",
-          radius: ["50%", "75%"],
-          avoidLabelOverlap: false,
-          label: { show: false },
-          data: [
-            { value: capitalStructure.equity, name: "Vốn chủ sở hữu", itemStyle: { color: "#00C076" } },
-            { value: capitalStructure.liabilities, name: "Nợ phải trả", itemStyle: { color: "#F97316" } },
-          ],
-        },
+  const assetDonutOption = useMemo(() => ({
+    tooltip: { trigger: "item" },
+    series: [{ type: "pie", radius: ["50%", "75%"], label: { show: false },
+      data: [
+        { value: shortTermPct, name: "TS Ngắn hạn", itemStyle: { color: "#F97316" } },
+        { value: longTermPct, name: "TS Dài hạn", itemStyle: { color: "#8B5CF6" } },
       ],
-    }),
-    []
-  );
+    }],
+  }), [shortTermPct, longTermPct]);
 
-  const stackedBarAssetOption = useMemo(
-    () => ({
+  const capitalDonutOption = useMemo(() => ({
+    tooltip: { trigger: "item" },
+    series: [{ type: "pie", radius: ["50%", "75%"], label: { show: false },
+      data: [
+        { value: equityPct, name: "Vốn CSH", itemStyle: { color: "#00C076" } },
+        { value: liabPct, name: "Nợ phải trả", itemStyle: { color: "#F97316" } },
+      ],
+    }],
+  }), [equityPct, liabPct]);
+
+  const trendOption = useMemo(() => {
+    if (trends.length < 2) return null;
+    return {
       tooltip: { trigger: "axis" },
-      legend: {
-        bottom: 0,
-        textStyle: { fontSize: 11 },
-        data: ["Vốn Chủ Sở Hữu", "Nợ Phải Trả"],
-      },
-      grid: { top: 10, left: 40, right: 20, bottom: 40 },
-      xAxis: { type: "category" as const, data: trendData.map((d) => d.year) },
-      yAxis: { type: "value" as const, max: 100, axisLabel: { formatter: "{value}%" } },
-      series: [
-        {
-          name: "Vốn Chủ Sở Hữu",
-          type: "bar",
-          stack: "total",
-          data: trendData.map((d) => d.equity),
-          itemStyle: { color: "#F97316" },
-          barWidth: "40%",
-        },
-        {
-          name: "Nợ Phải Trả",
-          type: "bar",
-          stack: "total",
-          data: trendData.map((d) => d.liabilities),
-          itemStyle: { color: "#9CA3AF" },
-          barWidth: "40%",
-        },
-      ],
-    }),
-    []
-  );
-
-  const debtBarOption = useMemo(
-    () => ({
-      tooltip: { trigger: "axis" },
-      legend: {
-        bottom: 0,
-        textStyle: { fontSize: 11 },
-        data: ["Nợ Vay Ngắn Hạn", "Nợ Vay Dài Hạn"],
-      },
-      grid: { top: 10, left: 40, right: 20, bottom: 40 },
-      xAxis: { type: "category" as const, data: trendData.map((d) => d.year) },
+      legend: { bottom: 0, textStyle: { fontSize: 11 }, data: ["Vốn CSH", "Nợ phải trả"] },
+      grid: { top: 10, left: 50, right: 20, bottom: 40 },
+      xAxis: { type: "category" as const, data: trends.map((t) => String(t.year)) },
       yAxis: { type: "value" as const },
       series: [
-        {
-          name: "Nợ Vay Ngắn Hạn",
-          type: "bar",
-          stack: "debt",
-          data: trendData.map((d) => d.shortTermDebt),
-          itemStyle: { color: "#F97316" },
-          barWidth: "40%",
-        },
-        {
-          name: "Nợ Vay Dài Hạn",
-          type: "bar",
-          stack: "debt",
-          data: trendData.map((d) => d.longTermDebt),
-          itemStyle: { color: "#9CA3AF" },
-          barWidth: "40%",
-        },
+        { name: "Vốn CSH", type: "bar", stack: "total", data: trends.map((t) => ((t.equity ?? 0) / 1e9).toFixed(0)), itemStyle: { color: "#F97316" }, barWidth: "40%" },
+        { name: "Nợ phải trả", type: "bar", stack: "total", data: trends.map((t) => ((t.totalLiabilities ?? 0) / 1e9).toFixed(0)), itemStyle: { color: "#9CA3AF" }, barWidth: "40%" },
       ],
-    }),
-    []
-  );
+    };
+  }, [trends]);
 
   return (
     <div className="space-y-4">
-      {/* Donut row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Asset Structure */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-bold text-gray-800 flex items-center gap-1.5">
-              <span>🍩</span> Cơ Cấu Tài Sản
-            </h3>
-            <span className="text-xs text-gray-400 italic">{assetStructure.label}</span>
-          </div>
+          <h3 className="text-sm font-bold text-gray-800 flex items-center gap-1.5 mb-4"><span>🍩</span> Cơ Cấu Tài Sản</h3>
           <div className="flex items-center gap-6">
-            <div className="w-40 h-40 flex-shrink-0">
-              <ReactECharts option={assetDonutOption} style={{ height: 160, width: 160 }} />
-            </div>
+            <div className="w-40 h-40 flex-shrink-0"><ReactECharts option={assetDonutOption} style={{ height: 160, width: 160 }} /></div>
             <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-orange-500" />
-                <span className="text-sm text-gray-600">Tài sản Ngắn hạn ({assetStructure.shortTerm}%)</span>
-              </div>
-              <div className="w-full h-1.5 bg-gray-200 rounded-full">
-                <div className="h-1.5 rounded-full bg-orange-500" style={{ width: `${assetStructure.shortTerm}%` }} />
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-purple-500" />
-                <span className="text-sm text-gray-600">Tài sản Dài hạn ({assetStructure.longTerm}%)</span>
-              </div>
-              <div className="w-full h-1.5 bg-gray-200 rounded-full">
-                <div className="h-1.5 rounded-full bg-purple-500" style={{ width: `${assetStructure.longTerm}%` }} />
-              </div>
+              <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-orange-500" /><span className="text-sm text-gray-600">Ngắn hạn ({shortTermPct}%)</span></div>
+              <div className="w-full h-1.5 bg-gray-200 rounded-full"><div className="h-1.5 rounded-full bg-orange-500" style={{ width: `${shortTermPct}%` }} /></div>
+              <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-purple-500" /><span className="text-sm text-gray-600">Dài hạn ({longTermPct}%)</span></div>
+              <div className="w-full h-1.5 bg-gray-200 rounded-full"><div className="h-1.5 rounded-full bg-purple-500" style={{ width: `${longTermPct}%` }} /></div>
             </div>
           </div>
         </div>
-
-        {/* Capital Structure */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-bold text-gray-800 flex items-center gap-1.5">
-              <span>🍩</span> Cấu Trúc Nguồn Vốn
-            </h3>
-            <span className="text-xs text-gray-400 italic">Đòn bẩy?</span>
-          </div>
+          <h3 className="text-sm font-bold text-gray-800 flex items-center gap-1.5 mb-4"><span>🍩</span> Cấu Trúc Nguồn Vốn</h3>
           <div className="flex items-center gap-6">
-            <div className="w-40 h-40 flex-shrink-0">
-              <ReactECharts option={capitalDonutOption} style={{ height: 160, width: 160 }} />
-            </div>
-            <div className="space-y-2 flex-1">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Debt / Equity</span>
-                <span className="text-sm font-bold text-orange-600 font-[var(--font-roboto-mono)]">
-                  {capitalStructure.debtToEquity}x
-                </span>
-              </div>
-              <div className="w-full h-1.5 bg-gray-200 rounded-full">
-                <div className="h-1.5 rounded-full bg-orange-500" style={{ width: `${capitalStructure.debtToEquity * 50}%` }} />
-              </div>
-              <div className="flex items-center justify-between mt-2">
-                <span className="text-sm text-gray-600">Nợ vay ngân hàng (Chịu lãi)</span>
-                <span className="text-sm font-bold text-purple-600 font-[var(--font-roboto-mono)]">
-                  {capitalStructure.bankLoanPercent}%
-                </span>
-              </div>
-              <div className="w-full h-1.5 bg-gray-200 rounded-full">
-                <div className="h-1.5 rounded-full bg-purple-500" style={{ width: `${capitalStructure.bankLoanPercent}%` }} />
-              </div>
-              <p className="text-[11px] text-gray-400 mt-1 italic">{capitalStructure.bankLoanLabel}</p>
+            <div className="w-40 h-40 flex-shrink-0"><ReactECharts option={capitalDonutOption} style={{ height: 160, width: 160 }} /></div>
+            <div className="space-y-3 flex-1">
+              <div className="flex items-center justify-between"><span className="text-sm text-gray-600">Vốn CSH</span><span className={`text-sm font-bold text-green-600 ${monoFont}`}>{equityPct}%</span></div>
+              <div className="w-full h-1.5 bg-gray-200 rounded-full"><div className="h-1.5 rounded-full bg-green-500" style={{ width: `${equityPct}%` }} /></div>
+              <div className="flex items-center justify-between"><span className="text-sm text-gray-600">Nợ phải trả</span><span className={`text-sm font-bold text-orange-600 ${monoFont}`}>{liabPct}%</span></div>
+              <div className="w-full h-1.5 bg-gray-200 rounded-full"><div className="h-1.5 rounded-full bg-orange-500" style={{ width: `${liabPct}%` }} /></div>
             </div>
           </div>
         </div>
       </div>
-
-      {/* 5 Year Trend row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Stacked Bar - Asset & Capital */}
+      {trendOption && (
         <div className="bg-white rounded-xl shadow-sm border-2 border-blue-200 p-5">
-          <h3 className="text-sm font-bold text-gray-800 flex items-center gap-1.5 mb-3">
-            <span className="w-1 h-4 bg-orange-500 rounded-full" />
-            Cấu trúc Tài sản & Nguồn vốn (5 năm)
-          </h3>
-          <ReactECharts option={stackedBarAssetOption} style={{ height: 240 }} />
-          <div className="mt-3 border-l-4 border-orange-400 pl-3 bg-orange-50/50 rounded-r-lg py-2">
-            <p className="text-xs text-gray-600">
-              <span className="font-semibold text-orange-600">Nhận định:</span> {trendInsights.assetCapital}
-            </p>
-          </div>
+          <h3 className="text-sm font-bold text-gray-800 flex items-center gap-1.5 mb-3"><span className="w-1 h-4 bg-orange-500 rounded-full" /> Cấu trúc Tài sản & Nguồn vốn (Xu hướng)</h3>
+          <ReactECharts option={trendOption} style={{ height: 240 }} />
         </div>
-
-        {/* Stacked Bar - Debt */}
-        <div className="bg-white rounded-xl shadow-sm border-2 border-blue-200 p-5">
-          <h3 className="text-sm font-bold text-gray-800 flex items-center gap-1.5 mb-3">
-            <span className="w-1 h-4 bg-blue-500 rounded-full" />
-            Phân tích Nợ & Khả năng Thanh toán
-          </h3>
-          <ReactECharts option={debtBarOption} style={{ height: 240 }} />
-          <div className="mt-3 border-l-4 border-orange-400 pl-3 bg-orange-50/50 rounded-r-lg py-2">
-            <p className="text-xs text-gray-600">
-              <span className="font-semibold text-orange-600">Nhận định:</span> {trendInsights.debtPayment}
-            </p>
-          </div>
-        </div>
-      </div>
+      )}
     </div>
   );
 }
 
-// ==================== ROW 4: INVENTORY & LEVERAGE ====================
-function InventoryAndLeverage() {
-  const maxInventory = Math.max(...inventoryItems.map((i) => i.percent));
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      {/* Inventory */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-        <h3 className="text-sm font-bold text-gray-800 flex items-center gap-1.5 mb-4">
-          <span>📦</span> Cấu Trúc Hàng Tồn Kho (Chi Tiết)
-        </h3>
-        <div className="space-y-3 mb-4">
-          {inventoryItems.map((item, idx) => (
-            <div key={idx} className="flex items-center gap-3">
-              <span className="text-xs text-gray-500 w-36 flex-shrink-0 truncate">{item.label}</span>
-              <div className="flex-1 h-5 bg-gray-100 rounded-full overflow-hidden">
-                <div
-                  className={`h-5 rounded-full ${item.color}`}
-                  style={{ width: `${(item.percent / maxInventory) * 100}%` }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="grid grid-cols-3 gap-2 border-t border-gray-100 pt-3">
-          <div className="text-center">
-            <p className="text-xs text-gray-400">Nguyên liệu</p>
-            <p className="text-sm font-bold text-blue-600 font-[var(--font-roboto-mono)]">
-              {inventoryStats.rawMaterial}%
-            </p>
-          </div>
-          <div className="text-center">
-            <p className="text-xs text-gray-400">Thành phẩm</p>
-            <p className="text-sm font-bold text-orange-600 font-[var(--font-roboto-mono)]">
-              {inventoryStats.finishedGoods}%
-            </p>
-          </div>
-          <div className="text-center">
-            <p className="text-xs text-gray-400">Vòng quay</p>
-            <p className="text-sm font-bold text-gray-800 font-[var(--font-roboto-mono)]">
-              {inventoryStats.turnover}x
-            </p>
-          </div>
-        </div>
-      </div>
+// ==================== ROW 4: LEVERAGE ====================
+function LeverageSection({ leverageData }: { leverageData: Record<string, unknown>[] }) {
+  const chartOption = useMemo(() => {
+    if (leverageData.length < 2) return null;
+    return {
+      tooltip: { trigger: "axis" },
+      legend: { bottom: 0, data: ["D/E Ratio"] },
+      grid: { top: 10, left: 50, right: 20, bottom: 40 },
+      xAxis: { type: "category" as const, data: leverageData.map((d) => String(d.year)) },
+      yAxis: { type: "value" as const },
+      series: [
+        { name: "D/E Ratio", type: "line", data: leverageData.map((d) => d.deRatio), symbol: "circle", symbolSize: 8, lineStyle: { color: "#F97316", width: 3 }, itemStyle: { color: "#F97316" },
+          areaStyle: { color: { type: "linear" as const, x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: "rgba(249,115,22,0.15)" }, { offset: 1, color: "rgba(249,115,22,0.02)" }] } },
+        },
+      ],
+    };
+  }, [leverageData]);
 
-      {/* Leverage */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-        <h3 className="text-sm font-bold text-gray-800 flex items-center gap-1.5 mb-4">
-          <span>⚖️</span> Các Chỉ Số Đòn Bẩy Tài Chính
-        </h3>
-        <div className="space-y-4">
-          {leverageItems.map((item, idx) => (
-            <div key={idx}>
-              <div className="flex items-center justify-between mb-0.5">
-                <div>
-                  <span className="text-sm font-semibold text-gray-700">{item.title}</span>
-                  <span className="text-[10px] text-gray-400 ml-2">{item.subtitle}</span>
-                </div>
-                <span className="text-lg font-extrabold font-[var(--font-roboto-mono)] text-gray-900">
-                  {item.value}
-                  <span className="text-xs font-semibold text-gray-500">{item.suffix}</span>
-                </span>
-              </div>
-              <div className="w-full h-1.5 bg-gray-200 rounded-full">
-                <div
-                  className={`h-1.5 rounded-full ${item.barColor}`}
-                  style={{ width: `${Math.min(item.barPercent, 100)}%` }}
-                />
-              </div>
-            </div>
-          ))}
+  const latest = leverageData.length > 0 ? leverageData[leverageData.length - 1] : null;
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+      <h3 className="text-sm font-bold text-gray-800 flex items-center gap-1.5 mb-4"><span>⚖️</span> Đòn Bẩy Tài Chính (D/E)</h3>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <div className="lg:col-span-4">
+          <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 text-center">
+            <p className="text-xs text-gray-500 mb-1">D/E hiện tại</p>
+            <p className={`text-4xl font-extrabold text-gray-900 ${monoFont}`}>{latest ? `${Number(latest.deRatio).toFixed(2)}x` : "N/A"}</p>
+            <p className={`text-xs mt-1 ${(Number(latest?.deRatio) ?? 0) <= 1 ? "text-[#00C076]" : "text-[#F59E0B]"}`}>
+              {(Number(latest?.deRatio) ?? 0) <= 1 ? "An toàn" : "Cần theo dõi"}
+            </p>
+          </div>
+        </div>
+        <div className="lg:col-span-8">
+          {chartOption ? <ReactECharts option={chartOption} style={{ height: 200 }} /> : <p className="text-gray-400 text-center py-8">Không đủ dữ liệu</p>}
         </div>
       </div>
     </div>
@@ -543,193 +263,94 @@ function InventoryAndLeverage() {
 }
 
 // ==================== ROW 5: CCC & LIQUIDITY ====================
-function CCCAndLiquidity() {
+function CCCAndLiquidity({ liquidityData, ratios }: { liquidityData: Record<string, unknown>[]; ratios: { inventoryDays: number | null; receivableDays: number | null; payableDays: number | null; cashConversionCycle: number | null } | null }) {
+  const ccc = ratios;
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-      {/* CCC */}
-      <div className="lg:col-span-7 bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-        <h3 className="text-sm font-bold text-gray-800 flex items-center gap-1.5 mb-5">
-          <span>🔄</span> Chu Kỳ Tiền Mặt (CCC)
-        </h3>
-        <div className="flex items-center justify-center gap-3 flex-wrap">
-          {/* Inventory Days */}
-          <div className="flex flex-col items-center bg-blue-50 rounded-xl px-5 py-3 border border-blue-100">
-            <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center mb-1">
-              <span className="text-xs font-bold">📦</span>
+      {ccc && (ccc.inventoryDays || ccc.receivableDays || ccc.payableDays) && (
+        <div className="lg:col-span-7 bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+          <h3 className="text-sm font-bold text-gray-800 flex items-center gap-1.5 mb-5"><span>🔄</span> Chu Kỳ Tiền Mặt (CCC)</h3>
+          <div className="flex items-center justify-center gap-3 flex-wrap">
+            <div className="flex flex-col items-center bg-blue-50 rounded-xl px-5 py-3 border border-blue-100">
+              <span className="text-[10px] text-gray-500">Tồn kho</span>
+              <span className={`text-xl font-extrabold text-blue-700 ${monoFont}`}>{ccc.inventoryDays?.toFixed(0) ?? "—"}d</span>
             </div>
-            <span className="text-[10px] text-gray-500">Tồn kho</span>
-            <span className="text-xl font-extrabold text-blue-700 font-[var(--font-roboto-mono)]">
-              {cccData.inventoryDays}d
-            </span>
-          </div>
-          <span className="text-2xl font-bold text-gray-400">+</span>
-          {/* Receivable Days */}
-          <div className="flex flex-col items-center bg-orange-50 rounded-xl px-5 py-3 border border-orange-100">
-            <div className="w-10 h-10 rounded-full bg-orange-500 text-white flex items-center justify-center mb-1">
-              <span className="text-xs font-bold">📄</span>
+            <span className="text-2xl font-bold text-gray-400">+</span>
+            <div className="flex flex-col items-center bg-orange-50 rounded-xl px-5 py-3 border border-orange-100">
+              <span className="text-[10px] text-gray-500">Phải thu</span>
+              <span className={`text-xl font-extrabold text-orange-700 ${monoFont}`}>{ccc.receivableDays?.toFixed(0) ?? "—"}d</span>
             </div>
-            <span className="text-[10px] text-gray-500">Phải thu</span>
-            <span className="text-xl font-extrabold text-orange-700 font-[var(--font-roboto-mono)]">
-              {cccData.receivableDays}d
-            </span>
-          </div>
-          <span className="text-2xl font-bold text-gray-400">−</span>
-          {/* Payable Days */}
-          <div className="flex flex-col items-center bg-green-50 rounded-xl px-5 py-3 border border-green-100">
-            <div className="w-10 h-10 rounded-full bg-green-500 text-white flex items-center justify-center mb-1">
-              <span className="text-xs font-bold">📋</span>
+            <span className="text-2xl font-bold text-gray-400">−</span>
+            <div className="flex flex-col items-center bg-green-50 rounded-xl px-5 py-3 border border-green-100">
+              <span className="text-[10px] text-gray-500">Phải trả</span>
+              <span className={`text-xl font-extrabold text-green-700 ${monoFont}`}>{ccc.payableDays?.toFixed(0) ?? "—"}d</span>
             </div>
-            <span className="text-[10px] text-gray-500">Phải trả</span>
-            <span className="text-xl font-extrabold text-green-700 font-[var(--font-roboto-mono)]">
-              {cccData.payableDays}d
-            </span>
-          </div>
-          <span className="text-2xl font-bold text-gray-400">=</span>
-          {/* Total CCC */}
-          <div className="flex flex-col items-center bg-purple-50 rounded-xl px-6 py-3 border-2 border-purple-200">
-            <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Chu kỳ</span>
-            <span className="text-3xl font-extrabold text-purple-700 font-[var(--font-roboto-mono)]">
-              {cccData.cycleDays}
-            </span>
-            <span className="text-xs text-purple-500 font-semibold">Ngày</span>
+            <span className="text-2xl font-bold text-gray-400">=</span>
+            <div className="flex flex-col items-center bg-purple-50 rounded-xl px-6 py-3 border-2 border-purple-200">
+              <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Chu kỳ</span>
+              <span className={`text-3xl font-extrabold text-purple-700 ${monoFont}`}>{ccc.cashConversionCycle?.toFixed(0) ?? "—"}</span>
+              <span className="text-xs text-purple-500 font-semibold">Ngày</span>
+            </div>
           </div>
         </div>
-      </div>
-
-      {/* Liquidity */}
-      <div className="lg:col-span-5 bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+      )}
+      <div className={`${ccc && (ccc.inventoryDays || ccc.receivableDays || ccc.payableDays) ? "lg:col-span-5" : "lg:col-span-12"} bg-white rounded-xl shadow-sm border border-gray-100 p-5`}>
         <h3 className="text-sm font-bold text-gray-800 mb-4">Thanh khoản</h3>
-        <div className="space-y-4">
-          {liquidityData.map((item, idx) => (
-            <div key={idx}>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm text-gray-600 font-medium">{item.title}</span>
-                <span className="text-base font-extrabold font-[var(--font-roboto-mono)] text-gray-900">
-                  {item.value}
-                  <span className="text-xs text-gray-500">{item.suffix}</span>
-                </span>
+        {liquidityData.length > 0 ? (
+          <div className="space-y-4">
+            {(() => { const latest = liquidityData[0] as Record<string, number>; const items = [
+              { title: "Hệ số thanh toán hiện hành", value: latest?.currentRatio, max: 3 },
+              { title: "Hệ số thanh toán nhanh", value: latest?.quickRatio, max: 3 },
+              { title: "Hệ số tiền mặt", value: latest?.cashRatio, max: 2 },
+            ]; return items.map((item, idx) => (
+              <div key={idx}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm text-gray-600 font-medium">{item.title}</span>
+                  <span className={`text-base font-extrabold ${monoFont} text-gray-900`}>{item.value != null ? item.value.toFixed(2) : "N/A"}<span className="text-xs text-gray-500">x</span></span>
+                </div>
+                <div className="w-full h-2.5 bg-gray-200 rounded-full">
+                  <div className={`h-2.5 rounded-full ${(item.value ?? 0) >= 1 ? "bg-green-500" : "bg-orange-500"}`} style={{ width: `${Math.min(((item.value ?? 0) / item.max) * 100, 100)}%` }} />
+                </div>
               </div>
-              <div className="w-full h-2.5 bg-gray-200 rounded-full">
-                <div
-                  className={`h-2.5 rounded-full ${item.barColor}`}
-                  style={{ width: `${Math.min(item.barPercent, 100)}%` }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
+            )); })()}
+          </div>
+        ) : <p className="text-gray-400 text-center py-4">Không có dữ liệu</p>}
       </div>
     </div>
   );
 }
 
-// ==================== ROW 6: DETAILED TABLE ====================
-function DetailedBalanceSheetTable() {
-  return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-t-4 border-t-orange-500 overflow-hidden">
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-        <h3 className="text-base font-bold text-gray-800">
-          Chi tiết Bảng Cân Đối Kế Toán & So Sánh
-        </h3>
-        <span className="text-xs text-gray-400 bg-gray-100 rounded-full px-3 py-1">
-          {tableCompareLabel}
-        </span>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
-              <th className="text-left px-6 py-3 font-semibold min-w-[200px]">Chỉ tiêu</th>
-              {tableYears.map((y) => (
-                <th key={y} className="text-right px-4 py-3 font-semibold">{y}</th>
-              ))}
-              <th className="text-right px-4 py-3 font-semibold">Thay đổi</th>
-              <th className="text-right px-4 py-3 font-semibold">% YoY</th>
-              <th className="text-right px-4 py-3 font-semibold">% Total &apos;24</th>
-            </tr>
-          </thead>
-          <tbody>
-            {balanceSheetTableData.map((row, idx) => {
-              const isMain = row.level === "main";
-              const isSub = row.level === "sub";
-              const rowClass = isMain
-                ? "font-bold text-orange-700 bg-orange-50"
-                : isSub
-                ? "font-semibold text-gray-800 bg-gray-50/50"
-                : "text-gray-600";
-
-              return (
-                <tr
-                  key={idx}
-                  className={`${rowClass} border-b border-gray-100 hover:bg-gray-50/60 transition-colors`}
-                >
-                  <td className={`px-6 py-2.5 ${row.level === "detail" ? "pl-10" : ""}`}>
-                    {row.label}
-                  </td>
-                  {row.values.map((val, vi) => (
-                    <td key={vi} className="text-right px-4 py-2.5 font-[var(--font-roboto-mono)]">
-                      {val !== null ? formatNumber(val) : "—"}
-                    </td>
-                  ))}
-                  <td className="text-right px-4 py-2.5 font-[var(--font-roboto-mono)]">
-                    {row.change !== null && row.change !== undefined ? (
-                      <span className={row.change >= 0 ? "text-[#00C076]" : "text-[#EF4444]"}>
-                        {row.change >= 0 ? "+" : ""}
-                        {formatNumber(row.change)}
-                      </span>
-                    ) : (
-                      "—"
-                    )}
-                  </td>
-                  <td className="text-right px-4 py-2.5 font-[var(--font-roboto-mono)]">
-                    {row.yoyPercent !== null && row.yoyPercent !== undefined ? (
-                      <span className={row.yoyPercent >= 0 ? "text-[#00C076]" : "text-[#EF4444]"}>
-                        {row.yoyPercent >= 0 ? "↑" : "↓"} {Math.abs(row.yoyPercent).toFixed(1)}%
-                      </span>
-                    ) : (
-                      "—"
-                    )}
-                  </td>
-                  <td className="text-right px-4 py-2.5 font-[var(--font-roboto-mono)]">
-                    {row.totalPercent !== null && row.totalPercent !== undefined
-                      ? `${row.totalPercent.toFixed(1)}%`
-                      : "—"}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-// ==================== BALANCE SHEET CONTENT (no header) ====================
+// ==================== BALANCE SHEET CONTENT ====================
 function BalanceSheetContent() {
+  const { ticker } = useStockDetail();
+  const { data, loading, error } = useDeepAnalysis(ticker);
+  const { data: ratioData } = useFinancialRatios(ticker, 4);
+
+  const bs = data?.balanceSheet;
+  const latestRatio = ratioData && ratioData.length > 0 ? ratioData[0] : null;
+
+  if (loading && !data) return <div className="text-center py-12 text-gray-400 animate-pulse">Đang tải phân tích...</div>;
+  if (error && !data) return <div className="text-center py-12 text-red-500">Lỗi: {error}</div>;
+  if (!bs) return <div className="text-center py-12 text-gray-400">Không có dữ liệu phân tích</div>;
+
   return (
     <>
-      <KeyMetricCards />
-      <FinancialHealthSection />
-      <AssetCapitalStructure />
-      <InventoryAndLeverage />
-      <CCCAndLiquidity />
-      <DetailedBalanceSheetTable />
+      <KeyMetricCards stats={bs.overviewStats} />
+      <FinancialHealthSection indicators={bs.healthIndicators} />
+      <AssetCapitalStructure trends={bs.trends} />
+      <LeverageSection leverageData={bs.leverageData} />
+      <CCCAndLiquidity liquidityData={bs.liquidityData} ratios={latestRatio ? { inventoryDays: latestRatio.inventoryDays, receivableDays: latestRatio.receivableDays, payableDays: latestRatio.payableDays, cashConversionCycle: latestRatio.cashConversionCycle } : null} />
     </>
   );
 }
 
-// ==================== MAIN COMPONENT (manages sub-tabs) ====================
+// ==================== MAIN COMPONENT ====================
 export default function BalanceSheetTab() {
   const { stockInfo } = useStockDetail();
   const [subTab, setSubTab] = useState<SubTab>("balance");
-
   return (
     <div className="space-y-5">
-      {/* Shared Header */}
       <PageHeader ticker={stockInfo.ticker} activeSubTab={subTab} onSubTabChange={setSubTab} />
-
-      {/* Sub-tab content */}
       {subTab === "balance" && <BalanceSheetContent />}
       {subTab === "income" && <IncomeStatementTab />}
       {subTab === "cashflow" && <CashFlowTab />}

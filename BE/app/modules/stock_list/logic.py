@@ -19,20 +19,20 @@ logger = logging.getLogger(__name__)
 SCHEMA = "hethong_phantich_chungkhoan"
 SYSTEM_SCHEMA = "system"
 
-# Allowed sort fields → actual SQL expression (use SELECT aliases for computed columns)
+# Allowed sort fields → actual SQL expression
 SORT_MAP = {
     "ticker": "hp.ticker",
     "current_price": "hp.close",
     "price_change_percent": "price_change_percent",
     "volume": "hp.volume",
-    "market_cap": "market_cap",
-    "pe": "pe",
-    "pb": "pb",
-    "eps": "eps",
-    "roe": "roe",
-    "roa": "roa",
-    "dividend_yield": "dividend_yield",
-    "debt_to_equity": "debt_to_equity",
+    "market_cap": "computed_market_cap",
+    "pe": "computed_pe",
+    "pb": "computed_pb",
+    "eps": "computed_eps",
+    "roe": "fr.roe",
+    "roa": "fr.roa",
+    "dividend_yield": "fr.dividend_yield",
+    "debt_to_equity": "fr.debt_to_equity",
 }
 
 
@@ -129,50 +129,48 @@ async def get_stock_overview(
     offset = (page - 1) * page_size
 
     # ── Main query ──
-    # Join latest financial_ratio + BCTC-computed P/E, P/B, EPS, market_cap
+    # Join latest financial_ratio + BCTC to compute P/E, P/B, EPS
     main_sql = text(f"""
-        WITH latest_fr AS (
-            SELECT DISTINCT ON (ticker)
-                ticker, pe, pb, eps, roe, roa, market_cap,
-                dividend_yield, debt_to_equity, outstanding_shares
-            FROM {SCHEMA}.financial_ratio
-            ORDER BY ticker, year DESC, quarter DESC
+        WITH bctc_data AS (
+            SELECT ticker, year, quarter, ind_code, value
+            FROM {SCHEMA}.bctc
+            WHERE ind_code IN (
+                'C_PHI_U_PH_TH_NG_NG',
+                'V_N_CH_S_H_U_NG',
+                'L_I_NHU_N_SAU_THU_C_A_C_NG_C_NG_TY_M_NG'
+            ) AND value IS NOT NULL AND value != 0
         ),
-        -- BCTC: outstanding shares (latest) — fallback to contributed capital for banks
-        bctc_shares AS (
+        shares AS (
             SELECT DISTINCT ON (ticker)
                 ticker, value / 10000.0 AS shares
-            FROM (
-                SELECT ticker, value, year, quarter, 1 AS priority
-                FROM {SCHEMA}.bctc
-                WHERE ind_code = 'C_PHI_U_PH_TH_NG_NG' AND value IS NOT NULL AND value > 0
-                UNION ALL
-                SELECT ticker, value, year, quarter, 2 AS priority
-                FROM {SCHEMA}.bctc
-                WHERE ind_code = 'V_N_G_P_C_A_CH_S_H_U_NG' AND value IS NOT NULL AND value > 0
-            ) combined
-            ORDER BY ticker, priority, year DESC, quarter DESC
-        ),
-        -- BCTC: equity (latest)
-        bctc_equity AS (
-            SELECT DISTINCT ON (ticker)
-                ticker, value AS equity
-            FROM {SCHEMA}.bctc
-            WHERE ind_code = 'V_N_CH_S_H_U_NG' AND value IS NOT NULL AND value > 0
+            FROM bctc_data
+            WHERE ind_code = 'C_PHI_U_PH_TH_NG_NG' AND value > 0
             ORDER BY ticker, year DESC, quarter DESC
         ),
-        -- BCTC: TTM net income (sum of last 4 quarters)
+        equity AS (
+            SELECT DISTINCT ON (ticker)
+                ticker, value AS equity
+            FROM bctc_data
+            WHERE ind_code = 'V_N_CH_S_H_U_NG' AND value > 0
+            ORDER BY ticker, year DESC, quarter DESC
+        ),
         ranked_ni AS (
             SELECT ticker, value,
                 ROW_NUMBER() OVER (PARTITION BY ticker ORDER BY year DESC, quarter DESC) AS rn
-            FROM {SCHEMA}.bctc
+            FROM bctc_data
             WHERE ind_code = 'L_I_NHU_N_SAU_THU_C_A_C_NG_C_NG_TY_M_NG'
-              AND value IS NOT NULL AND value != 0
         ),
         ttm_ni AS (
             SELECT ticker, SUM(value) AS ttm_ni
             FROM ranked_ni WHERE rn <= 4
             GROUP BY ticker HAVING COUNT(*) >= 2
+        ),
+        latest_fr AS (
+            SELECT DISTINCT ON (ticker)
+                ticker, roe, roa, market_cap,
+                dividend_yield, debt_to_equity, outstanding_shares
+            FROM {SCHEMA}.financial_ratio
+            ORDER BY ticker, year DESC, quarter DESC
         ),
         co_dedup AS (
             SELECT DISTINCT ON (ticker)
@@ -204,60 +202,41 @@ async def get_stock_overview(
                 ELSE 0
             END AS price_change_percent,
             hp.volume,
-            -- market_cap (VND): BCTC-computed first, then FR fallback
-            COALESCE(
-                CASE WHEN sh.shares > 0 AND hp.close > 0
-                     THEN ROUND((hp.close * 1000 * sh.shares)::numeric, 0) END,
-                fr.market_cap
-            ) AS market_cap,
-            -- P/E: BCTC-computed first (price / EPS), then FR fallback
-            COALESCE(
-                CASE WHEN ni.ttm_ni IS NOT NULL AND sh.shares > 0
-                          AND (ni.ttm_ni / sh.shares) > 0
-                          AND (hp.close * 1000 / (ni.ttm_ni / sh.shares)) BETWEEN 0.1 AND 500
-                     THEN ROUND((hp.close * 1000 / (ni.ttm_ni / sh.shares))::numeric, 2) END,
-                fr.pe
-            ) AS pe,
-            -- P/B: BCTC-computed first (price*shares / equity), then FR fallback
-            COALESCE(
-                CASE WHEN eq.equity > 0 AND sh.shares > 0
-                          AND (hp.close * 1000 * sh.shares / eq.equity) BETWEEN 0.01 AND 100
-                     THEN ROUND((hp.close * 1000 * sh.shares / eq.equity)::numeric, 2) END,
-                fr.pb
-            ) AS pb,
-            -- EPS (VND): BCTC-computed first (TTM NI / shares), then FR fallback
-            COALESCE(
-                CASE WHEN ni.ttm_ni IS NOT NULL AND sh.shares > 0
-                     THEN ROUND((ni.ttm_ni / sh.shares)::numeric, 0) END,
-                fr.eps
-            ) AS eps,
-            COALESCE(fr.roe,
-                (SELECT fr2.roe FROM {SCHEMA}.financial_ratio fr2
-                 WHERE fr2.ticker = hp.ticker AND fr2.roe IS NOT NULL
-                 ORDER BY fr2.year DESC, fr2.quarter DESC LIMIT 1)
-            ) AS roe,
-            COALESCE(fr.roa,
-                (SELECT fr2.roa FROM {SCHEMA}.financial_ratio fr2
-                 WHERE fr2.ticker = hp.ticker AND fr2.roa IS NOT NULL
-                 ORDER BY fr2.year DESC, fr2.quarter DESC LIMIT 1)
-            ) AS roa,
-            COALESCE(fr.debt_to_equity,
-                (SELECT fr2.debt_to_equity FROM {SCHEMA}.financial_ratio fr2
-                 WHERE fr2.ticker = hp.ticker AND fr2.debt_to_equity IS NOT NULL
-                 ORDER BY fr2.year DESC, fr2.quarter DESC LIMIT 1)
-            ) AS debt_to_equity,
-            COALESCE(fr.dividend_yield,
-                (SELECT fr2.dividend_yield FROM {SCHEMA}.financial_ratio fr2
-                 WHERE fr2.ticker = hp.ticker AND fr2.dividend_yield IS NOT NULL
-                 ORDER BY fr2.year DESC, fr2.quarter DESC LIMIT 1)
-            ) AS dividend_yield
+            -- Market cap from BCTC shares
+            CASE WHEN sh.shares > 0 AND hp.close > 0
+                THEN ROUND((hp.close * 1000 * sh.shares / 1e9)::numeric, 1)
+                ELSE fr.market_cap
+            END AS computed_market_cap,
+            -- EPS from BCTC (TTM net income / shares)
+            CASE WHEN sh.shares > 0 AND ni.ttm_ni IS NOT NULL
+                THEN ROUND((ni.ttm_ni / sh.shares)::numeric, 0)
+                ELSE NULL
+            END AS computed_eps,
+            -- P/E from price and EPS
+            CASE WHEN sh.shares > 0 AND ni.ttm_ni IS NOT NULL AND ni.ttm_ni > 0
+                    AND hp.close * 1000 * sh.shares / ni.ttm_ni > 0
+                    AND hp.close * 1000 * sh.shares / ni.ttm_ni < 500
+                THEN ROUND((hp.close * 1000 / (ni.ttm_ni / sh.shares))::numeric, 2)
+                ELSE NULL
+            END AS computed_pe,
+            -- P/B from price, shares, equity
+            CASE WHEN sh.shares > 0 AND eq.equity > 0 AND hp.close > 0
+                    AND hp.close * 1000 * sh.shares / eq.equity > 0
+                    AND hp.close * 1000 * sh.shares / eq.equity < 100
+                THEN ROUND((hp.close * 1000 * sh.shares / eq.equity)::numeric, 2)
+                ELSE NULL
+            END AS computed_pb,
+            fr.roe,
+            fr.roa,
+            fr.debt_to_equity,
+            fr.dividend_yield
         FROM {SCHEMA}.history_price hp
         LEFT JOIN co_dedup co ON co.ticker = hp.ticker
         LEFT JOIN {SCHEMA}.history_price hp_prev ON hp_prev.ticker = hp.ticker
             AND hp_prev.trading_date = :prev_date
         LEFT JOIN latest_fr fr ON fr.ticker = hp.ticker
-        LEFT JOIN bctc_shares sh ON sh.ticker = hp.ticker
-        LEFT JOIN bctc_equity eq ON eq.ticker = hp.ticker
+        LEFT JOIN shares sh ON sh.ticker = hp.ticker
+        LEFT JOIN equity eq ON eq.ticker = hp.ticker
         LEFT JOIN ttm_ni ni ON ni.ticker = hp.ticker
         WHERE hp.trading_date = :latest_date AND {where_clause}
         ORDER BY {sort_col} {sort_direction} NULLS LAST
@@ -312,10 +291,10 @@ async def get_stock_overview(
             "price_change_percent": float(r["price_change_percent"]) if r["price_change_percent"] else None,
             "volume": int(r["volume"]) if r["volume"] else None,
             "avg_volume_10d": avg_vol_map.get(t),
-            "market_cap": r["market_cap"],
-            "pe": round(r["pe"], 2) if r["pe"] else None,
-            "pb": round(r["pb"], 2) if r["pb"] else None,
-            "eps": round(r["eps"], 2) if r["eps"] else None,
+            "market_cap": float(r["computed_market_cap"]) if r["computed_market_cap"] else None,
+            "pe": float(r["computed_pe"]) if r["computed_pe"] else None,
+            "pb": float(r["computed_pb"]) if r["computed_pb"] else None,
+            "eps": float(r["computed_eps"]) if r["computed_eps"] else None,
             "roe": round(r["roe"] * 100, 2) if r["roe"] else None,      # Convert ratio → percent
             "roa": round(r["roa"] * 100, 2) if r["roa"] else None,
             "debt_to_equity": round(r["debt_to_equity"], 2) if r["debt_to_equity"] else None,
@@ -629,48 +608,17 @@ async def _get_market_summary(
     res = await db.execute(sql, {"latest_date": latest_date, "prev_date": prev_date})
     row = res.mappings().first()
 
-    # Average PE — compute from BCTC (price/EPS) with FR fallback
+    # Average PE
     pe_sql = text(f"""
-        WITH bctc_shares AS (
-            SELECT DISTINCT ON (ticker)
-                ticker, value / 10000.0 AS shares
-            FROM (
-                SELECT ticker, value, year, quarter, 1 AS priority
-                FROM {SCHEMA}.bctc
-                WHERE ind_code = 'C_PHI_U_PH_TH_NG_NG' AND value IS NOT NULL AND value > 0
-                UNION ALL
-                SELECT ticker, value, year, quarter, 2 AS priority
-                FROM {SCHEMA}.bctc
-                WHERE ind_code = 'V_N_G_P_C_A_CH_S_H_U_NG' AND value IS NOT NULL AND value > 0
-            ) combined
-            ORDER BY ticker, priority, year DESC, quarter DESC
-        ),
-        ranked_ni AS (
-            SELECT ticker, value,
-                ROW_NUMBER() OVER (PARTITION BY ticker ORDER BY year DESC, quarter DESC) AS rn
-            FROM {SCHEMA}.bctc
-            WHERE ind_code = 'L_I_NHU_N_SAU_THU_C_A_C_NG_C_NG_TY_M_NG'
-              AND value IS NOT NULL AND value != 0
-        ),
-        ttm_ni AS (
-            SELECT ticker, SUM(value) AS ttm_ni
-            FROM ranked_ni WHERE rn <= 4
-            GROUP BY ticker HAVING COUNT(*) >= 2
-        ),
-        computed_pe AS (
-            SELECT hp.ticker,
-                CASE WHEN ni.ttm_ni > 0 AND sh.shares > 0
-                          AND (hp.close * 1000 / (ni.ttm_ni / sh.shares)) BETWEEN 0.1 AND 200
-                     THEN hp.close * 1000 / (ni.ttm_ni / sh.shares)
-                     ELSE NULL END AS pe
-            FROM {SCHEMA}.history_price hp
-            JOIN bctc_shares sh ON sh.ticker = hp.ticker
-            JOIN ttm_ni ni ON ni.ticker = hp.ticker
-            WHERE hp.trading_date = :latest_date
-        )
-        SELECT AVG(pe) AS avg_pe FROM computed_pe WHERE pe IS NOT NULL
+        SELECT AVG(pe) AS avg_pe
+        FROM (
+            SELECT DISTINCT ON (ticker) pe
+            FROM {SCHEMA}.financial_ratio
+            WHERE pe IS NOT NULL AND pe > 0 AND pe < 200
+            ORDER BY ticker, year DESC, quarter DESC
+        ) sub
     """)
-    pe_res = await db.execute(pe_sql, {"latest_date": latest_date})
+    pe_res = await db.execute(pe_sql)
     avg_pe = pe_res.scalar()
 
     summary = {
@@ -895,7 +843,7 @@ async def get_screener_data(db: AsyncSession) -> Dict[str, Any]:
         ),
         latest_fr AS (
             SELECT DISTINCT ON (ticker)
-                ticker, roe, roa, debt_to_equity, dividend_yield, pe AS fr_pe, pb AS fr_pb, eps AS fr_eps
+                ticker, roe, roa, debt_to_equity, dividend_yield
             FROM {SCHEMA}.financial_ratio
             ORDER BY ticker, year DESC, quarter DESC
         ),
@@ -953,9 +901,6 @@ async def get_screener_data(db: AsyncSession) -> Dict[str, Any]:
             fr.roa,
             fr.debt_to_equity,
             fr.dividend_yield,
-            fr.fr_pe,
-            fr.fr_pb,
-            fr.fr_eps,
             tl.liabilities AS total_liabilities,
             dv.ttm_div,
             eb.foreign_buy,
@@ -1084,34 +1029,24 @@ async def get_screener_data(db: AsyncSession) -> Dict[str, Any]:
         if close_raw and shares and shares > 0:
             market_cap = round(close_raw * 1000 * shares / 1e9, 1)
 
-        # EPS (VND) — BCTC-computed, fallback to FR
+        # EPS (VND)
         eps = None
         if ttm_ni_val is not None and shares and shares > 0:
             eps = round(ttm_ni_val / shares, 0)
-        if eps is None and r["fr_eps"]:
-            eps = round(float(r["fr_eps"]), 0)
 
-        # P/E — BCTC-computed, fallback to FR
+        # P/E
         pe = None
         if eps and eps > 0 and current_price:
             pe_val = current_price / eps
             if 0 < pe_val < 500:
                 pe = round(pe_val, 2)
-        if pe is None and r["fr_pe"]:
-            fr_pe_val = float(r["fr_pe"])
-            if 0 < fr_pe_val < 500:
-                pe = round(fr_pe_val, 2)
 
-        # P/B — BCTC-computed, fallback to FR
+        # P/B
         pb = None
         if close_raw and shares and shares > 0 and equity_val and equity_val > 0:
             pb_val = close_raw * 1000 * shares / equity_val
             if 0 < pb_val < 100:
                 pb = round(pb_val, 2)
-        if pb is None and r["fr_pb"]:
-            fr_pb_val = float(r["fr_pb"])
-            if 0 < fr_pb_val < 100:
-                pb = round(fr_pb_val, 2)
 
         # ROE, ROA (stored as ratios → convert to %)
         roe = round(float(r["roe"]) * 100, 2) if r["roe"] else None

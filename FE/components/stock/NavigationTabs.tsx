@@ -1,9 +1,24 @@
 "use client";
 
 import React from "react";
-import { NAVIGATION_TABS } from "@/lib/stockDetailMockData";
 
-const NavigationTabs = ({ activeTab, onTabChange }: { activeTab: string; onTabChange: (id: string) => void }) => {
+const NAVIGATION_TABS = [
+    { id: "overview",   label: "Tổng quan" },
+    { id: "news",       label: "Tin tức" },
+    { id: "financials", label: "Số liệu tài chính" },
+    { id: "quant",      label: "Dashboard" },
+    { id: "valuation",  label: "Định giá" },
+    { id: "compare",    label: "So sánh" },
+    { id: "profile",    label: "Hồ sơ doanh nghiệp" },
+];
+
+interface NavigationTabsProps {
+    activeTab: string;
+    onTabChange: (id: string) => void;
+    ticker?: string;
+}
+
+const NavigationTabs = ({ activeTab, onTabChange, ticker }: NavigationTabsProps) => {
     return (
         <div className="sticky top-0 z-10 bg-white border border-gray-200 rounded-lg shadow-sm py-2 px-4">
             <nav className="flex items-center justify-center gap-1 overflow-x-auto">
@@ -12,12 +27,12 @@ const NavigationTabs = ({ activeTab, onTabChange }: { activeTab: string; onTabCh
                         key={tab.id}
                         onClick={() => onTabChange(tab.id)}
                         className={`
-              px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-colors
-              ${activeTab === tab.id
+                            px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-colors
+                            ${activeTab === tab.id
                                 ? "bg-[#2563EB] text-white shadow-sm"
                                 : "text-gray-600 hover:text-[#2563EB] hover:bg-blue-50"
                             }
-            `}
+                        `}
                     >
                         {tab.label}
                     </button>

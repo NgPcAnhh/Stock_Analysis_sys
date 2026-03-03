@@ -3,7 +3,7 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { TechnicalSignal } from "@/lib/technicalAnalysisData";
-import { TrendingUp, TrendingDown, Minus, Zap, BarChart2, Activity } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, BarChart2, Activity } from "lucide-react";
 
 interface SignalTableProps {
   signals: TechnicalSignal[];
@@ -11,15 +11,17 @@ interface SignalTableProps {
 
 const SignalBadge: React.FC<{ signal: string }> = ({ signal }) => {
   const config = {
-    "Mua": { bg: "bg-emerald-50", text: "text-emerald-700", icon: TrendingUp },
-    "Bán": { bg: "bg-red-50", text: "text-red-700", icon: TrendingDown },
+    Mua: { bg: "bg-emerald-50", text: "text-emerald-700", icon: TrendingUp },
+    Bán: { bg: "bg-red-50", text: "text-red-700", icon: TrendingDown },
     "Trung lập": { bg: "bg-gray-50", text: "text-gray-600", icon: Minus },
   };
   const c = config[signal as keyof typeof config] || config["Trung lập"];
   const Icon = c.icon;
 
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold ${c.bg} ${c.text}`}>
+    <span
+      className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold ${c.bg} ${c.text}`}
+    >
       <Icon size={12} />
       {signal}
     </span>
@@ -27,7 +29,7 @@ const SignalBadge: React.FC<{ signal: string }> = ({ signal }) => {
 };
 
 const StrengthDots: React.FC<{ strength: string }> = ({ strength }) => {
-  const levels = { "Mạnh": 3, "Trung bình": 2, "Yếu": 1 };
+  const levels = { Mạnh: 3, "Trung bình": 2, Yếu: 1 };
   const level = levels[strength as keyof typeof levels] || 1;
 
   return (
@@ -51,15 +53,33 @@ const StrengthDots: React.FC<{ strength: string }> = ({ strength }) => {
   );
 };
 
-const SignalTable: React.FC<SignalTableProps> = ({ signals }) => {
-  const maSignals = signals.filter(
-    (s) => s.indicator.includes("SMA") || s.indicator.includes("EMA")
-  );
-  const oscSignals = signals.filter(
-    (s) => !s.indicator.includes("SMA") && !s.indicator.includes("EMA")
-  );
+/** Categorize signals by type for display grouping */
+function categorizeSignals(signals: TechnicalSignal[]) {
+  const maSignals: TechnicalSignal[] = [];
+  const techSignals: TechnicalSignal[] = [];
 
-  const renderTable = (items: TechnicalSignal[], title: string, icon: React.ReactNode) => (
+  for (const s of signals) {
+    if (
+      s.indicator.includes("SMA") ||
+      s.indicator.includes("EMA") ||
+      s.indicator.includes("VWAP") ||
+      s.indicator.includes("Ichimoku")
+    ) {
+      maSignals.push(s);
+    } else {
+      techSignals.push(s);
+    }
+  }
+  return { maSignals, techSignals };
+}
+
+const RenderTable: React.FC<{
+  items: TechnicalSignal[];
+  title: string;
+  icon: React.ReactNode;
+}> = ({ items, title, icon }) => {
+  if (items.length === 0) return null;
+  return (
     <Card className="shadow-sm border-gray-200">
       <CardHeader className="pb-2 pt-3 px-4">
         <CardTitle className="text-sm font-semibold text-gray-700 flex items-center gap-2">
@@ -84,7 +104,9 @@ const SignalTable: React.FC<SignalTableProps> = ({ signals }) => {
                   key={signal.indicator}
                   className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors"
                 >
-                  <td className="py-2.5 text-sm text-gray-700 font-medium">{signal.indicator}</td>
+                  <td className="py-2.5 text-sm text-gray-700 font-medium">
+                    {signal.indicator}
+                  </td>
                   <td className="py-2.5 text-right font-mono text-sm text-gray-600">
                     {signal.value}
                   </td>
@@ -102,11 +124,23 @@ const SignalTable: React.FC<SignalTableProps> = ({ signals }) => {
       </CardContent>
     </Card>
   );
+};
+
+const SignalTable: React.FC<SignalTableProps> = ({ signals }) => {
+  const { maSignals, techSignals } = categorizeSignals(signals);
 
   return (
     <div className="space-y-4">
-      {renderTable(maSignals, "Đường trung bình động", <BarChart2 size={16} className="text-blue-500" />)}
-      {renderTable(oscSignals, "Chỉ báo kỹ thuật", <Activity size={16} className="text-purple-500" />)}
+      <RenderTable
+        items={maSignals}
+        title="Đường trung bình động"
+        icon={<BarChart2 size={16} className="text-blue-500" />}
+      />
+      <RenderTable
+        items={techSignals}
+        title="Chỉ báo kỹ thuật"
+        icon={<Activity size={16} className="text-purple-500" />}
+      />
     </div>
   );
 };

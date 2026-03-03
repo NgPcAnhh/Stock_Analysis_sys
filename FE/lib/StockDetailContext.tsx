@@ -1,7 +1,16 @@
 "use client";
 
 import React, { createContext, useContext } from "react";
-import type { StockInfo, PriceHistoryItem, OrderBookItem, HistoricalDataItem, Shareholder, PeerStock, NewsArticle, RecommendedStock } from "@/lib/stockDetailMockData";
+import type {
+    StockInfo,
+    PriceHistoryItem,
+    OrderBookItem,
+    HistoricalDataItem,
+    Shareholder,
+    PeerStock,
+    NewsArticle,
+    RecommendedStock,
+} from "@/hooks/useStockData";
 
 export interface StockDetailData {
     stockInfo: StockInfo;
@@ -9,10 +18,18 @@ export interface StockDetailData {
     orderBook: OrderBookItem[];
     historicalData: HistoricalDataItem[];
     shareholders: Shareholder[];
-    shareholderStructure: { domestic: number; foreign: number; strategic: number; individual: number };
+    shareholderStructure: { position: string; percent: number; members: { name: string; percent: number }[] }[];
     peerStocks: PeerStock[];
     corporateNews: NewsArticle[];
     recommendations: RecommendedStock[];
+    /** The raw ticker string for sub-tab API calls */
+    ticker: string;
+    /** Whether the overview data is still loading */
+    loading: boolean;
+    /** Error message if overview fetch failed */
+    error: string | null;
+    /** Callback to switch navigation tabs from child components */
+    onTabChange?: (tab: string) => void;
 }
 
 const StockDetailContext = createContext<StockDetailData | null>(null);

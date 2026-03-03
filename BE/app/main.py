@@ -18,6 +18,8 @@ from app.modules.news.router import router as news_router
 from app.modules.indices.router import router as indices_router
 from app.modules.stock_list.router import router as stock_list_router
 from app.modules.market.router import router as market_router
+from app.modules.stock.router import router as stock_router
+from app.modules.analysis.router import router as analysis_router
 
 settings = get_settings()
 
@@ -69,6 +71,8 @@ app.include_router(news_router, prefix="/api/v1")
 app.include_router(indices_router, prefix="/api/v1")
 app.include_router(stock_list_router, prefix="/api/v1")
 app.include_router(market_router, prefix="/api/v1")
+app.include_router(stock_router, prefix="/api/v1")
+app.include_router(analysis_router, prefix="/api/v1")
 
 @app.get("/")
 async def read_root():

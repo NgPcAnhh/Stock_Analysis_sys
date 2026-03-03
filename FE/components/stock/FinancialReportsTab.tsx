@@ -2,11 +2,12 @@
 
 import React, { useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getFinancialReportData, IncomeStatementItem, BalanceSheetItem, CashFlowItem } from "@/lib/financialReportData";
+import { useFinancialReports, type IncomeStatementItem, type BalanceSheetItem, type CashFlowItem } from "@/hooks/useStockData";
 import { useStockDetail } from "@/lib/StockDetailContext";
-import { Download, FileSpreadsheet } from "lucide-react";
+import { Download, FileSpreadsheet, BarChart3 } from "lucide-react";
+import FinancialOverviewCharts from "@/components/stock/FinancialOverviewCharts";
 
-type ReportType = "income" | "balance" | "cashflow";
+type ReportType = "overview" | "income" | "balance" | "cashflow";
 
 const formatNumber = (val: number): string => {
     if (val === 0) return "0";
@@ -372,11 +373,22 @@ function buildCashFlowCSV(data: CashFlowItem[]): string {
 
 // ==================== MAIN COMPONENT ====================
 export default function FinancialReportsTab() {
-    const { stockInfo } = useStockDetail();
-    const data = getFinancialReportData(stockInfo.ticker);
-    const [activeReport, setActiveReport] = useState<ReportType>("income");
+    const { stockInfo, ticker } = useStockDetail();
+    const { data: reportData, loading, error } = useFinancialReports(ticker);
+    const [activeReport, setActiveReport] = useState<ReportType>("overview");
+
+    if (loading && !reportData) return <div className="text-center py-12 text-gray-400 animate-pulse">Đang tải báo cáo tài chính…</div>;
+    if (error && !reportData) return <div className="text-center py-12 text-red-500">Lỗi: {error}</div>;
+    if (!reportData) return null;
+
+    const data = {
+        incomeStatements: reportData.incomeStatement,
+        balanceSheets: reportData.balanceSheet,
+        cashFlows: reportData.cashFlow,
+    };
 
     const reportTabs: { id: ReportType; label: string; icon: string }[] = [
+        { id: "overview", label: "Tổng quan biểu đồ", icon: "📊" },
         { id: "income", label: "Kết quả kinh doanh", icon: "📋" },
         { id: "balance", label: "Cân đối kế toán", icon: "🏛️" },
         { id: "cashflow", label: "Lưu chuyển tiền tệ", icon: "💵" },
@@ -450,16 +462,25 @@ export default function FinancialReportsTab() {
                         </button>
                     ))}
                 </div>
-                <button
-                    onClick={handleExportCurrent}
-                    className="flex items-center gap-1.5 px-3 py-1.5 mb-1 text-xs font-medium text-green-700 bg-green-50 hover:bg-green-100 border border-green-200 rounded-md transition-colors"
-                >
-                    <Download className="w-3.5 h-3.5" />
-                    Tải báo cáo này
-                </button>
+                {activeReport !== "overview" && (
+                    <button
+                        onClick={handleExportCurrent}
+                        className="flex items-center gap-1.5 px-3 py-1.5 mb-1 text-xs font-medium text-green-700 bg-green-50 hover:bg-green-100 border border-green-200 rounded-md transition-colors"
+                    >
+                        <Download className="w-3.5 h-3.5" />
+                        Tải báo cáo này
+                    </button>
+                )}
             </div>
 
-            {/* Report tables */}
+            {/* Report content */}
+            {activeReport === "overview" && (
+                <FinancialOverviewCharts
+                    incomeStatement={data.incomeStatements}
+                    balanceSheet={data.balanceSheets}
+                    cashFlow={data.cashFlows}
+                />
+            )}
             {activeReport === "income" && (
                 <IncomeStatementTable data={data.incomeStatements} />
             )}
