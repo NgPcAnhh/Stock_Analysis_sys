@@ -1,915 +1,744 @@
 ﻿"use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import ReactECharts from "echarts-for-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { TrendingUp, BarChart3, PieChart, Activity, DollarSign } from "lucide-react";
 import type {
     IncomeStatementItem,
     BalanceSheetItem,
     CashFlowItem,
+    FinancialRatioItem,
 } from "@/hooks/useStockData";
 
-// â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-/** Convert raw VND to tá»· VND */
-const toTyVND = (v: number): number => +(v / 1_000_000_000).toFixed(2);
+// --- Helpers ---
+const toTy = (v: number) => +(v / 1_000_000_000).toFixed(2);
 
 const fmtTy = (v: number): string => {
-    if (Math.abs(v) >= 1000) return `${(v / 1000).toFixed(1)}K`;
+    if (Math.abs(v) >= 1_000) return `${(v / 1_000).toFixed(1)}K`;
     return v.toFixed(1);
 };
 
-const COLORS = {
-    blue: "#3B82F6",
-    green: "#10B981",
-    red: "#EF4444",
-    amber: "#F59E0B",
-    purple: "#8B5CF6",
-    pink: "#EC4899",
-    cyan: "#06B6D4",
-    indigo: "#6366F1",
-    orange: "#F97316",
-    teal: "#14B8A6",
-    lime: "#84CC16",
-    emerald: "#059669",
-    sky: "#0EA5E9",
-    slate: "#64748B",
+const growthPct = (curr: number, prev: number): number | null => {
+    if (prev === 0 || !isFinite(prev)) return null;
+    return +((((curr - prev) / Math.abs(prev)) * 100).toFixed(1));
 };
 
-// â”€â”€ 1. Revenue â€“ COGS â€“ Gross Profit (combo bar + line) â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function RevenueOverviewChart({ data }: { data: IncomeStatementItem[] }) {
-    const sorted = useMemo(() => [...data].reverse(), [data]);
-    const periods = sorted.map((d) => d.period.period);
-    const revenue = sorted.map((d) => toTyVND(d.revenue));
-    const cogs = sorted.map((d) => toTyVND(Math.abs(d.costOfGoodsSold)));
-    const grossProfit = sorted.map((d) => toTyVND(d.grossProfit));
-    const grossMargin = sorted.map((d) =>
-        d.revenue !== 0 ? +((d.grossProfit / d.revenue) * 100).toFixed(1) : 0
-    );
-
-    const option = {
-        tooltip: {
-            trigger: "axis",
-            axisPointer: { type: "cross" },
-            formatter: (params: any[]) => {
-                let html = `<b>${params[0].axisValue}</b><br/>`;
-                params.forEach((p: any) => {
-                    const unit = p.seriesName.includes("BiÃªn") ? "%" : " tá»·";
-                    html += `${p.marker} ${p.seriesName}: <b>${p.value.toLocaleString("vi-VN")}${unit}</b><br/>`;
-                });
-                return html;
-            },
-        },
-        legend: { bottom: 0, textStyle: { fontSize: 11 } },
-        grid: { top: 30, right: 50, bottom: 50, left: 60, containLabel: true },
-        xAxis: { type: "category", data: periods, axisLabel: { fontSize: 10, rotate: 30 } },
-        yAxis: [
-            {
-                type: "value",
-                name: "Tá»· VND",
-                nameTextStyle: { fontSize: 10 },
-                axisLabel: { formatter: (v: number) => fmtTy(v) },
-            },
-            {
-                type: "value",
-                name: "BiÃªn LN gá»™p (%)",
-                nameTextStyle: { fontSize: 10 },
-                axisLabel: { formatter: "{value}%" },
-                splitLine: { show: false },
-            },
-        ],
-        series: [
-            {
-                name: "Doanh thu thuáº§n",
-                type: "bar",
-                data: revenue,
-                itemStyle: { color: COLORS.blue, borderRadius: [3, 3, 0, 0] },
-                barMaxWidth: 28,
-            },
-            {
-                name: "GiÃ¡ vá»‘n hÃ ng bÃ¡n",
-                type: "bar",
-                data: cogs,
-                itemStyle: { color: COLORS.red, borderRadius: [3, 3, 0, 0] },
-                barMaxWidth: 28,
-            },
-            {
-                name: "Lá»£i nhuáº­n gá»™p",
-                type: "bar",
-                data: grossProfit,
-                itemStyle: { color: COLORS.green, borderRadius: [3, 3, 0, 0] },
-                barMaxWidth: 28,
-            },
-            {
-                name: "BiÃªn LN gá»™p",
-                type: "line",
-                yAxisIndex: 1,
-                data: grossMargin,
-                smooth: true,
-                symbol: "circle",
-                symbolSize: 6,
-                lineStyle: { width: 2.5, color: COLORS.amber },
-                itemStyle: { color: COLORS.amber },
-            },
-        ],
-    };
-
-    return (
-        <Card className="shadow-sm border-gray-200">
-            <CardHeader className="pb-1">
-                <CardTitle className="text-sm font-bold text-gray-800">
-                    ðŸ“Š Doanh thu & Lá»£i nhuáº­n gá»™p
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="p-3">
-                <ReactECharts option={option} style={{ height: 340 }} />
-            </CardContent>
-        </Card>
-    );
-}
-
-// â”€â”€ 2. Net Profit After Tax + Net Margin (combo bar + line) â”€â”€â”€â”€â”€
-function NetProfitChart({ data }: { data: IncomeStatementItem[] }) {
-    const sorted = useMemo(() => [...data].reverse(), [data]);
-    const periods = sorted.map((d) => d.period.period);
-    const netProfit = sorted.map((d) => toTyVND(d.netProfit));
-    const netProfitParent = sorted.map((d) => toTyVND(d.netProfitParent));
-    const netMargin = sorted.map((d) =>
-        d.revenue !== 0 ? +((d.netProfit / d.revenue) * 100).toFixed(1) : 0
-    );
-
-    // YoY growth
-    const yoyGrowth = sorted.map((d, i) => {
-        if (i < 4) return null;
-        const prev = sorted[i - 4].netProfit;
-        if (prev === 0) return null;
-        return +(((d.netProfit - prev) / Math.abs(prev)) * 100).toFixed(1);
+function chronological(data: IncomeStatementItem[]): IncomeStatementItem[] {
+    return [...data].sort((a, b) => {
+        if (a.period.year !== b.period.year) return a.period.year - b.period.year;
+        return a.period.quarter - b.period.quarter;
     });
+}
 
-    const option = {
+function annualData(data: IncomeStatementItem[]): IncomeStatementItem[] {
+    const annuals = data.filter((d) => d.period.quarter === 0);
+    const sorted = annuals.length >= 3 ? annuals : data;
+    return chronological(sorted);
+}
+
+const C = {
+    blue:   "#3B82F6",
+    green:  "#10B981",
+    amber:  "#F59E0B",
+    orange: "#F97316",
+    red:    "#EF4444",
+    purple: "#8B5CF6",
+    indigo: "#6366F1",
+};
+
+const GRID = { top: 50, right: 60, bottom: 36, left: 64, containLabel: false };
+const AX = { fontSize: 10, color: "#6B7280", fontFamily: "Inter, sans-serif" };
+
+function baseOpt() {
+    return {
+        animation: true,
+        animationDuration: 500,
         tooltip: {
-            trigger: "axis",
-            axisPointer: { type: "cross" },
-            formatter: (params: any[]) => {
-                let html = `<b>${params[0].axisValue}</b><br/>`;
-                params.forEach((p: any) => {
-                    if (p.value === null || p.value === undefined) return;
-                    const unit = p.seriesName.includes("%") || p.seriesName.includes("BiÃªn") || p.seriesName.includes("tÄƒng trÆ°á»Ÿng") ? "%" : " tá»·";
-                    html += `${p.marker} ${p.seriesName}: <b>${typeof p.value === "number" ? p.value.toLocaleString("vi-VN") : p.value}${unit}</b><br/>`;
-                });
-                return html;
-            },
+            trigger: "axis" as const,
+            backgroundColor: "rgba(255,255,255,0.97)",
+            borderColor: "#E5E7EB",
+            borderWidth: 1,
+            textStyle: { fontSize: 12, color: "#374151", fontFamily: "Inter, sans-serif" },
+            axisPointer: { type: "shadow" as const },
         },
-        legend: { bottom: 0, textStyle: { fontSize: 11 } },
-        grid: { top: 30, right: 55, bottom: 50, left: 60, containLabel: true },
-        xAxis: { type: "category", data: periods, axisLabel: { fontSize: 10, rotate: 30 } },
-        yAxis: [
-            {
-                type: "value",
-                name: "Tá»· VND",
-                nameTextStyle: { fontSize: 10 },
-                axisLabel: { formatter: (v: number) => fmtTy(v) },
-            },
-            {
-                type: "value",
-                name: "%",
-                nameTextStyle: { fontSize: 10 },
-                axisLabel: { formatter: "{value}%" },
-                splitLine: { show: false },
-            },
-        ],
-        series: [
-            {
-                name: "LNST",
-                type: "bar",
-                data: netProfit,
-                itemStyle: {
-                    color: (params: any) => (params.value >= 0 ? COLORS.green : COLORS.red),
-                    borderRadius: [3, 3, 0, 0],
-                },
-                barMaxWidth: 30,
-            },
-            {
-                name: "LNST CÄCTM",
-                type: "bar",
-                data: netProfitParent,
-                itemStyle: { color: COLORS.teal, borderRadius: [3, 3, 0, 0] },
-                barMaxWidth: 30,
-            },
-            {
-                name: "BiÃªn LN rÃ²ng",
-                type: "line",
-                yAxisIndex: 1,
-                data: netMargin,
-                smooth: true,
-                symbol: "circle",
-                symbolSize: 5,
-                lineStyle: { width: 2, color: COLORS.purple },
-                itemStyle: { color: COLORS.purple },
-            },
-            {
-                name: "TÄƒng trÆ°á»Ÿng YoY",
-                type: "line",
-                yAxisIndex: 1,
-                data: yoyGrowth,
-                smooth: true,
-                symbol: "diamond",
-                symbolSize: 6,
-                lineStyle: { width: 2, type: "dashed", color: COLORS.amber },
-                itemStyle: { color: COLORS.amber },
-                connectNulls: false,
-            },
-        ],
+        grid: GRID,
     };
+}
 
+// ---- 1. Revenue & Growth -----
+function RevenueGrowthChart({ data }: { data: IncomeStatementItem[] }) {
+    const rows = useMemo(() => annualData(data), [data]);
+    const option = useMemo(() => {
+        const labels = rows.map((d) => d.period.period);
+        const revTy  = rows.map((d) => +toTy(d.revenue).toFixed(1));
+        const growth = rows.map((d, i) => i === 0 ? null : growthPct(d.revenue, rows[i - 1].revenue));
+        return {
+            ...baseOpt(),
+            legend: { data: ["Doanh thu (t\u1ef7)", "T\u0103ng tr\u01b0\u1edfng (%)"], top: 4, textStyle: { fontSize: 11, fontFamily: "Inter, sans-serif" }, itemGap: 16 },
+            xAxis: { type: "category" as const, data: labels, axisLabel: { ...AX, rotate: 30 }, axisTick: { alignWithLabel: true } },
+            yAxis: [
+                { type: "value" as const, name: "T\u1ef7 VND", nameTextStyle: { fontSize: 10, color: "#9CA3AF", fontFamily: "Inter, sans-serif" }, axisLabel: { formatter: (v: number) => fmtTy(v), ...AX }, splitLine: { lineStyle: { color: "#F3F4F6" } } },
+                { type: "value" as const, name: "T\u0103ng tr\u01b0\u1edfng", nameTextStyle: { fontSize: 10, color: "#9CA3AF", fontFamily: "Inter, sans-serif" }, axisLabel: { formatter: (v: number) => `${v}%`, ...AX }, splitLine: { show: false } },
+            ],
+            series: [
+                { name: "Doanh thu (t\u1ef7)", type: "bar" as const, yAxisIndex: 0, data: revTy, barMaxWidth: 40, itemStyle: { color: C.blue, borderRadius: [4, 4, 0, 0] }, tooltip: { valueFormatter: (v: number) => `${v.toLocaleString("vi-VN")} t\u1ef7` } },
+                { name: "T\u0103ng tr\u01b0\u1edfng (%)", type: "line" as const, yAxisIndex: 1, data: growth, smooth: true, symbol: "circle", symbolSize: 7, lineStyle: { color: C.amber, width: 2 }, itemStyle: { color: C.amber }, connectNulls: false, tooltip: { valueFormatter: (v: number | null) => v == null ? "-" : `${v > 0 ? "+" : ""}${v}%` } },
+            ],
+        };
+    }, [rows]);
     return (
         <Card className="shadow-sm border-gray-200">
-            <CardHeader className="pb-1">
-                <CardTitle className="text-sm font-bold text-gray-800">
-                    ðŸ’° Lá»£i nhuáº­n sau thuáº¿ & TÄƒng trÆ°á»Ÿng
+            <CardHeader className="pb-1 pt-3 px-4">
+                <CardTitle className="text-sm font-bold text-gray-800 flex items-center gap-2">
+                    <DollarSign className="w-4 h-4 text-blue-500" />
+                    Doanh thu &amp; Tăng trưởng doanh thu
                 </CardTitle>
             </CardHeader>
-            <CardContent className="p-3">
-                <ReactECharts option={option} style={{ height: 340 }} />
+            <CardContent className="px-2 pb-3">
+                <ReactECharts option={option} style={{ height: 280 }} opts={{ devicePixelRatio: 2 }} />
             </CardContent>
         </Card>
     );
 }
 
-// â”€â”€ 3. Cost Structure (stacked bar) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ---- 2. Net Profit & Growth (last 8) ----
+function ProfitGrowthChart({ data }: { data: IncomeStatementItem[] }) {
+    const rows = useMemo(() => annualData(data).slice(-8), [data]);
+    const option = useMemo(() => {
+        const labels = rows.map((d) => d.period.period);
+        const profTy = rows.map((d) => +toTy(d.netProfit).toFixed(1));
+        const growth = rows.map((d, i) => i === 0 ? null : growthPct(d.netProfit, rows[i - 1].netProfit));
+        return {
+            ...baseOpt(),
+            legend: { data: ["LNST (t\u1ef7)", "T\u0103ng tr\u01b0\u1edfng (%)"], top: 4, textStyle: { fontSize: 11, fontFamily: "Inter, sans-serif" }, itemGap: 16 },
+            xAxis: { type: "category" as const, data: labels, axisLabel: { ...AX, rotate: 30 }, axisTick: { alignWithLabel: true } },
+            yAxis: [
+                { type: "value" as const, name: "T\u1ef7 VND", nameTextStyle: { fontSize: 10, color: "#9CA3AF", fontFamily: "Inter, sans-serif" }, axisLabel: { formatter: (v: number) => fmtTy(v), ...AX }, splitLine: { lineStyle: { color: "#F3F4F6" } } },
+                { type: "value" as const, name: "T\u0103ng tr\u01b0\u1edfng", nameTextStyle: { fontSize: 10, color: "#9CA3AF", fontFamily: "Inter, sans-serif" }, axisLabel: { formatter: (v: number) => `${v}%`, ...AX }, splitLine: { show: false } },
+            ],
+            series: [
+                { name: "LNST (t\u1ef7)", type: "bar" as const, yAxisIndex: 0, data: profTy.map((v) => ({ value: v, itemStyle: { color: v >= 0 ? C.green : C.red, borderRadius: v >= 0 ? [4,4,0,0] : [0,0,4,4] } })), barMaxWidth: 40, tooltip: { valueFormatter: (v: number) => `${v.toLocaleString("vi-VN")} t\u1ef7` } },
+                { name: "T\u0103ng tr\u01b0\u1edfng (%)", type: "line" as const, yAxisIndex: 1, data: growth, smooth: true, symbol: "circle", symbolSize: 7, lineStyle: { color: C.orange, width: 2 }, itemStyle: { color: C.orange }, connectNulls: false, tooltip: { valueFormatter: (v: number | null) => v == null ? "-" : `${v > 0 ? "+" : ""}${v}%` } },
+            ],
+        };
+    }, [rows]);
+    return (
+        <Card className="shadow-sm border-gray-200">
+            <CardHeader className="pb-1 pt-3 px-4">
+                <CardTitle className="text-sm font-bold text-gray-800 flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-green-500" />
+                    Lợi nhuận &amp; Tăng trưởng lợi nhuận (8 kỳ)
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="px-2 pb-3">
+                <ReactECharts option={option} style={{ height: 280 }} opts={{ devicePixelRatio: 2 }} />
+            </CardContent>
+        </Card>
+    );
+}
+
+// ---- 3. Cost Structure ----
 function CostStructureChart({ data }: { data: IncomeStatementItem[] }) {
-    const sorted = useMemo(() => [...data].reverse(), [data]);
-    const periods = sorted.map((d) => d.period.period);
-    const cogs = sorted.map((d) => toTyVND(Math.abs(d.costOfGoodsSold)));
-    const selling = sorted.map((d) => toTyVND(Math.abs(d.sellingExpenses)));
-    const admin = sorted.map((d) => toTyVND(Math.abs(d.adminExpenses)));
-    const financial = sorted.map((d) => toTyVND(Math.abs(d.financialExpenses)));
-    const tax = sorted.map((d) => toTyVND(Math.abs(d.incomeTax)));
-
-    const option = {
-        tooltip: {
-            trigger: "axis",
-            axisPointer: { type: "shadow" },
-            formatter: (params: any[]) => {
-                let html = `<b>${params[0].axisValue}</b><br/>`;
-                let total = 0;
-                params.forEach((p: any) => {
-                    total += p.value;
-                    html += `${p.marker} ${p.seriesName}: <b>${p.value.toLocaleString("vi-VN")} tá»·</b><br/>`;
-                });
-                html += `<b>Tá»•ng: ${total.toLocaleString("vi-VN")} tá»·</b>`;
-                return html;
-            },
-        },
-        legend: { bottom: 0, textStyle: { fontSize: 10 } },
-        grid: { top: 30, right: 20, bottom: 55, left: 60, containLabel: true },
-        xAxis: { type: "category", data: periods, axisLabel: { fontSize: 10, rotate: 30 } },
-        yAxis: {
-            type: "value",
-            name: "Tá»· VND",
-            nameTextStyle: { fontSize: 10 },
-            axisLabel: { formatter: (v: number) => fmtTy(v) },
-        },
-        series: [
-            {
-                name: "GiÃ¡ vá»‘n",
-                type: "bar",
-                stack: "cost",
-                data: cogs,
-                itemStyle: { color: COLORS.red },
-                barMaxWidth: 35,
-            },
-            {
-                name: "Chi phÃ­ bÃ¡n hÃ ng",
-                type: "bar",
-                stack: "cost",
-                data: selling,
-                itemStyle: { color: COLORS.orange },
-                barMaxWidth: 35,
-            },
-            {
-                name: "Chi phÃ­ QLDN",
-                type: "bar",
-                stack: "cost",
-                data: admin,
-                itemStyle: { color: COLORS.amber },
-                barMaxWidth: 35,
-            },
-            {
-                name: "Chi phÃ­ tÃ i chÃ­nh",
-                type: "bar",
-                stack: "cost",
-                data: financial,
-                itemStyle: { color: COLORS.purple },
-                barMaxWidth: 35,
-            },
-            {
-                name: "Thuáº¿ TNDN",
-                type: "bar",
-                stack: "cost",
-                data: tax,
-                itemStyle: { color: COLORS.slate },
-                barMaxWidth: 35,
-            },
-        ],
-    };
-
+    const rows = useMemo(() => annualData(data), [data]);
+    const option = useMemo(() => {
+        const labels  = rows.map((d) => d.period.period);
+        const cogs    = rows.map((d) => +toTy(Math.abs(d.costOfGoodsSold)).toFixed(1));
+        const selling = rows.map((d) => +toTy(Math.abs(d.sellingExpenses)).toFixed(1));
+        const admin   = rows.map((d) => +toTy(Math.abs(d.adminExpenses)).toFixed(1));
+        const fin     = rows.map((d) => +toTy(Math.abs(d.financialExpenses)).toFixed(1));
+        const mkS = (name: string, dt: number[], color: string) => ({
+            name, type: "bar" as const, stack: "cost", data: dt, barMaxWidth: 48,
+            itemStyle: { color }, emphasis: { focus: "series" as const },
+            tooltip: { valueFormatter: (v: number) => `${v.toLocaleString("vi-VN")} t\u1ef7` },
+        });
+        return {
+            ...baseOpt(),
+            legend: { data: ["Gi\u00e1 v\u1ed1n", "Chi ph\u00ed b\u00e1n h\u00e0ng", "Chi ph\u00ed QLDN", "Chi ph\u00ed t\u00e0i ch\u00ednh"], top: 4, textStyle: { fontSize: 11, fontFamily: "Inter, sans-serif" }, itemGap: 12 },
+            xAxis: { type: "category" as const, data: labels, axisLabel: { ...AX, rotate: 30 }, axisTick: { alignWithLabel: true } },
+            yAxis: { type: "value" as const, name: "T\u1ef7 VND", nameTextStyle: { fontSize: 10, color: "#9CA3AF", fontFamily: "Inter, sans-serif" }, axisLabel: { formatter: (v: number) => fmtTy(v), ...AX }, splitLine: { lineStyle: { color: "#F3F4F6" } } },
+            series: [mkS("Gi\u00e1 v\u1ed1n", cogs, C.red), mkS("Chi ph\u00ed b\u00e1n h\u00e0ng", selling, C.orange), mkS("Chi ph\u00ed QLDN", admin, C.purple), mkS("Chi ph\u00ed t\u00e0i ch\u00ednh", fin, C.amber)],
+        };
+    }, [rows]);
     return (
         <Card className="shadow-sm border-gray-200">
-            <CardHeader className="pb-1">
-                <CardTitle className="text-sm font-bold text-gray-800">
-                    ðŸ—ï¸ CÆ¡ cáº¥u chi phÃ­
+            <CardHeader className="pb-1 pt-3 px-4">
+                <CardTitle className="text-sm font-bold text-gray-800 flex items-center gap-2">
+                    <PieChart className="w-4 h-4 text-purple-500" />
+                    Cơ cấu chi phí qua các năm
                 </CardTitle>
             </CardHeader>
-            <CardContent className="p-3">
-                <ReactECharts option={option} style={{ height: 340 }} />
+            <CardContent className="px-2 pb-3">
+                <ReactECharts option={option} style={{ height: 280 }} opts={{ devicePixelRatio: 2 }} />
             </CardContent>
         </Card>
     );
 }
 
-// â”€â”€ 4. Balance Sheet Structure (stacked area) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function BalanceSheetOverviewChart({ data }: { data: BalanceSheetItem[] }) {
-    const sorted = useMemo(() => [...data].reverse(), [data]);
-    const periods = sorted.map((d) => d.period.period);
-
-    const option = {
-        tooltip: {
-            trigger: "axis",
-            axisPointer: { type: "cross" },
-            formatter: (params: any[]) => {
-                let html = `<b>${params[0].axisValue}</b><br/>`;
-                params.forEach((p: any) => {
-                    html += `${p.marker} ${p.seriesName}: <b>${p.value.toLocaleString("vi-VN")} tá»·</b><br/>`;
-                });
-                return html;
-            },
-        },
-        legend: { bottom: 0, textStyle: { fontSize: 10 } },
-        grid: { top: 30, right: 20, bottom: 50, left: 60, containLabel: true },
-        xAxis: { type: "category", data: periods, axisLabel: { fontSize: 10, rotate: 30 } },
-        yAxis: {
-            type: "value",
-            name: "Tá»· VND",
-            nameTextStyle: { fontSize: 10 },
-            axisLabel: { formatter: (v: number) => fmtTy(v) },
-        },
-        series: [
-            {
-                name: "Tá»•ng tÃ i sáº£n",
-                type: "line",
-                data: sorted.map((d) => toTyVND(d.totalAssets)),
-                smooth: true,
-                lineStyle: { width: 3, color: COLORS.blue },
-                itemStyle: { color: COLORS.blue },
-                symbol: "circle",
-                symbolSize: 6,
-                areaStyle: { color: "rgba(59,130,246,0.08)" },
-            },
-            {
-                name: "Vá»‘n chá»§ sá»Ÿ há»¯u",
-                type: "bar",
-                data: sorted.map((d) => toTyVND(d.totalEquity)),
-                itemStyle: { color: COLORS.green, borderRadius: [3, 3, 0, 0] },
-                barMaxWidth: 22,
-            },
-            {
-                name: "Tá»•ng ná»£ pháº£i tráº£",
-                type: "bar",
-                data: sorted.map((d) => toTyVND(d.totalLiabilities)),
-                itemStyle: { color: COLORS.red, borderRadius: [3, 3, 0, 0] },
-                barMaxWidth: 22,
-            },
-        ],
-    };
-
+// ---- 4. Financial Indices ----
+function FinancialIndicesChart({ data, ratios }: { data: IncomeStatementItem[]; ratios?: FinancialRatioItem[] }) {
+    const rows = useMemo(() => annualData(data), [data]);
+    const epsMap = useMemo(() => {
+        const m = new Map<string, number>();
+        if (ratios) for (const r of ratios) if (r.eps != null) m.set(`${r.year}_${r.quarter}`, r.eps);
+        return m;
+    }, [ratios]);
+    const option = useMemo(() => {
+        const labels      = rows.map((d) => d.period.period);
+        const grossMargin = rows.map((d) => d.revenue !== 0 ? +((d.grossProfit / d.revenue) * 100).toFixed(2) : null);
+        const netMargin   = rows.map((d) => d.revenue !== 0 ? +((d.netProfit  / d.revenue) * 100).toFixed(2) : null);
+        const ebitMargin  = rows.map((d) => d.revenue !== 0 ? +((d.operatingProfit / d.revenue) * 100).toFixed(2) : null);
+        const eps         = rows.map((d) => {
+            const v = epsMap.get(`${d.period.year}_${d.period.quarter}`);
+            return v ?? (d.eps && d.eps !== 0 ? d.eps : null);
+        });
+        const hasEps = eps.some((v) => v != null && v !== 0);
+        const mkL = (name: string, dt: (number | null)[], color: string, yIdx = 0, dashed = false) => ({
+            name, type: "line" as const, yAxisIndex: yIdx, data: dt, smooth: true,
+            symbol: "circle", symbolSize: 6,
+            lineStyle: { color, width: 2, type: dashed ? "dashed" as const : "solid" as const },
+            itemStyle: { color }, connectNulls: false,
+            tooltip: { valueFormatter: (v: number | null) => v == null ? "-" : yIdx === 0 ? `${v.toFixed(1)}%` : v.toLocaleString("vi-VN") },
+        });
+        const legendItems = ["Bi\u00ean g\u1ed9p", "Bi\u00ean r\u00f2ng", "Bi\u00ean EBIT"];
+        if (hasEps) legendItems.push("EPS (VND)");
+        const yAxes: object[] = [
+            { type: "value" as const, name: "T\u1ef7 l\u1ec7 (%)", nameTextStyle: { fontSize: 10, color: "#9CA3AF", fontFamily: "Inter, sans-serif" }, axisLabel: { formatter: (v: number) => `${v}%`, ...AX }, splitLine: { lineStyle: { color: "#F3F4F6" } } },
+        ];
+        if (hasEps) yAxes.push({ type: "value" as const, name: "EPS (VND)", nameTextStyle: { fontSize: 10, color: "#9CA3AF", fontFamily: "Inter, sans-serif" }, axisLabel: { formatter: (v: number) => v.toLocaleString("vi-VN"), ...AX }, splitLine: { show: false } });
+        const series: object[] = [mkL("Bi\u00ean g\u1ed9p", grossMargin, C.blue), mkL("Bi\u00ean r\u00f2ng", netMargin, C.green), mkL("Bi\u00ean EBIT", ebitMargin, C.orange)];
+        if (hasEps) series.push(mkL("EPS (VND)", eps, C.purple, 1, true));
+        return {
+            ...baseOpt(),
+            legend: { data: legendItems, top: 4, textStyle: { fontSize: 11, fontFamily: "Inter, sans-serif" }, itemGap: 14 },
+            xAxis: { type: "category" as const, data: labels, axisLabel: { ...AX, rotate: 30 }, axisTick: { alignWithLabel: true } },
+            yAxis: yAxes, series,
+        };
+    }, [rows, epsMap]);
     return (
         <Card className="shadow-sm border-gray-200">
-            <CardHeader className="pb-1">
-                <CardTitle className="text-sm font-bold text-gray-800">
-                    ðŸ›ï¸ Tá»•ng quan CÃ¢n Ä‘á»‘i káº¿ toÃ¡n
+            <CardHeader className="pb-1 pt-3 px-4">
+                <CardTitle className="text-sm font-bold text-gray-800 flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-blue-500" />
+                    Chỉ số tài chính qua các năm
+                    <span className="text-[10px] font-normal text-gray-400 ml-1">(biên lợi nhuận &amp; EPS)</span>
                 </CardTitle>
             </CardHeader>
-            <CardContent className="p-3">
-                <ReactECharts option={option} style={{ height: 340 }} />
+            <CardContent className="px-2 pb-3">
+                <ReactECharts option={option} style={{ height: 280 }} opts={{ devicePixelRatio: 2 }} />
             </CardContent>
         </Card>
     );
 }
 
-// â”€â”€ 5. Asset Composition (stacked bar) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function AssetCompositionChart({ data }: { data: BalanceSheetItem[] }) {
-    const sorted = useMemo(() => [...data].reverse(), [data]);
-    const periods = sorted.map((d) => d.period.period);
+// ---- 5. Profit Before Tax ----
+function ProfitBeforeTaxChart({ data }: { data: IncomeStatementItem[] }) {
+    const rows = useMemo(() => annualData(data), [data]);
+    const option = useMemo(() => {
+        const labels       = rows.map((d) => d.period.period);
+        const grossProfit  = rows.map((d) => +toTy(d.grossProfit).toFixed(1));
+        const opProfit     = rows.map((d) => +toTy(d.operatingProfit).toFixed(1));
+        const pbt          = rows.map((d) => +toTy(d.profitBeforeTax).toFixed(1));
+        const netProfit    = rows.map((d) => +toTy(d.netProfit).toFixed(1));
+        const netParent    = rows.map((d) => +toTy(d.netProfitParent).toFixed(1));
+        // YoY growth của LNST làm đường tham chiếu
+        const growthLNST   = rows.map((d, i) => i === 0 ? null : growthPct(d.netProfit, rows[i - 1].netProfit));
 
-    const option = {
-        tooltip: {
-            trigger: "axis",
-            axisPointer: { type: "shadow" },
-            formatter: (params: any[]) => {
-                let html = `<b>${params[0].axisValue}</b><br/>`;
-                let total = 0;
-                params.forEach((p: any) => {
-                    total += p.value;
-                    html += `${p.marker} ${p.seriesName}: <b>${p.value.toLocaleString("vi-VN")} tá»·</b><br/>`;
-                });
-                html += `<b>Tá»•ng TS: ${total.toLocaleString("vi-VN")} tá»·</b>`;
-                return html;
-            },
-        },
-        legend: { bottom: 0, textStyle: { fontSize: 10 } },
-        grid: { top: 30, right: 20, bottom: 60, left: 60, containLabel: true },
-        xAxis: { type: "category", data: periods, axisLabel: { fontSize: 10, rotate: 30 } },
-        yAxis: {
-            type: "value",
-            name: "Tá»· VND",
-            nameTextStyle: { fontSize: 10 },
-            axisLabel: { formatter: (v: number) => fmtTy(v) },
-        },
-        series: [
-            {
-                name: "Tiá»n & TÄ tiá»n",
-                type: "bar",
-                stack: "asset",
-                data: sorted.map((d) => toTyVND(d.cash)),
-                itemStyle: { color: COLORS.cyan },
-                barMaxWidth: 35,
-            },
-            {
-                name: "ÄTTC ngáº¯n háº¡n",
-                type: "bar",
-                stack: "asset",
-                data: sorted.map((d) => toTyVND(d.shortTermInvestments)),
-                itemStyle: { color: COLORS.sky },
-                barMaxWidth: 35,
-            },
-            {
-                name: "Pháº£i thu NH",
-                type: "bar",
-                stack: "asset",
-                data: sorted.map((d) => toTyVND(d.shortTermReceivables)),
-                itemStyle: { color: COLORS.blue },
-                barMaxWidth: 35,
-            },
-            {
-                name: "HÃ ng tá»“n kho",
-                type: "bar",
-                stack: "asset",
-                data: sorted.map((d) => toTyVND(d.inventory)),
-                itemStyle: { color: COLORS.amber },
-                barMaxWidth: 35,
-            },
-            {
-                name: "TSCÄ",
-                type: "bar",
-                stack: "asset",
-                data: sorted.map((d) => toTyVND(d.fixedAssets)),
-                itemStyle: { color: COLORS.indigo },
-                barMaxWidth: 35,
-            },
-            {
-                name: "ÄT dÃ i háº¡n",
-                type: "bar",
-                stack: "asset",
-                data: sorted.map((d) => toTyVND(d.longTermInvestments)),
-                itemStyle: { color: COLORS.purple },
-                barMaxWidth: 35,
-            },
-        ],
-    };
+        const mkBar = (name: string, dt: number[], color: string, r = [4,4,0,0]) => ({
+            name,
+            type: "bar" as const,
+            yAxisIndex: 0,
+            data: dt.map((v) => ({
+                value: v,
+                itemStyle: { color: v >= 0 ? color : C.red, borderRadius: v >= 0 ? r : [0,0,4,4] },
+            })),
+            barMaxWidth: 18,
+            tooltip: { valueFormatter: (v: number) => `${v.toLocaleString("vi-VN")} tỷ` },
+        });
 
+        return {
+            ...baseOpt(),
+            grid: { top: 50, right: 60, bottom: 60, left: 64, containLabel: false },
+            dataZoom: [
+                {
+                    type: "slider" as const,
+                    xAxisIndex: 0,
+                    bottom: 4,
+                    height: 18,
+                    borderColor: "#E5E7EB",
+                    fillerColor: "rgba(99,102,241,0.1)",
+                    handleStyle: { color: "#6366F1", borderColor: "#6366F1" },
+                    moveHandleStyle: { color: "#6366F1" },
+                    textStyle: { fontSize: 9, color: "#9CA3AF", fontFamily: "Inter, sans-serif" },
+                    brushSelect: false,
+                    showDetail: false,
+                },
+                {
+                    type: "inside" as const,
+                    xAxisIndex: 0,
+                    zoomOnMouseWheel: true,
+                    moveOnMouseMove: true,
+                },
+            ],
+            legend: {
+                data: ["LN gộp", "LN HĐKD", "LN trước thuế", "LNST", "LNST CĐCTM", "Tăng trưởng LNST (%)"],
+                top: 4,
+                textStyle: { fontSize: 10, fontFamily: "Inter, sans-serif" },
+                itemGap: 10,
+            },
+            xAxis: {
+                type: "category" as const,
+                data: labels,
+                axisLabel: { ...AX, rotate: 30 },
+                axisTick: { alignWithLabel: true },
+            },
+            yAxis: [
+                {
+                    type: "value" as const,
+                    name: "Tỷ VND",
+                    nameTextStyle: { fontSize: 10, color: "#9CA3AF", fontFamily: "Inter, sans-serif" },
+                    axisLabel: { formatter: (v: number) => fmtTy(v), ...AX },
+                    splitLine: { lineStyle: { color: "#F3F4F6" } },
+                },
+                {
+                    type: "value" as const,
+                    name: "Tăng trưởng",
+                    nameTextStyle: { fontSize: 10, color: "#9CA3AF", fontFamily: "Inter, sans-serif" },
+                    axisLabel: { formatter: (v: number) => `${v}%`, ...AX },
+                    splitLine: { show: false },
+                },
+            ],
+            series: [
+                mkBar("LN gộp",         grossProfit, "#10B981"),
+                mkBar("LN HĐKD",        opProfit,    "#06B6D4"),
+                mkBar("LN trước thuế",  pbt,         C.indigo),
+                mkBar("LNST",           netProfit,   C.blue),
+                mkBar("LNST CĐCTM",     netParent,   "#8B5CF6"),
+                {
+                    name: "Tăng trưởng LNST (%)",
+                    type: "line" as const,
+                    yAxisIndex: 1,
+                    data: growthLNST,
+                    smooth: true,
+                    symbol: "circle",
+                    symbolSize: 7,
+                    lineStyle: { color: C.amber, width: 2 },
+                    itemStyle: { color: C.amber },
+                    connectNulls: false,
+                    tooltip: {
+                        valueFormatter: (v: number | null) =>
+                            v == null ? "-" : `${v > 0 ? "+" : ""}${v}%`,
+                    },
+                },
+            ],
+        };
+    }, [rows]);
     return (
         <Card className="shadow-sm border-gray-200">
-            <CardHeader className="pb-1">
-                <CardTitle className="text-sm font-bold text-gray-800">
-                    ðŸ“¦ CÆ¡ cáº¥u tÃ i sáº£n
+            <CardHeader className="pb-1 pt-3 px-4">
+                <CardTitle className="text-sm font-bold text-gray-800 flex items-center gap-2">
+                    <BarChart3 className="w-4 h-4 text-indigo-500" />
+                    Các tầng lợi nhuận qua các năm
+                    <span className="text-[10px] font-normal text-gray-400 ml-1">
+                        (gộp · HĐKD · trước thuế · sau thuế)
+                    </span>
                 </CardTitle>
             </CardHeader>
-            <CardContent className="p-3">
-                <ReactECharts option={option} style={{ height: 340 }} />
+            <CardContent className="px-2 pb-3">
+                <ReactECharts option={option} style={{ height: 320 }} opts={{ devicePixelRatio: 2 }} />
             </CardContent>
         </Card>
     );
 }
 
-// â”€â”€ 6. Cash Flow Overview (waterfall-style grouped bar) â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function CashFlowOverviewChart({ data }: { data: CashFlowItem[] }) {
-    const sorted = useMemo(() => [...data].reverse(), [data]);
-    const periods = sorted.map((d) => d.period.period);
-    const operating = sorted.map((d) => toTyVND(d.operatingCashFlow));
-    const investing = sorted.map((d) => toTyVND(d.investingCashFlow));
-    const financing = sorted.map((d) => toTyVND(d.financingCashFlow));
-    const netChange = sorted.map((d) => toTyVND(d.netCashChange));
-
-    const option = {
-        tooltip: {
-            trigger: "axis",
-            axisPointer: { type: "shadow" },
-            formatter: (params: any[]) => {
-                let html = `<b>${params[0].axisValue}</b><br/>`;
-                params.forEach((p: any) => {
-                    html += `${p.marker} ${p.seriesName}: <b>${p.value.toLocaleString("vi-VN")} tá»·</b><br/>`;
-                });
-                return html;
-            },
-        },
-        legend: { bottom: 0, textStyle: { fontSize: 10 } },
-        grid: { top: 30, right: 20, bottom: 50, left: 60, containLabel: true },
-        xAxis: { type: "category", data: periods, axisLabel: { fontSize: 10, rotate: 30 } },
-        yAxis: {
-            type: "value",
-            name: "Tá»· VND",
-            nameTextStyle: { fontSize: 10 },
-            axisLabel: { formatter: (v: number) => fmtTy(v) },
-        },
-        series: [
-            {
-                name: "LCTT tá»« HÄKD",
-                type: "bar",
-                data: operating,
-                itemStyle: { color: COLORS.green, borderRadius: [3, 3, 0, 0] },
-                barMaxWidth: 22,
-            },
-            {
-                name: "LCTT tá»« HÄÄT",
-                type: "bar",
-                data: investing,
-                itemStyle: { color: COLORS.orange, borderRadius: [3, 3, 0, 0] },
-                barMaxWidth: 22,
-            },
-            {
-                name: "LCTT tá»« HÄTC",
-                type: "bar",
-                data: financing,
-                itemStyle: { color: COLORS.purple, borderRadius: [3, 3, 0, 0] },
-                barMaxWidth: 22,
-            },
-            {
-                name: "Thay Ä‘á»•i tiá»n rÃ²ng",
-                type: "line",
-                data: netChange,
-                smooth: true,
-                symbol: "circle",
-                symbolSize: 7,
-                lineStyle: { width: 2.5, color: COLORS.blue, type: "dashed" },
-                itemStyle: { color: COLORS.blue },
-            },
-        ],
-    };
-
-    return (
-        <Card className="shadow-sm border-gray-200">
-            <CardHeader className="pb-1">
-                <CardTitle className="text-sm font-bold text-gray-800">
-                    ðŸ’µ Tá»•ng quan DÃ²ng tiá»n
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="p-3">
-                <ReactECharts option={option} style={{ height: 340 }} />
-            </CardContent>
-        </Card>
-    );
-}
-
-// â”€â”€ 7. Debt vs Equity (stacked bar + D/E ratio line) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function DebtEquityChart({ data }: { data: BalanceSheetItem[] }) {
-    const sorted = useMemo(() => [...data].reverse(), [data]);
-    const periods = sorted.map((d) => d.period.period);
-    const shortDebt = sorted.map((d) => toTyVND(d.currentLiabilities));
-    const longDebt = sorted.map((d) => toTyVND(d.longTermLiabilities));
-    const equity = sorted.map((d) => toTyVND(d.totalEquity));
-    const deRatio = sorted.map((d) =>
-        d.totalEquity !== 0 ? +((d.totalLiabilities / d.totalEquity) * 100).toFixed(1) : 0
-    );
-
-    const option = {
-        tooltip: {
-            trigger: "axis",
-            axisPointer: { type: "cross" },
-            formatter: (params: any[]) => {
-                let html = `<b>${params[0].axisValue}</b><br/>`;
-                params.forEach((p: any) => {
-                    const unit = p.seriesName.includes("D/E") ? "%" : " tá»·";
-                    html += `${p.marker} ${p.seriesName}: <b>${p.value.toLocaleString("vi-VN")}${unit}</b><br/>`;
-                });
-                return html;
-            },
-        },
-        legend: { bottom: 0, textStyle: { fontSize: 10 } },
-        grid: { top: 30, right: 55, bottom: 50, left: 60, containLabel: true },
-        xAxis: { type: "category", data: periods, axisLabel: { fontSize: 10, rotate: 30 } },
-        yAxis: [
-            {
-                type: "value",
-                name: "Tá»· VND",
-                nameTextStyle: { fontSize: 10 },
-                axisLabel: { formatter: (v: number) => fmtTy(v) },
-            },
-            {
-                type: "value",
-                name: "D/E (%)",
-                nameTextStyle: { fontSize: 10 },
-                axisLabel: { formatter: "{value}%" },
-                splitLine: { show: false },
-            },
-        ],
-        series: [
-            {
-                name: "Ná»£ ngáº¯n háº¡n",
-                type: "bar",
-                stack: "debt",
-                data: shortDebt,
-                itemStyle: { color: COLORS.red },
-                barMaxWidth: 28,
-            },
-            {
-                name: "Ná»£ dÃ i háº¡n",
-                type: "bar",
-                stack: "debt",
-                data: longDebt,
-                itemStyle: { color: COLORS.orange },
-                barMaxWidth: 28,
-            },
-            {
-                name: "VCSH",
-                type: "bar",
-                data: equity,
-                itemStyle: { color: COLORS.green, borderRadius: [3, 3, 0, 0] },
-                barMaxWidth: 28,
-            },
-            {
-                name: "D/E Ratio",
-                type: "line",
-                yAxisIndex: 1,
-                data: deRatio,
-                smooth: true,
-                symbol: "circle",
-                symbolSize: 6,
-                lineStyle: { width: 2.5, color: COLORS.indigo },
-                itemStyle: { color: COLORS.indigo },
-            },
-        ],
-    };
-
-    return (
-        <Card className="shadow-sm border-gray-200">
-            <CardHeader className="pb-1">
-                <CardTitle className="text-sm font-bold text-gray-800">
-                    âš–ï¸ Ná»£ & Vá»‘n chá»§ sá»Ÿ há»¯u
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="p-3">
-                <ReactECharts option={option} style={{ height: 340 }} />
-            </CardContent>
-        </Card>
-    );
-}
-
-// â”€â”€ 8. Latest Period Pie: Revenue Breakdown â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function LatestPeriodPieChart({ income, balance }: { income: IncomeStatementItem; balance: BalanceSheetItem }) {
-    const pieProfitData = [
-        { name: "GiÃ¡ vá»‘n", value: toTyVND(Math.abs(income.costOfGoodsSold)), itemStyle: { color: COLORS.red } },
-        { name: "CP bÃ¡n hÃ ng", value: toTyVND(Math.abs(income.sellingExpenses)), itemStyle: { color: COLORS.orange } },
-        { name: "CP quáº£n lÃ½", value: toTyVND(Math.abs(income.adminExpenses)), itemStyle: { color: COLORS.amber } },
-        { name: "CP tÃ i chÃ­nh", value: toTyVND(Math.abs(income.financialExpenses)), itemStyle: { color: COLORS.purple } },
-        { name: "Thuáº¿ TNDN", value: toTyVND(Math.abs(income.incomeTax)), itemStyle: { color: COLORS.slate } },
-        { name: "LNST", value: toTyVND(Math.max(income.netProfit, 0)), itemStyle: { color: COLORS.green } },
-    ].filter((d) => d.value > 0);
-
-    const pieSourceData = [
-        { name: "VCSH", value: toTyVND(balance.totalEquity), itemStyle: { color: COLORS.green } },
-        { name: "Ná»£ ngáº¯n háº¡n", value: toTyVND(balance.currentLiabilities), itemStyle: { color: COLORS.red } },
-        { name: "Ná»£ dÃ i háº¡n", value: toTyVND(balance.longTermLiabilities), itemStyle: { color: COLORS.orange } },
-    ].filter((d) => d.value > 0);
-
-    const option = {
-        tooltip: {
-            trigger: "item",
-            formatter: (p: any) => `${p.marker} ${p.name}: <b>${p.value.toLocaleString("vi-VN")} tá»·</b> (${p.percent}%)`,
-        },
-        legend: { bottom: 0, textStyle: { fontSize: 10 } },
-        series: [
-            {
-                name: "PhÃ¢n bá»• doanh thu",
-                type: "pie",
-                radius: ["0%", "55%"],
-                center: ["25%", "45%"],
-                data: pieProfitData,
-                label: { show: false },
-                emphasis: { label: { show: true, fontSize: 11, fontWeight: "bold" } },
-            },
-            {
-                name: "CÆ¡ cáº¥u nguá»“n vá»‘n",
-                type: "pie",
-                radius: ["30%", "55%"],
-                center: ["72%", "45%"],
-                data: pieSourceData,
-                label: { show: false },
-                emphasis: { label: { show: true, fontSize: 11, fontWeight: "bold" } },
-                roseType: "radius",
-            },
-        ],
-        graphic: [
-            {
-                type: "text",
-                left: "14%",
-                top: 5,
-                style: { text: "PhÃ¢n bá»• doanh thu", fontSize: 12, fontWeight: "bold", fill: "#374151" },
-            },
-            {
-                type: "text",
-                left: "61%",
-                top: 5,
-                style: { text: "CÆ¡ cáº¥u nguá»“n vá»‘n", fontSize: 12, fontWeight: "bold", fill: "#374151" },
-            },
-        ],
-    };
-
-    return (
-        <Card className="shadow-sm border-gray-200">
-            <CardHeader className="pb-1">
-                <CardTitle className="text-sm font-bold text-gray-800">
-                    ðŸ© Ká»³ gáº§n nháº¥t: {income.period.period}
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="p-3">
-                <ReactECharts option={option} style={{ height: 320 }} />
-            </CardContent>
-        </Card>
-    );
-}
-
-// â”€â”€ 9. KPI Summary Cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ---- KPI Summary Cards ----
 function KPISummaryCards({
-    income,
-    balance,
-    cashflow,
+    data,
+    ratios,
 }: {
-    income: IncomeStatementItem[];
-    balance: BalanceSheetItem[];
-    cashflow: CashFlowItem[];
+    data: IncomeStatementItem[];
+    ratios?: FinancialRatioItem[];
 }) {
-    const latest = income[0];
-    const prev = income.length > 1 ? income[1] : null;
-    const latestBS = balance[0];
-    const latestCF = cashflow[0];
+    const annual = useMemo(() => annualData(data), [data]);
+    const latest = annual[annual.length - 1];
+    const prevYr = annual.length >= 2 ? annual[annual.length - 2] : null;
 
-    const revenueGrowth =
-        prev && prev.revenue !== 0
-            ? +(((latest.revenue - prev.revenue) / Math.abs(prev.revenue)) * 100).toFixed(1)
-            : null;
-    const profitGrowth =
-        prev && prev.netProfit !== 0
-            ? +(((latest.netProfit - prev.netProfit) / Math.abs(prev.netProfit)) * 100).toFixed(1)
-            : null;
-    const grossMargin = latest.revenue !== 0 ? +((latest.grossProfit / latest.revenue) * 100).toFixed(1) : 0;
-    const netMargin = latest.revenue !== 0 ? +((latest.netProfit / latest.revenue) * 100).toFixed(1) : 0;
-    const deRatio = latestBS.totalEquity !== 0 ? +((latestBS.totalLiabilities / latestBS.totalEquity)).toFixed(2) : 0;
+    if (!latest) return null;
 
-    const kpis = [
+    const latestRatio = ratios?.find(
+        (r) => r.year === latest.period.year && r.quarter === latest.period.quarter,
+    );
+
+    const grossMarginPct =
+        latest.revenue !== 0 ? +((latest.grossProfit / latest.revenue) * 100).toFixed(1) : 0;
+    const netMarginPct =
+        latest.revenue !== 0 ? +((latest.netProfit / latest.revenue) * 100).toFixed(1) : 0;
+    const opMarginPct =
+        latest.revenue !== 0 ? +((latest.operatingProfit / latest.revenue) * 100).toFixed(1) : 0;
+    const totalCost =
+        Math.abs(latest.costOfGoodsSold) +
+        Math.abs(latest.sellingExpenses) +
+        Math.abs(latest.adminExpenses) +
+        Math.abs(latest.financialExpenses);
+    const eps = latestRatio?.eps ?? (latest.eps !== 0 ? latest.eps : null);
+
+    const yoy = (curr: number, prev: number | undefined): number | null => {
+        if (!prev || prev === 0) return null;
+        return +(((curr - prev) / Math.abs(prev)) * 100).toFixed(1);
+    };
+
+    type KpiColor = "blue" | "emerald" | "teal" | "indigo" | "green" | "amber" | "purple" | "rose" | "red";
+    interface KpiDef {
+        label: string;
+        value: string;
+        change: number | null;
+        isPoint?: boolean;
+        color: KpiColor;
+    }
+
+    const kpis: KpiDef[] = [
         {
-            label: "Doanh thu",
-            value: `${toTyVND(latest.revenue).toLocaleString("vi-VN")} tá»·`,
-            change: revenueGrowth,
+            label: "Doanh thu thuần",
+            value: `${fmtTy(toTy(latest.revenue))} tỷ`,
+            change: yoy(latest.revenue, prevYr?.revenue),
             color: "blue",
         },
         {
-            label: "LNST",
-            value: `${toTyVND(latest.netProfit).toLocaleString("vi-VN")} tá»·`,
-            change: profitGrowth,
-            color: "green",
+            label: "Lợi nhuận gộp",
+            value: `${fmtTy(toTy(latest.grossProfit))} tỷ`,
+            change: yoy(latest.grossProfit, prevYr?.grossProfit),
+            color: "emerald",
         },
         {
-            label: "BiÃªn LN gá»™p",
-            value: `${grossMargin}%`,
-            change: null,
-            color: "amber",
-        },
-        {
-            label: "BiÃªn LN rÃ²ng",
-            value: `${netMargin}%`,
-            change: null,
-            color: "purple",
-        },
-        {
-            label: "Tá»•ng tÃ i sáº£n",
-            value: `${toTyVND(latestBS.totalAssets).toLocaleString("vi-VN")} tá»·`,
-            change: null,
-            color: "indigo",
-        },
-        {
-            label: "D/E Ratio",
-            value: `${deRatio}x`,
-            change: null,
-            color: "red",
-        },
-        {
-            label: "VCSH",
-            value: `${toTyVND(latestBS.totalEquity).toLocaleString("vi-VN")} tá»·`,
-            change: null,
+            label: "LN hoạt động",
+            value: `${fmtTy(toTy(latest.operatingProfit))} tỷ`,
+            change: yoy(latest.operatingProfit, prevYr?.operatingProfit),
             color: "teal",
         },
         {
-            label: "LCTT tá»« HÄKD",
-            value: `${toTyVND(latestCF.operatingCashFlow).toLocaleString("vi-VN")} tá»·`,
+            label: "LN trước thuế",
+            value: `${fmtTy(toTy(latest.profitBeforeTax))} tỷ`,
+            change: yoy(latest.profitBeforeTax, prevYr?.profitBeforeTax),
+            color: "indigo",
+        },
+        {
+            label: "LNST",
+            value: `${fmtTy(toTy(latest.netProfit))} tỷ`,
+            change: yoy(latest.netProfit, prevYr?.netProfit),
+            color: "green",
+        },
+        {
+            label: "Tổng chi phí",
+            value: `${fmtTy(toTy(totalCost))} tỷ`,
+            change: prevYr
+                ? yoy(
+                      totalCost,
+                      Math.abs(prevYr.costOfGoodsSold) +
+                          Math.abs(prevYr.sellingExpenses) +
+                          Math.abs(prevYr.adminExpenses) +
+                          Math.abs(prevYr.financialExpenses),
+                  )
+                : null,
+            color: "red",
+        },
+        {
+            label: "Biên LN gộp",
+            value: `${grossMarginPct}%`,
+            change:
+                prevYr && prevYr.revenue !== 0
+                    ? +((grossMarginPct - (prevYr.grossProfit / prevYr.revenue) * 100).toFixed(1))
+                    : null,
+            isPoint: true,
+            color: "amber",
+        },
+        {
+            label: "Biên LN HĐKD",
+            value: `${opMarginPct}%`,
+            change:
+                prevYr && prevYr.revenue !== 0
+                    ? +((opMarginPct - (prevYr.operatingProfit / prevYr.revenue) * 100).toFixed(1))
+                    : null,
+            isPoint: true,
+            color: "purple",
+        },
+        {
+            label: "Biên LN ròng",
+            value: `${netMarginPct}%`,
+            change:
+                prevYr && prevYr.revenue !== 0
+                    ? +((netMarginPct - (prevYr.netProfit / prevYr.revenue) * 100).toFixed(1))
+                    : null,
+            isPoint: true,
+            color: "rose",
+        },
+        {
+            label: "EPS",
+            value: eps != null ? eps.toLocaleString("vi-VN") : "—",
             change: null,
-            color: "cyan",
+            color: "indigo",
         },
     ];
 
-    const colorMap: Record<string, string> = {
-        blue: "bg-blue-50 border-blue-200 text-blue-700",
-        green: "bg-green-50 border-green-200 text-green-700",
-        amber: "bg-amber-50 border-amber-200 text-amber-700",
-        purple: "bg-purple-50 border-purple-200 text-purple-700",
-        indigo: "bg-indigo-50 border-indigo-200 text-indigo-700",
-        red: "bg-red-50 border-red-200 text-red-700",
-        teal: "bg-teal-50 border-teal-200 text-teal-700",
-        cyan: "bg-cyan-50 border-cyan-200 text-cyan-700",
+    const colorMap: Record<KpiColor, { bg: string; border: string; title: string; val: string }> = {
+        blue:    { bg: "bg-blue-50",    border: "border-blue-200",    title: "text-blue-500",    val: "text-blue-800"    },
+        emerald: { bg: "bg-emerald-50", border: "border-emerald-200", title: "text-emerald-500", val: "text-emerald-800" },
+        teal:    { bg: "bg-teal-50",    border: "border-teal-200",    title: "text-teal-500",    val: "text-teal-800"    },
+        indigo:  { bg: "bg-indigo-50",  border: "border-indigo-200",  title: "text-indigo-500",  val: "text-indigo-800"  },
+        green:   { bg: "bg-green-50",   border: "border-green-200",   title: "text-green-500",   val: "text-green-800"   },
+        amber:   { bg: "bg-amber-50",   border: "border-amber-200",   title: "text-amber-500",   val: "text-amber-800"   },
+        purple:  { bg: "bg-purple-50",  border: "border-purple-200",  title: "text-purple-500",  val: "text-purple-800"  },
+        rose:    { bg: "bg-rose-50",    border: "border-rose-200",    title: "text-rose-500",    val: "text-rose-800"    },
+        red:     { bg: "bg-red-50",     border: "border-red-200",     title: "text-red-500",     val: "text-red-800"     },
     };
 
     return (
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
-            {kpis.map((kpi) => (
-                <div
-                    key={kpi.label}
-                    className={`rounded-lg border p-3 ${colorMap[kpi.color] || "bg-gray-50 border-gray-200 text-gray-700"}`}
-                >
-                    <div className="text-[10px] font-medium opacity-70 uppercase tracking-wide">
-                        {kpi.label}
-                    </div>
-                    <div className="text-sm font-bold mt-1 leading-tight">{kpi.value}</div>
-                    {kpi.change !== null && (
+        <div className="space-y-2">
+            <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-gray-700">KPI Báo Cáo Tài Chính</span>
+                <span className="text-xs text-gray-400">• Kỳ gần nhất: {latest.period.period}</span>
+                {prevYr && (
+                    <span className="text-xs text-gray-400">• So sánh với: {prevYr.period.period}</span>
+                )}
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 xl:grid-cols-10 gap-2">
+                {kpis.map((kpi) => {
+                    const c = colorMap[kpi.color];
+                    return (
                         <div
-                            className={`text-[10px] font-semibold mt-0.5 ${
-                                kpi.change >= 0 ? "text-green-600" : "text-red-500"
-                            }`}
+                            key={kpi.label}
+                            className={`rounded-xl border ${c.bg} ${c.border} p-3 flex flex-col gap-0.5`}
                         >
-                            {kpi.change >= 0 ? "â–²" : "â–¼"} {Math.abs(kpi.change)}% vs quÃ½ trÆ°á»›c
+                            <div className={`text-[10px] font-semibold uppercase tracking-wide ${c.title}`}>
+                                {kpi.label}
+                            </div>
+                            <div className={`text-sm font-bold leading-snug ${c.val}`}>{kpi.value}</div>
+                            {kpi.change != null && (
+                                <div
+                                    className={`text-[10px] font-medium ${
+                                        kpi.change >= 0 ? "text-green-600" : "text-red-500"
+                                    }`}
+                                >
+                                    {kpi.change >= 0 ? "▲" : "▼"} {Math.abs(kpi.change)}
+                                    {kpi.isPoint ? " đpt" : "%"} YoY
+                                </div>
+                            )}
                         </div>
-                    )}
-                </div>
-            ))}
+                    );
+                })}
+            </div>
         </div>
     );
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// MAIN EXPORT â€” Financial Overview Charts
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ---- Financial Summary Table ----
+function FinancialSummaryTable({ data }: { data: IncomeStatementItem[] }) {
+    const annual = useMemo(() => annualData(data), [data]);
+    const periods = annual.slice(-6);
+
+    // Track which parent groups are expanded
+    const [expanded, setExpanded] = useState<Set<string>>(new Set());
+    const toggle = (id: string) =>
+        setExpanded((prev) => {
+            const next = new Set(prev);
+            next.has(id) ? next.delete(id) : next.add(id);
+            return next;
+        });
+
+    if (periods.length === 0) return null;
+
+    const fmtVal = (v: number) => {
+        const ty = toTy(Math.abs(v));
+        if (ty >= 1000) return `${(ty / 1000).toFixed(1)}K`;
+        if (ty >= 1) return ty.toFixed(1);
+        return ty.toFixed(2);
+    };
+
+    const yoyLast = (getter: (d: IncomeStatementItem) => number): number | null => {
+        if (periods.length < 2) return null;
+        return growthPct(getter(periods[periods.length - 1]), getter(periods[periods.length - 2]));
+    };
+
+    interface RowDef {
+        id: string;
+        label: string;
+        getter: (d: IncomeStatementItem) => number;
+        highlight?: boolean;
+        isPct?: boolean;
+        negative?: boolean;
+        dividerBefore?: boolean;
+        isParent?: boolean;  // clickable, toggles children
+        parentId?: string;   // hidden when parent is collapsed
+        level?: number;      // indent level (0 = none, 1 = child)
+    }
+
+    const rows: RowDef[] = [
+        // ── Doanh thu ──────────────────────────────────────────────────
+        { id: "revenue",     label: "Doanh thu thuần",  getter: (d) => d.revenue,                 highlight: true, isParent: true },
+        { id: "cogs",        label: "Giá vốn hàng bán", getter: (d) => Math.abs(d.costOfGoodsSold), negative: true,  parentId: "revenue", level: 1 },
+        // ── Lợi nhuận gộp ─────────────────────────────────────────────
+        { id: "gross",       label: "Lợi nhuận gộp",   getter: (d) => d.grossProfit,             highlight: true, isParent: true, dividerBefore: true },
+        { id: "selling",     label: "Chi phí bán hàng", getter: (d) => Math.abs(d.sellingExpenses), negative: true, parentId: "gross", level: 1 },
+        { id: "admin",       label: "Chi phí QLDN",     getter: (d) => Math.abs(d.adminExpenses),   negative: true, parentId: "gross", level: 1 },
+        { id: "finExp",      label: "Chi phí tài chính",getter: (d) => Math.abs(d.financialExpenses), negative: true, parentId: "gross", level: 1 },
+        { id: "finInc",      label: "Thu nhập TC",      getter: (d) => d.financialIncome,          parentId: "gross", level: 1 },
+        // ── LN HĐKD ───────────────────────────────────────────────────
+        { id: "opProfit",    label: "LN từ HĐKD",      getter: (d) => d.operatingProfit,          highlight: true, dividerBefore: true },
+        // ── LN trước thuế ─────────────────────────────────────────────
+        { id: "pbt",         label: "LN trước thuế",   getter: (d) => d.profitBeforeTax,          highlight: true, isParent: true, dividerBefore: true },
+        { id: "tax",         label: "Thuế TNDN",        getter: (d) => Math.abs(d.incomeTax),       negative: true, parentId: "pbt", level: 1 },
+        // ── LNST ──────────────────────────────────────────────────────
+        { id: "net",         label: "LNST",             getter: (d) => d.netProfit,                highlight: true, isParent: true, dividerBefore: true },
+        { id: "netParent",   label: "LNST CĐCTM",      getter: (d) => d.netProfitParent,           parentId: "net", level: 1 },
+        // ── Biên lợi nhuận ────────────────────────────────────────────
+        { id: "grossMargin", label: "Biên LN gộp",     getter: (d) => d.revenue !== 0 ? +((d.grossProfit / d.revenue) * 100).toFixed(1) : 0,      isPct: true, dividerBefore: true },
+        { id: "opMargin",    label: "Biên LN HĐKD",    getter: (d) => d.revenue !== 0 ? +((d.operatingProfit / d.revenue) * 100).toFixed(1) : 0,  isPct: true },
+        { id: "netMargin",   label: "Biên LN ròng",    getter: (d) => d.revenue !== 0 ? +((d.netProfit / d.revenue) * 100).toFixed(1) : 0,        isPct: true },
+    ];
+
+    const expandAll  = () => setExpanded(new Set(rows.filter((r) => r.isParent).map((r) => r.id)));
+    const collapseAll = () => setExpanded(new Set());
+
+    return (
+        <Card className="shadow-sm border-gray-200">
+            <CardHeader className="pb-1 pt-3 px-4">
+                <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-bold text-gray-800">
+                        Bảng tổng hợp chỉ số tài chính quan trọng
+                        <span className="text-[10px] font-normal text-gray-400 ml-2">(đơn vị: tỷ VND)</span>
+                    </CardTitle>
+                    <div className="flex gap-2 text-[11px]">
+                        <button onClick={expandAll}  className="text-indigo-500 hover:text-indigo-700 font-medium">Mở tất cả</button>
+                        <span className="text-gray-300">|</span>
+                        <button onClick={collapseAll} className="text-gray-400 hover:text-gray-600 font-medium">Thu gọn</button>
+                    </div>
+                </div>
+            </CardHeader>
+            <CardContent className="px-2 pb-4 overflow-x-auto">
+                <table className="w-full text-xs min-w-[560px]">
+                    <thead>
+                        <tr className="border-b-2 border-gray-300">
+                            <th className="text-left py-2 px-2 font-semibold text-gray-600 w-44 sticky left-0 bg-white">
+                                Chỉ tiêu
+                            </th>
+                            {periods.map((p) => (
+                                <th key={p.period.period} className="text-right py-2 px-2 font-semibold text-gray-600 whitespace-nowrap">
+                                    {p.period.period}
+                                </th>
+                            ))}
+                            <th className="text-right py-2 px-2 font-semibold text-indigo-600 whitespace-nowrap">YoY</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {rows.map((row) => {
+                            // Hide child rows when parent is collapsed
+                            if (row.parentId && !expanded.has(row.parentId)) return null;
+
+                            const yoy    = yoyLast(row.getter);
+                            const isOpen = row.isParent && expanded.has(row.id);
+
+                            return (
+                                <tr
+                                    key={row.id}
+                                    onClick={row.isParent ? () => toggle(row.id) : undefined}
+                                    className={[
+                                        "border-b border-gray-100 transition-colors",
+                                        row.isParent ? "cursor-pointer select-none" : "",
+                                        row.highlight ? "bg-blue-50/50 hover:bg-blue-100/60" : "hover:bg-gray-50/70",
+                                        row.dividerBefore ? "border-t border-t-gray-300" : "",
+                                        row.parentId ? "bg-gray-50/40" : "",
+                                    ].join(" ")}
+                                >
+                                    <td
+                                        className={[
+                                            "py-1.5 px-2 sticky left-0",
+                                            row.highlight ? "bg-blue-50/70 font-semibold text-gray-800" : "bg-white text-gray-600",
+                                            row.parentId ? "bg-gray-50/60 text-gray-500" : "",
+                                            row.level === 1 ? "pl-6" : "",
+                                        ].join(" ")}
+                                    >
+                                        <span className="flex items-center gap-1">
+                                            {row.isParent && (
+                                                <span className={`text-[9px] text-indigo-400 transition-transform duration-150 ${isOpen ? "rotate-90" : ""}`}>
+                                                    ▶
+                                                </span>
+                                            )}
+                                            {row.level === 1 && (
+                                                <span className="text-gray-300 mr-0.5">└</span>
+                                            )}
+                                            {row.negative && <span className="text-red-400 text-[10px]">(-)</span>}
+                                            {row.label}
+                                        </span>
+                                    </td>
+                                    {periods.map((p) => {
+                                        const val  = row.getter(p);
+                                        const isNeg = !row.isPct && val < 0;
+                                        return (
+                                            <td
+                                                key={p.period.period}
+                                                className={[
+                                                    "py-1.5 px-2 text-right tabular-nums",
+                                                    row.highlight ? "font-semibold" : "",
+                                                    row.isPct
+                                                        ? val >= 0 ? "text-emerald-700" : "text-red-600"
+                                                        : row.negative || isNeg ? "text-red-600" : "text-gray-700",
+                                                ].join(" ")}
+                                            >
+                                                {row.isPct ? `${val.toFixed(1)}%` : fmtVal(val)}
+                                            </td>
+                                        );
+                                    })}
+                                    <td
+                                        className={[
+                                            "py-1.5 px-2 text-right tabular-nums font-semibold",
+                                            yoy == null ? "text-gray-300" : yoy >= 0 ? "text-green-600" : "text-red-500",
+                                        ].join(" ")}
+                                    >
+                                        {yoy == null ? "—" : `${yoy >= 0 ? "▲" : "▼"} ${Math.abs(yoy)}%`}
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
+            </CardContent>
+        </Card>
+    );
+}
+
+// ---- Main Export ----
 interface FinancialOverviewChartsProps {
     incomeStatement: IncomeStatementItem[];
     balanceSheet: BalanceSheetItem[];
     cashFlow: CashFlowItem[];
+    financialRatios?: FinancialRatioItem[];
+    isBank?: boolean;
 }
 
 export default function FinancialOverviewCharts({
     incomeStatement,
-    balanceSheet,
-    cashFlow,
+    financialRatios,
 }: FinancialOverviewChartsProps) {
-    if (!incomeStatement.length || !balanceSheet.length || !cashFlow.length) {
-        return (
-            <div className="text-center py-8 text-gray-400">
-                KhÃ´ng cÃ³ dá»¯ liá»‡u Ä‘á»ƒ hiá»ƒn thá»‹ biá»ƒu Ä‘á»“
-            </div>
-        );
+    if (!incomeStatement.length) {
+        return <div className="text-center py-8 text-gray-400">Không có dữ liệu để hiển thị biểu đồ.</div>;
     }
-
     return (
-        <div className="space-y-4">
-            {/* KPI Summary */}
-            <KPISummaryCards
-                income={incomeStatement}
-                balance={balanceSheet}
-                cashflow={cashFlow}
-            />
+        <div className="space-y-4 font-sans">
+            {/* KPI nổi bật — luôn ở đầu */}
+            <KPISummaryCards data={incomeStatement} ratios={financialRatios} />
 
-            {/* Row 1: Revenue + Net Profit */}
+            {/* Biểu đồ */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <RevenueOverviewChart data={incomeStatement} />
-                <NetProfitChart data={incomeStatement} />
+                <RevenueGrowthChart data={incomeStatement} />
+                <ProfitGrowthChart data={incomeStatement} />
             </div>
-
-            {/* Row 2: Cost Structure + Pie Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <CostStructureChart data={incomeStatement} />
-                <LatestPeriodPieChart
-                    income={incomeStatement[0]}
-                    balance={balanceSheet[0]}
-                />
+                <FinancialIndicesChart data={incomeStatement} ratios={financialRatios} />
             </div>
+            <ProfitBeforeTaxChart data={incomeStatement} />
 
-            {/* Row 3: Balance Sheet + Assets */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <BalanceSheetOverviewChart data={balanceSheet} />
-                <AssetCompositionChart data={balanceSheet} />
-            </div>
-
-            {/* Row 4: Cash Flow + Debt/Equity */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <CashFlowOverviewChart data={cashFlow} />
-                <DebtEquityChart data={balanceSheet} />
-            </div>
+            {/* Bảng tổng hợp chỉ số — phía dưới */}
+            <FinancialSummaryTable data={incomeStatement} />
         </div>
     );
 }

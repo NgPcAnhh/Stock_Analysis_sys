@@ -115,9 +115,96 @@ CREATE INDEX IF NOT EXISTS idx_stock_search_logs_keyword_time
     ON system.stock_search_logs (keyword, searched_at DESC);
 
 -- ────────────────────────────────────────────────────────────
+-- 5. sidebar_clicks — Mỗi lần user click vào mục sidebar
+-- ────────────────────────────────────────────────────────────
+-- Thiết kế: 1 row = 1 click event (append-only)
+-- Dùng để thống kê chức năng nào được dùng nhiều nhất
+-- ────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS system.sidebar_clicks (
+    id          BIGSERIAL    PRIMARY KEY,
+    menu_name   VARCHAR(50)  NOT NULL,                             -- Tên menu: 'Tổng quan', 'Thị trường', ...
+    menu_href   VARCHAR(100) NOT NULL,                             -- Path: '/', '/market', ...
+    user_id     BIGINT       REFERENCES system.users(id) ON DELETE SET NULL,  -- NULL nếu chưa đăng nhập
+    session_id  VARCHAR(64)  NOT NULL DEFAULT 'anonymous',
+    ip_address  VARCHAR(45),
+    clicked_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_sidebar_clicks_menu
+    ON system.sidebar_clicks (menu_name);
+
+CREATE INDEX IF NOT EXISTS idx_sidebar_clicks_time
+    ON system.sidebar_clicks (clicked_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_sidebar_clicks_user
+    ON system.sidebar_clicks (user_id)
+    WHERE user_id IS NOT NULL;
+
+-- ────────────────────────────────────────────────────────────
+-- 6. login_logs — Bản ghi mỗi lần đăng nhập
+-- ────────────────────────────────────────────────────────────
+-- Thiết kế: 1 row = 1 login event (kể cả thất bại)
+-- Dùng để thống kê số lần đăng nhập, thiết bị, phương thức
+-- ────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS system.login_logs (
+    id          BIGSERIAL    PRIMARY KEY,
+    user_id     BIGINT       REFERENCES system.users(id) ON DELETE SET NULL,  -- NULL nếu đăng nhập thất bại
+    method      VARCHAR(20)  NOT NULL DEFAULT 'local',             -- 'local', 'google'
+    success     BOOLEAN      NOT NULL DEFAULT TRUE,
+    ip_address  VARCHAR(45),
+    device_info TEXT,
+    login_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_login_logs_user
+    ON system.login_logs (user_id)
+    WHERE user_id IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_login_logs_time
+    ON system.login_logs (login_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_login_logs_method
+    ON system.login_logs (method);
+
+-- ────────────────────────────────────────────────────────────
+-- 7. session_logs — Thời gian duy trì phiên trên web
+-- ────────────────────────────────────────────────────────────
+-- Thiết kế: 1 row = 1 phiên làm việc
+-- FE gửi ping khi rời trang hoặc mỗi N giây (heartbeat)
+-- ────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS system.session_logs (
+    id               BIGSERIAL    PRIMARY KEY,
+    session_id       VARCHAR(64)  NOT NULL,
+    user_id          BIGINT       REFERENCES system.users(id) ON DELETE SET NULL,  -- NULL = anonymous
+    started_at       TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    last_seen_at     TIMESTAMPTZ  NOT NULL DEFAULT NOW(),          -- cập nhật mỗi heartbeat
+    duration_seconds INTEGER      DEFAULT 0,                       -- tổng thời gian (giây), tính khi kết thúc
+    ip_address       VARCHAR(45),
+    user_agent       TEXT,
+    ended            BOOLEAN      NOT NULL DEFAULT FALSE           -- TRUE khi session kết thúc
+);
+
+CREATE INDEX IF NOT EXISTS idx_session_logs_session
+    ON system.session_logs (session_id);
+
+CREATE INDEX IF NOT EXISTS idx_session_logs_user
+    ON system.session_logs (user_id)
+    WHERE user_id IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_session_logs_time
+    ON system.session_logs (started_at DESC);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_session_logs_session_unique
+    ON system.session_logs (session_id)
+    WHERE ended = FALSE;
+
+-- ────────────────────────────────────────────────────────────
 -- Quyền (tuỳ setup, uncomment nếu cần)
 -- ────────────────────────────────────────────────────────────
 -- ALTER TABLE system.article_clicks      OWNER TO admin;
 -- ALTER TABLE system.search_logs         OWNER TO admin;
 -- ALTER TABLE system.stock_clicks        OWNER TO admin;
 -- ALTER TABLE system.stock_search_logs   OWNER TO admin;
+-- ALTER TABLE system.sidebar_clicks      OWNER TO admin;
+-- ALTER TABLE system.login_logs          OWNER TO admin;
+-- ALTER TABLE system.session_logs        OWNER TO admin;

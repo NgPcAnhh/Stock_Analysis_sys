@@ -173,8 +173,8 @@ function AssetCapitalStructure({ trends }: { trends: TrendYear[] }) {
     if (trends.length < 2) return null;
     return {
       tooltip: { trigger: "axis" },
-      legend: { bottom: 0, textStyle: { fontSize: 11 }, data: ["Vốn CSH", "Nợ phải trả"] },
-      grid: { top: 10, left: 50, right: 20, bottom: 40 },
+      legend: { top: 4, textStyle: { fontSize: 11 }, data: ["Vốn CSH", "Nợ phải trả"] },
+      grid: { top: 40, left: 50, right: 20, bottom: 24 },
       xAxis: { type: "category" as const, data: trends.map((t) => String(t.year)) },
       yAxis: { type: "value" as const },
       series: [
@@ -228,8 +228,8 @@ function LeverageSection({ leverageData }: { leverageData: Record<string, unknow
     if (leverageData.length < 2) return null;
     return {
       tooltip: { trigger: "axis" },
-      legend: { bottom: 0, data: ["D/E Ratio"] },
-      grid: { top: 10, left: 50, right: 20, bottom: 40 },
+      legend: { top: 4, data: ["D/E Ratio"] },
+      grid: { top: 36, left: 50, right: 20, bottom: 24 },
       xAxis: { type: "category" as const, data: leverageData.map((d) => String(d.year)) },
       yAxis: { type: "value" as const },
       series: [

@@ -1,0 +1,154 @@
+"""API Router for Tracking module — theo dõi hành vi người dùng."""
+
+import logging
+
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, Request
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.database.database import get_db
+from app.modules.tracking import logic
+from app.modules.tracking.schemas import (
+    SessionEndRequest,
+    SessionHeartbeatRequest,
+    SessionStartRequest,
+    TrackResponse,
+    TrackSearchRequest,
+    TrackSidebarClickRequest,
+    TrackStockSearchRequest,
+    TrackingStatsResponse,
+)
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/tracking", tags=["Tracking"])
+
+
+def _client_ip(request: Request) -> str:
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
+# ── 1. Tìm kiếm tin tức / từ khoá chung ──────────────────────────
+
+@router.post("/search", response_model=TrackResponse)
+async def track_search(
+    body: TrackSearchRequest,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+):
+    """Ghi log mỗi lần user tìm kiếm tin tức hoặc từ khoá chung."""
+    background_tasks.add_task(
+        logic.track_search,
+        db,
+        keyword=body.keyword,
+        session_id=body.session_id,
+        ip_address=_client_ip(request),
+    )
+    return TrackResponse(success=True)
+
+
+# ── 2. Tìm kiếm mã cổ phiếu ──────────────────────────────────────
+
+@router.post("/stock-search", response_model=TrackResponse)
+async def track_stock_search(
+    body: TrackStockSearchRequest,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+):
+    """Ghi log mỗi lần user tìm kiếm mã cổ phiếu."""
+    background_tasks.add_task(
+        logic.track_stock_search,
+        db,
+        keyword=body.keyword,
+        session_id=body.session_id,
+        ip_address=_client_ip(request),
+    )
+    return TrackResponse(success=True)
+
+
+# ── 3. Click sidebar ──────────────────────────────────────────────
+
+@router.post("/sidebar-click", response_model=TrackResponse)
+async def track_sidebar_click(
+    body: TrackSidebarClickRequest,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+):
+    """Ghi log mỗi lần user click vào mục sidebar."""
+    background_tasks.add_task(
+        logic.track_sidebar_click,
+        db,
+        menu_name=body.menu_name,
+        menu_href=body.menu_href,
+        session_id=body.session_id,
+        user_id=body.user_id,
+        ip_address=_client_ip(request),
+    )
+    return TrackResponse(success=True)
+
+
+# ── 4. Session lifecycle ──────────────────────────────────────────
+
+@router.post("/session/start", response_model=TrackResponse)
+async def session_start(
+    body: SessionStartRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """Bắt đầu theo dõi phiên làm việc (gọi khi load app lần đầu)."""
+    ok = await logic.session_start(
+        db,
+        session_id=body.session_id,
+        user_id=body.user_id,
+        ip_address=_client_ip(request),
+        user_agent=request.headers.get("user-agent"),
+    )
+    return TrackResponse(success=ok)
+
+
+@router.post("/session/heartbeat", response_model=TrackResponse)
+async def session_heartbeat(
+    body: SessionHeartbeatRequest,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+):
+    """Cập nhật thời gian phiên (gọi mỗi 30 giây)."""
+    background_tasks.add_task(
+        logic.session_heartbeat,
+        db,
+        session_id=body.session_id,
+        duration_seconds=body.duration_seconds,
+    )
+    return TrackResponse(success=True)
+
+
+@router.post("/session/end", response_model=TrackResponse)
+async def session_end(
+    body: SessionEndRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """Kết thúc phiên làm việc (gọi khi đóng tab hoặc rời trang)."""
+    ok = await logic.session_end(
+        db,
+        session_id=body.session_id,
+        duration_seconds=body.duration_seconds,
+    )
+    return TrackResponse(success=ok)
+
+
+# ── 5. Stats (admin) ──────────────────────────────────────────────
+
+@router.get("/stats", response_model=TrackingStatsResponse)
+async def get_stats(
+    days: int = Query(7, ge=1, le=90, description="Số ngày thống kê"),
+    top: int = Query(10, ge=1, le=50, description="Số kết quả top"),
+    db: AsyncSession = Depends(get_db),
+):
+    """Thống kê tổng quan hành vi người dùng (hot search, sidebar, login, session)."""
+    data = await logic.get_tracking_stats(db, days=days, top=top)
+    return data

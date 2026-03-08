@@ -61,7 +61,7 @@ export default function IndicesPage() {
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-bold text-gray-900">
-                        Chỉ số &amp; Vĩ mô <span className="text-orange-500">vnstock</span>
+                        Chỉ số &amp; Vĩ mô <span className="text-orange-500">StockPro</span>
                     </h1>
                     <div className="text-sm text-gray-500">Cập nhật: Vừa xong</div>
                 </div>

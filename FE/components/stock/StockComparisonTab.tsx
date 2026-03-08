@@ -91,7 +91,7 @@ export default function StockComparisonTab() {
     const [searchLoading, setSearchLoading] = useState(false);
     const [showDropdown, setShowDropdown] = useState(false);
     const searchRef = useRef<HTMLDivElement>(null);
-    const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+    const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
     /* Close dropdown on outside click */
     useEffect(() => {
@@ -210,8 +210,8 @@ export default function StockComparisonTab() {
                     return html;
                 },
             },
-            legend: { data: series.map((s) => s.name), bottom: 0 },
-            grid: { top: 30, right: 20, bottom: 40, left: 60 },
+            legend: { data: series.map((s) => s.name), top: 4 },
+            grid: { top: 50, right: 20, bottom: 24, left: 60 },
             xAxis: {
                 type: "category",
                 data: dates,
@@ -275,7 +275,7 @@ export default function StockComparisonTab() {
         }));
         return {
             tooltip: { trigger: "item" },
-            legend: { data: allStocks.map((s) => s.ticker), bottom: 0 },
+            legend: { data: allStocks.map((s) => s.ticker), top: 4 },
             radar: {
                 indicator: indicators,
                 radius: "60%",

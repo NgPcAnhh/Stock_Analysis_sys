@@ -133,6 +133,41 @@ IS_BANK_FALLBACKS: Dict[str, str] = {
     "incomeTax":        "THU_TNDN",                         # Thuế TNDN (bank-aggregate)
 }
 
+# ── Bank-specific EXTRA fields for income statement (ngân hàng) ──
+# These are fetched in addition to IS_CODES when isBank detected.
+IS_BANK_EXTRA_CODES: Dict[str, str] = {
+    "interestIncome":       "THU_NH_P_L_I_V_C_C_KHO_N_T_NG_T",   # Thu nhập lãi và các khoản tương tự
+    "interestExpenseBank":  "CHI_PH_L_I_V_C_C_KHO_N_T_NG_T",      # Chi phí lãi và các khoản tương tự
+    "netInterestIncome":    "THU_NH_P_L_I_THU_N",                   # Thu nhập lãi thuần (NII)
+    "netServiceFeeIncome":  "L_I_L_T_PHI_D_CH_V",                   # Lãi thuần từ phí dịch vụ
+    "tradingFxIncome":      "L_I_L_T_H_KD_NGO_I_H_I",              # Lãi thuần từ kinh doanh ngoại hối
+    "tradingSecuritiesIncome":"L_I_L_T_MUA_B_N_CK_KD",             # Lãi thuần từ mua bán CK kinh doanh
+    "investmentSecuritiesIncome":"L_I_L_T_MUA_B_N_CK_T",           # Lãi thuần từ mua bán CK đầu tư
+    "otherOperatingIncome": "L_I_L_T_HO_T_NG_KH_C",                # Lãi thuần từ hoạt động khác
+    "totalOperatingIncome": "T_NG_THU_NH_P_HO_T_NG",               # Tổng thu nhập hoạt động (TOI)
+    "operatingExpenses":    "CHI_PH_HO_T_NG",                       # Chi phí hoạt động (OPEX)
+    "prePpopProfit":        "LN_T_H_KD_TR_C_CF_D_PH_NG",           # LN trước dự phòng (PPOP)
+    "provisionExpenses":    "CHI_PH_D_PH_NG_RR_TD",                 # Chi phí dự phòng rủi ro tín dụng
+}
+
+# ── Bank-specific EXTRA fields for balance sheet ──
+BS_BANK_EXTRA_CODES: Dict[str, str] = {
+    "loansToCustomers":      "CHO_VAY_KH_CH_H_NG_THU_N",            # Cho vay và ứng trước KH (thuần)
+    "loansToCustomersGross": "CHO_VAY_V_NG_TR_C_KH_CH_H_NG",        # Cho vay KH (gộp, trước dự phòng)
+    "loanLossReserves":      "D_PH_NG_RR_CHO_VAY_KH_CH_H_NG",       # Dự phòng rủi ro cho vay KH
+    "customerDeposits":      "TI_N_G_I_C_A_KH_CH_H_NG",             # Tiền gửi của khách hàng
+    "sbvDeposits":           "TI_N_G_I_T_I_NHNN_VI_T_NAM",          # Tiền gửi tại NHNN Việt Nam
+    "interBankDeposits":     "TI_N_G_I_V_CHO_VAY_C_C_TD_KH_C",      # Tiền gửi tại TCTD khác
+    "tradingSecurities":     "CH_NG_KHO_N_KINH_DOANH_THU_N",        # Chứng khoán kinh doanh (thuần)
+    "investmentSecurities":  "CH_NG_KHO_N_U_T_THU_N",               # Chứng khoán đầu tư (thuần)
+    "debtSecuritiesIssued":  "PH_T_H_NH_GI_Y_T_C_GI_TR",            # Phát hành giấy tờ có giá
+}
+
+# Banking industry detection keywords (Vietnamese ICB names)
+BANK_INDUSTRY_KEYWORDS = ("ngân hàng", "bảo hiểm", "bank", "chứng khoán", "tài chính")
+# Stricter: only "Ngân hàng" is a true bank with bank-format BCTC
+BANK_STRICT_KEYWORDS = ("ngân hàng", "bank")
+
 
 # ────────────────────────────────────────────────────────────────────
 # Helpers (shared with analysis module via import)
@@ -316,7 +351,7 @@ async def get_stock_overview(db: AsyncSession, ticker: str = "VIC") -> Dict[str,
             "pb": str(_safe_round(ratio.get("pb")) or "N/A"),
             "evEbitda": str(_safe_round(ratio.get("ev_ebitda")) or "N/A"),
             "outstandingShares": _fmt_volume(_safe_int(ratio.get("outstanding_shares"))),
-            "roe": f"{_safe_float(ratio.get('roe')):.1f}%" if ratio.get("roe") else "N/A",
+            "roe": f"{_safe_float(ratio.get('roe')) * 100:.1f}%" if ratio.get("roe") else "N/A",
             "bvps": f"{_safe_float(ratio.get('bvps')):,.0f}" if ratio.get("bvps") else "N/A",
         },
         "evaluation": _compute_evaluation(ratio, current_price, ref_price),
@@ -1067,16 +1102,38 @@ async def get_financial_ratios(db: AsyncSession, ticker: str = "VIC", periods: i
 # ────────────────────────────────────────────────────────────────────
 @cached("stock:reports", ttl=300)
 async def get_financial_reports(db: AsyncSession, ticker: str = "VIC", periods: int = 12) -> Dict[str, Any]:
-    """Fetch IS, BS, CF from bctc table, pivoting ind_code rows into columns."""
+    """Fetch IS, BS, CF from bctc table, pivoting ind_code rows into columns.
+
+    Automatically detects banking/financial-sector tickers and:
+      1. Returns isBank=True in the response
+      2. Maps IS fields using bank-specific ind_codes (NET_INTEREST_INCOME, TOI, etc.)
+      3. Adds extra bank fields (interestIncome, netInterestIncome, loansToCustomers, …)
+    """
     await db.execute(_STMT_TIMEOUT)
     ticker = ticker.upper()
 
-    # Collect all needed ind_codes (including bank fallbacks)
-    all_codes = set()
+    # ── Detect industry from company_overview ──
+    info_sql = text(f"""
+        SELECT icb_name1, icb_name2, icb_name3
+        FROM {SCHEMA}.company_overview
+        WHERE ticker = :ticker
+        LIMIT 1
+    """)
+    info_res = await db.execute(info_sql, {"ticker": ticker})
+    info_row = info_res.mappings().first()
+    industry1 = (info_row["icb_name1"] or "").lower() if info_row else ""
+    industry2 = (info_row["icb_name2"] or "").lower() if info_row else ""
+    is_bank = any(kw in industry2 for kw in BANK_STRICT_KEYWORDS) or any(kw in industry1 for kw in BANK_STRICT_KEYWORDS)
+
+    # ── Collect all needed ind_codes ──
+    all_codes: set = set()
     for mapping in (IS_CODES, BS_CODES, CF_CODES, IS_BANK_FALLBACKS):
         all_codes.update(mapping.values())
+    if is_bank:
+        all_codes.update(IS_BANK_EXTRA_CODES.values())
+        all_codes.update(BS_BANK_EXTRA_CODES.values())
 
-    # Single query for all financial data — efficient pivot
+    # ── Single query for all financial data — efficient pivot ──
     sql = text(f"""
         SELECT year, quarter, ind_code, value
         FROM {SCHEMA}.bctc
@@ -1099,24 +1156,41 @@ async def get_financial_reports(db: AsyncSession, ticker: str = "VIC", periods: 
     sorted_periods = sorted(pivot.keys(), key=lambda x: (x[0], x[1]), reverse=True)[:periods]
 
     def _build_period(year: int, quarter: str) -> Dict:
-        return {"period": f"Q{quarter}/{year}", "year": year, "quarter": int(quarter) if quarter.isdigit() else 0}
+        return {"period": {"period": f"Q{quarter}/{year}", "year": year, "quarter": int(quarter) if quarter.isdigit() else 0}}
 
-    # Build IS (with bank fallback logic)
+    # ── Build IS (with bank fallback logic + extra bank fields) ──
     income_statement = []
     for year, quarter in sorted_periods:
         data = pivot.get((year, quarter), {})
         item = _build_period(year, quarter)
+
         for field, code in IS_CODES.items():
             val = data.get(code, 0)
-            # If primary code is 0, try bank fallback
+            # If primary code yields 0, try bank fallback
             if val == 0 and field in IS_BANK_FALLBACKS:
                 val = data.get(IS_BANK_FALLBACKS[field], 0)
             item[field] = val
-        # Compute EPS from net profit parent if available
-        item["eps"] = 0  # Would need outstanding shares; use ratio endpoint
+
+        # EPS: use basicEps if available, otherwise 0 (ratio endpoint has proper EPS)
+        item["eps"] = item.pop("basicEps", 0) or 0
+
+        # Bank-specific extra income statement fields
+        if is_bank:
+            for field, code in IS_BANK_EXTRA_CODES.items():
+                item[field] = data.get(code, 0)
+            # Ensure totalOperatingIncome is populated — try field or grossProfit fallback
+            if item.get("totalOperatingIncome", 0) == 0:
+                item["totalOperatingIncome"] = item.get("grossProfit", 0) or item.get("revenue", 0)
+            # Ensure netInterestIncome is populated
+            if item.get("netInterestIncome", 0) == 0:
+                item["netInterestIncome"] = item.get("financialIncome", 0)
+            # Ensure prePpopProfit (PPOP)
+            if item.get("prePpopProfit", 0) == 0:
+                item["prePpopProfit"] = item.get("operatingProfit", 0)
+
         income_statement.append(item)
 
-    # Build BS
+    # ── Build BS ──
     balance_sheet = []
     for year, quarter in sorted_periods:
         data = pivot.get((year, quarter), {})
@@ -1124,9 +1198,19 @@ async def get_financial_reports(db: AsyncSession, ticker: str = "VIC", periods: 
         for field, code in BS_CODES.items():
             item[field] = data.get(code, 0)
         item["totalLiabilitiesAndEquity"] = item.get("totalLiabilities", 0) + item.get("totalEquity", 0)
+
+        # Bank-specific extra balance sheet fields
+        if is_bank:
+            for field, code in BS_BANK_EXTRA_CODES.items():
+                item[field] = data.get(code, 0)
+            # Compute gross loans if net loans are available but gross is not
+            if item.get("loansToCustomers", 0) == 0 and item.get("loansToCustomersGross", 0) != 0:
+                reserves = item.get("loanLossReserves", 0)
+                item["loansToCustomers"] = item["loansToCustomersGross"] + reserves  # reserves typically negative
+
         balance_sheet.append(item)
 
-    # Build CF
+    # ── Build CF ──
     cash_flow = []
     for year, quarter in sorted_periods:
         data = pivot.get((year, quarter), {})
@@ -1136,6 +1220,8 @@ async def get_financial_reports(db: AsyncSession, ticker: str = "VIC", periods: 
         cash_flow.append(item)
 
     return {
+        "isBank": is_bank,
+        "industry": (info_row["icb_name2"] if info_row else "") or "",
         "incomeStatement": income_statement,
         "balanceSheet": balance_sheet,
         "cashFlow": cash_flow,

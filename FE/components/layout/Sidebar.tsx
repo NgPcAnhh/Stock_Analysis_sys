@@ -16,6 +16,8 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/AuthContext";
+import { useTracking } from "@/hooks/useTracking";
 
 const navigation = [
     { name: "Tổng quan", href: "/", icon: LayoutDashboard },
@@ -37,6 +39,25 @@ interface SidebarProps {
 export function Sidebar({ className, collapsed, onToggle }: SidebarProps) {
     const pathname = usePathname();
 
+    const { isAuthenticated, user, openAuthModal, logout } = useAuth();
+    const { trackSidebarClick } = useTracking(user?.id);
+
+    // Auth Guard handle
+    const handleNavigation = (e: React.MouseEvent<HTMLAnchorElement>, href: string, name: string) => {
+        // Ghi log click sidebar
+        trackSidebarClick(name, href);
+
+        if (!isAuthenticated && href !== "/") {
+            e.preventDefault();
+            openAuthModal();
+            // Close sidebar on mobile
+            if (onToggle) onToggle();
+        } else {
+            // Close sidebar on mobile normally after click
+            if (onToggle && window.innerWidth < 1024) onToggle();
+        }
+    };
+
     return (
         <div className={cn(
             "flex h-screen flex-col border-r bg-sidebar text-sidebar-foreground transition-all duration-300 ease-in-out",
@@ -48,10 +69,12 @@ export function Sidebar({ className, collapsed, onToggle }: SidebarProps) {
                 collapsed ? "justify-center px-0" : "px-6 justify-between"
             )}>
                 <div className="flex items-center gap-2 font-bold text-xl text-primary overflow-hidden">
-                    <div className="h-8 w-8 min-w-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
-                        V
-                    </div>
-                    {!collapsed && <span className="whitespace-nowrap transition-opacity duration-300">VNStock</span>}
+                    <img
+                        src="/favicon.ico"
+                        alt="StockPro Logo"
+                        className="h-8 w-8 min-w-8 object-contain rounded-lg bg-white/10"
+                    />
+                    {!collapsed && <span className="whitespace-nowrap transition-opacity duration-300">StockPro</span>}
                 </div>
             </div>
 
@@ -63,6 +86,7 @@ export function Sidebar({ className, collapsed, onToggle }: SidebarProps) {
                             <Link
                                 key={item.name}
                                 href={item.href}
+                                onClick={(e) => handleNavigation(e, item.href, item.name)}
                                 className={cn(
                                     "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors relative group",
                                     isActive
@@ -92,13 +116,18 @@ export function Sidebar({ className, collapsed, onToggle }: SidebarProps) {
                     {!collapsed && <span>Thu gọn</span>}
                 </button>
 
-                <button className={cn(
-                    "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-colors",
-                    collapsed && "justify-center px-0"
-                )}>
-                    <LogOut className="h-5 w-5" />
-                    {!collapsed && <span>Đăng xuất</span>}
-                </button>
+                {isAuthenticated && (
+                    <button
+                        onClick={() => logout()}
+                        className={cn(
+                            "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-sidebar-accent/50 hover:text-red-500 transition-colors",
+                            collapsed && "justify-center px-0"
+                        )}
+                    >
+                        <LogOut className="h-5 w-5" />
+                        {!collapsed && <span>Đăng xuất</span>}
+                    </button>
+                )}
             </div>
         </div>
     );

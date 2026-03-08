@@ -21,6 +21,7 @@ md/
 │   │   └── schema.md                ← Schema cơ sở dữ liệu
 │   ├── modules/
 │   │   └── tong_quan.md             ← Module "Tổng quan" — 13 API endpoints
+│   ├── auth_implementation.md       ← Hướng dẫn triển khai Auth (Login/Register/Google OAuth)
 │   └── websocket.md                 ← WebSocket manager
 │
 └── fe/                              ← Tài liệu Frontend (Next.js)

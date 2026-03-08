@@ -242,7 +242,7 @@ export default function StocksPage() {
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-bold text-gray-900">
-                        Bảng phân tích cổ phiếu <span className="text-orange-500">vnstock</span>
+                        Bảng phân tích cổ phiếu <span className="text-orange-500">StockPro</span>
                     </h1>
                     <div className="text-sm text-gray-500">
                         {total} mã · Cập nhật: Vừa xong

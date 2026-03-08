@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Inter, Roboto_Mono } from "next/font/google";
 import "./globals.css";
 import MainLayout from "@/components/layout/MainLayout";
+import { AuthProvider } from "@/lib/AuthContext";
+import { AuthModal } from "@/components/auth/AuthModal";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,7 +27,7 @@ const robotoMono = Roboto_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "VNStock - Nền tảng phân tích chứng khoán chuyên nghiệp",
+  title: "StockPro - Nền tảng phân tích chứng khoán chuyên nghiệp",
   description: "Cập nhật dữ liệu thị trường, tin tức tài chính và công cụ phân tích chứng khoán hàng đầu Việt Nam.",
 };
 
@@ -39,9 +41,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${robotoMono.variable} antialiased`}
       >
-        <MainLayout>
-          {children}
-        </MainLayout>
+        <AuthProvider>
+          <MainLayout>
+            {children}
+          </MainLayout>
+          <AuthModal />
+        </AuthProvider>
       </body>
     </html>
   );

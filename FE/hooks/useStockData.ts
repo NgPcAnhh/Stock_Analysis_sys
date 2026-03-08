@@ -35,10 +35,42 @@ export function useFinancialRatios(ticker: string, periods = 20) {
 }
 
 // ── Financial Reports ─────────────────────────────────────────
+// Normalise period: backend may return flat {period:"Q1/2025",year,quarter,...}
+// or nested {period:{period:"Q1/2025",year,quarter},...}. We always normalise to
+// the nested FinancialPeriod shape expected by our TypeScript interfaces.
+function normalisePeriod(item: Record<string, unknown>): Record<string, unknown> {
+    const p = item.period;
+    if (typeof p === "string") {
+        // flat → nested
+        return {
+            ...item,
+            period: {
+                period: p,
+                year: Number(item.year) || 0,
+                quarter: Number(item.quarter) || 0,
+            },
+        };
+    }
+    return item;
+}
+
+function transformFinancialReports(json: unknown): FinancialReportsData {
+    const raw = json as Record<string, unknown>;
+    const rawArr = raw as Record<string, unknown[]>;
+    return {
+        isBank: !!(raw.isBank),
+        industry: String(raw.industry || ""),
+        incomeStatement: (rawArr.incomeStatement || []).map((i) => normalisePeriod(i as Record<string, unknown>) as unknown as IncomeStatementItem),
+        balanceSheet: (rawArr.balanceSheet || []).map((i) => normalisePeriod(i as Record<string, unknown>) as unknown as BalanceSheetItem),
+        cashFlow: (rawArr.cashFlow || []).map((i) => normalisePeriod(i as Record<string, unknown>) as unknown as CashFlowItem),
+    };
+}
+
 export function useFinancialReports(ticker: string, periods = 12) {
     return useOptimizedFetch<FinancialReportsData>({
         url: `${API_BASE}/api/v1/stock/${ticker}/financial-reports?periods=${periods}`,
         refreshInterval: 300_000,
+        transform: transformFinancialReports,
     });
 }
 
@@ -108,6 +140,7 @@ export interface StockInfo {
     overview: string;
     logoUrl: string;
     tags: string[];
+    sector?: string;
     website: string;
     currentPrice: number;
     priceChange: number;
@@ -261,6 +294,19 @@ export interface IncomeStatementItem {
     netProfit: number;
     netProfitParent: number;
     eps: number;
+    // Banking-specific extra fields (present when isBank=true)
+    interestIncome?: number;           // Thu nhập lãi và các khoản tương tự
+    interestExpenseBank?: number;      // Chi phí lãi và các khoản tương tự
+    netInterestIncome?: number;        // Thu nhập lãi thuần (NII)
+    netServiceFeeIncome?: number;      // Lãi thuần từ phí dịch vụ
+    tradingFxIncome?: number;          // Lãi thuần từ kinh doanh ngoại hối
+    tradingSecuritiesIncome?: number;  // Lãi thuần từ mua bán CK kinh doanh
+    investmentSecuritiesIncome?: number; // Lãi thuần từ mua bán CK đầu tư
+    otherOperatingIncome?: number;     // Lãi thuần từ hoạt động khác
+    totalOperatingIncome?: number;     // Tổng thu nhập hoạt động (TOI)
+    operatingExpenses?: number;        // Chi phí hoạt động (OPEX)
+    prePpopProfit?: number;            // LN trước dự phòng (PPOP)
+    provisionExpenses?: number;        // Chi phí dự phòng rủi ro tín dụng
 }
 
 export interface BalanceSheetItem {
@@ -281,6 +327,16 @@ export interface BalanceSheetItem {
     charterCapital: number;
     retainedEarnings: number;
     totalLiabilitiesAndEquity: number;
+    // Banking-specific extra fields (present when isBank=true)
+    loansToCustomers?: number;         // Cho vay và ứng trước khách hàng (thuần)
+    loansToCustomersGross?: number;    // Cho vay KH (gộp)
+    loanLossReserves?: number;         // Dự phòng rủi ro cho vay KH
+    customerDeposits?: number;         // Tiền gửi của khách hàng
+    sbvDeposits?: number;              // Tiền gửi tại NHNN
+    interBankDeposits?: number;        // Tiền gửi tại TCTD khác
+    tradingSecurities?: number;        // Chứng khoán kinh doanh
+    investmentSecurities?: number;     // Chứng khoán đầu tư
+    debtSecuritiesIssued?: number;     // Phát hành giấy tờ có giá
 }
 
 export interface CashFlowItem {
@@ -307,6 +363,8 @@ export interface CashFlowItem {
 }
 
 export interface FinancialReportsData {
+    isBank: boolean;
+    industry: string;
     incomeStatement: IncomeStatementItem[];
     balanceSheet: BalanceSheetItem[];
     cashFlow: CashFlowItem[];

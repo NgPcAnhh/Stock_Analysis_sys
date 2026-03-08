@@ -58,7 +58,7 @@ export default function NewsPage() {
             <footer className="bg-slate-900 text-white mt-12 border-t-4 border-orange-500">
                 <div className="max-w-[1400px] mx-auto p-8 grid grid-cols-1 md:grid-cols-4 gap-8">
                     <div>
-                        <h3 className="font-bold text-lg mb-4 text-orange-400">VNStock</h3>
+                        <h3 className="font-bold text-lg mb-4 text-orange-400">StockPro</h3>
                         <p className="text-sm text-gray-400">
                             Nền tảng phân tích tài chính hàng đầu Việt Nam.
                         </p>
@@ -82,7 +82,7 @@ export default function NewsPage() {
                     <div>
                         <h3 className="font-bold text-md mb-4">Liên hệ</h3>
                         <p className="text-sm text-gray-400">
-                            Email: support@vnstock.com<br />
+                            Email: support@stockpro.com<br />
                             Hotline: 1900 1234
                         </p>
                     </div>

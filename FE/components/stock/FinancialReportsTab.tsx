@@ -1,11 +1,34 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, Component, type ReactNode, type ErrorInfo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useFinancialReports, type IncomeStatementItem, type BalanceSheetItem, type CashFlowItem } from "@/hooks/useStockData";
+import { useFinancialReports, useFinancialRatios, type IncomeStatementItem, type BalanceSheetItem, type CashFlowItem } from "@/hooks/useStockData";
 import { useStockDetail } from "@/lib/StockDetailContext";
-import { Download, FileSpreadsheet, BarChart3 } from "lucide-react";
+import { Download, FileSpreadsheet, BarChart3, Building2 } from "lucide-react";
 import FinancialOverviewCharts from "@/components/stock/FinancialOverviewCharts";
+
+// Temporary error boundary to capture runtime errors
+class FinancialErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+    constructor(props: { children: ReactNode }) {
+        super(props);
+        this.state = { error: null };
+    }
+    static getDerivedStateFromError(err: Error) { return { error: err }; }
+    componentDidCatch(err: Error, info: ErrorInfo) {
+        console.error("[FinancialErrorBoundary]", err.message, err.stack, info.componentStack);
+    }
+    render() {
+        if (this.state.error) {
+            return (
+                <div className="p-4 bg-red-50 border border-red-300 rounded-lg text-sm font-sans">
+                    <p className="font-bold text-red-700">Runtime Error:</p>
+                    <pre className="mt-2 text-xs text-red-600 whitespace-pre-wrap">{this.state.error.message}{"\n"}{this.state.error.stack}</pre>
+                </div>
+            );
+        }
+        return this.props.children;
+    }
+}
 
 type ReportType = "overview" | "income" | "balance" | "cashflow";
 
@@ -16,6 +39,10 @@ const formatNumber = (val: number): string => {
     const formatted = abs.toLocaleString("vi-VN");
     return negative ? `(${formatted})` : formatted;
 };
+
+// Convert raw VND to tỷ VND for display
+const toTyVND = (val: number): number => +(val / 1_000_000_000).toFixed(2);
+const fmtTy = (val: number): string => formatNumber(toTyVND(val));
 
 const getChangePercent = (current: number, previous: number): number | null => {
     if (previous === 0) return null;
@@ -168,13 +195,13 @@ function ReportTable<T extends Record<string, any>>({
         <Card className="shadow-sm border-gray-200">
             <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
-                    <CardTitle className="text-base font-bold text-gray-800">{title}</CardTitle>
-                    <span className="text-xs text-gray-400 italic">{subtitle}</span>
+                    <CardTitle className="text-sm font-bold text-gray-800 font-sans">{title}</CardTitle>
+                    <span className="text-xs text-gray-400 italic font-sans">{subtitle}</span>
                 </div>
             </CardHeader>
             <CardContent className="p-0">
                 <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                    <table className="w-full text-xs font-sans">
                         <thead>
                             <tr className="bg-gray-50 border-b border-gray-200">
                                 <th className="text-left px-4 py-3 font-semibold text-gray-600 min-w-[220px] sticky left-0 bg-gray-50 z-10">
@@ -207,10 +234,10 @@ function ReportTable<T extends Record<string, any>>({
                                     if (seenSectionHeaders.has(row.label)) return null;
                                     seenSectionHeaders.add(row.label);
                                     return (
-                                        <tr key={`section-${idx}`} className="bg-gray-100">
+                                        <tr key={`section-${idx}`} className="bg-blue-50/40 border-t border-blue-100">
                                             <td
                                                 colSpan={periods.length + 2}
-                                                className="px-4 py-2 text-xs font-bold text-gray-700 uppercase tracking-wide"
+                                                className="px-4 py-2 text-xs font-bold text-blue-700 uppercase tracking-wide"
                                             >
                                                 {row.label}
                                             </td>
@@ -218,9 +245,9 @@ function ReportTable<T extends Record<string, any>>({
                                     );
                                 }
 
-                                const values = data.map((d) => d[row.key] as number);
-                                const currentVal = values[0];
-                                const prevVal = values[1];
+                                const values = data.map((d) => (d[row.key] as number) ?? 0);
+                                const currentVal = values[0] ?? 0;
+                                const prevVal = values[1] ?? 0;
 
                                 return (
                                     <tr
@@ -231,7 +258,7 @@ function ReportTable<T extends Record<string, any>>({
                                     >
                                         <td
                                             className={`px-4 py-2.5 sticky left-0 bg-white z-10 ${
-                                                row.bold ? "font-semibold text-gray-800" : "text-gray-600"
+                                                row.bold ? "font-semibold text-gray-800" : "font-normal text-gray-600"
                                             } ${row.indent ? "pl-8" : ""}`}
                                         >
                                             {row.label}
@@ -244,10 +271,10 @@ function ReportTable<T extends Record<string, any>>({
                                                         ? "font-semibold text-blue-700 bg-blue-50/30"
                                                         : row.bold
                                                         ? "font-medium text-gray-800"
-                                                        : "text-gray-600"
-                                                } ${val < 0 ? "text-red-500" : ""}`}
+                                                        : "font-normal text-gray-600"
+                                                } ${val < 0 ? "!text-red-500" : ""}`}
                                             >
-                                                {formatNumber(val)}
+                                                {fmtTy(val)}
                                             </td>
                                         ))}
                                         <td className="text-right px-3 py-2.5">
@@ -261,6 +288,106 @@ function ReportTable<T extends Record<string, any>>({
                 </div>
             </CardContent>
         </Card>
+    );
+}
+
+// ==================== BANK INCOME STATEMENT TABLE ====================
+function BankIncomeStatementTable({ data }: { data: IncomeStatementItem[] }) {
+    const periods = data.map((d) => d.period.period);
+
+    type BankISRow = {
+        label: string;
+        key: keyof IncomeStatementItem;
+        bold?: boolean;
+        indent?: boolean;
+        section?: string;
+    };
+
+    const rows: BankISRow[] = [
+        { label: "I. THU NHẬP LÃI THUẦN", key: "netInterestIncome", bold: true, section: "header" },
+        { label: "Thu nhập lãi và các khoản tương đương", key: "interestIncome", indent: true },
+        { label: "Chi phí lãi và các khoản tương đương", key: "interestExpenseBank", indent: true },
+        { label: "Thu nhập lãi thuần (NII)", key: "netInterestIncome", bold: true },
+
+        { label: "II. THU NHẬP NGOÀI LÃI", key: "totalOperatingIncome", bold: true, section: "header" },
+        { label: "Lãi/lỗ thuần dịch vụ & phí", key: "netServiceFeeIncome", indent: true },
+        { label: "Lãi/lỗ hoạt động kinh doanh ngoại tệ", key: "tradingFxIncome", indent: true },
+        { label: "Lãi/lỗ mua bán chứng khoán kinh doanh", key: "tradingSecuritiesIncome", indent: true },
+        { label: "Lãi/lỗ từ chứng khoán đầu tư", key: "investmentSecuritiesIncome", indent: true },
+        { label: "Thu nhập từ hoạt động khác", key: "otherOperatingIncome", indent: true },
+        { label: "Tổng thu nhập hoạt động (TOI)", key: "totalOperatingIncome", bold: true },
+
+        { label: "III. CHI PHÍ HOẠT ĐỘNG (OPEX)", key: "operatingExpenses", bold: true, section: "header" },
+        { label: "Chi phí hoạt động", key: "operatingExpenses", bold: true, indent: true },
+        { label: "Lợi nhuận trước dự phòng (PPOP)", key: "prePpopProfit", bold: true },
+
+        { label: "IV. DỰ PHÒNG RỦI RO TÍN DỤNG", key: "provisionExpenses", bold: true, section: "header" },
+        { label: "Chi phí dự phòng rủi ro tín dụng", key: "provisionExpenses", bold: true, indent: true },
+
+        { label: "V. LỢI NHUẬN", key: "profitBeforeTax", bold: true, section: "header" },
+        { label: "Lợi nhuận trước thuế", key: "profitBeforeTax", bold: true },
+        { label: "Thuế TNDN", key: "incomeTax", indent: true },
+        { label: "Lợi nhuận sau thuế (LNST)", key: "netProfit", bold: true },
+        { label: "LNST của CĐ công ty mẹ", key: "netProfitParent" },
+        { label: "EPS (VND)", key: "eps" },
+    ];
+
+    return (
+        <ReportTable
+            title="🏦 KQKD Ngân hàng"
+            subtitle="Đơn vị: Tỷ VND"
+            periods={periods}
+            rows={rows}
+            data={data}
+        />
+    );
+}
+
+// ==================== BANK BALANCE SHEET TABLE ====================
+function BankBalanceSheetTable({ data }: { data: BalanceSheetItem[] }) {
+    const periods = data.map((d) => d.period.period);
+
+    type BankBSRow = {
+        label: string;
+        key: keyof BalanceSheetItem;
+        bold?: boolean;
+        indent?: boolean;
+        section?: string;
+    };
+
+    const rows: BankBSRow[] = [
+        { label: "TÀI SẢN", key: "totalAssets", bold: true, section: "header" },
+        { label: "Tổng tài sản", key: "totalAssets", bold: true },
+        { label: "Tiền và tương đương tiền", key: "cash", indent: true },
+        { label: "Tiền gửi tại NHNN", key: "sbvDeposits", indent: true },
+        { label: "Tiền gửi tại TCTD khác (tài sản)", key: "interBankDeposits", indent: true },
+        { label: "Chứng khoán kinh doanh", key: "tradingSecurities", indent: true },
+        { label: "Chứng khoán đầu tư", key: "investmentSecurities", indent: true },
+        { label: "Cho vay khách hàng (gộp)", key: "loansToCustomersGross", indent: true },
+        { label: "Dự phòng rủi ro cho vay", key: "loanLossReserves", indent: true },
+        { label: "Cho vay khách hàng (thuần)", key: "loansToCustomers", bold: true, indent: true },
+        { label: "Tài sản cố định", key: "fixedAssets", indent: true },
+        { label: "Đầu tư TC dài hạn", key: "longTermInvestments", indent: true },
+
+        { label: "NGUỒN VỐN", key: "totalLiabilitiesAndEquity", bold: true, section: "header" },
+        { label: "Tổng nợ phải trả", key: "totalLiabilities", bold: true },
+        { label: "Tiền gửi của NHNN và TCTD", key: "sbvDeposits", indent: true },
+        { label: "Tiền gửi khách hàng", key: "customerDeposits", bold: true, indent: true },
+        { label: "Phát hành giấy tờ có giá", key: "debtSecuritiesIssued", indent: true },
+        { label: "Vốn chủ sở hữu", key: "totalEquity", bold: true },
+        { label: "Vốn điều lệ", key: "charterCapital", indent: true },
+        { label: "LN chưa phân phối", key: "retainedEarnings", indent: true },
+        { label: "Tổng nguồn vốn", key: "totalLiabilitiesAndEquity", bold: true },
+    ];
+
+    return (
+        <ReportTable
+            title="🏦 Cân đối kế toán Ngân hàng"
+            subtitle="Đơn vị: Tỷ VND"
+            periods={periods}
+            rows={rows}
+            data={data}
+        />
     );
 }
 
@@ -374,39 +501,43 @@ function buildCashFlowCSV(data: CashFlowItem[]): string {
 // ==================== MAIN COMPONENT ====================
 export default function FinancialReportsTab() {
     const { stockInfo, ticker } = useStockDetail();
-    const { data: reportData, loading, error } = useFinancialReports(ticker);
+    const { data: reportData, loading, error } = useFinancialReports(ticker, 20);
+    const { data: ratiosData } = useFinancialRatios(ticker, 20);
     const [activeReport, setActiveReport] = useState<ReportType>("overview");
 
-    if (loading && !reportData) return <div className="text-center py-12 text-gray-400 animate-pulse">Đang tải báo cáo tài chính…</div>;
-    if (error && !reportData) return <div className="text-center py-12 text-red-500">Lỗi: {error}</div>;
-    if (!reportData) return null;
+    const isBank = reportData?.isBank ?? false;
 
-    const data = {
-        incomeStatements: reportData.incomeStatement,
-        balanceSheets: reportData.balanceSheet,
-        cashFlows: reportData.cashFlow,
-    };
+    const data = reportData
+        ? {
+              incomeStatements: reportData.incomeStatement,
+              balanceSheets: reportData.balanceSheet,
+              cashFlows: reportData.cashFlow,
+          }
+        : null;
 
     const reportTabs: { id: ReportType; label: string; icon: string }[] = [
         { id: "overview", label: "Tổng quan biểu đồ", icon: "📊" },
-        { id: "income", label: "Kết quả kinh doanh", icon: "📋" },
-        { id: "balance", label: "Cân đối kế toán", icon: "🏛️" },
+        { id: "income", label: isBank ? "KQKD Ngân hàng" : "Kết quả kinh doanh", icon: isBank ? "🏦" : "📋" },
+        { id: "balance", label: isBank ? "CĐKT Ngân hàng" : "Cân đối kế toán", icon: isBank ? "🏦" : "🏛️" },
         { id: "cashflow", label: "Lưu chuyển tiền tệ", icon: "💵" },
     ];
 
+    // All hooks MUST be called before any early return (React Rules of Hooks)
     const handleExportCurrent = useCallback(() => {
-        const ticker = stockInfo.ticker;
+        if (!data) return;
+        const t = stockInfo.ticker;
         if (activeReport === "income") {
-            downloadCSV(`${ticker}_ket_qua_kinh_doanh.csv`, buildIncomeCSV(data.incomeStatements));
+            downloadCSV(`${t}_ket_qua_kinh_doanh.csv`, buildIncomeCSV(data.incomeStatements));
         } else if (activeReport === "balance") {
-            downloadCSV(`${ticker}_can_doi_ke_toan.csv`, buildBalanceCSV(data.balanceSheets));
+            downloadCSV(`${t}_can_doi_ke_toan.csv`, buildBalanceCSV(data.balanceSheets));
         } else {
-            downloadCSV(`${ticker}_luu_chuyen_tien_te.csv`, buildCashFlowCSV(data.cashFlows));
+            downloadCSV(`${t}_luu_chuyen_tien_te.csv`, buildCashFlowCSV(data.cashFlows));
         }
     }, [activeReport, data, stockInfo.ticker]);
 
     const handleExportAll = useCallback(() => {
-        const ticker = stockInfo.ticker;
+        if (!data) return;
+        const t = stockInfo.ticker;
         const income = buildIncomeCSV(data.incomeStatements);
         const balance = buildBalanceCSV(data.balanceSheets);
         const cashflow = buildCashFlowCSV(data.cashFlows);
@@ -420,19 +551,27 @@ export default function FinancialReportsTab() {
             "=== LƯU CHUYỂN TIỀN TỆ ===",
             cashflow,
         ].join("\n");
-        downloadCSV(`${ticker}_bao_cao_tai_chinh.csv`, combined);
+        downloadCSV(`${t}_bao_cao_tai_chinh.csv`, combined);
     }, [data, stockInfo.ticker]);
 
+    if (loading && !reportData) return <div className="text-center py-12 text-gray-400 animate-pulse font-sans">Đang tải báo cáo tài chính…</div>;
+    if (error && !reportData) return <div className="text-center py-12 text-red-500 font-sans">Lỗi: {error}</div>;
+    if (!data) return null;
+
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 font-sans">
             {/* Header */}
             <div className="flex items-center justify-between flex-wrap gap-3">
                 <div>
-                    <h2 className="text-lg font-bold text-gray-800">
-                        Báo cáo tài chính - {stockInfo.ticker}
+                    <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                        {isBank && <Building2 className="w-5 h-5 text-blue-600" />}
+                        Báo cáo tài chính
+                        {isBank && <span className="text-sm font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">Ngân hàng</span>}
+                        {" — "}{stockInfo.ticker}
                     </h2>
                     <p className="text-xs text-gray-400 italic mt-0.5">
                         So sánh 6 quý gần nhất • Đơn vị: Tỷ VND
+                        {isBank && " • Cấu trúc BCTC dành riêng cho ngành Ngân hàng"}
                     </p>
                 </div>
                 <button
@@ -446,7 +585,7 @@ export default function FinancialReportsTab() {
 
             {/* Sub-tabs + Export current */}
             <div className="flex items-center justify-between border-b border-gray-200 pb-0">
-                <div className="flex gap-2">
+                <div className="flex gap-1 flex-wrap">
                     {reportTabs.map((tab) => (
                         <button
                             key={tab.id}
@@ -474,22 +613,30 @@ export default function FinancialReportsTab() {
             </div>
 
             {/* Report content */}
-            {activeReport === "overview" && (
+            <FinancialErrorBoundary>
+            {activeReport === "overview" && data && (
                 <FinancialOverviewCharts
                     incomeStatement={data.incomeStatements}
                     balanceSheet={data.balanceSheets}
                     cashFlow={data.cashFlows}
+                    financialRatios={ratiosData ?? undefined}
+                    isBank={isBank}
                 />
             )}
-            {activeReport === "income" && (
-                <IncomeStatementTable data={data.incomeStatements} />
+            {activeReport === "income" && data && (
+                isBank
+                    ? <BankIncomeStatementTable data={data.incomeStatements} />
+                    : <IncomeStatementTable data={data.incomeStatements} />
             )}
-            {activeReport === "balance" && (
-                <BalanceSheetTable data={data.balanceSheets} />
+            {activeReport === "balance" && data && (
+                isBank
+                    ? <BankBalanceSheetTable data={data.balanceSheets} />
+                    : <BalanceSheetTable data={data.balanceSheets} />
             )}
-            {activeReport === "cashflow" && (
+            {activeReport === "cashflow" && data && (
                 <CashFlowTable data={data.cashFlows} />
             )}
+            </FinancialErrorBoundary>
         </div>
     );
 }

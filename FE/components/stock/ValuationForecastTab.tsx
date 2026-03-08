@@ -296,8 +296,8 @@ function MultipleBandsSection({ peBand, pbBand }: { peBand: ValuationData["peBan
     if (!band.dates.length || !band.prices.length) return null;
     return {
       tooltip: { trigger: "axis" as const },
-      legend: { bottom: 0, textStyle: { fontSize: 10 }, data: ["Gia thuc te", `${label} High`, `${label} Avg`, `${label} Mid`, `${label} Low`] },
-      grid: { top: 20, left: 50, right: 20, bottom: 50 },
+      legend: { top: 4, textStyle: { fontSize: 10 }, data: ["Gia thuc te", `${label} High`, `${label} Avg`, `${label} Mid`, `${label} Low`] },
+      grid: { top: 42, left: 50, right: 20, bottom: 28 },
       xAxis: {
         type: "category" as const, data: band.dates,
         axisLabel: { fontSize: 9, color: "#94a3b8", interval: Math.floor(band.dates.length / 6) },

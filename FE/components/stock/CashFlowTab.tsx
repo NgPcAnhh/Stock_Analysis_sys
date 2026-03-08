@@ -144,8 +144,8 @@ function ThreeCashFlows({ trends }: { trends: TrendYear[] }) {
     const years = data.map((d) => String(d.year));
     return {
       tooltip: { trigger: "axis" as const },
-      legend: { bottom: 0, textStyle: { fontSize: 11 }, data: ["HĐ Kinh Doanh", "HĐ Đầu Tư", "HĐ Tài Chính"] },
-      grid: { top: 15, left: 50, right: 20, bottom: 45 },
+      legend: { top: 4, textStyle: { fontSize: 11 }, data: ["HĐ Kinh Doanh", "HĐ Đầu Tư", "HĐ Tài Chính"] },
+      grid: { top: 40, left: 50, right: 20, bottom: 28 },
       xAxis: { type: "category" as const, data: years },
       yAxis: { type: "value" as const, axisLabel: { formatter: (v: number) => fmt(v) } },
       series: [

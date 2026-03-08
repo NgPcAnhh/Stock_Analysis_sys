@@ -1,16 +1,35 @@
 "use client";
 
-import { useState } from "react";
-import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { StockTicker } from "./StockTicker";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/AuthContext";
+import { useSessionTracking } from "@/hooks/useTracking";
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
+    const router = useRouter();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const [isCollapsed, setIsCollapsed] = useState(false);
+    const [isCollapsed, setIsCollapsed] = useState(true);
+
+    const { isAuthenticated, isLoading, user, openAuthModal } = useAuth();
+
+    // Theo dõi thời gian phiên làm việc
+    useSessionTracking(user?.id);
+
+    // Route Protection Guard
+    useEffect(() => {
+        if (!isLoading && !isAuthenticated && pathname !== "/") {
+            // Bỏ qua chặn các route public khác nếu có
+            if (!pathname.startsWith("/auth/callback") && !pathname.startsWith("/reset-password")) {
+                router.push("/");
+                openAuthModal();
+            }
+        }
+    }, [isLoading, isAuthenticated, pathname, router, openAuthModal]);
 
     return (
         <div className="flex h-screen overflow-hidden bg-background">

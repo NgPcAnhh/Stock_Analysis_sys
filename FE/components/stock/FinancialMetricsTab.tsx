@@ -81,8 +81,8 @@ export default function FinancialMetricsTab() {
                 return result;
             },
         },
-        legend: { data: ["Doanh thu", "Lợi nhuận gộp", "LNST"], bottom: 0 },
-        grid: { left: "3%", right: "4%", bottom: "14%", top: "10%", containLabel: true },
+        legend: { data: ["Doanh thu", "Lợi nhuận gộp", "LNST"], top: 4 },
+        grid: { left: "3%", right: "4%", bottom: "8%", top: "18%", containLabel: true },
         xAxis: { type: "category", data: periods },
         yAxis: { type: "value", axisLabel: { formatter: (v: number) => formatBillion(v) + " tỷ" } },
         series: [
@@ -101,8 +101,8 @@ export default function FinancialMetricsTab() {
                 return result;
             },
         },
-        legend: { data: ["Biên LN gộp", "Biên LNST", "Biên HĐKD"], bottom: 0 },
-        grid: { left: "3%", right: "4%", bottom: "14%", top: "10%", containLabel: true },
+        legend: { data: ["Biên LN gộp", "Biên LNST", "Biên HĐKD"], top: 4 },
+        grid: { left: "3%", right: "4%", bottom: "8%", top: "18%", containLabel: true },
         xAxis: { type: "category", data: periods },
         yAxis: { type: "value", axisLabel: { formatter: "{value}%" } },
         series: [
@@ -122,8 +122,8 @@ export default function FinancialMetricsTab() {
                 return result;
             },
         },
-        legend: { data: ["VCSH", "Tổng nợ", "Vốn chủ sở hữu"], bottom: 0 },
-        grid: { left: "3%", right: "4%", bottom: "14%", top: "10%", containLabel: true },
+        legend: { data: ["VCSH", "Tổng nợ", "Vốn chủ sở hữu"], top: 4 },
+        grid: { left: "3%", right: "4%", bottom: "8%", top: "18%", containLabel: true },
         xAxis: { type: "category", data: periods },
         yAxis: { type: "value", axisLabel: { formatter: (v: number) => formatBillion(v) + " tỷ" } },
         series: [
@@ -142,8 +142,8 @@ export default function FinancialMetricsTab() {
                 return result;
             },
         },
-        legend: { data: ["ROE", "ROA"], bottom: 0 },
-        grid: { left: "3%", right: "4%", bottom: "14%", top: "10%", containLabel: true },
+        legend: { data: ["ROE", "ROA"], top: 4 },
+        grid: { left: "3%", right: "4%", bottom: "8%", top: "18%", containLabel: true },
         xAxis: { type: "category", data: periods },
         yAxis: { type: "value", axisLabel: { formatter: "{value}%" } },
         series: [
@@ -161,8 +161,8 @@ export default function FinancialMetricsTab() {
                 return result;
             },
         },
-        legend: { data: ["Nợ/VCSH (D/E)", "Hệ số TT ngắn hạn"], bottom: 0 },
-        grid: { left: "3%", right: "4%", bottom: "14%", top: "10%", containLabel: true },
+        legend: { data: ["Nợ/VCSH (D/E)", "Hệ số TT ngắn hạn"], top: 4 },
+        grid: { left: "3%", right: "4%", bottom: "8%", top: "18%", containLabel: true },
         xAxis: { type: "category", data: periods },
         yAxis: [
             { type: "value", name: "D/E", position: "left" },
@@ -192,8 +192,8 @@ export default function FinancialMetricsTab() {
                 return result;
             },
         },
-        legend: { data: ["Giá vốn", "CP bán hàng", "CP quản lý", "CP tài chính"], bottom: 0 },
-        grid: { left: "3%", right: "4%", bottom: "14%", top: "10%", containLabel: true },
+        legend: { data: ["Giá vốn", "CP bán hàng", "CP quản lý", "CP tài chính"], top: 4 },
+        grid: { left: "3%", right: "4%", bottom: "8%", top: "18%", containLabel: true },
         xAxis: { type: "category", data: periods },
         yAxis: { type: "value", axisLabel: { formatter: (v: number) => formatBillion(v) + " tỷ" } },
         series: [
@@ -215,8 +215,8 @@ export default function FinancialMetricsTab() {
                 return result;
             },
         },
-        legend: { data: ["Tăng trưởng DT", "Tăng trưởng LNST"], bottom: 0 },
-        grid: { left: "3%", right: "4%", bottom: "14%", top: "10%", containLabel: true },
+        legend: { data: ["Tăng trưởng DT", "Tăng trưởng LNST"], top: 4 },
+        grid: { left: "3%", right: "4%", bottom: "8%", top: "18%", containLabel: true },
         xAxis: { type: "category", data: periods },
         yAxis: { type: "value", axisLabel: { formatter: "{value}%" } },
         series: [
@@ -240,8 +240,8 @@ export default function FinancialMetricsTab() {
                 return result;
             },
         },
-        legend: { data: ["HĐKD", "HĐĐT", "HĐTC", "Tiền thuần"], bottom: 0 },
-        grid: { left: "3%", right: "4%", bottom: "14%", top: "10%", containLabel: true },
+        legend: { data: ["HĐKD", "HĐĐT", "HĐTC", "Tiền thuần"], top: 4 },
+        grid: { left: "3%", right: "4%", bottom: "8%", top: "18%", containLabel: true },
         xAxis: { type: "category", data: periods },
         yAxis: { type: "value", axisLabel: { formatter: (v: number) => formatBillion(v) + " tỷ" } },
         series: [
@@ -264,8 +264,8 @@ export default function FinancialMetricsTab() {
                 return result;
             },
         },
-        legend: { data: ["EPS", "LNST CĐ mẹ"], bottom: 0 },
-        grid: { left: "3%", right: "4%", bottom: "14%", top: "10%", containLabel: true },
+        legend: { data: ["EPS", "LNST CĐ mẹ"], top: 4 },
+        grid: { left: "3%", right: "4%", bottom: "8%", top: "18%", containLabel: true },
         xAxis: { type: "category", data: periods },
         yAxis: [
             { type: "value", name: "EPS (VND)", position: "left" },
@@ -293,7 +293,7 @@ export default function FinancialMetricsTab() {
                 return result;
             },
         },
-        legend: { data: ["Tiền mặt", "ĐT ngắn hạn", "Phải thu", "Tồn kho", "TS dài hạn"], bottom: 0 },
+        legend: { data: ["Tiền mặt", "ĐT ngắn hạn", "Phải thu", "Tồn kho", "TS dài hạn"], top: 4 },
         grid: { left: "3%", right: "4%", bottom: "16%", top: "10%", containLabel: true },
         xAxis: { type: "category", data: periods },
         yAxis: { type: "value", axisLabel: { formatter: (v: number) => formatBillion(v) + " tỷ" } },

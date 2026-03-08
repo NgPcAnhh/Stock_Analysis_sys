@@ -82,8 +82,8 @@ function RevenueCostTrends({ costStructure }: { costStructure: Record<string, un
     const grossProfit = data.map((d, i) => revenue[i] - cogs[i]);
     return {
       tooltip: { trigger: "axis" as const },
-      legend: { bottom: 0, textStyle: { fontSize: 11 }, data: ["Doanh Thu", "Giá Vốn", "LN Gộp"] },
-      grid: { top: 20, left: 50, right: 20, bottom: 45 },
+      legend: { top: 4, textStyle: { fontSize: 11 }, data: ["Doanh Thu", "Giá Vốn", "LN Gộp"] },
+      grid: { top: 42, left: 50, right: 20, bottom: 28 },
       xAxis: { type: "category" as const, data: years },
       yAxis: { type: "value" as const, axisLabel: { formatter: (v: number) => `${fmt(v)}` } },
       series: [
@@ -132,8 +132,8 @@ function GrowthAndMargins({ growthData, marginTrends }: { growthData: Record<str
     if (growthData.length < 2) return null;
     return {
       tooltip: { trigger: "axis" as const },
-      legend: { bottom: 0, textStyle: { fontSize: 11 }, data: ["Tăng trưởng DT (%)", "Tăng trưởng LNST (%)"] },
-      grid: { top: 20, left: 50, right: 20, bottom: 40 },
+      legend: { top: 4, textStyle: { fontSize: 11 }, data: ["Tăng trưởng DT (%)", "Tăng trưởng LNST (%)"] },
+      grid: { top: 42, left: 50, right: 20, bottom: 24 },
       xAxis: { type: "category" as const, data: growthData.map((d) => String(d.year)) },
       yAxis: { type: "value" as const, axisLabel: { formatter: "{value}%" } },
       series: [
@@ -149,8 +149,8 @@ function GrowthAndMargins({ growthData, marginTrends }: { growthData: Record<str
     if (display.length < 2) return null;
     return {
       tooltip: { trigger: "axis" as const },
-      legend: { bottom: 0, textStyle: { fontSize: 11 }, data: ["Biên gộp", "Biên ròng", "Biên EBIT"] },
-      grid: { top: 20, left: 50, right: 20, bottom: 40 },
+      legend: { top: 4, textStyle: { fontSize: 11 }, data: ["Biên gộp", "Biên ròng", "Biên EBIT"] },
+      grid: { top: 42, left: 50, right: 20, bottom: 24 },
       xAxis: { type: "category" as const, data: display.map((d) => `${d.year}${Number(d.quarter) && Number(d.quarter) < 5 ? `/Q${d.quarter}` : ""}`) },
       yAxis: { type: "value" as const, axisLabel: { formatter: "{value}%" } },
       series: [

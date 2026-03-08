@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useCallback, useEffect } from "react";
+import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
   STOCK_SECTORS,
@@ -31,6 +31,7 @@ import {
   Activity, Trophy, ChevronLeft, ChevronsLeft, ChevronsRight,
   Star, Eye,
 } from "lucide-react";
+import { useTracking } from "@/hooks/useTracking";
 
 // ─── API config ──────────────────────────────────────────
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
@@ -178,6 +179,21 @@ export default function StockScreener() {
   const [activePreset, setActivePreset] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(true);
   const [viewMode, setViewMode] = useState<"table" | "card">("table");
+
+  // Theo dõi tìm kiếm mã cổ phiếu (debounce 1.5s)
+  const { trackStockSearch } = useTracking();
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (!search.trim()) return;
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = setTimeout(() => {
+      trackStockSearch(search.trim());
+    }, 1500);
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
   const [watchlist, setWatchlist] = useState<Set<string>>(new Set());
 
   // ─── Fetch screener data from API ──────────────────
