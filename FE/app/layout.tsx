@@ -5,6 +5,7 @@ import "./globals.css";
 import MainLayout from "@/components/layout/MainLayout";
 import { AuthProvider } from "@/lib/AuthContext";
 import { AuthModal } from "@/components/auth/AuthModal";
+import { SettingsProvider } from "@/lib/SettingsContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,15 +38,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="vi" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${robotoMono.variable} antialiased`}
       >
         <AuthProvider>
-          <MainLayout>
-            {children}
-          </MainLayout>
-          <AuthModal />
+          <SettingsProvider>
+            <MainLayout>
+              {children}
+            </MainLayout>
+            <AuthModal />
+          </SettingsProvider>
         </AuthProvider>
       </body>
     </html>

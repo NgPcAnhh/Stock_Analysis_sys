@@ -88,9 +88,9 @@ function RevenueGrowthChart({ data }: { data: IncomeStatementItem[] }) {
         };
     }, [rows]);
     return (
-        <Card className="shadow-sm border-gray-200">
+        <Card className="shadow-sm border-border">
             <CardHeader className="pb-1 pt-3 px-4">
-                <CardTitle className="text-sm font-bold text-gray-800 flex items-center gap-2">
+                <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
                     <DollarSign className="w-4 h-4 text-blue-500" />
                     Doanh thu &amp; Tăng trưởng doanh thu
                 </CardTitle>
@@ -124,9 +124,9 @@ function ProfitGrowthChart({ data }: { data: IncomeStatementItem[] }) {
         };
     }, [rows]);
     return (
-        <Card className="shadow-sm border-gray-200">
+        <Card className="shadow-sm border-border">
             <CardHeader className="pb-1 pt-3 px-4">
-                <CardTitle className="text-sm font-bold text-gray-800 flex items-center gap-2">
+                <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
                     <TrendingUp className="w-4 h-4 text-green-500" />
                     Lợi nhuận &amp; Tăng trưởng lợi nhuận (8 kỳ)
                 </CardTitle>
@@ -161,9 +161,9 @@ function CostStructureChart({ data }: { data: IncomeStatementItem[] }) {
         };
     }, [rows]);
     return (
-        <Card className="shadow-sm border-gray-200">
+        <Card className="shadow-sm border-border">
             <CardHeader className="pb-1 pt-3 px-4">
-                <CardTitle className="text-sm font-bold text-gray-800 flex items-center gap-2">
+                <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
                     <PieChart className="w-4 h-4 text-purple-500" />
                     Cơ cấu chi phí qua các năm
                 </CardTitle>
@@ -216,12 +216,12 @@ function FinancialIndicesChart({ data, ratios }: { data: IncomeStatementItem[]; 
         };
     }, [rows, epsMap]);
     return (
-        <Card className="shadow-sm border-gray-200">
+        <Card className="shadow-sm border-border">
             <CardHeader className="pb-1 pt-3 px-4">
-                <CardTitle className="text-sm font-bold text-gray-800 flex items-center gap-2">
+                <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
                     <Activity className="w-4 h-4 text-blue-500" />
                     Chỉ số tài chính qua các năm
-                    <span className="text-[10px] font-normal text-gray-400 ml-1">(biên lợi nhuận &amp; EPS)</span>
+                    <span className="text-[10px] font-normal text-muted-foreground ml-1">(biên lợi nhuận &amp; EPS)</span>
                 </CardTitle>
             </CardHeader>
             <CardContent className="px-2 pb-3">
@@ -334,12 +334,12 @@ function ProfitBeforeTaxChart({ data }: { data: IncomeStatementItem[] }) {
         };
     }, [rows]);
     return (
-        <Card className="shadow-sm border-gray-200">
+        <Card className="shadow-sm border-border">
             <CardHeader className="pb-1 pt-3 px-4">
-                <CardTitle className="text-sm font-bold text-gray-800 flex items-center gap-2">
+                <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
                     <BarChart3 className="w-4 h-4 text-indigo-500" />
                     Các tầng lợi nhuận qua các năm
-                    <span className="text-[10px] font-normal text-gray-400 ml-1">
+                    <span className="text-[10px] font-normal text-muted-foreground ml-1">
                         (gộp · HĐKD · trước thuế · sau thuế)
                     </span>
                 </CardTitle>
@@ -494,10 +494,10 @@ function KPISummaryCards({
     return (
         <div className="space-y-2">
             <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-gray-700">KPI Báo Cáo Tài Chính</span>
-                <span className="text-xs text-gray-400">• Kỳ gần nhất: {latest.period.period}</span>
+                <span className="text-sm font-bold text-foreground">KPI Báo Cáo Tài Chính</span>
+                <span className="text-xs text-muted-foreground">• Kỳ gần nhất: {latest.period.period}</span>
                 {prevYr && (
-                    <span className="text-xs text-gray-400">• So sánh với: {prevYr.period.period}</span>
+                    <span className="text-xs text-muted-foreground">• So sánh với: {prevYr.period.period}</span>
                 )}
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 xl:grid-cols-10 gap-2">
@@ -599,29 +599,29 @@ function FinancialSummaryTable({ data }: { data: IncomeStatementItem[] }) {
     const collapseAll = () => setExpanded(new Set());
 
     return (
-        <Card className="shadow-sm border-gray-200">
+        <Card className="shadow-sm border-border">
             <CardHeader className="pb-1 pt-3 px-4">
                 <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-bold text-gray-800">
+                    <CardTitle className="text-sm font-bold text-foreground">
                         Bảng tổng hợp chỉ số tài chính quan trọng
-                        <span className="text-[10px] font-normal text-gray-400 ml-2">(đơn vị: tỷ VND)</span>
+                        <span className="text-[10px] font-normal text-muted-foreground ml-2">(đơn vị: tỷ VND)</span>
                     </CardTitle>
                     <div className="flex gap-2 text-[11px]">
                         <button onClick={expandAll}  className="text-indigo-500 hover:text-indigo-700 font-medium">Mở tất cả</button>
-                        <span className="text-gray-300">|</span>
-                        <button onClick={collapseAll} className="text-gray-400 hover:text-gray-600 font-medium">Thu gọn</button>
+                        <span className="text-muted-foreground/50">|</span>
+                        <button onClick={collapseAll} className="text-muted-foreground hover:text-foreground font-medium">Thu gọn</button>
                     </div>
                 </div>
             </CardHeader>
             <CardContent className="px-2 pb-4 overflow-x-auto">
                 <table className="w-full text-xs min-w-[560px]">
                     <thead>
-                        <tr className="border-b-2 border-gray-300">
-                            <th className="text-left py-2 px-2 font-semibold text-gray-600 w-44 sticky left-0 bg-white">
+                        <tr className="border-b-2 border-border">
+                            <th className="text-left py-2 px-2 font-semibold text-muted-foreground w-44 sticky left-0 bg-card">
                                 Chỉ tiêu
                             </th>
                             {periods.map((p) => (
-                                <th key={p.period.period} className="text-right py-2 px-2 font-semibold text-gray-600 whitespace-nowrap">
+                                <th key={p.period.period} className="text-right py-2 px-2 font-semibold text-muted-foreground whitespace-nowrap">
                                     {p.period.period}
                                 </th>
                             ))}
@@ -641,18 +641,18 @@ function FinancialSummaryTable({ data }: { data: IncomeStatementItem[] }) {
                                     key={row.id}
                                     onClick={row.isParent ? () => toggle(row.id) : undefined}
                                     className={[
-                                        "border-b border-gray-100 transition-colors",
+                                        "border-b border-border/50 transition-colors",
                                         row.isParent ? "cursor-pointer select-none" : "",
-                                        row.highlight ? "bg-blue-50/50 hover:bg-blue-100/60" : "hover:bg-gray-50/70",
-                                        row.dividerBefore ? "border-t border-t-gray-300" : "",
-                                        row.parentId ? "bg-gray-50/40" : "",
+                                        row.highlight ? "bg-blue-50/50 hover:bg-blue-100/60" : "hover:bg-muted/50",
+                                        row.dividerBefore ? "border-t border-t-border" : "",
+                                        row.parentId ? "bg-muted/30" : "",
                                     ].join(" ")}
                                 >
                                     <td
                                         className={[
                                             "py-1.5 px-2 sticky left-0",
-                                            row.highlight ? "bg-blue-50/70 font-semibold text-gray-800" : "bg-white text-gray-600",
-                                            row.parentId ? "bg-gray-50/60 text-gray-500" : "",
+                                            row.highlight ? "bg-blue-50/70 font-semibold text-foreground" : "bg-card text-muted-foreground",
+                                            row.parentId ? "bg-muted/50 text-muted-foreground" : "",
                                             row.level === 1 ? "pl-6" : "",
                                         ].join(" ")}
                                     >
@@ -663,7 +663,7 @@ function FinancialSummaryTable({ data }: { data: IncomeStatementItem[] }) {
                                                 </span>
                                             )}
                                             {row.level === 1 && (
-                                                <span className="text-gray-300 mr-0.5">└</span>
+                                                <span className="text-muted-foreground/50 mr-0.5">└</span>
                                             )}
                                             {row.negative && <span className="text-red-400 text-[10px]">(-)</span>}
                                             {row.label}
@@ -680,7 +680,7 @@ function FinancialSummaryTable({ data }: { data: IncomeStatementItem[] }) {
                                                     row.highlight ? "font-semibold" : "",
                                                     row.isPct
                                                         ? val >= 0 ? "text-emerald-700" : "text-red-600"
-                                                        : row.negative || isNeg ? "text-red-600" : "text-gray-700",
+                                                        : row.negative || isNeg ? "text-red-600" : "text-foreground",
                                                 ].join(" ")}
                                             >
                                                 {row.isPct ? `${val.toFixed(1)}%` : fmtVal(val)}
@@ -690,7 +690,7 @@ function FinancialSummaryTable({ data }: { data: IncomeStatementItem[] }) {
                                     <td
                                         className={[
                                             "py-1.5 px-2 text-right tabular-nums font-semibold",
-                                            yoy == null ? "text-gray-300" : yoy >= 0 ? "text-green-600" : "text-red-500",
+                                            yoy == null ? "text-muted-foreground/50" : yoy >= 0 ? "text-green-600" : "text-red-500",
                                         ].join(" ")}
                                     >
                                         {yoy == null ? "—" : `${yoy >= 0 ? "▲" : "▼"} ${Math.abs(yoy)}%`}
@@ -719,7 +719,7 @@ export default function FinancialOverviewCharts({
     financialRatios,
 }: FinancialOverviewChartsProps) {
     if (!incomeStatement.length) {
-        return <div className="text-center py-8 text-gray-400">Không có dữ liệu để hiển thị biểu đồ.</div>;
+        return <div className="text-center py-8 text-muted-foreground">Không có dữ liệu để hiển thị biểu đồ.</div>;
     }
     return (
         <div className="space-y-4 font-sans">

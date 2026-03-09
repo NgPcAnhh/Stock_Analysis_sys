@@ -258,9 +258,9 @@ const MLPrediction: React.FC<MLPredictionProps> = ({
       };
     return {
       icon: <Minus size={14} />,
-      color: "text-gray-600",
-      bg: "bg-gray-50",
-      border: "border-gray-200",
+      color: "text-muted-foreground",
+      bg: "bg-muted",
+      border: "border-border",
       label: "TRUNG LẬP",
     };
   };
@@ -273,7 +273,7 @@ const MLPrediction: React.FC<MLPredictionProps> = ({
       {/* Section Header */}
       <div className="flex items-center gap-2 px-3 py-2">
         <Brain size={14} className="text-violet-500" />
-        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           Dự báo ML
         </span>
       </div>
@@ -282,10 +282,9 @@ const MLPrediction: React.FC<MLPredictionProps> = ({
       <div>
         <button
           onClick={() => setExpandRegression(!expandRegression)}
-          className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+          className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted/50 rounded-lg transition-colors"
         >
-          <span className="flex items-center gap-1.5">
-            <Target size={13} className="text-blue-500" />
+          <span className="flex-1 text-left">
             Dự báo giá (Hồi quy)
           </span>
           {expandRegression ? (
@@ -311,16 +310,16 @@ const MLPrediction: React.FC<MLPredictionProps> = ({
                   {regTrend.label}
                 </span>
               </div>
-              <span className="text-[10px] text-gray-500">
+              <span className="text-[10px] text-muted-foreground">
                 R² = {(regression.r2 * 100).toFixed(0)}%
               </span>
             </div>
 
             {/* Predicted prices table */}
-            <div className="bg-white rounded-lg border border-gray-100 overflow-hidden">
+            <div className="bg-card rounded-lg border border-border/50 overflow-hidden">
               <table className="w-full text-[11px]">
                 <thead>
-                  <tr className="bg-gray-50 text-gray-500">
+                  <tr className="bg-muted/50 text-muted-foreground">
                     <th className="text-left px-2 py-1.5 font-medium">Ngày</th>
                     <th className="text-right px-2 py-1.5 font-medium">Dự báo</th>
                     <th className="text-right px-2 py-1.5 font-medium">Khoảng</th>
@@ -333,9 +332,9 @@ const MLPrediction: React.FC<MLPredictionProps> = ({
                     return (
                       <tr
                         key={p.day}
-                        className="border-t border-gray-50 hover:bg-gray-50/50"
+                        className="border-t border-border/30 hover:bg-muted/40"
                       >
-                        <td className="px-2 py-1.5 text-gray-600">
+                        <td className="px-2 py-1.5 text-muted-foreground">
                           +{p.day}D
                         </td>
                         <td className="px-2 py-1.5 text-right font-medium">
@@ -346,12 +345,12 @@ const MLPrediction: React.FC<MLPredictionProps> = ({
                           >
                             {p.price.toLocaleString()}
                           </span>
-                          <span className="text-gray-400 ml-1">
+                          <span className="text-muted-foreground ml-1">
                             ({isUp ? "+" : ""}
                             {change.toFixed(1)}%)
                           </span>
                         </td>
-                        <td className="px-2 py-1.5 text-right text-gray-400">
+                        <td className="px-2 py-1.5 text-right text-muted-foreground">
                           {p.lower.toLocaleString()}-{p.upper.toLocaleString()}
                         </td>
                       </tr>
@@ -361,7 +360,7 @@ const MLPrediction: React.FC<MLPredictionProps> = ({
               </table>
             </div>
 
-            <p className="text-[10px] text-gray-400 px-1 leading-relaxed">
+            <p className="text-[10px] text-muted-foreground px-1 leading-relaxed">
               OLS Linear Regression trên 30 phiên gần nhất. Khoảng tin cậy 95%.
             </p>
           </div>
@@ -369,16 +368,15 @@ const MLPrediction: React.FC<MLPredictionProps> = ({
       </div>
 
       {/* Divider */}
-      <div className="mx-3 border-t border-gray-100" />
+      <div className="mx-3 border-t border-border/50" />
 
       {/* 2. KNN Pattern Matching */}
       <div>
         <button
           onClick={() => setExpandKNN(!expandKNN)}
-          className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+          className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted/50 rounded-lg transition-colors"
         >
-          <span className="flex items-center gap-1.5">
-            <Zap size={13} className="text-amber-500" />
+          <span className="flex-1 text-left">
             Nhận diện mẫu hình (KNN)
           </span>
           {expandKNN ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -400,15 +398,15 @@ const MLPrediction: React.FC<MLPredictionProps> = ({
                   {knnTrend.label}
                 </span>
               </div>
-              <span className="text-[10px] text-gray-500">
+              <span className="text-[10px] text-muted-foreground">
                 Xác suất: {knn.probability}%
               </span>
             </div>
 
             {/* Stats */}
             <div className="grid grid-cols-2 gap-1.5">
-              <div className="bg-white rounded-lg border border-gray-100 px-2.5 py-2 text-center">
-                <div className="text-[10px] text-gray-400 mb-0.5">
+              <div className="bg-card rounded-lg border border-border/50 px-2.5 py-2 text-center">
+                <div className="text-[10px] text-muted-foreground mb-0.5">
                   Lợi nhuận TB
                 </div>
                 <div
@@ -417,19 +415,19 @@ const MLPrediction: React.FC<MLPredictionProps> = ({
                     knn.avgReturn > 0
                       ? "text-emerald-600"
                       : knn.avgReturn < 0
-                      ? "text-red-600"
-                      : "text-gray-600"
+                        ? "text-red-600"
+                        : "text-muted-foreground"
                   )}
                 >
                   {knn.avgReturn > 0 ? "+" : ""}
                   {knn.avgReturn}%
                 </div>
               </div>
-              <div className="bg-white rounded-lg border border-gray-100 px-2.5 py-2 text-center">
-                <div className="text-[10px] text-gray-400 mb-0.5">
+              <div className="bg-card rounded-lg border border-border/50 px-2.5 py-2 text-center">
+                <div className="text-[10px] text-muted-foreground mb-0.5">
                   Win Rate tổng
                 </div>
-                <div className="text-sm font-bold text-gray-700">
+                <div className="text-sm font-bold text-foreground">
                   {knn.historicalWinRate}%
                 </div>
               </div>
@@ -437,30 +435,30 @@ const MLPrediction: React.FC<MLPredictionProps> = ({
 
             {/* Probability bar */}
             <div className="px-1">
-              <div className="flex items-center justify-between text-[10px] text-gray-500 mb-1">
+              <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
                 <span>Giảm</span>
                 <span>Trung lập</span>
                 <span>Tăng</span>
               </div>
-              <div className="h-2 bg-gray-100 rounded-full overflow-hidden relative">
+              <div className="h-2 bg-muted rounded-full overflow-hidden relative">
                 <div
                   className={cn(
                     "absolute top-0 h-full rounded-full transition-all",
                     knn.direction === "up"
                       ? "bg-emerald-500 left-1/2"
                       : knn.direction === "down"
-                      ? "bg-red-500 right-1/2"
-                      : "bg-gray-400 left-[40%]"
+                        ? "bg-red-500 right-1/2"
+                        : "bg-muted-foreground left-[40%]"
                   )}
                   style={{
                     width: `${Math.min(50, knn.probability / 2)}%`,
                   }}
                 />
-                <div className="absolute left-1/2 top-0 w-px h-full bg-gray-300" />
+                <div className="absolute left-1/2 top-0 w-px h-full bg-border" />
               </div>
             </div>
 
-            <p className="text-[10px] text-gray-400 px-1 leading-relaxed">
+            <p className="text-[10px] text-muted-foreground px-1 leading-relaxed">
               K-Nearest Neighbors: so khớp 10 phiên gần nhất với lịch sử, chọn 5 mẫu tương đồng nhất.
             </p>
           </div>

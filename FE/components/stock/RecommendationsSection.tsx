@@ -57,7 +57,7 @@ function SparklineChart({ data, positive }: { data: number[]; positive: boolean 
 
     if (!data.length) {
         return (
-            <div className="h-[80px] flex items-center justify-center text-xs text-gray-300">
+            <div className="h-[80px] flex items-center justify-center text-xs text-muted-foreground/50">
                 Chưa có dữ liệu
             </div>
         );
@@ -71,7 +71,7 @@ function RecommendationCard({ stock }: { stock: RecommendedStock }) {
     const positive = stock.priceChange >= 0;
     return (
         <Link href={`/stock/${stock.ticker}`} className="block">
-            <div className="rounded-xl border border-gray-200 bg-white overflow-hidden hover:shadow-lg hover:border-blue-200 transition-all duration-200 flex flex-col h-full">
+            <div className="rounded-xl border border-border bg-card overflow-hidden hover:shadow-lg hover:border-blue-200 transition-all duration-200 flex flex-col h-full">
                 {/* Info: ticker name + price + change */}
                 <div className="px-3 pt-3">
                     {/* Ticker row */}
@@ -79,7 +79,7 @@ function RecommendationCard({ stock }: { stock: RecommendedStock }) {
                         <img
                             src={stock.logoUrl}
                             alt={stock.ticker}
-                            className="w-6 h-6 rounded-full border border-gray-200 object-cover bg-gray-100"
+                            className="w-6 h-6 rounded-full border border-border object-cover bg-muted"
                             onError={(e) => {
                                 const el = e.currentTarget as HTMLImageElement;
                                 el.style.display = "none";
@@ -92,7 +92,7 @@ function RecommendationCard({ stock }: { stock: RecommendedStock }) {
                         >
                             {stock.ticker.charAt(0)}
                         </div>
-                        <span className="font-bold text-sm text-gray-900 group-hover:text-blue-600 transition-colors">
+                        <span className="font-bold text-sm text-foreground group-hover:text-blue-600 transition-colors">
                             {stock.ticker}
                         </span>
                     </div>
@@ -138,7 +138,7 @@ const RecommendationsSection = () => {
 
     if (!recommendations.length) {
         return (
-            <div className="rounded-lg border border-gray-200 bg-white p-6 text-center text-sm text-gray-400">
+            <div className="rounded-lg border border-border bg-card p-6 text-center text-sm text-muted-foreground">
                 Không có gợi ý.
             </div>
         );

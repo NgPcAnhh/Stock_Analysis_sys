@@ -80,7 +80,7 @@ const ShareholderDonutChart = () => {
 
     if (chartData.length === 0) {
         return (
-            <div className="flex items-center justify-center h-[320px] text-sm text-gray-400">
+            <div className="flex items-center justify-center h-[320px] text-sm text-muted-foreground">
                 Chưa có dữ liệu cơ cấu cổ đông
             </div>
         );
@@ -88,7 +88,7 @@ const ShareholderDonutChart = () => {
 
     return (
         <div className="flex flex-col items-center w-full">
-            <h3 className="text-sm font-semibold text-gray-700 mb-1">Cơ cấu cổ đông theo chức vụ</h3>
+            <h3 className="text-sm font-semibold text-foreground mb-1">Cơ cấu cổ đông theo chức vụ</h3>
             <ReactECharts
                 option={option}
                 style={{ height: "320px", width: "100%" }}
@@ -103,8 +103,8 @@ const ShareholderDonutChart = () => {
                             className="w-3.5 h-3.5 rounded-full flex-shrink-0"
                             style={{ backgroundColor: d.itemStyle.color }}
                         />
-                        <span className="text-gray-600 flex-1 truncate">{d.name}</span>
-                        <span className="font-semibold text-gray-800 font-[var(--font-roboto-mono)]">
+                        <span className="text-muted-foreground flex-1 truncate">{d.name}</span>
+                        <span className="font-semibold text-foreground font-[var(--font-roboto-mono)]">
                             {d.value}%
                         </span>
                     </div>

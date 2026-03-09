@@ -212,23 +212,23 @@ const NewsList: React.FC<NewsListProps> = ({ onSearch }) => {
     return (
         <div className="space-y-5">
             {/* ── Search & Filters ─────────────────────────────────── */}
-            <div className="bg-white rounded-xl border shadow-sm p-4 space-y-3">
+            <div className="bg-card rounded-xl border shadow-sm p-4 space-y-3">
                 {/* Search bar */}
                 <div className="flex gap-2">
                     <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <input
                             type="text"
                             placeholder="Tìm kiếm tin tức theo tiêu đề..."
                             value={searchInput}
                             onChange={(e) => setSearchInput(e.target.value)}
                             onKeyDown={handleKeyDown}
-                            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent bg-gray-50 hover:bg-white transition-colors"
+                            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent bg-muted/50 hover:bg-card transition-colors"
                         />
                         {searchInput && (
                             <button
                                 onClick={() => { setSearchInput(""); setActiveSearch(""); }}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                             >
                                 <X className="w-4 h-4" />
                             </button>
@@ -245,7 +245,7 @@ const NewsList: React.FC<NewsListProps> = ({ onSearch }) => {
                         className={`px-3 py-2.5 rounded-lg border text-sm font-medium transition-colors flex items-center gap-1.5 ${
                             showFilters || hasActiveFilters
                                 ? "bg-orange-50 border-orange-300 text-orange-600"
-                                : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                                : "border-border text-muted-foreground hover:bg-muted/50"
                         }`}
                     >
                         <Filter className="w-4 h-4" />
@@ -256,14 +256,14 @@ const NewsList: React.FC<NewsListProps> = ({ onSearch }) => {
 
                 {/* Extended filters */}
                 {showFilters && (
-                    <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-gray-100">
+                    <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-border/50">
                         {/* Source */}
                         <div className="flex items-center gap-2">
-                            <label className="text-xs font-medium text-gray-500 whitespace-nowrap">Nguồn:</label>
+                            <label className="text-xs font-medium text-muted-foreground whitespace-nowrap">Ànguồn:</label>
                             <select
                                 value={source}
                                 onChange={(e) => setSource(e.target.value)}
-                                className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                                className="text-sm border border-border rounded-lg px-3 py-1.5 bg-muted/50 focus:outline-none focus:ring-2 focus:ring-orange-400"
                             >
                                 <option value="">Tất cả</option>
                                 {sources.map((s) => (
@@ -274,28 +274,28 @@ const NewsList: React.FC<NewsListProps> = ({ onSearch }) => {
 
                         {/* Date from */}
                         <div className="flex items-center gap-2">
-                            <label className="text-xs font-medium text-gray-500 whitespace-nowrap">Từ:</label>
+                            <label className="text-xs font-medium text-muted-foreground whitespace-nowrap">Từ:</label>
                             <div className="relative">
-                                <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                                <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                                 <input
                                     type="date"
                                     value={dateFrom}
                                     onChange={(e) => setDateFrom(e.target.value)}
-                                    className="text-sm border border-gray-200 rounded-lg pl-8 pr-3 py-1.5 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                                    className="text-sm border border-border rounded-lg pl-8 pr-3 py-1.5 bg-muted/50 focus:outline-none focus:ring-2 focus:ring-orange-400"
                                 />
                             </div>
                         </div>
 
                         {/* Date to */}
                         <div className="flex items-center gap-2">
-                            <label className="text-xs font-medium text-gray-500 whitespace-nowrap">Đến:</label>
+                            <label className="text-xs font-medium text-muted-foreground whitespace-nowrap">Đến:</label>
                             <div className="relative">
-                                <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                                <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                                 <input
                                     type="date"
                                     value={dateTo}
                                     onChange={(e) => setDateTo(e.target.value)}
-                                    className="text-sm border border-gray-200 rounded-lg pl-8 pr-3 py-1.5 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                                    className="text-sm border border-border rounded-lg pl-8 pr-3 py-1.5 bg-muted/50 focus:outline-none focus:ring-2 focus:ring-orange-400"
                                 />
                             </div>
                         </div>
@@ -315,8 +315,8 @@ const NewsList: React.FC<NewsListProps> = ({ onSearch }) => {
 
             {/* Results info */}
             {(activeSearch || hasActiveFilters) && (
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <span>Tìm thấy <strong className="text-gray-800">{total}</strong> kết quả</span>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <span>Tìm thấy <strong className="text-foreground">{total}</strong> kết quả</span>
                     {activeSearch && (
                         <Badge variant="secondary" className="text-xs">
                             &quot;{activeSearch}&quot;
@@ -339,7 +339,7 @@ const NewsList: React.FC<NewsListProps> = ({ onSearch }) => {
             {/* ── Article list ─────────────────────────────────────── */}
             <div className="space-y-3">
                 {articles.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+                    <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
                         <Search className="w-12 h-12 mb-3 opacity-50" />
                         <p className="text-sm">Không tìm thấy bài viết nào</p>
                     </div>
@@ -357,7 +357,7 @@ const NewsList: React.FC<NewsListProps> = ({ onSearch }) => {
                             >
                                 <Card className="border-none shadow-sm hover:shadow-md hover:border-l-4 hover:border-l-orange-500 transition-all group">
                                     <CardContent className="p-4 flex gap-4">
-                                        <div className="w-24 h-[72px] shrink-0 rounded-lg overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
+                                        <div className="w-24 h-[72px] shrink-0 rounded-lg overflow-hidden bg-gradient-to-br from-muted to-muted/50">
                                             {extractImgSrc(article.summary) ? (
                                                 <img
                                                     src={extractImgSrc(article.summary)!}
@@ -372,10 +372,10 @@ const NewsList: React.FC<NewsListProps> = ({ onSearch }) => {
                                             )}
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <h3 className="text-base font-bold text-gray-900 line-clamp-2 group-hover:text-orange-600 transition-colors">
+                                            <h3 className="text-base font-bold text-foreground line-clamp-2 group-hover:text-orange-600 transition-colors">
                                                 {article.title}
                                             </h3>
-                                            <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
+                                            <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                                                 <Badge variant="secondary" className="text-[10px] font-medium">
                                                     {article.source}
                                                 </Badge>
@@ -402,7 +402,7 @@ const NewsList: React.FC<NewsListProps> = ({ onSearch }) => {
                 <button
                     onClick={loadMore}
                     disabled={loadingMore}
-                    className="w-full py-3 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                    className="w-full py-3 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:bg-muted/50 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                     {loadingMore ? (
                         <>

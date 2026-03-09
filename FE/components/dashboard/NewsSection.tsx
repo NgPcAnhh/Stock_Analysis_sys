@@ -127,18 +127,18 @@ export function NewsSection() {
                 {canLeft && (
                     <button
                         onClick={() => scroll("left")}
-                        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full p-2 -ml-3 opacity-0 group-hover/slider:opacity-100 transition-opacity"
+                        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-card/90 hover:bg-card shadow-lg rounded-full p-2 -ml-3 opacity-0 group-hover/slider:opacity-100 transition-opacity"
                     >
-                        <ChevronLeft className="h-5 w-5 text-gray-700" />
+                        <ChevronLeft className="h-5 w-5 text-foreground" />
                     </button>
                 )}
                 {/* Right arrow */}
                 {canRight && (
                     <button
                         onClick={() => scroll("right")}
-                        className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full p-2 -mr-3 opacity-0 group-hover/slider:opacity-100 transition-opacity"
+                        className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-card/90 hover:bg-card shadow-lg rounded-full p-2 -mr-3 opacity-0 group-hover/slider:opacity-100 transition-opacity"
                     >
-                        <ChevronRight className="h-5 w-5 text-gray-700" />
+                        <ChevronRight className="h-5 w-5 text-foreground" />
                     </button>
                 )}
 
@@ -162,10 +162,10 @@ export function NewsSection() {
                                 key={item.id}
                                 {...(wrapperProps as any)}
                                 data-news-card
-                                className="w-[calc((100%-48px)/4)] min-w-[calc((100%-48px)/4)] shrink-0 snap-start rounded-lg border bg-white overflow-hidden shadow-sm hover:shadow-lg transition-all cursor-pointer group flex flex-col"
+                                className="w-[calc((100%-48px)/4)] min-w-[calc((100%-48px)/4)] shrink-0 snap-start rounded-lg border bg-card overflow-hidden shadow-sm hover:shadow-lg transition-all cursor-pointer group flex flex-col"
                             >
                                 {/* Thumbnail */}
-                                <div className="relative h-[140px] bg-gradient-to-br from-gray-100 to-gray-50 overflow-hidden">
+                                    <div className="relative h-[140px] bg-gradient-to-br from-muted to-muted/50 overflow-hidden">
                                     {hasImg ? (
                                         <div
                                             className="w-full h-full [&_img]:w-full [&_img]:h-full [&_img]:object-cover"
@@ -174,7 +174,7 @@ export function NewsSection() {
                                         />
                                     ) : (
                                         <div className="w-full h-full flex items-center justify-center">
-                                            <Newspaper className="h-10 w-10 text-gray-300" />
+                                            <Newspaper className="h-10 w-10 text-muted-foreground" />
                                         </div>
                                     )}
                                     <Badge className={`absolute top-2 left-2 ${badgeColor} text-white text-[11px] px-2 py-0.5`}>

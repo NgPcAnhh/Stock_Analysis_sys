@@ -1,34 +1,16 @@
 "use client";
 
 import {
-    LayoutDashboard,
-    BarChart2,
-    LineChart,
-    PieChart,
-    Newspaper,
-    Activity,
-    Settings,
     LogOut,
     ChevronLeft,
     ChevronRight,
-    Monitor,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/AuthContext";
 import { useTracking } from "@/hooks/useTracking";
-
-const navigation = [
-    { name: "Tổng quan", href: "/", icon: LayoutDashboard },
-    { name: "Thị trường", href: "/market", icon: BarChart2 },
-    { name: "Chỉ số", href: "/indices", icon: Activity },
-    { name: "Bảng điện", href: "/price-board", icon: Monitor },
-    { name: "Cổ phiếu", href: "/stocks", icon: LineChart },
-    { name: "Phân tích", href: "/analysis", icon: PieChart },
-    { name: "Tin tức", href: "/news", icon: Newspaper },
-    { name: "Cài đặt", href: "/settings", icon: Settings },
-];
+import { useSettings, SIDEBAR_ICON_MAP } from "@/lib/SettingsContext";
 
 interface SidebarProps {
     className?: string;
@@ -38,7 +20,7 @@ interface SidebarProps {
 
 export function Sidebar({ className, collapsed, onToggle }: SidebarProps) {
     const pathname = usePathname();
-
+    const { sidebarItems } = useSettings();
     const { isAuthenticated, user, openAuthModal, logout } = useAuth();
     const { trackSidebarClick } = useTracking(user?.id);
 
@@ -80,27 +62,30 @@ export function Sidebar({ className, collapsed, onToggle }: SidebarProps) {
 
             <div className="flex-1 overflow-y-auto py-4 overflow-x-hidden">
                 <nav className="grid gap-1 px-3">
-                    {navigation.map((item) => {
-                        const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
-                        return (
-                            <Link
-                                key={item.name}
-                                href={item.href}
-                                onClick={(e) => handleNavigation(e, item.href, item.name)}
-                                className={cn(
-                                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors relative group",
-                                    isActive
-                                        ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
-                                        : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
-                                    collapsed && "justify-center px-0"
-                                )}
-                                title={collapsed ? item.name : undefined}
-                            >
-                                <item.icon className="h-5 w-5 min-w-5" />
-                                {!collapsed && <span className="whitespace-nowrap transition-opacity duration-300">{item.name}</span>}
-                            </Link>
-                        );
-                    })}
+                    {sidebarItems
+                        .filter((item) => item.enabled)
+                        .map((item) => {
+                            const IconComponent = SIDEBAR_ICON_MAP[item.iconName];
+                            const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+                            return (
+                                <Link
+                                    key={item.id}
+                                    href={item.href}
+                                    onClick={(e) => handleNavigation(e, item.href, item.name)}
+                                    className={cn(
+                                        "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors relative group",
+                                        isActive
+                                            ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
+                                            : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
+                                        collapsed && "justify-center px-0"
+                                    )}
+                                    title={collapsed ? item.name : undefined}
+                                >
+                                    {IconComponent && <IconComponent className="h-5 w-5 min-w-5" />}
+                                    {!collapsed && <span className="whitespace-nowrap transition-opacity duration-300">{item.name}</span>}
+                                </Link>
+                            );
+                        })}
                 </nav>
             </div>
 

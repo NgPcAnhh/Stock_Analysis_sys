@@ -125,7 +125,7 @@ const NewsFeed = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
             {/* Left Column: Main Feed */}
             <div className="lg:col-span-2 space-y-4">
-                <h2 className="text-xl font-bold text-gray-900 border-l-4 border-orange-500 pl-3">
+                <h2 className="text-xl font-bold text-foreground border-l-4 border-orange-500 pl-3">
                     Dòng sự kiện
                 </h2>
                 <div className="space-y-4">
@@ -134,7 +134,7 @@ const NewsFeed = () => {
                         const inner = (
                             <Card className="border-none shadow-sm hover:shadow-md transition-shadow">
                                 <CardContent className="p-4 flex gap-4">
-                                    <div className="w-24 h-[72px] shrink-0 rounded-lg overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
+                                    <div className="w-24 h-[72px] shrink-0 rounded-lg overflow-hidden bg-gradient-to-br from-muted to-muted/50">
                                         {imgSrc ? (
                                             <img
                                                 src={imgSrc}
@@ -149,11 +149,11 @@ const NewsFeed = () => {
                                         )}
                                     </div>
                                     <div className="flex-1">
-                                        <h3 className="text-lg font-bold text-gray-900 line-clamp-2 hover:text-orange-600 cursor-pointer">
+                                        <h3 className="text-lg font-bold text-foreground line-clamp-2 hover:text-orange-600 cursor-pointer">
                                             {news.title}
                                         </h3>
-                                        <div className="flex items-center gap-2 mt-2 text-xs text-gray-400">
-                                            <span className="font-medium text-gray-500">
+                                        <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                                            <span className="font-medium text-muted-foreground">
                                                 {news.source}
                                             </span>
                                             <span>•</span>
@@ -179,7 +179,7 @@ const NewsFeed = () => {
                     <button
                         onClick={loadMore}
                         disabled={loadingMore}
-                        className="w-full py-3 mt-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                        className="w-full py-3 mt-2 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:bg-muted/50 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                     >
                         {loadingMore ? (
                             <>
@@ -196,9 +196,9 @@ const NewsFeed = () => {
             {/* Right Column: Sidebar */}
             <div className="space-y-8">
                 {/* Hot Keywords */}
-                <Card className="border-gray-200 shadow-sm">
+                <Card className="border-border shadow-sm">
                     <CardHeader>
-                        <CardTitle className="text-md font-bold text-gray-800">
+                        <CardTitle className="text-md font-bold text-foreground">
                             Từ khóa nổi bật
                         </CardTitle>
                     </CardHeader>
@@ -218,23 +218,23 @@ const NewsFeed = () => {
                 </Card>
 
                 {/* Recent News (replaces "Most Read" since DB has no views data) */}
-                <Card className="border-gray-200 shadow-sm">
+                <Card className="border-border shadow-sm">
                     <CardHeader>
-                        <CardTitle className="text-md font-bold text-gray-800">
+                        <CardTitle className="text-md font-bold text-foreground">
                             Mới nhất
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="p-0">
-                        <div className="divide-y divide-gray-100">
+                        <div className="divide-y divide-border/50">
                             {recentItems.map((item, index) => {
                                 const inner = (
-                                    <div className="p-4 flex items-start gap-3 hover:bg-gray-50 cursor-pointer transition-colors">
-                                        <span className="text-2xl font-bold text-gray-300 -mt-1">{index + 1}</span>
+                                    <div className="p-4 flex items-start gap-3 hover:bg-muted/50 cursor-pointer transition-colors">
+                                        <span className="text-2xl font-bold text-muted-foreground -mt-1">{index + 1}</span>
                                         <div>
-                                            <h4 className="text-sm font-medium text-gray-700 hover:text-orange-600 leading-snug line-clamp-2">
+                                            <h4 className="text-sm font-medium text-foreground hover:text-orange-600 leading-snug line-clamp-2">
                                                 {item.title}
                                             </h4>
-                                            <span className="text-xs text-gray-400">{timeAgo(item.published)}</span>
+                                            <span className="text-xs text-muted-foreground">{timeAgo(item.published)}</span>
                                         </div>
                                     </div>
                                 );

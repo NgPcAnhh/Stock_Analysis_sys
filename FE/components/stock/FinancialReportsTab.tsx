@@ -51,13 +51,13 @@ const getChangePercent = (current: number, previous: number): number | null => {
 
 function ChangeCell({ current, previous }: { current: number; previous: number }) {
     const pct = getChangePercent(current, previous);
-    if (pct === null) return <span className="text-gray-400">-</span>;
+    if (pct === null) return <span className="text-muted-foreground">-</span>;
     const isPositive = pct > 0;
     const isNegative = pct < 0;
     return (
         <span
             className={`text-xs font-medium ${
-                isPositive ? "text-green-600" : isNegative ? "text-red-500" : "text-gray-500"
+                isPositive ? "text-green-600" : isNegative ? "text-red-500" : "text-muted-foreground"
             }`}
         >
             {isPositive ? "+" : ""}
@@ -192,26 +192,26 @@ function ReportTable<T extends Record<string, any>>({
     const seenSectionHeaders = new Set<string>();
 
     return (
-        <Card className="shadow-sm border-gray-200">
+        <Card className="shadow-sm border-border">
             <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-bold text-gray-800 font-sans">{title}</CardTitle>
-                    <span className="text-xs text-gray-400 italic font-sans">{subtitle}</span>
+                    <CardTitle className="text-sm font-bold text-foreground font-sans">{title}</CardTitle>
+                    <span className="text-xs text-muted-foreground italic font-sans">{subtitle}</span>
                 </div>
             </CardHeader>
             <CardContent className="p-0">
                 <div className="overflow-x-auto">
                     <table className="w-full text-xs font-sans">
                         <thead>
-                            <tr className="bg-gray-50 border-b border-gray-200">
-                                <th className="text-left px-4 py-3 font-semibold text-gray-600 min-w-[220px] sticky left-0 bg-gray-50 z-10">
+                            <tr className="bg-muted border-b border-border">
+                                <th className="text-left px-4 py-3 font-semibold text-muted-foreground min-w-[220px] sticky left-0 bg-muted z-10">
                                     Chỉ tiêu
                                 </th>
                                 {periods.map((p, i) => (
                                     <th
                                         key={p}
                                         className={`text-right px-3 py-3 font-semibold min-w-[110px] ${
-                                            i === 0 ? "text-blue-600 bg-blue-50/50" : "text-gray-600"
+                                            i === 0 ? "text-blue-600 bg-blue-50/50" : "text-muted-foreground"
                                         }`}
                                     >
                                         {p}
@@ -222,7 +222,7 @@ function ReportTable<T extends Record<string, any>>({
                                         )}
                                     </th>
                                 ))}
-                                <th className="text-right px-3 py-3 font-semibold text-gray-500 min-w-[90px]">
+                                <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[90px]">
                                     % thay đổi
                                 </th>
                             </tr>
@@ -252,13 +252,13 @@ function ReportTable<T extends Record<string, any>>({
                                 return (
                                     <tr
                                         key={`row-${idx}`}
-                                        className={`border-b border-gray-100 hover:bg-gray-50/50 transition-colors ${
-                                            row.bold ? "bg-gray-50/30" : ""
+                                        className={`border-b border-border/50 hover:bg-muted/50 transition-colors ${
+                                            row.bold ? "bg-muted/20" : ""
                                         }`}
                                     >
                                         <td
-                                            className={`px-4 py-2.5 sticky left-0 bg-white z-10 ${
-                                                row.bold ? "font-semibold text-gray-800" : "font-normal text-gray-600"
+                                            className={`px-4 py-2.5 sticky left-0 bg-card z-10 ${
+                                                row.bold ? "font-semibold text-foreground" : "font-normal text-muted-foreground"
                                             } ${row.indent ? "pl-8" : ""}`}
                                         >
                                             {row.label}
@@ -270,8 +270,8 @@ function ReportTable<T extends Record<string, any>>({
                                                     i === 0
                                                         ? "font-semibold text-blue-700 bg-blue-50/30"
                                                         : row.bold
-                                                        ? "font-medium text-gray-800"
-                                                        : "font-normal text-gray-600"
+                                                        ? "font-medium text-foreground"
+                                                        : "font-normal text-muted-foreground"
                                                 } ${val < 0 ? "!text-red-500" : ""}`}
                                             >
                                                 {fmtTy(val)}
@@ -554,7 +554,7 @@ export default function FinancialReportsTab() {
         downloadCSV(`${t}_bao_cao_tai_chinh.csv`, combined);
     }, [data, stockInfo.ticker]);
 
-    if (loading && !reportData) return <div className="text-center py-12 text-gray-400 animate-pulse font-sans">Đang tải báo cáo tài chính…</div>;
+    if (loading && !reportData) return <div className="text-center py-12 text-muted-foreground animate-pulse font-sans">Đang tải báo cáo tài chính…</div>;
     if (error && !reportData) return <div className="text-center py-12 text-red-500 font-sans">Lỗi: {error}</div>;
     if (!data) return null;
 
@@ -563,13 +563,13 @@ export default function FinancialReportsTab() {
             {/* Header */}
             <div className="flex items-center justify-between flex-wrap gap-3">
                 <div>
-                    <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                    <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
                         {isBank && <Building2 className="w-5 h-5 text-blue-600" />}
                         Báo cáo tài chính
                         {isBank && <span className="text-sm font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">Ngân hàng</span>}
                         {" — "}{stockInfo.ticker}
                     </h2>
-                    <p className="text-xs text-gray-400 italic mt-0.5">
+                    <p className="text-xs text-muted-foreground italic mt-0.5">
                         So sánh 6 quý gần nhất • Đơn vị: Tỷ VND
                         {isBank && " • Cấu trúc BCTC dành riêng cho ngành Ngân hàng"}
                     </p>
@@ -584,7 +584,7 @@ export default function FinancialReportsTab() {
             </div>
 
             {/* Sub-tabs + Export current */}
-            <div className="flex items-center justify-between border-b border-gray-200 pb-0">
+            <div className="flex items-center justify-between border-b border-border pb-0">
                 <div className="flex gap-1 flex-wrap">
                     {reportTabs.map((tab) => (
                         <button
@@ -593,7 +593,7 @@ export default function FinancialReportsTab() {
                             className={`px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors border-b-2 ${
                                 activeReport === tab.id
                                     ? "border-blue-500 text-blue-600 bg-blue-50/50"
-                                    : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                                    : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"
                             }`}
                         >
                             <span className="mr-1.5">{tab.icon}</span>

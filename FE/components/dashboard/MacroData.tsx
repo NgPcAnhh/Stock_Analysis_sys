@@ -86,9 +86,9 @@ export const MacroData = () => {
     }, [data]);
 
     return (
-        <Card className="shadow-sm border-gray-200">
-            <CardHeader className="pb-3 border-b border-gray-100">
-                <CardTitle className="text-lg font-bold text-gray-800">
+        <Card className="shadow-sm border-border">
+            <CardHeader className="pb-3 border-b border-border">
+                <CardTitle className="text-lg font-bold text-foreground">
                     Chỉ số vĩ mô Việt Nam
                 </CardTitle>
             </CardHeader>
@@ -108,15 +108,15 @@ export const MacroData = () => {
                         <Table>
                             <TableHeader>
                                 <TableRow className="hover:bg-transparent">
-                                    <TableHead className="text-xs font-semibold sticky left-0 bg-white z-10 min-w-[200px]">
+                                    <TableHead className="text-xs font-semibold sticky left-0 bg-card z-10 min-w-[200px]">
                                         Chỉ số
                                     </TableHead>
                                     {view.years.map((y) => (
-                                        <TableHead key={y} className="text-xs text-center font-semibold min-w-[90px]">
+                                        <TableHead key={y} className="text-xs text-center font-semibold min-w-[90px] text-foreground">
                                             {y}
                                         </TableHead>
                                     ))}
-                                    <TableHead className="text-xs text-center font-semibold min-w-[100px] bg-blue-50">
+                                        <TableHead className="text-xs text-center font-semibold min-w-[100px] bg-blue-50 dark:bg-blue-950/30">
                                         Tăng trưởng
                                     </TableHead>
                                 </TableRow>
@@ -131,7 +131,7 @@ export const MacroData = () => {
 
                                     return (
                                         <TableRow key={ind.key} className="hover:bg-muted/50 border-b border-border/50">
-                                            <TableCell className="font-semibold text-sm sticky left-0 bg-white z-10">
+                                            <TableCell className="font-semibold text-sm sticky left-0 bg-card z-10 text-foreground">
                                                 {ind.label}
                                             </TableCell>
                                             {vals.map((val, idx) => {
@@ -143,7 +143,7 @@ export const MacroData = () => {
                                                         key={idx}
                                                         className={cn(
                                                             "text-center text-sm tabular-nums",
-                                                            val === null && "text-gray-300",
+                                                            val === null && "text-muted-foreground",
                                                             isUp && "text-green-600",
                                                             isDown && "text-red-500",
                                                         )}
@@ -153,10 +153,10 @@ export const MacroData = () => {
                                                 );
                                             })}
                                             <TableCell className={cn(
-                                                "text-center text-sm font-semibold tabular-nums bg-blue-50/50",
+                                                "text-center text-sm font-semibold tabular-nums bg-blue-50/50 dark:bg-blue-950/20",
                                                 growth.dir === "up" && "text-green-600",
                                                 growth.dir === "down" && "text-red-500",
-                                                growth.dir === "flat" && "text-gray-400",
+                                                growth.dir === "flat" && "text-muted-foreground",
                                             )}>
                                                 <span className="inline-flex items-center gap-0.5">
                                                     {growth.dir === "up" && <ArrowUpRight className="h-3.5 w-3.5" />}

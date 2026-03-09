@@ -30,23 +30,23 @@ export default function MarketPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 p-6">
+        <div className="min-h-screen bg-background p-6">
             <div className="max-w-[1600px] mx-auto space-y-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
-                    <h1 className="text-2xl font-bold text-gray-900">
+                    <h1 className="text-2xl font-bold text-foreground">
                         Phân tích thị trường <span className="text-orange-500">StockPro</span>
                     </h1>
                     <div className="flex items-center gap-4">
                         <button
                             onClick={scrollToDetailedSector}
-                            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-orange-50 hover:text-orange-600 hover:border-orange-300 transition-colors shadow-sm"
+                            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-foreground bg-card border border-border rounded-lg hover:bg-orange-50 hover:text-orange-600 hover:border-orange-300 transition-colors shadow-sm"
                             title="Xem chi tiết ngành"
                         >
                             <TableProperties className="h-4 w-4" />
                             <span>Chi tiết ngành</span>
                         </button>
-                        <div className="text-sm text-gray-500">Cập nhật: Vừa xong</div>
+                        <div className="text-sm text-muted-foreground">Cập nhật: Vừa xong</div>
                     </div>
                 </div>
 
@@ -57,7 +57,7 @@ export default function MarketPage() {
 
                 {/* ── Tier 2: Tổng quan — Breadth + CashFlow ── */}
                 <section>
-                    <h2 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+                    <h2 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
                         <span className="w-1 h-5 bg-orange-500 rounded-full" />
                         Tổng quan thị trường
                     </h2>
@@ -74,7 +74,7 @@ export default function MarketPage() {
 
                 {/* ── Tier 3: Phân tích ngành ── */}
                 <section>
-                    <h2 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+                    <h2 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
                         <span className="w-1 h-5 bg-orange-500 rounded-full" />
                         Phân tích ngành
                     </h2>
@@ -86,7 +86,7 @@ export default function MarketPage() {
 
                 {/* ── Tier 4: Bảng giá chi tiết theo ngành ── */}
                 <section ref={detailedSectorRef}>
-                    <h2 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+                    <h2 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
                         <span className="w-1 h-5 bg-orange-500 rounded-full" />
                         Bảng giá chi tiết theo Ngành
                     </h2>

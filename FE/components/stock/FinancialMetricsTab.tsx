@@ -13,7 +13,7 @@ const formatBillion = (val: number) => {
 
 function SectionHeading({ icon, color, title }: { icon: string; color: string; title: string }) {
     return (
-        <h3 className="text-base font-semibold text-gray-700 flex items-center gap-2">
+        <h3 className="text-base font-semibold text-muted-foreground flex items-center gap-2">
             <span className={`w-1 h-5 ${color} rounded-full`} />
             <span>{icon}</span>
             {title}
@@ -25,7 +25,7 @@ export default function FinancialMetricsTab() {
     const { stockInfo, ticker } = useStockDetail();
     const { data: reportData, loading, error } = useFinancialReports(ticker);
 
-    if (loading && !reportData) return <div className="text-center py-12 text-gray-400 animate-pulse">Đang tải chỉ số tài chính…</div>;
+    if (loading && !reportData) return <div className="text-center py-12 text-muted-foreground animate-pulse">Đang tải chỉ số tài chính…</div>;
     if (error && !reportData) return <div className="text-center py-12 text-red-500">Lỗi: {error}</div>;
     if (!reportData) return null;
 
@@ -309,7 +309,7 @@ export default function FinancialMetricsTab() {
     return (
         <div className="space-y-6">
             {/* Title */}
-            <h2 className="text-lg font-bold text-gray-800">
+            <h2 className="text-lg font-bold text-foreground">
                 Số liệu tài chính - {stockInfo.ticker}
             </h2>
 
@@ -387,9 +387,9 @@ export default function FinancialMetricsTab() {
 // ============ REUSABLE CHART CARD ============
 function ChartCard({ title, option }: { title: string; option: any }) {
     return (
-        <Card className="shadow-sm border-gray-200">
+        <Card className="shadow-sm border-border">
             <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold text-gray-700">{title}</CardTitle>
+                <CardTitle className="text-sm font-semibold text-muted-foreground">{title}</CardTitle>
             </CardHeader>
             <CardContent className="h-[320px]">
                 <ReactECharts option={option} style={{ height: "100%", width: "100%" }} />
@@ -406,11 +406,11 @@ function KpiCard({
 }) {
     const isUp = trend === "up";
     return (
-        <Card className="shadow-sm border-gray-200 hover:shadow-md transition-shadow">
+        <Card className="shadow-sm border-border hover:shadow-md transition-shadow">
             <CardContent className="p-3">
-                <p className="text-[10px] text-gray-500 font-medium truncate uppercase tracking-wide">{label}</p>
-                <p className="text-sm font-bold text-gray-800 mt-1">
-                    {value}<span className="text-[10px] font-normal text-gray-400 ml-0.5">{unit}</span>
+                <p className="text-[10px] text-muted-foreground font-medium truncate uppercase tracking-wide">{label}</p>
+                <p className="text-sm font-bold text-foreground mt-1">
+                    {value}<span className="text-[10px] font-normal text-muted-foreground ml-0.5">{unit}</span>
                 </p>
                 <div className="flex items-center gap-1 mt-1">
                     <span className={`text-[10px] font-semibold ${isUp ? "text-green-600" : "text-red-500"}`}>

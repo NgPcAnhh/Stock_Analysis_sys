@@ -47,7 +47,7 @@ const HotSearch: React.FC<HotSearchProps> = ({ onKeywordClick }) => {
 
     if (loading) {
         return (
-            <Card className="border-gray-200 shadow-sm">
+            <Card className="border-border shadow-sm">
                 <CardHeader className="pb-3">
                     <Skeleton className="h-5 w-36" />
                 </CardHeader>
@@ -68,9 +68,9 @@ const HotSearch: React.FC<HotSearchProps> = ({ onKeywordClick }) => {
         : DEFAULT_KEYWORDS;
 
     return (
-        <Card className="border-gray-200 shadow-sm">
+        <Card className="border-border shadow-sm">
             <CardHeader className="pb-3">
-                <CardTitle className="text-base font-bold text-gray-800 flex items-center gap-2">
+                <CardTitle className="text-base font-bold text-foreground flex items-center gap-2">
                     <Flame className="w-4 h-4 text-red-500" />
                     Tìm kiếm nổi bật
                 </CardTitle>

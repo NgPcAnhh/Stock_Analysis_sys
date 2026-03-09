@@ -56,9 +56,9 @@ export function CashFlow() {
 
     return (
         <Card className="shadow-sm">
-            <CardHeader className="pb-2 border-b border-slate-100">
+            <CardHeader className="pb-2 border-b border-border/50">
                 <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-bold text-slate-800">Phân bố dòng tiền</CardTitle>
+                    <CardTitle className="text-sm font-bold text-foreground">Phân bố dòng tiền</CardTitle>
                     {!loading && (
                         <button
                             onClick={fetchData}
@@ -111,7 +111,7 @@ export function CashFlow() {
                                 Giảm {fmtVal(data.decliningValue)}
                             </div>
                         </div>
-                        <div className="mt-4 flex justify-between text-xs text-slate-500">
+                        <div className="mt-4 flex justify-between text-xs text-muted-foreground">
                             <div className="flex items-center gap-1">
                                 <div className="w-2 h-2 rounded-full bg-green-500"></div>
                                 <span>Tăng: {data.advancingCount} mã</span>

@@ -18,10 +18,10 @@ const CardWrapper = ({
   children: React.ReactNode;
   className?: string;
 }) => (
-  <div className={`bg-white rounded-xl shadow-sm border border-gray-100 ${className}`}>
+  <div className={`bg-card rounded-xl shadow-sm border border-border/50 ${className}`}>
     {title && (
       <div className="px-5 pt-4 pb-2">
-        <h3 className="text-sm font-semibold text-gray-700">{title}</h3>
+        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
       </div>
     )}
     <div className="px-5 pb-5">{children}</div>
@@ -40,8 +40,8 @@ const SectionHeading = ({
   <div className="flex items-start gap-3 mb-4 mt-2">
     <span className="text-xl leading-none mt-0.5">{icon}</span>
     <div>
-      <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">{title}</h3>
-      {subtitle && <p className="text-[11px] text-gray-400 mt-0.5">{subtitle}</p>}
+      <h3 className="text-sm font-bold text-foreground uppercase tracking-wide">{title}</h3>
+      {subtitle && <p className="text-[11px] text-muted-foreground mt-0.5">{subtitle}</p>}
     </div>
   </div>
 );
@@ -64,7 +64,7 @@ const InsightBlock = ({
   const s = styles[level];
   return (
     <div className={`mt-3 border-l-4 ${s.border} ${s.bg} rounded-r-lg px-4 py-3`}>
-      <p className="text-xs text-gray-600 leading-relaxed">
+      <p className="text-xs text-muted-foreground leading-relaxed">
         <span className="mr-1">{s.icon}</span>
         {children}
       </p>
@@ -100,7 +100,7 @@ const KPICards = ({ kpis }: { kpis: QuantAnalysisData["kpis"] }) => {
           const style = colorMap[k.label] ?? defaults[i % defaults.length];
           return (
             <div key={k.label} className={`rounded-xl border ${style.border} ${style.bg} p-4 flex flex-col gap-1`}>
-              <span className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">{k.label}</span>
+              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">{k.label}</span>
               <span className={`text-2xl font-extrabold font-mono ${style.color}`}>
                 {k.value}{k.suffix}
               </span>
@@ -153,7 +153,8 @@ const CumulativeReturnChart = ({ wealthIndex }: { wealthIndex: QuantAnalysisData
         type: "line", data: vals, smooth: true, symbol: "none",
         lineStyle: { width: 2.5, color: "#F97316" },
         areaStyle: {
-          color: { type: "linear" as const, x: 0, y: 0, x2: 0, y2: 1,
+          color: {
+            type: "linear" as const, x: 0, y: 0, x2: 0, y2: 1,
             colorStops: [{ offset: 0, color: "rgba(249,115,22,0.15)" }, { offset: 1, color: "rgba(249,115,22,0)" }],
           },
         },
@@ -207,7 +208,8 @@ const DrawdownChart = ({ drawdownData }: { drawdownData: QuantAnalysisData["draw
         type: "line", data: vals, symbol: "none",
         lineStyle: { width: 1, color: "#EF4444" },
         areaStyle: {
-          color: { type: "linear" as const, x: 0, y: 0, x2: 0, y2: 1,
+          color: {
+            type: "linear" as const, x: 0, y: 0, x2: 0, y2: 1,
             colorStops: [{ offset: 0, color: "rgba(239,68,68,0.35)" }, { offset: 1, color: "rgba(239,68,68,0.05)" }],
           },
         },
@@ -268,7 +270,8 @@ const RollingVolatilityChart = ({ rollingVolatility }: { rollingVolatility: Quan
           type: "line", data: vals, symbol: "none", smooth: true,
           lineStyle: { width: 1.5, color: "#3B82F6" },
           areaStyle: {
-            color: { type: "linear" as const, x: 0, y: 0, x2: 0, y2: 1,
+            color: {
+              type: "linear" as const, x: 0, y: 0, x2: 0, y2: 1,
               colorStops: [{ offset: 0, color: "rgba(59,130,246,0.12)" }, { offset: 1, color: "rgba(59,130,246,0)" }],
             },
           },
@@ -289,7 +292,7 @@ const RollingVolatilityChart = ({ rollingVolatility }: { rollingVolatility: Quan
   return (
     <CardWrapper title="Do bien dong truot (Rolling Volatility)">
       <ReactECharts option={option} style={{ height: 260 }} />
-      <div className="flex items-center justify-between mt-1 text-[10px] text-gray-400 font-mono">
+      <div className="flex items-center justify-between mt-1 text-[10px] text-muted-foreground font-mono">
         <span>Trung binh: {average.toFixed(1)}%</span>
         <span>Hien tai: {recentVol.toFixed(1)}%</span>
       </div>
@@ -346,7 +349,8 @@ const RollingSharpeChart = ({ rollingSharpe }: { rollingSharpe: QuantAnalysisDat
           type: "line", data: vals, symbol: "none", smooth: true,
           lineStyle: { width: 1.5 },
           areaStyle: {
-            color: { type: "linear" as const, x: 0, y: 0, x2: 0, y2: 1,
+            color: {
+              type: "linear" as const, x: 0, y: 0, x2: 0, y2: 1,
               colorStops: [{ offset: 0, color: "rgba(59,130,246,0.08)" }, { offset: 1, color: "rgba(59,130,246,0)" }],
             },
           },
@@ -372,7 +376,7 @@ const RollingSharpeChart = ({ rollingSharpe }: { rollingSharpe: QuantAnalysisDat
   return (
     <CardWrapper title="Rolling Sharpe Ratio">
       <ReactECharts option={option} style={{ height: 260 }} />
-      <div className="flex items-center justify-between mt-1 text-[10px] text-gray-400 font-mono">
+      <div className="flex items-center justify-between mt-1 text-[10px] text-muted-foreground font-mono">
         <span>TB dai han: {average.toFixed(2)}</span>
         <span>Gan day: {recent.toFixed(2)}</span>
       </div>
@@ -404,10 +408,10 @@ const VaRSummary = ({ varData }: { varData: QuantAnalysisData["varData"] }) => {
     <CardWrapper title="Gia tri Rui ro (Value at Risk)">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {items.map((it) => (
-          <div key={it.label} className="rounded-lg bg-gray-50 border border-gray-100 p-3">
-            <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">{it.label}</span>
+          <div key={it.label} className="rounded-lg bg-muted/50 border border-border/50 p-3">
+            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{it.label}</span>
             <div className={`text-xl font-extrabold font-mono ${it.color} mt-1`}>{it.value}</div>
-            <span className="text-[10px] text-gray-400">{it.desc}</span>
+            <span className="text-[10px] text-muted-foreground">{it.desc}</span>
           </div>
         ))}
       </div>
@@ -434,7 +438,7 @@ const MonthlyHeatmap = ({ monthlyReturns }: { monthlyReturns: QuantAnalysisData[
     return { years: yrs, grouped: grp };
   }, [monthlyReturns]);
 
-  const months = ["T1","T2","T3","T4","T5","T6","T7","T8","T9","T10","T11","T12"];
+  const months = ["T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10", "T11", "T12"];
 
   const option = useMemo(() => {
     if (years.length < 1) return null;
@@ -474,7 +478,7 @@ const MonthlyHeatmap = ({ monthlyReturns }: { monthlyReturns: QuantAnalysisData[
         min: minVal, max: maxVal, calculable: false, orient: "horizontal" as const,
         left: "center", bottom: 0, itemWidth: 12, itemHeight: 120,
         textStyle: { fontSize: 10, color: "#94a3b8" },
-        inRange: { color: ["#fca5a5","#fecaca","#fef2f2","#f0fdf4","#bbf7d0","#4ade80"] },
+        inRange: { color: ["#fca5a5", "#fecaca", "#fef2f2", "#f0fdf4", "#bbf7d0", "#4ade80"] },
       },
       series: [{
         type: "heatmap", data: heatData,
@@ -670,15 +674,15 @@ const MonteCarloDisplay = ({ monteCarlo }: { monteCarlo: QuantAnalysisData["mont
             </div>
             <div className="lg:col-span-3 flex flex-col gap-3">
               {statItems.map((it) => (
-                <div key={it.label} className="bg-gray-50 rounded-lg border border-gray-100 p-3">
-                  <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">{it.label}</span>
+                <div key={it.label} className="bg-muted/50 rounded-lg border border-border/50 p-3">
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{it.label}</span>
                   <div className={`text-lg font-extrabold font-mono ${it.color} mt-0.5`}>{it.value}</div>
                 </div>
               ))}
-              <div className="bg-gray-50 rounded-lg border border-gray-100 p-3">
-                <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">Xac suat co lai</span>
-                <div className="text-lg font-extrabold font-mono text-gray-800 mt-0.5">{probUp}%</div>
-                <div className="mt-2 h-2 w-full rounded-full bg-gray-200 overflow-hidden">
+              <div className="bg-muted/50 rounded-lg border border-border/50 p-3">
+                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Xac suat co lai</span>
+                <div className="text-lg font-extrabold font-mono text-foreground mt-0.5">{probUp}%</div>
+                <div className="mt-2 h-2 w-full rounded-full bg-muted overflow-hidden">
                   <div className="h-full rounded-full bg-[#00C076] transition-all" style={{ width: `${probUp}%` }} />
                 </div>
               </div>
@@ -691,7 +695,7 @@ const MonteCarloDisplay = ({ monteCarlo }: { monteCarlo: QuantAnalysisData["mont
           </InsightBlock>
         </>
       ) : (
-        <p className="text-gray-400 text-center py-8">Khong du du lieu de mo phong</p>
+        <p className="text-muted-foreground text-center py-8">Khong du du lieu de mo phong</p>
       )}
     </CardWrapper>
   );
@@ -704,16 +708,16 @@ export default function QuantAnalysisTab() {
   const { ticker } = useStockDetail();
   const { data, loading, error } = useQuantAnalysis(ticker);
 
-  if (loading && !data) return <div className="text-center py-12 text-gray-400 animate-pulse">Dang tai phan tich dinh luong...</div>;
+  if (loading && !data) return <div className="text-center py-12 text-muted-foreground animate-pulse">Dang tai phan tich dinh luong...</div>;
   if (error && !data) return <div className="text-center py-12 text-red-500">Loi: {error}</div>;
-  if (!data) return <div className="text-center py-12 text-gray-400">Khong co du lieu</div>;
+  if (!data) return <div className="text-center py-12 text-muted-foreground">Khong co du lieu</div>;
 
   return (
     <div className="space-y-6">
       {/* Title */}
       <div className="flex items-center gap-2">
         <span className="w-1.5 h-6 bg-gradient-to-b from-[#F97316] to-[#F59E0B] rounded-full" />
-        <h2 className="text-base font-bold text-gray-800">Phan tich Dinh luong – {ticker}</h2>
+        <h2 className="text-base font-bold text-foreground">Phan tich Dinh luong – {ticker}</h2>
       </div>
 
       {/* SECTION 1: HIEU SUAT DAU TU */}
@@ -725,7 +729,7 @@ export default function QuantAnalysisTab() {
         </div>
       </section>
 
-      <hr className="border-gray-100" />
+      <hr className="border-border/50" />
 
       {/* SECTION 2: PHAN TICH RUI RO */}
       <section>
@@ -742,7 +746,7 @@ export default function QuantAnalysisTab() {
         </div>
       </section>
 
-      <hr className="border-gray-100" />
+      <hr className="border-border/50" />
 
       {/* SECTION 3: PHAN TICH THONG KE */}
       <section>
@@ -753,7 +757,7 @@ export default function QuantAnalysisTab() {
         </div>
       </section>
 
-      <hr className="border-gray-100" />
+      <hr className="border-border/50" />
 
       {/* SECTION 4: MO PHONG MONTE CARLO */}
       <section>
@@ -761,7 +765,7 @@ export default function QuantAnalysisTab() {
         <MonteCarloDisplay monteCarlo={data.monteCarlo} />
       </section>
 
-      <hr className="border-gray-100" />
+      <hr className="border-border/50" />
 
       {/* SECTION 5: DANH GIA TONG HOP */}
       <section>

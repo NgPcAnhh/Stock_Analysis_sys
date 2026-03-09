@@ -29,35 +29,35 @@ const FinancialMatrix = () => {
             </div>
 
             {/* ── Vertical divider ── */}
-            <div className="hidden lg:block border-l border-gray-100" />
+            <div className="hidden lg:block border-l border-border/50" />
 
             {/* ── Right: Evaluation Section ── */}
             <div className="w-56 flex-shrink-0 flex flex-col gap-3">
                 <div className="grid grid-cols-2 gap-4">
                     {/* Fundamental Analysis */}
                     <div>
-                        <div className="flex items-center gap-1 text-[10px] text-gray-500 uppercase mb-1.5">
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground uppercase mb-1.5">
                             Phân tích cơ bản
-                            <Info className="w-3 h-3 text-gray-400" />
+                            <Info className="w-3 h-3 text-muted-foreground" />
                         </div>
-                        <span className="text-xs font-medium text-gray-700">{evaluation.fundamentalAnalysis || "N/A"}</span>
+                        <span className="text-xs font-medium text-foreground">{evaluation.fundamentalAnalysis || "N/A"}</span>
                     </div>
 
                     {/* Valuation */}
                     <div>
-                        <div className="flex items-center gap-1 text-[10px] text-gray-500 uppercase mb-1.5">
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground uppercase mb-1.5">
                             Định giá
-                            <Info className="w-3 h-3 text-gray-400" />
+                            <Info className="w-3 h-3 text-muted-foreground" />
                         </div>
-                        <span className="text-xs font-medium text-gray-700">{evaluation.valuation || "N/A"}</span>
+                        <span className="text-xs font-medium text-foreground">{evaluation.valuation || "N/A"}</span>
                     </div>
                 </div>
 
                 {/* Risk */}
                 <div>
-                    <div className="flex items-center gap-1 text-[10px] text-gray-500 uppercase mb-1.5">
+                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground uppercase mb-1.5">
                         Rủi ro
-                        <Info className="w-3 h-3 text-gray-400" />
+                        <Info className="w-3 h-3 text-muted-foreground" />
                     </div>
                     <EvaluationBadge
                         label=""
@@ -88,15 +88,15 @@ const MetricItem = ({
     hasInfo?: boolean;
 }) => (
     <div>
-        <div className="flex items-center gap-1 text-[10px] text-gray-500 uppercase">
+        <div className="flex items-center gap-1 text-[10px] text-muted-foreground uppercase">
             {label}
-            {hasInfo && <Info className="w-3 h-3 text-gray-400" />}
+            {hasInfo && <Info className="w-3 h-3 text-muted-foreground" />}
         </div>
-        <div className="text-sm font-bold text-gray-900 font-[var(--font-roboto-mono)]">
+        <div className="text-sm font-bold text-foreground font-[var(--font-roboto-mono)]">
             {value}
         </div>
         {subtext && (
-            <div className="text-[10px] text-gray-400">{subtext}</div>
+            <div className="text-[10px] text-muted-foreground">{subtext}</div>
         )}
     </div>
 );

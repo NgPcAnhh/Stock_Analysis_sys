@@ -13,7 +13,7 @@ const SignalBadge: React.FC<{ signal: string }> = ({ signal }) => {
   const config = {
     Mua: { bg: "bg-emerald-50", text: "text-emerald-700", icon: TrendingUp },
     Bán: { bg: "bg-red-50", text: "text-red-700", icon: TrendingDown },
-    "Trung lập": { bg: "bg-gray-50", text: "text-gray-600", icon: Minus },
+    "Trung lập": { bg: "bg-muted", text: "text-muted-foreground", icon: Minus },
   };
   const c = config[signal as keyof typeof config] || config["Trung lập"];
   const Icon = c.icon;
@@ -43,12 +43,12 @@ const StrengthDots: React.FC<{ strength: string }> = ({ strength }) => {
                 ? "bg-emerald-500"
                 : level === 2
                 ? "bg-amber-400"
-                : "bg-gray-400"
-              : "bg-gray-200"
+                : "bg-muted-foreground/50"
+              : "bg-muted"
           }`}
         />
       ))}
-      <span className="text-xs text-gray-500 ml-1">{strength}</span>
+      <span className="text-xs text-muted-foreground ml-1">{strength}</span>
     </div>
   );
 };
@@ -80,9 +80,9 @@ const RenderTable: React.FC<{
 }> = ({ items, title, icon }) => {
   if (items.length === 0) return null;
   return (
-    <Card className="shadow-sm border-gray-200">
+    <Card className="shadow-sm border-border">
       <CardHeader className="pb-2 pt-3 px-4">
-        <CardTitle className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+        <CardTitle className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
           {icon}
           {title}
         </CardTitle>
@@ -91,23 +91,23 @@ const RenderTable: React.FC<{
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-gray-100">
-                <th className="text-left py-2 text-xs text-gray-500 font-medium">Chỉ báo</th>
-                <th className="text-right py-2 text-xs text-gray-500 font-medium">Giá trị</th>
-                <th className="text-center py-2 text-xs text-gray-500 font-medium">Tín hiệu</th>
-                <th className="text-right py-2 text-xs text-gray-500 font-medium">Độ mạnh</th>
+              <tr className="border-b border-border/50">
+                <th className="text-left py-2 text-xs text-muted-foreground font-medium">Chỉ báo</th>
+                <th className="text-right py-2 text-xs text-muted-foreground font-medium">Giá trị</th>
+                <th className="text-center py-2 text-xs text-muted-foreground font-medium">Tín hiệu</th>
+                <th className="text-right py-2 text-xs text-muted-foreground font-medium">Độ mạnh</th>
               </tr>
             </thead>
             <tbody>
               {items.map((signal) => (
                 <tr
                   key={signal.indicator}
-                  className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors"
+                  className="border-b border-border/30 last:border-0 hover:bg-muted/50 transition-colors"
                 >
-                  <td className="py-2.5 text-sm text-gray-700 font-medium">
+                  <td className="py-2.5 text-sm text-foreground font-medium">
                     {signal.indicator}
                   </td>
-                  <td className="py-2.5 text-right font-mono text-sm text-gray-600">
+                  <td className="py-2.5 text-right font-mono text-sm text-muted-foreground">
                     {signal.value}
                   </td>
                   <td className="py-2.5 text-center">

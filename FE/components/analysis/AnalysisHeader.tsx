@@ -39,17 +39,17 @@ const AnalysisHeader: React.FC<AnalysisHeaderProps> = ({ data }) => {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold text-gray-900">{data.ticker}</h1>
+              <h1 className="text-xl font-bold text-foreground">{data.ticker}</h1>
               <span className="text-xs px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full font-medium">
                 {data.exchange}
               </span>
             </div>
-            <p className="text-sm text-gray-500">{data.companyName}</p>
+            <p className="text-sm text-muted-foreground">{data.companyName}</p>
           </div>
         </div>
 
         <div className="flex items-baseline gap-3 ml-auto">
-          <span className="text-3xl font-bold text-gray-900">
+          <span className="text-3xl font-bold text-foreground">
             {data.currentPrice.toLocaleString()}
           </span>
           <div
@@ -108,13 +108,13 @@ const QuickStatCard: React.FC<{
   icon: React.ReactNode;
   color: string;
 }> = ({ label, value, subValue, subColor, icon, color }) => (
-  <div className="bg-white rounded-lg border border-gray-100 px-3 py-2.5 flex items-center gap-2.5">
+  <div className="bg-card rounded-lg border border-border/50 px-3 py-2.5 flex items-center gap-2.5">
     <div className={`${color} opacity-60`}>{icon}</div>
     <div className="min-w-0">
-      <div className="text-[11px] text-gray-400 font-medium">{label}</div>
-      <div className="text-sm font-bold text-gray-800">{value}</div>
+      <div className="text-[11px] text-muted-foreground font-medium">{label}</div>
+      <div className="text-sm font-bold text-foreground">{value}</div>
       {subValue && (
-        <div className={`text-[10px] font-medium ${subColor || "text-gray-400"}`}>
+        <div className={`text-[10px] font-medium ${subColor || "text-muted-foreground"}`}>
           {subValue}
         </div>
       )}

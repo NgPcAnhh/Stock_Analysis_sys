@@ -14,12 +14,12 @@ function IncomeKeyCards({ stats }: { stats: OverviewStat[] }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {stats.map((s, i) => (
-        <div key={i} className={`bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 ${borderColors[i % borderColors.length]} p-5`}>
-          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">{s.label}</p>
-          <p className={`text-2xl font-extrabold text-gray-900 ${monoFont}`}>{s.value}</p>
-          {s.subLabel && <p className="text-xs text-gray-400 mt-1">{s.subLabel}</p>}
+        <div key={i} className={`bg-card rounded-xl shadow-sm border border-border/50 border-l-4 ${borderColors[i % borderColors.length]} p-5`}>
+          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">{s.label}</p>
+          <p className={`text-2xl font-extrabold text-foreground ${monoFont}`}>{s.value}</p>
+          {s.subLabel && <p className="text-xs text-muted-foreground mt-1">{s.subLabel}</p>}
           {s.trend && (
-            <span className={`text-xs font-medium ${s.trend === "up" ? "text-[#00C076]" : s.trend === "down" ? "text-[#EF4444]" : "text-gray-500"}`}>
+            <span className={`text-xs font-medium ${s.trend === "up" ? "text-[#00C076]" : s.trend === "down" ? "text-[#EF4444]" : "text-muted-foreground"}`}>
               {s.trend === "up" ? "↗" : "↘"}
             </span>
           )}
@@ -36,32 +36,32 @@ function DuPontSection({ dupont }: { dupont: DuPontFactor[] }) {
   const factors = dupont.filter((d) => d.name !== "ROE");
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-      <h2 className="text-base font-bold text-gray-800 flex items-center gap-2 mb-6">
+    <div className="bg-card rounded-xl shadow-sm border border-border/50 p-6">
+      <h2 className="text-base font-bold text-foreground flex items-center gap-2 mb-6">
         <span className="text-lg">🔬</span> Phân Tích DuPont
       </h2>
       <div className="flex items-center justify-center gap-3 flex-wrap mb-6">
         {factors.map((f, i) => (
           <React.Fragment key={i}>
-            <div className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-center min-w-[130px] shadow-sm">
-              <p className="text-[9px] font-semibold text-gray-400 uppercase tracking-wider mb-1">{f.name}</p>
-              <p className={`text-xl font-extrabold text-gray-900 ${monoFont}`}>{f.value.toFixed(2)}</p>
+            <div className="bg-card border border-border rounded-xl px-4 py-3 text-center min-w-[130px] shadow-sm">
+              <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">{f.name}</p>
+              <p className={`text-xl font-extrabold text-foreground ${monoFont}`}>{f.value.toFixed(2)}</p>
               {f.prior != null && (
-                <p className={`text-[10px] ${f.value > f.prior ? "text-[#00C076]" : f.value < f.prior ? "text-[#EF4444]" : "text-gray-400"}`}>
+                <p className={`text-[10px] ${f.value > f.prior ? "text-[#00C076]" : f.value < f.prior ? "text-[#EF4444]" : "text-muted-foreground"}`}>
                   Trước: {f.prior.toFixed(2)} {f.value > f.prior ? "↗" : f.value < f.prior ? "↘" : "→"}
                 </p>
               )}
             </div>
-            {i < factors.length - 1 && <span className="text-xl font-bold text-gray-300">×</span>}
+            {i < factors.length - 1 && <span className="text-xl font-bold text-muted-foreground/60">×</span>}
           </React.Fragment>
         ))}
         {roe && (
           <>
-            <span className="text-xl font-bold text-gray-400">=</span>
+            <span className="text-xl font-bold text-muted-foreground">=</span>
             <div className="bg-orange-50 border-2 border-orange-300 rounded-xl px-6 py-3 text-center min-w-[120px] shadow-sm">
-              <p className="text-[9px] font-semibold text-gray-500 uppercase tracking-wider mb-1">ROE</p>
+              <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">ROE</p>
               <p className={`text-2xl font-extrabold text-[#F97316] ${monoFont}`}>{roe.value.toFixed(1)}%</p>
-              {roe.prior != null && <p className="text-[10px] text-gray-400">Trước: {roe.prior.toFixed(1)}%</p>}
+              {roe.prior != null && <p className="text-[10px] text-muted-foreground">Trước: {roe.prior.toFixed(1)}%</p>}
             </div>
           </>
         )}
@@ -114,13 +114,13 @@ function RevenueCostTrends({ costStructure }: { costStructure: Record<string, un
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-      <div className="lg:col-span-8 bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-        <h3 className="text-sm font-bold text-gray-800 flex items-center gap-1.5 mb-3"><span>📊</span> Diễn biến Doanh thu & Chi phí (Tỷ VND)</h3>
-        {chartOption ? <ReactECharts option={chartOption} style={{ height: 280 }} /> : <p className="text-gray-400 text-center py-8">Không đủ dữ liệu</p>}
+      <div className="lg:col-span-8 bg-card rounded-xl shadow-sm border border-border/50 p-5">
+        <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5 mb-3"><span>📊</span> Diễn biến Doanh thu & Chi phí (Tỷ VND)</h3>
+        {chartOption ? <ReactECharts option={chartOption} style={{ height: 280 }} /> : <p className="text-muted-foreground text-center py-8">Không đủ dữ liệu</p>}
       </div>
-      <div className="lg:col-span-4 bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-        <h3 className="text-sm font-bold text-gray-800 flex items-center gap-1.5 mb-3"><span>🍩</span> Cơ cấu Chi phí (% DT)</h3>
-        {donutOption ? <ReactECharts option={donutOption} style={{ height: 220 }} /> : <p className="text-gray-400 text-center py-8">Không đủ dữ liệu</p>}
+      <div className="lg:col-span-4 bg-card rounded-xl shadow-sm border border-border/50 p-5">
+        <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5 mb-3"><span>🍩</span> Cơ cấu Chi phí (% DT)</h3>
+        {donutOption ? <ReactECharts option={donutOption} style={{ height: 220 }} /> : <p className="text-muted-foreground text-center py-8">Không đủ dữ liệu</p>}
       </div>
     </div>
   );
@@ -163,13 +163,13 @@ function GrowthAndMargins({ growthData, marginTrends }: { growthData: Record<str
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <div className="bg-white rounded-xl shadow-sm border-2 border-blue-200 p-5">
-        <h3 className="text-sm font-bold text-gray-800 flex items-center gap-1.5 mb-3"><span className="w-1 h-4 bg-orange-500 rounded-full" /> Tốc độ Tăng trưởng (YoY Growth %)</h3>
-        {growthOption ? <ReactECharts option={growthOption} style={{ height: 260 }} /> : <p className="text-gray-400 text-center py-8">Không đủ dữ liệu</p>}
+      <div className="bg-card rounded-xl shadow-sm border-2 border-blue-200 p-5">
+        <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5 mb-3"><span className="w-1 h-4 bg-orange-500 rounded-full" /> Tốc độ Tăng trưởng (YoY Growth %)</h3>
+        {growthOption ? <ReactECharts option={growthOption} style={{ height: 260 }} /> : <p className="text-muted-foreground text-center py-8">Không đủ dữ liệu</p>}
       </div>
-      <div className="bg-white rounded-xl shadow-sm border-2 border-blue-200 p-5">
-        <h3 className="text-sm font-bold text-gray-800 flex items-center gap-1.5 mb-3"><span className="w-1 h-4 bg-blue-500 rounded-full" /> Xu hướng Biên lợi nhuận (%)</h3>
-        {marginOption ? <ReactECharts option={marginOption} style={{ height: 260 }} /> : <p className="text-gray-400 text-center py-8">Không đủ dữ liệu</p>}
+      <div className="bg-card rounded-xl shadow-sm border-2 border-blue-200 p-5">
+        <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5 mb-3"><span className="w-1 h-4 bg-blue-500 rounded-full" /> Xu hướng Biên lợi nhuận (%)</h3>
+        {marginOption ? <ReactECharts option={marginOption} style={{ height: 260 }} /> : <p className="text-muted-foreground text-center py-8">Không đủ dữ liệu</p>}
       </div>
     </div>
   );
@@ -181,9 +181,9 @@ export default function IncomeStatementTab() {
   const { data, loading, error } = useDeepAnalysis(ticker);
   const is = data?.incomeStatement;
 
-  if (loading && !data) return <div className="text-center py-12 text-gray-400 animate-pulse">Đang tải phân tích...</div>;
+  if (loading && !data) return <div className="text-center py-12 text-muted-foreground animate-pulse">Đang tải phân tích...</div>;
   if (error && !data) return <div className="text-center py-12 text-red-500">Lỗi: {error}</div>;
-  if (!is) return <div className="text-center py-12 text-gray-400">Không có dữ liệu</div>;
+  if (!is) return <div className="text-center py-12 text-muted-foreground">Không có dữ liệu</div>;
 
   return (
     <div className="space-y-5">

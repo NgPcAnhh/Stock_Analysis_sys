@@ -15,7 +15,7 @@ const StockIdentityCard = () => {
                 {/* Row 1: Logo, Ticker, Exchange, Star, Share */}
                 <div className="flex items-center gap-3">
                     {/* Logo */}
-                    <div className="w-10 h-10 rounded-full overflow-hidden shadow-md bg-gray-100 flex-shrink-0 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-full overflow-hidden shadow-md bg-muted flex-shrink-0 flex items-center justify-center">
                         <img
                             src={stock.logoUrl}
                             alt={stock.ticker}
@@ -23,17 +23,17 @@ const StockIdentityCard = () => {
                             onError={(e) => {
                                 const el = e.target as HTMLImageElement;
                                 el.style.display = 'none';
-                                el.parentElement!.innerHTML = `<span class="text-xs font-bold text-gray-500">${stock.ticker}</span>`;
+                                el.parentElement!.innerHTML = `<span class="text-xs font-bold text-muted-foreground">${stock.ticker}</span>`;
                             }}
                         />
                     </div>
                     <div className="flex items-center gap-2">
-                        <h1 className="text-2xl font-extrabold text-gray-900">{stock.ticker}</h1>
-                        <span className="text-gray-500 text-sm">({stock.exchange})</span>
+                        <h1 className="text-2xl font-extrabold text-foreground">{stock.ticker}</h1>
+                        <span className="text-muted-foreground text-sm">({stock.exchange})</span>
                         <button className="text-amber-500 hover:text-amber-600">
                             <Star className="w-5 h-5" fill="currentColor" />
                         </button>
-                        <button className="text-gray-400 hover:text-gray-600 text-xs flex items-center gap-1 ml-2">
+                        <button className="text-muted-foreground hover:text-foreground text-xs flex items-center gap-1 ml-2">
                             <Share2 className="w-4 h-4" />
                             Chia sẻ
                         </button>
@@ -41,7 +41,7 @@ const StockIdentityCard = () => {
                 </div>
 
                 {/* Row 2: Company Full Name (organ_name) */}
-                <h2 className="text-base font-semibold text-gray-800">{stock.companyNameFull || stock.companyName}</h2>
+                <h2 className="text-base font-semibold text-foreground">{stock.companyNameFull || stock.companyName}</h2>
 
                 {/* Row 3: Tags - Exchange + ICB Name 2 + ICB Name 3 */}
                 <div className="flex flex-wrap items-center gap-2 text-xs">
@@ -56,7 +56,7 @@ const StockIdentityCard = () => {
                 </div>
 
                 {/* Row 4: Company Overview (from DB) with "Xem thêm" → profile tab */}
-                <div className="text-xs text-gray-500 leading-relaxed">
+                <div className="text-xs text-muted-foreground leading-relaxed">
                     <p className="line-clamp-5">
                         {stock.overview || stock.companyNameFull}
                     </p>
@@ -104,7 +104,7 @@ const StockIdentityCard = () => {
 };
 
 const ActionButton = ({ icon, label }: { icon: React.ReactNode; label: string }) => (
-    <button className="flex items-center gap-1 px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs rounded transition-colors">
+    <button className="flex items-center gap-1 px-2 py-1 bg-muted hover:bg-muted/80 text-muted-foreground text-xs rounded transition-colors">
         {icon}
         {label}
     </button>

@@ -18,14 +18,14 @@ type SortKey = keyof MarketIndex | "";
 type SortDir = "asc" | "desc";
 
 const colorClass = (v: number) =>
-    v > 0 ? "text-green-600" : v < 0 ? "text-red-600" : "text-gray-600";
+    v > 0 ? "text-green-600" : v < 0 ? "text-red-600" : "text-muted-foreground";
 
 const colorBg = (v: number) =>
     v > 0
         ? "bg-green-50 text-green-700"
         : v < 0
             ? "bg-red-50 text-red-700"
-            : "bg-gray-50 text-gray-600";
+            : "bg-muted text-muted-foreground";
 
 const fmt = (v: number) => {
     const s = v > 0 ? "+" : "";
@@ -67,7 +67,7 @@ function SparklineChart({ data, positive }: { data: number[]; positive: boolean 
         [data, positive]
     );
 
-    if (!data || data.length === 0) return <span className="text-gray-400 text-xs">N/A</span>;
+    if (!data || data.length === 0) return <span className="text-muted-foreground text-xs">N/A</span>;
     return <ReactECharts option={option} style={{ height: 36, width: 120 }} opts={{ renderer: "svg" }} />;
 }
 
@@ -114,39 +114,39 @@ export default function MarketIndicesTable({ title, data, description }: MarketI
         className?: string;
     }) => (
         <TableHead
-            className={`text-right cursor-pointer select-none hover:bg-gray-100/80 transition-colors whitespace-nowrap px-4 ${className}`}
+            className={`text-right cursor-pointer select-none hover:bg-muted/50 transition-colors whitespace-nowrap px-4 ${className}`}
             onClick={() => handleSort(colKey)}
         >
             <span className="inline-flex items-center gap-1">
                 {label}
                 <ArrowUpDown
-                    className={`h-3 w-3 ${sortKey === colKey ? "text-orange-500" : "text-gray-400"}`}
+                    className={`h-3 w-3 ${sortKey === colKey ? "text-orange-500" : "text-muted-foreground"}`}
                 />
             </span>
         </TableHead>
     );
 
     return (
-        <Card className="shadow-sm border-gray-200 overflow-hidden">
-            <div className="px-5 py-4 border-b bg-white">
-                <h3 className="text-lg font-bold text-gray-900">{title}</h3>
+        <Card className="shadow-sm border-border overflow-hidden">
+            <div className="px-5 py-4 border-b bg-card">
+                <h3 className="text-lg font-bold text-foreground">{title}</h3>
                 {description && (
-                    <p className="text-sm text-gray-500 mt-0.5">{description}</p>
+                    <p className="text-sm text-muted-foreground mt-0.5">{description}</p>
                 )}
             </div>
             <CardContent className="p-0">
                 <div className="overflow-x-auto">
                     <Table>
                         <TableHeader>
-                            <TableRow className="bg-gray-50/80">
+                            <TableRow className="bg-muted/50">
                                 <TableHead
-                                    className="sticky left-0 bg-gray-50/80 z-10 min-w-[160px] cursor-pointer select-none hover:bg-gray-100/80 transition-colors px-4"
+                                    className="sticky left-0 bg-muted/50 z-10 min-w-[160px] cursor-pointer select-none hover:bg-muted/50 transition-colors px-4"
                                     onClick={() => handleSort("name")}
                                 >
                                     <span className="inline-flex items-center gap-1">
                                         Tên chỉ số
                                         <ArrowUpDown
-                                            className={`h-3 w-3 ${sortKey === "name" ? "text-orange-500" : "text-gray-400"}`}
+                                            className={`h-3 w-3 ${sortKey === "name" ? "text-orange-500" : "text-muted-foreground"}`}
                                         />
                                     </span>
                                 </TableHead>
@@ -168,10 +168,10 @@ export default function MarketIndicesTable({ title, data, description }: MarketI
                                     key={row.name}
                                     className="hover:bg-orange-50/40 transition-colors h-[68px]"
                                 >
-                                    <TableCell className="sticky left-0 bg-white z-10 px-4">
+                                    <TableCell className="sticky left-0 bg-card z-10 px-4">
                                         <div className="flex items-center gap-2.5">
                                             <span className="text-xl leading-none">{row.flag}</span>
-                                            <span className="font-bold text-gray-900 text-sm">
+                                            <span className="font-bold text-foreground text-sm">
                                                 {row.name}
                                             </span>
                                         </div>
@@ -184,7 +184,7 @@ export default function MarketIndicesTable({ title, data, description }: MarketI
                                             />
                                         </div>
                                     </TableCell>
-                                    <TableCell className="text-right font-bold text-gray-900 px-4 tabular-nums">
+                                    <TableCell className="text-right font-bold text-foreground px-4 tabular-nums">
                                         {row.value.toLocaleString("en-US", {
                                             minimumFractionDigits: 2,
                                             maximumFractionDigits: 2,

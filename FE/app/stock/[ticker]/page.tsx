@@ -30,10 +30,10 @@ interface StockDetailPageProps {
 function OverviewSkeleton() {
     return (
         <div className="animate-pulse space-y-4">
-            <div className="h-28 bg-gray-200 rounded-xl" />
+            <div className="h-28 bg-muted rounded-xl" />
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-                <div className="lg:col-span-8 h-72 bg-gray-200 rounded-xl" />
-                <div className="lg:col-span-4 h-72 bg-gray-200 rounded-xl" />
+                <div className="lg:col-span-8 h-72 bg-muted rounded-xl" />
+                <div className="lg:col-span-4 h-72 bg-muted rounded-xl" />
             </div>
         </div>
     );
@@ -60,7 +60,7 @@ export default function StockDetailPage({ params }: StockDetailPageProps) {
 
     return (
         <StockDetailProvider data={contextValue}>
-            <div className="min-h-screen bg-[#F3F4F6]">
+            <div className="min-h-screen bg-background">
                 <div className="max-w-[1440px] mx-auto px-4 py-4 space-y-6">
 
                 {/* Section 1: Header & Overview */}
@@ -81,7 +81,7 @@ export default function StockDetailPage({ params }: StockDetailPageProps) {
                     <>
                         {/* ── Biểu đồ & Khớp lệnh ── */}
                         <section className="space-y-3">
-                            <h2 className="text-base font-semibold text-gray-600 flex items-center gap-2">
+                            <h2 className="text-base font-semibold text-muted-foreground flex items-center gap-2">
                                 <span className="w-1 h-5 bg-blue-500 rounded-full" />
                                 Biểu đồ & Khớp lệnh
                             </h2>
@@ -97,7 +97,7 @@ export default function StockDetailPage({ params }: StockDetailPageProps) {
 
                         {/* ── Dữ liệu giao dịch ── */}
                         <section className="space-y-3">
-                            <h2 className="text-base font-semibold text-gray-600 flex items-center gap-2">
+                            <h2 className="text-base font-semibold text-muted-foreground flex items-center gap-2">
                                 <span className="w-1 h-5 bg-green-500 rounded-full" />
                                 Dữ liệu giao dịch & So sánh
                             </h2>
@@ -113,11 +113,11 @@ export default function StockDetailPage({ params }: StockDetailPageProps) {
 
                         {/* ── Cơ cấu cổ đông ── */}
                         <section className="space-y-3">
-                            <h2 className="text-base font-semibold text-gray-600 flex items-center gap-2">
+                            <h2 className="text-base font-semibold text-muted-foreground flex items-center gap-2">
                                 <span className="w-1 h-5 bg-amber-500 rounded-full" />
                                 Cơ cấu cổ đông
                             </h2>
-                            <Card className="shadow-sm border-gray-200">
+                            <Card className="shadow-sm border-border">
                                 <CardContent className="p-4">
                                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                         <div className="flex items-center justify-center">
@@ -133,7 +133,7 @@ export default function StockDetailPage({ params }: StockDetailPageProps) {
 
                         {/* ── Tin tức doanh nghiệp ── */}
                         <section className="space-y-3">
-                            <h2 className="text-base font-semibold text-gray-600 flex items-center gap-2">
+                            <h2 className="text-base font-semibold text-muted-foreground flex items-center gap-2">
                                 <span className="w-1 h-5 bg-purple-500 rounded-full" />
                                 Tin tức doanh nghiệp
                             </h2>
@@ -142,7 +142,7 @@ export default function StockDetailPage({ params }: StockDetailPageProps) {
 
                         {/* ── Khuyến nghị ── */}
                         <section className="space-y-3">
-                            <h2 className="text-base font-semibold text-gray-600 flex items-center gap-2">
+                            <h2 className="text-base font-semibold text-muted-foreground flex items-center gap-2">
                                 <span className="w-1 h-5 bg-red-500 rounded-full" />
                                 Có thể bạn sẽ quan tâm
                             </h2>
@@ -153,7 +153,7 @@ export default function StockDetailPage({ params }: StockDetailPageProps) {
 
                 {activeTab === "news" && (
                     <div className="py-4 space-y-3">
-                        <h2 className="text-base font-semibold text-gray-600 flex items-center gap-2">
+                        <h2 className="text-base font-semibold text-muted-foreground flex items-center gap-2">
                             <span className="w-1 h-5 bg-purple-500 rounded-full" />
                             Tin tức doanh nghiệp
                         </h2>

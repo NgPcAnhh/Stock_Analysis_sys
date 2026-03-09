@@ -26,47 +26,47 @@ export default function AnalysisLandingPage() {
       title: "Biểu đồ nến",
       description: "Biểu đồ nến Nhật với zoom, crosshair và tooltip chi tiết",
       color: "text-blue-500",
-      bgColor: "bg-blue-50",
+      bgColor: "bg-blue-50 dark:bg-blue-950",
     },
     {
       icon: <Activity size={24} />,
       title: "Chỉ báo kỹ thuật",
       description: "SMA, EMA, Bollinger Bands, Ichimoku Cloud, MACD, RSI...",
       color: "text-purple-500",
-      bgColor: "bg-purple-50",
+      bgColor: "bg-purple-50 dark:bg-purple-950",
     },
     {
       icon: <Gauge size={24} />,
       title: "Tín hiệu mua/bán",
       description: "Tín hiệu tổng hợp từ nhiều chỉ báo kỹ thuật",
       color: "text-emerald-500",
-      bgColor: "bg-emerald-50",
+      bgColor: "bg-emerald-50 dark:bg-emerald-950",
     },
     {
       icon: <BarChart3 size={24} />,
       title: "Điểm Pivot",
       description: "Hỗ trợ và kháng cự Classic, Fibonacci",
       color: "text-amber-500",
-      bgColor: "bg-amber-50",
+      bgColor: "bg-amber-50 dark:bg-amber-950",
     },
     {
       icon: <Waves size={24} />,
       title: "Stochastic & RSI",
       description: "Phát hiện quá mua/quá bán với độ chính xác cao",
       color: "text-cyan-500",
-      bgColor: "bg-cyan-50",
+      bgColor: "bg-cyan-50 dark:bg-cyan-950",
     },
     {
       icon: <PieChart size={24} />,
       title: "Tổng quan tín hiệu",
       description: "Bảng tổng hợp đánh giá từ tất cả các chỉ báo",
       color: "text-rose-500",
-      bgColor: "bg-rose-50",
+      bgColor: "bg-rose-50 dark:bg-rose-950",
     },
   ];
 
   return (
-    <div className="min-h-screen bg-[#F3F4F6]">
+    <div className="min-h-screen bg-background">
       <div className="max-w-[1200px] mx-auto px-4 py-8">
         {/* Hero */}
         <div className="text-center space-y-4 mb-10">
@@ -74,10 +74,10 @@ export default function AnalysisLandingPage() {
             <Activity size={16} />
             Phân tích kỹ thuật
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground">
             Phân tích kỹ thuật cổ phiếu
           </h1>
-          <p className="text-gray-500 max-w-xl mx-auto">
+          <p className="text-muted-foreground max-w-xl mx-auto">
             Biểu đồ chuyên nghiệp với đầy đủ chỉ báo kỹ thuật, tín hiệu mua/bán, 
             hỗ trợ và kháng cự để đưa ra quyết định đầu tư thông minh.
           </p>
@@ -90,7 +90,7 @@ export default function AnalysisLandingPage() {
 
         {/* Quick access stocks */}
         <div className="mb-10">
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
             <TrendingUp size={14} />
             Mã phổ biến
           </h2>
@@ -99,18 +99,18 @@ export default function AnalysisLandingPage() {
               <button
                 key={stock.ticker}
                 onClick={() => router.push(`/analysis/${stock.ticker}`)}
-                className="group bg-white rounded-xl border border-gray-200 px-4 py-3 text-left hover:border-primary/30 hover:shadow-md transition-all"
+                className="group bg-card rounded-xl border border-border px-4 py-3 text-left hover:border-primary/30 hover:shadow-md transition-all"
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-sm font-bold text-gray-800 group-hover:text-primary transition-colors">
+                    <div className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">
                       {stock.ticker}
                     </div>
-                    <div className="text-xs text-gray-400">{stock.name}</div>
+                    <div className="text-xs text-muted-foreground">{stock.name}</div>
                   </div>
                   <ArrowRight
                     size={14}
-                    className="text-gray-300 group-hover:text-primary group-hover:translate-x-0.5 transition-all"
+                    className="text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all"
                   />
                 </div>
               </button>
@@ -120,7 +120,7 @@ export default function AnalysisLandingPage() {
 
         {/* Features grid */}
         <div>
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
             <BarChart3 size={14} />
             Tính năng phân tích
           </h2>
@@ -128,16 +128,16 @@ export default function AnalysisLandingPage() {
             {features.map((feature) => (
               <Card
                 key={feature.title}
-                className="shadow-sm border-gray-200 hover:shadow-md transition-shadow"
+                className="shadow-sm border-border hover:shadow-md transition-shadow"
               >
                 <CardContent className="p-5">
                   <div className={`w-10 h-10 rounded-xl ${feature.bgColor} flex items-center justify-center mb-3`}>
                     <div className={feature.color}>{feature.icon}</div>
                   </div>
-                  <h3 className="text-sm font-semibold text-gray-800 mb-1">
+                  <h3 className="text-sm font-semibold text-foreground mb-1">
                     {feature.title}
                   </h3>
-                  <p className="text-xs text-gray-500 leading-relaxed">
+                  <p className="text-xs text-muted-foreground leading-relaxed">
                     {feature.description}
                   </p>
                 </CardContent>

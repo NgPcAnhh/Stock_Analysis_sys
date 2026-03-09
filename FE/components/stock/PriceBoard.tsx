@@ -46,31 +46,31 @@ const PriceBoard = () => {
             {/* Price Range Grid: Ceiling - Floor - Reference */}
             <div className="grid grid-cols-5 gap-4 text-center mt-2">
                 <div>
-                    <div className="text-[10px] text-gray-400 uppercase">Trần</div>
+                    <div className="text-[10px] text-muted-foreground uppercase">Trần</div>
                     <div className="text-sm font-semibold text-purple-600 font-[var(--font-roboto-mono)]">
                         {formatPrice(stock.ceilingPrice)}
                     </div>
                 </div>
                 <div>
-                    <div className="text-[10px] text-gray-400 uppercase">Giá thấp nhất</div>
-                    <div className="text-sm font-semibold text-gray-700 font-[var(--font-roboto-mono)]">
+                    <div className="text-[10px] text-muted-foreground uppercase">Giá thấp nhất</div>
+                    <div className="text-sm font-semibold text-muted-foreground font-[var(--font-roboto-mono)]">
                         {formatPrice(stock.dayLow)}
                     </div>
                 </div>
                 <div>
-                    <div className="text-[10px] text-gray-400 uppercase">Tham chiếu</div>
+                    <div className="text-[10px] text-muted-foreground uppercase">Tham chiếu</div>
                     <div className="text-sm font-semibold text-[#F59E0B] font-[var(--font-roboto-mono)]">
                         {formatPrice(stock.referencePrice)}
                     </div>
                 </div>
                 <div>
-                    <div className="text-[10px] text-gray-400 uppercase">Giá cao nhất</div>
-                    <div className="text-sm font-semibold text-gray-700 font-[var(--font-roboto-mono)]">
+                    <div className="text-[10px] text-muted-foreground uppercase">Giá cao nhất</div>
+                    <div className="text-sm font-semibold text-muted-foreground font-[var(--font-roboto-mono)]">
                         {formatPrice(stock.dayHigh)}
                     </div>
                 </div>
                 <div>
-                    <div className="text-[10px] text-gray-400 uppercase">Sàn</div>
+                    <div className="text-[10px] text-muted-foreground uppercase">Sàn</div>
                     <div className="text-sm font-semibold text-cyan-600 font-[var(--font-roboto-mono)]">
                         {formatPrice(stock.floorPrice)}
                     </div>
@@ -88,7 +88,7 @@ const PriceBoard = () => {
             </div>
 
             {/* Live indicator */}
-            <div className="flex items-center gap-1 text-[10px] text-gray-400">
+            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                 <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
                 24h
             </div>
@@ -115,7 +115,7 @@ const MiniPriceSlider = ({
     return (
         <div className="relative h-2">
             {/* Background track */}
-            <div className="absolute inset-0 bg-gray-200 rounded-full" />
+            <div className="absolute inset-0 bg-muted rounded-full" />
 
             {/* Colored fill from reference to current */}
             <div
@@ -128,7 +128,7 @@ const MiniPriceSlider = ({
 
             {/* Current price marker */}
             <div
-                className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white border-2 border-gray-800 rounded-full shadow-sm"
+                className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-background border-2 border-foreground rounded-full shadow-sm"
                 style={{ left: `${currentPos}%`, marginLeft: '-6px' }}
             />
         </div>

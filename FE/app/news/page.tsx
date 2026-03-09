@@ -16,21 +16,21 @@ export default function NewsPage() {
     }, []);
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-background">
             <div className="max-w-[1400px] mx-auto px-6 py-8">
                 {/* Page header */}
                 <div className="mb-8">
-                    <h1 className="text-2xl font-bold text-gray-900">
+                    <h1 className="text-2xl font-bold text-foreground">
                         Tin tức & Sự kiện
                     </h1>
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className="text-sm text-muted-foreground mt-1">
                         Cập nhật tin tức tài chính, chứng khoán mới nhất
                     </p>
                 </div>
 
                 {/* ── Section 1: Latest News Hero Slider ───────────── */}
                 <section className="mb-10">
-                    <h2 className="text-lg font-bold text-gray-800 border-l-4 border-orange-500 pl-3 mb-4">
+                    <h2 className="text-lg font-bold text-foreground border-l-4 border-orange-500 pl-3 mb-4">
                         Bài viết mới nhất
                     </h2>
                     <LatestNewsSlider />
@@ -40,7 +40,7 @@ export default function NewsPage() {
                 <div id="news-list-section" className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Left — Article list with search & pagination */}
                     <div className="lg:col-span-2">
-                        <h2 className="text-lg font-bold text-gray-800 border-l-4 border-orange-500 pl-3 mb-4">
+                        <h2 className="text-lg font-bold text-foreground border-l-4 border-orange-500 pl-3 mb-4">
                             Tất cả bài viết
                         </h2>
                         <NewsList key={hotKeyword} />

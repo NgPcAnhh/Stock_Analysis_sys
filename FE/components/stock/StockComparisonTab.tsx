@@ -27,7 +27,7 @@ const fmt = (v: number | null | undefined) => (v != null ? v.toLocaleString("vi-
 const fmtP = (v: number | null | undefined) => (v != null ? `${v.toFixed(1)}%` : "N/A");
 const fmtX = (v: number | null | undefined) => (v != null ? v.toFixed(2) : "N/A");
 const cc = (v: number | null) =>
-    !v ? "text-gray-500" : v > 0 ? "text-green-600" : v < 0 ? "text-red-600" : "text-gray-500";
+    !v ? "text-muted-foreground" : v > 0 ? "text-green-600" : v < 0 ? "text-red-600" : "text-muted-foreground";
 
 /* ──────── Search result item type ──────── */
 interface SearchResultItem {
@@ -394,9 +394,9 @@ export default function StockComparisonTab() {
     return (
         <div className="space-y-6">
             {/* ══════════════ SEARCH & SELECTOR CARD ══════════════ */}
-            <Card className="shadow-sm border-gray-200">
+            <Card className="shadow-sm border-border">
                 <CardHeader className="pb-3">
-                    <CardTitle className="text-base font-semibold text-gray-700 flex items-center gap-2">
+                    <CardTitle className="text-base font-semibold text-foreground flex items-center gap-2">
                         <ArrowUpDown className="w-4 h-4 text-blue-500" />
                         So sánh cổ phiếu
                     </CardTitle>
@@ -406,10 +406,10 @@ export default function StockComparisonTab() {
                     <div>
                         <div className="flex items-center gap-2 mb-2.5">
                             <BarChart3 className="w-4 h-4 text-blue-500" />
-                            <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                                 Các mã đang so sánh
                             </span>
-                            <span className="text-[10px] text-gray-400 ml-auto">
+                            <span className="text-[10px] text-muted-foreground ml-auto">
                                 {1 +
                                     extraPeers.length +
                                     (data?.peers.filter(
@@ -420,7 +420,7 @@ export default function StockComparisonTab() {
                                 mã
                             </span>
                         </div>
-                        <div className="flex flex-wrap items-center gap-2 p-3 bg-gray-50/80 rounded-xl border border-gray-100 min-h-[48px]">
+                        <div className="flex flex-wrap items-center gap-2 p-3 bg-muted/50 rounded-xl border border-border/50 min-h-[48px]">
                             {/* Current ticker — not removable */}
                             <div
                                 className="flex items-center gap-2 px-3 py-1.5 rounded-full border-2 text-sm font-medium"
@@ -462,7 +462,7 @@ export default function StockComparisonTab() {
                                         />
                                         <span className="font-semibold">{peerTicker}</span>
                                         {peerData && (
-                                            <span className="text-xs text-gray-500 truncate max-w-[80px]">
+                                            <span className="text-xs text-muted-foreground truncate max-w-[80px]">
                                                 {peerData.companyName}
                                             </span>
                                         )}
@@ -471,7 +471,7 @@ export default function StockComparisonTab() {
                                             className="ml-0.5 p-0.5 rounded-full hover:bg-red-100 transition-colors opacity-60 group-hover:opacity-100"
                                             title="Xóa khỏi so sánh"
                                         >
-                                            <X className="w-3.5 h-3.5 text-gray-400 hover:text-red-500" />
+                                            <X className="w-3.5 h-3.5 text-muted-foreground hover:text-red-500" />
                                         </button>
                                     </div>
                                 );
@@ -504,7 +504,7 @@ export default function StockComparisonTab() {
                                                 }}
                                             />
                                             <span className="font-semibold">{stock.ticker}</span>
-                                            <span className="text-xs text-gray-500 truncate max-w-[80px]">
+                                            <span className="text-xs text-muted-foreground truncate max-w-[80px]">
                                                 {stock.companyName}
                                             </span>
                                             <button
@@ -512,7 +512,7 @@ export default function StockComparisonTab() {
                                                 className="ml-0.5 p-0.5 rounded-full hover:bg-red-100 transition-colors opacity-0 group-hover:opacity-100"
                                                 title="Xóa khỏi so sánh"
                                             >
-                                                <X className="w-3.5 h-3.5 text-gray-400 hover:text-red-500" />
+                                                <X className="w-3.5 h-3.5 text-muted-foreground hover:text-red-500" />
                                             </button>
                                         </div>
                                     );
@@ -524,7 +524,7 @@ export default function StockComparisonTab() {
                                     data.peers.filter(
                                         (p) => !excludedPeers.includes(p.ticker)
                                     ).length === 0) && (
-                                    <span className="text-xs text-gray-400 italic">
+                                    <span className="text-xs text-muted-foreground italic">
                                         Chưa có mã nào — Tìm kiếm hoặc chọn từ gợi ý bên dưới
                                     </span>
                                 )}
@@ -534,14 +534,14 @@ export default function StockComparisonTab() {
                     {/* ═══════ ZONE 2: Tìm kiếm cổ phiếu ═══════ */}
                     <div>
                         <div className="flex items-center gap-2 mb-2.5">
-                            <Search className="w-4 h-4 text-gray-400" />
-                            <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                            <Search className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                                 Tìm kiếm cổ phiếu
                             </span>
                         </div>
                         <div ref={searchRef} className="relative">
                             <div className="relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                                 <input
                                     type="text"
                                     value={searchQuery}
@@ -550,7 +550,7 @@ export default function StockComparisonTab() {
                                         if (searchResults.length) setShowDropdown(true);
                                     }}
                                     placeholder="Nhập mã hoặc tên công ty (VD: VNM, FPT, Vinamilk...)"
-                                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white placeholder:text-gray-400"
+                                    className="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-background placeholder:text-muted-foreground"
                                 />
                                 {searchLoading && (
                                     <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -561,7 +561,7 @@ export default function StockComparisonTab() {
 
                             {/* ── Dropdown results ── */}
                             {showDropdown && searchResults.length > 0 && (
-                                <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-72 overflow-y-auto">
+                                <div className="absolute z-50 mt-1 w-full bg-card border border-border rounded-lg shadow-lg max-h-72 overflow-y-auto">
                                     {searchResults.map((item) => {
                                         const isMain =
                                             item.ticker.toUpperCase() === ticker.toUpperCase();
@@ -578,19 +578,19 @@ export default function StockComparisonTab() {
                                                 key={item.ticker}
                                                 onClick={() => addPeer(item.ticker)}
                                                 disabled={isMain || isSelected || alreadyInPeers}
-                                                className={`w-full text-left px-4 py-2.5 flex items-center gap-3 text-sm transition-colors border-b border-gray-50 last:border-0 ${
+                                                className={`w-full text-left px-4 py-2.5 flex items-center gap-3 text-sm transition-colors border-b border-border/20 last:border-0 ${
                                                     isMain || isSelected || alreadyInPeers
-                                                        ? "bg-gray-50 text-gray-400 cursor-not-allowed"
+                                                        ? "bg-muted text-muted-foreground cursor-not-allowed"
                                                         : "hover:bg-blue-50 cursor-pointer"
                                                 }`}
                                             >
-                                                <span className="font-bold text-gray-800 min-w-[56px]">
+                                                <span className="font-bold text-foreground min-w-[56px]">
                                                     {item.ticker}
                                                 </span>
-                                                <span className="text-gray-500 truncate flex-1">
+                                                <span className="text-muted-foreground truncate flex-1">
                                                     {item.company_name ?? ""}
                                                 </span>
-                                                <span className="text-xs text-gray-400 shrink-0">
+                                                <span className="text-xs text-muted-foreground shrink-0">
                                                     {item.exchange}
                                                 </span>
                                                 {(isMain || isSelected || alreadyInPeers) && (
@@ -614,7 +614,7 @@ export default function StockComparisonTab() {
                         <div>
                             <div className="flex items-center gap-2 mb-2.5">
                                 <Building2 className="w-4 h-4 text-amber-500" />
-                                <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                                     Gợi ý cổ phiếu cùng ngành
                                 </span>
                                 {stockInfo?.sector && (
@@ -635,15 +635,15 @@ export default function StockComparisonTab() {
                                             disabled={isSelected}
                                             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all duration-150 ${
                                                 isSelected
-                                                    ? "border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed"
+                                                    ? "border-border bg-muted text-muted-foreground cursor-not-allowed"
                                                     : isExcluded
                                                     ? "border-dashed border-amber-300 bg-amber-50 text-amber-700 hover:border-amber-400 hover:bg-amber-100 cursor-pointer"
-                                                    : "border-gray-200 bg-white text-gray-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600 cursor-pointer shadow-sm hover:shadow"
+                                                    : "border-border bg-card text-foreground hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600 cursor-pointer shadow-sm hover:shadow"
                                             }`}
                                         >
                                             <Plus className="w-3 h-3" />
                                             <span className="font-bold">{peer.ticker}</span>
-                                            <span className="text-gray-400">
+                                            <span className="text-muted-foreground">
                                                 {peer.price ? `${fmt(peer.price)}đ` : ""}
                                             </span>
                                         </button>
@@ -654,12 +654,12 @@ export default function StockComparisonTab() {
                     )}
 
                     {/* ═══════ COMPARE BUTTON ═══════ */}
-                    <div className="pt-3 border-t border-gray-100">
+                    <div className="pt-3 border-t border-border/50">
                         <button
                             onClick={handleCompare}
                             className={`w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-200 shadow-sm ${
                                 loading
-                                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                    ? "bg-muted text-muted-foreground cursor-not-allowed"
                                     : showResults && !selectionChanged
                                     ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 shadow-green-200"
                                     : "bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:from-blue-600 hover:to-indigo-600 shadow-blue-200 hover:shadow-md"
@@ -696,7 +696,7 @@ export default function StockComparisonTab() {
 
             {/* ── Loading / Error ── */}
             {showResults && loading && !data && (
-                <div className="text-center py-12 text-gray-400 animate-pulse">Đang tải so sánh…</div>
+                <div className="text-center py-12 text-muted-foreground animate-pulse">Đang tải so sánh…</div>
             )}
             {showResults && error && !data && (
                 <div className="text-center py-12 text-red-500">Lỗi: {error}</div>
@@ -708,9 +708,9 @@ export default function StockComparisonTab() {
                     {/* ── Charts ── */}
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
                         <div className="lg:col-span-7">
-                            <Card className="shadow-sm border-gray-200">
+                            <Card className="shadow-sm border-border">
                                 <CardHeader className="pb-2">
-                                    <CardTitle className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                                    <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
                                         <TrendingUp className="w-4 h-4 text-blue-500" />
                                         Biến động giá tương đối (%)
                                     </CardTitle>
@@ -719,7 +719,7 @@ export default function StockComparisonTab() {
                                     {priceChartOption ? (
                                         <ReactECharts option={priceChartOption} style={{ height: 360 }} />
                                     ) : (
-                                        <div className="h-[360px] flex items-center justify-center text-sm text-gray-400">
+                                        <div className="h-[360px] flex items-center justify-center text-sm text-muted-foreground">
                                             Chưa có dữ liệu lịch sử giá
                                         </div>
                                     )}
@@ -727,9 +727,9 @@ export default function StockComparisonTab() {
                             </Card>
                         </div>
                         <div className="lg:col-span-5">
-                            <Card className="shadow-sm border-gray-200">
+                            <Card className="shadow-sm border-border">
                                 <CardHeader className="pb-2">
-                                    <CardTitle className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                                    <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
                                         <BarChart3 className="w-4 h-4 text-purple-500" />
                                         Đa chiều chỉ số
                                     </CardTitle>
@@ -738,7 +738,7 @@ export default function StockComparisonTab() {
                                     {radarChartOption ? (
                                         <ReactECharts option={radarChartOption} style={{ height: 360 }} />
                                     ) : (
-                                        <div className="h-[360px] flex items-center justify-center text-sm text-gray-400">
+                                        <div className="h-[360px] flex items-center justify-center text-sm text-muted-foreground">
                                             Không đủ dữ liệu
                                         </div>
                                     )}
@@ -748,9 +748,9 @@ export default function StockComparisonTab() {
                     </div>
 
                     {/* ── Comparison Table ── */}
-                    <Card className="shadow-sm border-gray-200 overflow-hidden">
+                    <Card className="shadow-sm border-border overflow-hidden">
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-base font-semibold text-gray-700 flex items-center gap-2">
+                            <CardTitle className="text-base font-semibold text-foreground flex items-center gap-2">
                                 <BarChart3 className="w-4 h-4 text-green-500" />
                                 Bảng so sánh chi tiết
                             </CardTitle>
@@ -759,8 +759,8 @@ export default function StockComparisonTab() {
                             <div className="overflow-x-auto">
                                 <table className="w-full text-sm">
                                     <thead>
-                                        <tr className="bg-gray-50 border-b border-gray-200">
-                                            <th className="text-left px-4 py-3 font-semibold text-gray-600 sticky left-0 bg-gray-50 min-w-[180px] z-10">
+                                        <tr className="bg-muted border-b border-border">
+                                            <th className="text-left px-4 py-3 font-semibold text-muted-foreground sticky left-0 bg-muted min-w-[180px] z-10">
                                                 Chỉ tiêu
                                             </th>
                                             {allStocks.map((stock, i) => (
@@ -777,11 +777,11 @@ export default function StockComparisonTab() {
                                                                         CHART_COLORS[i % CHART_COLORS.length],
                                                                 }}
                                                             />
-                                                            <span className="font-bold text-gray-800">
+                                                            <span className="font-bold text-foreground">
                                                                 {stock.ticker}
                                                             </span>
                                                         </div>
-                                                        <span className="text-[10px] text-gray-400 font-normal truncate max-w-[120px]">
+                                                        <span className="text-[10px] text-muted-foreground font-normal truncate max-w-[120px]">
                                                             {stock.exchange}
                                                         </span>
                                                     </div>
@@ -793,7 +793,7 @@ export default function StockComparisonTab() {
                                         {sections.map((section) => (
                                             <React.Fragment key={section.key}>
                                                 <tr
-                                                    className="cursor-pointer hover:bg-gray-50 border-b border-gray-100"
+                                                    className="cursor-pointer hover:bg-muted/50 border-b border-border/30"
                                                     onClick={() => toggleSection(section.key)}
                                                 >
                                                     <td
@@ -804,13 +804,13 @@ export default function StockComparisonTab() {
                                                             <span
                                                                 className={`w-1 h-4 ${section.color} rounded-full`}
                                                             />
-                                                            <span className="font-semibold text-gray-700 text-sm">
+                                                            <span className="font-semibold text-foreground text-sm">
                                                                 {section.title}
                                                             </span>
                                                             {expandedSections[section.key] ? (
-                                                                <ChevronUp className="w-4 h-4 text-gray-400" />
+                                                                <ChevronUp className="w-4 h-4 text-muted-foreground" />
                                                             ) : (
-                                                                <ChevronDown className="w-4 h-4 text-gray-400" />
+                                                                <ChevronDown className="w-4 h-4 text-muted-foreground" />
                                                             )}
                                                         </div>
                                                     </td>
@@ -823,13 +823,13 @@ export default function StockComparisonTab() {
                                                         return (
                                                             <tr
                                                                 key={row.label}
-                                                                className={`border-b border-gray-50 ${
+                                                                className={`border-b border-border/20 ${
                                                                     ri % 2 === 0
-                                                                        ? "bg-white"
-                                                                        : "bg-gray-50/50"
+                                                                        ? "bg-card"
+                                                                        : "bg-muted/30"
                                                                 } hover:bg-blue-50/30 transition-colors`}
                                                             >
-                                                                <td className="px-4 py-2.5 text-gray-600 font-medium sticky left-0 bg-inherit z-10">
+                                                                <td className="px-4 py-2.5 text-muted-foreground font-medium sticky left-0 bg-inherit z-10">
                                                                     {row.label}
                                                                 </td>
                                                                 {allStocks.map((stock) => (
@@ -939,13 +939,13 @@ export default function StockComparisonTab() {
 
             {/* ── No results yet — prompt ── */}
             {!showResults && (
-                <Card className="shadow-sm border-dashed border-2 border-gray-200 bg-gray-50/50">
+                <Card className="shadow-sm border-dashed border-2 border-border bg-muted/30">
                     <CardContent className="py-12 text-center">
                         <Play className="w-12 h-12 text-blue-300 mx-auto mb-3" />
-                        <h3 className="text-base font-semibold text-gray-500 mb-1">
+                        <h3 className="text-base font-semibold text-muted-foreground mb-1">
                             Chọn cổ phiếu và nhấn &ldquo;So sánh ngay&rdquo;
                         </h3>
-                        <p className="text-sm text-gray-400">
+                        <p className="text-sm text-muted-foreground">
                             Thêm cổ phiếu từ thanh tìm kiếm hoặc danh sách cùng ngành phía trên
                         </p>
                     </CardContent>
@@ -954,13 +954,13 @@ export default function StockComparisonTab() {
 
             {/* ── No peers found after compare ── */}
             {showResults && data && allStocks.length < 2 && (
-                <Card className="shadow-sm border-gray-200">
+                <Card className="shadow-sm border-border">
                     <CardContent className="py-12 text-center">
-                        <ArrowUpDown className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                        <h3 className="text-base font-semibold text-gray-500 mb-1">
+                        <ArrowUpDown className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+                        <h3 className="text-base font-semibold text-muted-foreground mb-1">
                             Không tìm thấy cổ phiếu cùng ngành
                         </h3>
-                        <p className="text-sm text-gray-400">
+                        <p className="text-sm text-muted-foreground">
                             Thêm cổ phiếu từ thanh tìm kiếm để so sánh
                         </p>
                     </CardContent>

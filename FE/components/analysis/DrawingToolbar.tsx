@@ -93,13 +93,13 @@ const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
   ];
 
   return (
-    <div className="flex flex-col bg-white border border-gray-200 rounded-xl shadow-sm py-1.5 w-[42px] items-center select-none">
+    <div className="flex flex-col bg-card border border-border rounded-xl shadow-sm py-1.5 w-[42px] items-center select-none">
       {groups.map((group, gi) => {
         const tools = drawingTools.filter((t) => t.group === group.key);
         if (tools.length === 0) return null;
         return (
           <React.Fragment key={group.key}>
-            {gi > 0 && <div className="w-6 border-t border-gray-100 my-1" />}
+            {gi > 0 && <div className="w-6 border-t border-border/50 my-1" />}
             {tools.map((tool) => (
               <button
                 key={tool.id}
@@ -109,7 +109,7 @@ const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
                   "w-8 h-8 flex items-center justify-center rounded-lg transition-all my-0.5",
                   activeTool === tool.id
                     ? "bg-primary/15 text-primary shadow-sm"
-                    : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
               >
                 {tool.icon}
@@ -120,20 +120,20 @@ const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
       })}
 
       {/* Divider */}
-      <div className="w-6 border-t border-gray-100 my-1.5" />
+      <div className="w-6 border-t border-border/50 my-1.5" />
 
       {/* Color picker */}
       <div className="relative">
         <button
           onClick={() => { setShowColorPicker(!showColorPicker); setShowWidthPicker(false); }}
           title="Màu sắc"
-          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors my-0.5"
+          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-muted transition-colors my-0.5"
         >
-          <div className="w-4 h-4 rounded-full border-2 border-gray-300" style={{ backgroundColor: activeColor }} />
+          <div className="w-4 h-4 rounded-full border-2 border-border" style={{ backgroundColor: activeColor }} />
         </button>
         {showColorPicker && (
-          <div className="absolute left-full ml-2 top-0 bg-white rounded-lg shadow-lg border border-gray-200 p-2 z-50 w-[144px]">
-            <div className="text-[10px] text-gray-400 font-semibold uppercase mb-1.5 px-0.5">Màu nét vẽ</div>
+          <div className="absolute left-full ml-2 top-0 bg-card rounded-lg shadow-lg border border-border p-2 z-50 w-[144px]">
+            <div className="text-[10px] text-muted-foreground font-semibold uppercase mb-1.5 px-0.5">Màu nét vẽ</div>
             <div className="grid grid-cols-5 gap-1">
               {DRAWING_COLORS.map((c) => (
                 <button
@@ -141,7 +141,7 @@ const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
                   onClick={() => { onColorChange(c); setShowColorPicker(false); }}
                   className={cn(
                     "w-5 h-5 rounded-full border-2 transition-transform hover:scale-110",
-                    activeColor === c ? "border-primary scale-110 ring-2 ring-primary/30" : "border-gray-200"
+                    activeColor === c ? "border-primary scale-110 ring-2 ring-primary/30" : "border-border"
                   )}
                   style={{ backgroundColor: c }}
                 />
@@ -156,27 +156,27 @@ const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
         <button
           onClick={() => { setShowWidthPicker(!showWidthPicker); setShowColorPicker(false); }}
           title="Độ dày nét"
-          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors my-0.5 text-gray-500"
+          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-muted transition-colors my-0.5 text-muted-foreground"
         >
           <div className="flex flex-col items-center gap-0.5">
-            <div className="bg-gray-500 rounded-full" style={{ width: "16px", height: `${Math.max(lineWidth, 1)}px` }} />
+            <div className="bg-muted-foreground rounded-full" style={{ width: "16px", height: `${Math.max(lineWidth, 1)}px` }} />
           </div>
         </button>
         {showWidthPicker && (
-          <div className="absolute left-full ml-2 top-0 bg-white rounded-lg shadow-lg border border-gray-200 p-2 z-50">
-            <div className="text-[10px] text-gray-400 font-semibold uppercase mb-1.5 px-0.5">Độ dày</div>
+          <div className="absolute left-full ml-2 top-0 bg-card rounded-lg shadow-lg border border-border p-2 z-50">
+            <div className="text-[10px] text-muted-foreground font-semibold uppercase mb-1.5 px-0.5">Độ dày</div>
             <div className="flex flex-col gap-1">
               {[1, 2, 3, 4, 5].map((w) => (
                 <button
                   key={w}
                   onClick={() => { onLineWidthChange(w); setShowWidthPicker(false); }}
                   className={cn(
-                    "flex items-center gap-2 px-2 py-1 rounded-md hover:bg-gray-50 transition-colors",
+                    "flex items-center gap-2 px-2 py-1 rounded-md hover:bg-muted/50 transition-colors",
                     lineWidth === w && "bg-primary/10"
                   )}
                 >
-                  <div className="bg-gray-600 rounded-full" style={{ width: "24px", height: `${w}px` }} />
-                  <span className="text-[10px] text-gray-500">{w}px</span>
+                  <div className="bg-muted-foreground rounded-full" style={{ width: "24px", height: `${w}px` }} />
+                  <span className="text-[10px] text-muted-foreground">{w}px</span>
                 </button>
               ))}
             </div>
@@ -185,7 +185,7 @@ const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
       </div>
 
       {/* Divider */}
-      <div className="w-6 border-t border-gray-100 my-1.5" />
+      <div className="w-6 border-t border-border/50 my-1.5" />
 
       {/* Undo / Redo */}
       <button
@@ -194,7 +194,7 @@ const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
         title="Hoàn tác (Ctrl+Z)"
         className={cn(
           "w-8 h-8 flex items-center justify-center rounded-lg transition-colors my-0.5",
-          canUndo ? "text-gray-500 hover:bg-gray-100 hover:text-gray-700" : "text-gray-300 cursor-not-allowed"
+          canUndo ? "text-muted-foreground hover:bg-muted hover:text-foreground" : "text-border cursor-not-allowed"
         )}
       >
         <Undo2 size={15} />
@@ -205,7 +205,7 @@ const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
         title="Làm lại (Ctrl+Y)"
         className={cn(
           "w-8 h-8 flex items-center justify-center rounded-lg transition-colors my-0.5",
-          canRedo ? "text-gray-500 hover:bg-gray-100 hover:text-gray-700" : "text-gray-300 cursor-not-allowed"
+          canRedo ? "text-muted-foreground hover:bg-muted hover:text-foreground" : "text-border cursor-not-allowed"
         )}
       >
         <Redo2 size={15} />
@@ -218,7 +218,7 @@ const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
         title="Xóa tất cả"
         className={cn(
           "w-8 h-8 flex items-center justify-center rounded-lg transition-colors my-0.5",
-          drawingCount > 0 ? "text-red-400 hover:bg-red-50 hover:text-red-600" : "text-gray-300 cursor-not-allowed"
+          drawingCount > 0 ? "text-red-400 hover:bg-red-50 hover:text-red-600" : "text-border cursor-not-allowed"
         )}
       >
         <Trash2 size={15} />
@@ -228,14 +228,14 @@ const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
       <button
         onClick={onExport}
         title="Lưu ảnh"
-        className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors my-0.5"
+        className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors my-0.5"
       >
         <Download size={15} />
       </button>
 
       {/* Drawing count badge */}
       {drawingCount > 0 && (
-        <div className="mt-1 text-[9px] text-gray-400 font-medium text-center leading-none">
+        <div className="mt-1 text-[9px] text-muted-foreground font-medium text-center leading-none">
           {drawingCount}
         </div>
       )}

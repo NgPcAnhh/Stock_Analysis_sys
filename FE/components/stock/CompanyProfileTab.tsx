@@ -56,9 +56,9 @@ function SectionHeading({
 
 function InfoRow({ label, value, mono }: { label: string; value: string | number; mono?: boolean }) {
     return (
-        <div className="flex justify-between items-start py-2 border-b border-gray-100 last:border-b-0">
-            <span className="text-xs text-gray-500 w-2/5">{label}</span>
-            <span className={`text-xs font-medium text-gray-800 text-right w-3/5 ${mono ? "font-mono" : ""}`}>
+        <div className="flex justify-between items-start py-2 border-b border-border/50 last:border-b-0">
+            <span className="text-xs text-muted-foreground w-2/5">{label}</span>
+            <span className={`text-xs font-medium text-foreground text-right w-3/5 ${mono ? "font-mono" : ""}`}>
                 {value}
             </span>
         </div>
@@ -71,7 +71,7 @@ function Badge({ text, variant }: { text: string; variant: "blue" | "green" | "a
         green: "bg-green-50 text-green-700 border-green-200",
         amber: "bg-amber-50 text-amber-700 border-amber-200",
         red: "bg-red-50 text-red-700 border-red-200",
-        gray: "bg-gray-50 text-gray-600 border-gray-200",
+        gray: "bg-muted text-muted-foreground border-border",
     };
     return (
         <span className={`inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full border ${cls[variant]}`}>
@@ -84,21 +84,21 @@ function Badge({ text, variant }: { text: string; variant: "blue" | "green" | "a
 
 function CompanyOverviewSection({ data }: { data: CompanyProfileData["overview"] }) {
     return (
-        <Card className="shadow-sm border-gray-200">
+        <Card className="shadow-sm border-border">
             <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
                     <Building2 className="w-4 h-4 text-blue-500" />
                     Giới thiệu chung
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-                <p className="text-xs text-gray-600 leading-relaxed">
+                <p className="text-xs text-muted-foreground leading-relaxed">
                     {data.description || "Chưa có thông tin giới thiệu."}
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-gray-50 rounded-lg p-3 space-y-0.5">
-                        <h4 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                    <div className="bg-muted/50 rounded-lg p-3 space-y-0.5">
+                        <h4 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">
                             Thông tin doanh nghiệp
                         </h4>
                         <InfoRow label="Tên đầy đủ" value={data.companyNameFull} />
@@ -107,8 +107,8 @@ function CompanyOverviewSection({ data }: { data: CompanyProfileData["overview"]
                         <InfoRow label="Ngành phụ" value={data.subIndustry} />
                     </div>
 
-                    <div className="bg-gray-50 rounded-lg p-3 space-y-0.5">
-                        <h4 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                    <div className="bg-muted/50 rounded-lg p-3 space-y-0.5">
+                        <h4 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">
                             Thông tin niêm yết
                         </h4>
                         <InfoRow label="Sàn giao dịch" value={data.exchange} />
@@ -116,7 +116,7 @@ function CompanyOverviewSection({ data }: { data: CompanyProfileData["overview"]
                         <InfoRow label="CP lưu hành" value={data.outstandingShares != null ? data.outstandingShares.toLocaleString("vi-VN") : "—"} />
                         {data.website && (
                             <div className="flex items-center gap-2 py-2">
-                                <Globe className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                                <Globe className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                                 <a
                                     href={data.website.startsWith("http") ? data.website : `https://${data.website}`}
                                     target="_blank"
@@ -180,70 +180,70 @@ function ShareholdersSection({ shareholders }: { shareholders: Shareholder[] }) 
     const pageData = sorted.slice((page - 1) * SHAREHOLDERS_PAGE_SIZE, page * SHAREHOLDERS_PAGE_SIZE);
 
     const SortIcon = ({ col }: { col: ShareholderSortKey }) => {
-        if (sortKey !== col || !sortDir) return <ArrowUpDown className="w-3 h-3 text-gray-400" />;
+        if (sortKey !== col || !sortDir) return <ArrowUpDown className="w-3 h-3 text-muted-foreground" />;
         return sortDir === "asc" ? <ArrowUp className="w-3 h-3 text-amber-600" /> : <ArrowDown className="w-3 h-3 text-amber-600" />;
     };
 
     if (!shareholders.length) {
         return (
-            <Card className="shadow-sm border-gray-200">
-                <CardContent className="py-8 text-center text-xs text-gray-400">Chưa có dữ liệu cổ đông</CardContent>
+            <Card className="shadow-sm border-border">
+                <CardContent className="py-8 text-center text-xs text-muted-foreground">Chưa có dữ liệu cổ đông</CardContent>
             </Card>
         );
     }
 
     return (
-        <Card className="shadow-sm border-gray-200">
+        <Card className="shadow-sm border-border">
             <CardHeader className="pb-2">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                    <CardTitle className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                    <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
                         <Users className="w-4 h-4 text-amber-500" />
                         Cổ đông & Lãnh đạo
-                        <span className="text-[11px] font-normal text-gray-400 ml-1">({shareholders.length})</span>
+                        <span className="text-[11px] font-normal text-muted-foreground ml-1">({shareholders.length})</span>
                     </CardTitle>
                     <div className="relative">
-                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                         <input
                             type="text"
                             placeholder="Tìm theo tên hoặc chức vụ…"
                             value={search}
                             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                            className="pl-8 pr-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-400 focus:border-amber-400 w-full sm:w-56 bg-gray-50"
+                            className="pl-8 pr-3 py-1.5 text-xs border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-400 focus:border-amber-400 w-full sm:w-56 bg-muted/50"
                         />
                     </div>
                 </div>
             </CardHeader>
             <CardContent className="px-0 pb-3">
                 {/* Table Header */}
-                <div className="grid grid-cols-12 gap-1 px-4 py-2.5 text-[11px] font-semibold text-gray-500 bg-gray-50 border-y border-gray-200 uppercase tracking-wide">
+                <div className="grid grid-cols-12 gap-1 px-4 py-2.5 text-[11px] font-semibold text-muted-foreground bg-muted/50 border-y border-border uppercase tracking-wide">
                     <button className="col-span-1 text-center">#</button>
-                    <button className="col-span-4 flex items-center gap-1 hover:text-gray-700" onClick={() => toggleSort("name")}>
+                    <button className="col-span-4 flex items-center gap-1 hover:text-foreground" onClick={() => toggleSort("name")}>
                         Họ và tên <SortIcon col="name" />
                     </button>
-                    <button className="col-span-4 flex items-center gap-1 hover:text-gray-700" onClick={() => toggleSort("role")}>
+                    <button className="col-span-4 flex items-center gap-1 hover:text-foreground" onClick={() => toggleSort("role")}>
                         Chức vụ <SortIcon col="role" />
                     </button>
-                    <button className="col-span-3 flex items-center gap-1 justify-end hover:text-gray-700" onClick={() => toggleSort("percentage")}>
+                    <button className="col-span-3 flex items-center gap-1 justify-end hover:text-foreground" onClick={() => toggleSort("percentage")}>
                         Tỷ lệ (%) <SortIcon col="percentage" />
                     </button>
                 </div>
 
                 {/* Table Body */}
-                <div className="divide-y divide-gray-100">
+                <div className="divide-y divide-border/50">
                     {pageData.length === 0 ? (
-                        <div className="px-4 py-6 text-center text-xs text-gray-400">Không tìm thấy kết quả</div>
+                        <div className="px-4 py-6 text-center text-xs text-muted-foreground">Không tìm thấy kết quả</div>
                     ) : (
                         pageData.map((s, idx) => (
                             <div
                                 key={idx}
-                                className={`grid grid-cols-12 gap-1 px-4 py-2.5 text-xs hover:bg-amber-50/40 transition-colors ${idx % 2 === 0 ? "bg-white" : "bg-gray-50/30"}`}
+                                className={`grid grid-cols-12 gap-1 px-4 py-2.5 text-xs hover:bg-amber-50/40 transition-colors ${idx % 2 === 0 ? "bg-card" : "bg-muted/20"}`}
                             >
-                                <span className="col-span-1 text-center text-gray-400 font-mono">
+                                <span className="col-span-1 text-center text-muted-foreground font-mono">
                                     {(page - 1) * SHAREHOLDERS_PAGE_SIZE + idx + 1}
                                 </span>
-                                <span className="col-span-4 text-gray-800 font-medium truncate">{s.name}</span>
-                                <span className="col-span-4 text-gray-500 truncate">{s.role}</span>
-                                <span className="col-span-3 text-right font-semibold text-gray-700 font-[var(--font-roboto-mono)]">
+                                <span className="col-span-4 text-foreground font-medium truncate">{s.name}</span>
+                                <span className="col-span-4 text-muted-foreground truncate">{s.role}</span>
+                                <span className="col-span-3 text-right font-semibold text-muted-foreground font-[var(--font-roboto-mono)]">
                                     {`${s.percentage}%`}
                                 </span>
                             </div>
@@ -253,31 +253,31 @@ function ShareholdersSection({ shareholders }: { shareholders: Shareholder[] }) 
 
                 {/* Pagination */}
                 {totalPages > 1 && (
-                    <div className="flex items-center justify-between px-4 pt-3 border-t border-gray-200 mt-1">
-                        <span className="text-[11px] text-gray-400">
+                    <div className="flex items-center justify-between px-4 pt-3 border-t border-border mt-1">
+                        <span className="text-[11px] text-muted-foreground">
                             Trang {page}/{totalPages} · {sorted.length} kết quả
                         </span>
                         <div className="flex items-center gap-1">
                             <button
                                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                                 disabled={page === 1}
-                                className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                                className="p-1 rounded hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed"
                             >
-                                <ChevronLeft className="w-4 h-4 text-gray-600" />
+                                <ChevronLeft className="w-4 h-4 text-muted-foreground" />
                             </button>
                             {Array.from({ length: totalPages }, (_, i) => i + 1)
                                 .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
                                 .map((p, idx, arr) => (
                                     <React.Fragment key={p}>
                                         {idx > 0 && arr[idx - 1] !== p - 1 && (
-                                            <span className="text-[10px] text-gray-300 px-0.5">…</span>
+                                            <span className="text-[10px] text-border px-0.5">…</span>
                                         )}
                                         <button
                                             onClick={() => setPage(p)}
                                             className={`min-w-[24px] h-6 rounded text-[11px] font-medium transition-colors ${
                                                 p === page
                                                     ? "bg-amber-500 text-white"
-                                                    : "text-gray-600 hover:bg-gray-100"
+                                                    : "text-muted-foreground hover:bg-muted"
                                             }`}
                                         >
                                             {p}
@@ -287,9 +287,9 @@ function ShareholdersSection({ shareholders }: { shareholders: Shareholder[] }) 
                             <button
                                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                                 disabled={page === totalPages}
-                                className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                                className="p-1 rounded hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed"
                             >
-                                <ChevronRight className="w-4 h-4 text-gray-600" />
+                                <ChevronRight className="w-4 h-4 text-muted-foreground" />
                             </button>
                         </div>
                     </div>
@@ -306,8 +306,8 @@ function EventsSection({ events }: { events: CompanyProfileData["events"] }) {
 
     if (!events.length) {
         return (
-            <Card className="shadow-sm border-gray-200">
-                <CardContent className="py-8 text-center text-xs text-gray-400">Chưa có sự kiện</CardContent>
+            <Card className="shadow-sm border-border">
+                <CardContent className="py-8 text-center text-xs text-muted-foreground">Chưa có sự kiện</CardContent>
             </Card>
         );
     }
@@ -316,17 +316,17 @@ function EventsSection({ events }: { events: CompanyProfileData["events"] }) {
     const visible = expanded ? events : events.slice(0, EVENTS_PREVIEW_COUNT);
 
     return (
-        <Card className="shadow-sm border-gray-200">
+        <Card className="shadow-sm border-border">
             <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
                     <CalendarDays className="w-4 h-4 text-red-500" />
                     Sự kiện doanh nghiệp
-                    <span className="text-[11px] font-normal text-gray-400 ml-1">({events.length})</span>
+                    <span className="text-[11px] font-normal text-muted-foreground ml-1">({events.length})</span>
                 </CardTitle>
             </CardHeader>
             <CardContent>
                 <div className="relative">
-                    <div className="absolute left-[18px] top-0 bottom-0 w-0.5 bg-gray-200" />
+                    <div className="absolute left-[18px] top-0 bottom-0 w-0.5 bg-border" />
                     <div className="space-y-3">
                         {visible.map((e, i) => (
                             <div key={i} className="flex gap-3 relative">
@@ -335,12 +335,12 @@ function EventsSection({ events }: { events: CompanyProfileData["events"] }) {
                                 </div>
                                 <div className="flex-1 pb-3">
                                     <div className="flex items-center gap-2 flex-wrap">
-                                        <span className="text-xs font-bold text-gray-800">{e.date}</span>
+                                        <span className="text-xs font-bold text-foreground">{e.date}</span>
                                         {e.category && <Badge text={e.category} variant="blue" />}
                                     </div>
-                                    <p className="text-xs text-gray-600 mt-0.5 leading-relaxed">{e.title}</p>
+                                    <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{e.title}</p>
                                     {e.source && (
-                                        <span className="text-[10px] text-gray-400">Nguồn: {e.source}</span>
+                                        <span className="text-[10px] text-muted-foreground">Nguồn: {e.source}</span>
                                     )}
                                 </div>
                             </div>
@@ -371,17 +371,17 @@ export default function CompanyProfileTab() {
     const { stockInfo, ticker } = useStockDetail();
     const { data, loading, error } = useCompanyProfile(ticker);
 
-    if (loading && !data) return <div className="text-center py-12 text-gray-400 animate-pulse">Đang tải hồ sơ doanh nghiệp…</div>;
+    if (loading && !data) return <div className="text-center py-12 text-muted-foreground animate-pulse">Đang tải hồ sơ doanh nghiệp…</div>;
     if (error && !data) return <div className="text-center py-12 text-red-500">Lỗi: {error}</div>;
     if (!data) return null;
 
     return (
         <div className="space-y-4">
             <div>
-                <h2 className="text-lg font-bold text-gray-800">
+                <h2 className="text-lg font-bold text-foreground">
                     Hồ sơ doanh nghiệp - {stockInfo.ticker}
                 </h2>
-                <p className="text-xs text-gray-400 italic mt-0.5">
+                <p className="text-xs text-muted-foreground italic mt-0.5">
                     {data.overview.companyName}
                 </p>
             </div>
@@ -390,7 +390,7 @@ export default function CompanyProfileTab() {
             <CompanyOverviewSection data={data.overview} />
 
             <SectionHeading icon={Network} title="Sơ đồ bộ máy tổ chức" color="cyan" />
-            <Card className="shadow-sm border-gray-200">
+            <Card className="shadow-sm border-border">
                 <CardContent className="p-4 sm:p-6">
                     <OrgChart shareholders={data.shareholders} />
                 </CardContent>

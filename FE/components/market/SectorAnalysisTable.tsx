@@ -32,7 +32,7 @@ type SortKey = keyof SectorTableRow;
 type SortDir = "asc" | "desc";
 
 const colorClass = (v: number) =>
-    v > 0 ? "text-green-600" : v < 0 ? "text-red-600" : "text-gray-600";
+    v > 0 ? "text-green-600" : v < 0 ? "text-red-600" : "text-muted-foreground";
 
 const fmt = (v: number) => {
     const s = v > 0 ? "+" : "";
@@ -93,19 +93,19 @@ export default function SectorAnalysisTable() {
 
     const SortableHead = ({ label, colKey, className = "" }: { label: string; colKey: SortKey; className?: string }) => (
         <TableHead
-            className={`text-right cursor-pointer select-none hover:bg-gray-100 transition-colors whitespace-nowrap ${className}`}
+            className={`text-right cursor-pointer select-none hover:bg-muted/50 transition-colors whitespace-nowrap ${className}`}
             onClick={() => handleSort(colKey)}
         >
             <span className="inline-flex items-center gap-1">
                 {label}
-                <ArrowUpDown className={`h-3 w-3 ${sortKey === colKey ? "text-orange-500" : "text-gray-400"}`} />
+                <ArrowUpDown className={`h-3 w-3 ${sortKey === colKey ? "text-orange-500" : "text-muted-foreground"}`} />
             </span>
         </TableHead>
     );
 
     if (loading) {
         return (
-            <Card className="shadow-sm border-gray-200">
+            <Card className="shadow-sm border-border">
                 <CardContent className="p-4">
                     <div className="animate-pulse space-y-0">
                         {/* Header row */}
@@ -132,7 +132,7 @@ export default function SectorAnalysisTable() {
 
     if (error) {
         return (
-            <div className="flex flex-col items-center justify-center py-12 text-gray-500 gap-3">
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-3">
                 <p>{error}</p>
                 <button onClick={fetchData} className="flex items-center gap-1 text-blue-600 hover:underline text-sm">
                     <RefreshCw className="w-4 h-4" /> Thử lại
@@ -147,14 +147,14 @@ export default function SectorAnalysisTable() {
                 <div className="overflow-x-auto">
                     <Table>
                         <TableHeader>
-                            <TableRow className="bg-gray-50">
+                            <TableRow className="bg-muted/50">
                                 <TableHead
-                                    className="sticky left-0 bg-gray-50 z-10 min-w-[160px] cursor-pointer select-none hover:bg-gray-100 transition-colors"
+                                    className="sticky left-0 bg-muted/50 z-10 min-w-[160px] cursor-pointer select-none hover:bg-muted/50 transition-colors"
                                     onClick={() => handleSort("name")}
                                 >
                                     <span className="inline-flex items-center gap-1">
                                         Nhóm ngành
-                                        <ArrowUpDown className={`h-3 w-3 ${sortKey === "name" ? "text-orange-500" : "text-gray-400"}`} />
+                                        <ArrowUpDown className={`h-3 w-3 ${sortKey === "name" ? "text-orange-500" : "text-muted-foreground"}`} />
                                     </span>
                                 </TableHead>
                                 <SortableHead label="Số lượng cổ phiếu" colKey="stockCount" />
@@ -170,14 +170,14 @@ export default function SectorAnalysisTable() {
                         </TableHeader>
                         <TableBody>
                             {sorted.map((row) => (
-                                <TableRow key={row.name} className="hover:bg-gray-50/80 transition-colors">
-                                    <TableCell className="sticky left-0 bg-white font-semibold text-gray-900 min-w-[160px] z-10">
+                                <TableRow key={row.name} className="hover:bg-muted/50 transition-colors">
+                                    <TableCell className="sticky left-0 bg-card font-semibold text-foreground min-w-[160px] z-10">
                                         {row.name}
                                     </TableCell>
-                                    <TableCell className="text-right text-gray-700">{row.stockCount}</TableCell>
-                                    <TableCell className="text-right text-gray-700 font-medium">{row.marketCap}</TableCell>
-                                    <TableCell className="text-right text-gray-700">{row.pe.toFixed(2)}</TableCell>
-                                    <TableCell className="text-right text-gray-700">{row.pb.toFixed(2)}</TableCell>
+                                    <TableCell className="text-right text-muted-foreground">{row.stockCount}</TableCell>
+                                    <TableCell className="text-right text-muted-foreground font-medium">{row.marketCap}</TableCell>
+                                    <TableCell className="text-right text-muted-foreground">{row.pe.toFixed(2)}</TableCell>
+                                    <TableCell className="text-right text-muted-foreground">{row.pb.toFixed(2)}</TableCell>
                                     <TableCell className={`text-right font-medium ${colorClass(row.priceChange1D)}`}>
                                         {fmt(row.priceChange1D)}
                                     </TableCell>

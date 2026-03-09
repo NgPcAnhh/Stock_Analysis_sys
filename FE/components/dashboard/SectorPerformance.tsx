@@ -5,6 +5,7 @@ import ReactECharts from "echarts-for-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2, RefreshCw } from "lucide-react";
+import { useSettings } from "@/lib/SettingsContext";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -17,6 +18,7 @@ export const SectorPerformance = () => {
     const [data, setData] = useState<SectorItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const { darkMode } = useSettings();
 
     const fetchData = useCallback(async () => {
         try {
@@ -60,6 +62,9 @@ export const SectorPerformance = () => {
     // ── Chart option ──
     const option = React.useMemo(() => {
         if (data.length === 0) return {};
+        const textColor = darkMode ? "#9ca3af" : "#6b7280";
+        const splitLineColor = darkMode ? "#374151" : "#e5e7eb";
+        const dzBgColor = darkMode ? "#1f2937" : "#f3f4f6";
 
         // Tính % hiển thị mặc định: nếu <= 12 ngành thì show hết, ngược lại show ~12 ngành
         const totalItems = data.length;
@@ -94,10 +99,10 @@ export const SectorPerformance = () => {
                     height: 20,
                     bottom: 4,
                     borderColor: "transparent",
-                    backgroundColor: "#f3f4f6",
+                    backgroundColor: dzBgColor,
                     fillerColor: "rgba(59,130,246,0.15)",
                     handleStyle: { color: "#3b82f6", borderColor: "#3b82f6" },
-                    textStyle: { fontSize: 10, color: "#6b7280" },
+                    textStyle: { fontSize: 10, color: textColor },
                     brushSelect: false,
                 },
                 {
@@ -123,8 +128,8 @@ export const SectorPerformance = () => {
             },
             yAxis: {
                 type: "value",
-                axisLabel: { formatter: "{value}%", fontSize: 11 },
-                splitLine: { lineStyle: { type: "dashed", color: "#e5e7eb" } },
+                axisLabel: { formatter: "{value}%", fontSize: 11, color: textColor },
+                splitLine: { lineStyle: { type: "dashed", color: splitLineColor } },
             },
             series: [
                 {
@@ -144,18 +149,18 @@ export const SectorPerformance = () => {
                         formatter: (p: { value: number }) =>
                             `${p.value >= 0 ? "+" : ""}${p.value}%`,
                         fontSize: 10,
-                        color: "#6b7280",
+                        color: textColor,
                     },
                 },
             ],
         };
-    }, [data]);
+    }, [data, darkMode]);
 
     return (
-        <Card className="shadow-sm border-gray-200 h-full flex flex-col">
+        <Card className="shadow-sm border-border h-full flex flex-col">
             <CardHeader className="pb-2 shrink-0">
                 <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg font-bold text-gray-800">
+                    <CardTitle className="text-lg font-bold text-foreground">
                         Biến động ngành
                     </CardTitle>
                     {!loading && (

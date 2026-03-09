@@ -5,6 +5,7 @@ import ReactECharts from "echarts-for-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from "lucide-react";
+import { useSettings } from "@/lib/SettingsContext";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -67,7 +68,7 @@ function calcMA(data: number[], period: number): (number | string)[] {
 
 // ==================== CHART OPTIONS ====================
 
-function getLineChartOption(data: OHLCVData[], ticker: string) {
+function getLineChartOption(data: OHLCVData[], ticker: string, darkMode: boolean) {
     const dates = data.map(d => d.date);
     const closes = data.map(d => d.close);
     const volumes = data.map(d => d.volume);
@@ -134,10 +135,10 @@ function getLineChartOption(data: OHLCVData[], ticker: string) {
                 type: "category",
                 data: dates,
                 gridIndex: 0,
-                axisLine: { lineStyle: { color: "#e5e7eb" } },
+                axisLine: { lineStyle: { color: darkMode ? "#374151" : "#e5e7eb" } },
                 axisTick: { show: false },
                 axisLabel: {
-                    color: "#9ca3af",
+                    color: darkMode ? "#9ca3af" : "#6b7280",
                     fontSize: 11,
                     formatter: (val: string) => formatDate(val, true),
                     interval: Math.max(Math.floor(dates.length / 8), 1),
@@ -165,9 +166,9 @@ function getLineChartOption(data: OHLCVData[], ticker: string) {
                 position: "left",
                 axisLine: { show: false },
                 axisTick: { show: false },
-                splitLine: { lineStyle: { color: "#f3f4f6", type: "dashed" } },
+                splitLine: { lineStyle: { color: darkMode ? "#374151" : "#f3f4f6", type: "dashed" } },
                 axisLabel: {
-                    color: "#9ca3af",
+                    color: darkMode ? "#9ca3af" : "#6b7280",
                     fontSize: 11,
                     formatter: (val: number) => formatPrice(val),
                 },
@@ -224,7 +225,7 @@ function getLineChartOption(data: OHLCVData[], ticker: string) {
     };
 }
 
-function getCandleChartOption(data: OHLCVData[], ticker: string) {
+function getCandleChartOption(data: OHLCVData[], ticker: string, darkMode: boolean) {
     const dates = data.map(d => d.date);
     const ohlc = data.map(d => [d.open, d.close, d.low, d.high]);
     const volumes = data.map(d => d.volume);
@@ -284,10 +285,10 @@ function getCandleChartOption(data: OHLCVData[], ticker: string) {
                 type: "category",
                 data: dates,
                 gridIndex: 0,
-                axisLine: { lineStyle: { color: "#e5e7eb" } },
+                axisLine: { lineStyle: { color: darkMode ? "#374151" : "#e5e7eb" } },
                 axisTick: { show: false },
                 axisLabel: {
-                    color: "#9ca3af",
+                    color: darkMode ? "#9ca3af" : "#6b7280",
                     fontSize: 11,
                     formatter: (val: string) => formatDate(val, true),
                     interval: Math.max(Math.floor(dates.length / 8), 1),
@@ -313,9 +314,9 @@ function getCandleChartOption(data: OHLCVData[], ticker: string) {
                 position: "left",
                 axisLine: { show: false },
                 axisTick: { show: false },
-                splitLine: { lineStyle: { color: "#f3f4f6", type: "dashed" } },
+                splitLine: { lineStyle: { color: darkMode ? "#374151" : "#f3f4f6", type: "dashed" } },
                 axisLabel: {
-                    color: "#9ca3af",
+                    color: darkMode ? "#9ca3af" : "#6b7280",
                     fontSize: 11,
                     formatter: (val: number) => formatPrice(val),
                 },
@@ -341,7 +342,7 @@ function getCandleChartOption(data: OHLCVData[], ticker: string) {
                 top: "96%",
                 height: 16,
                 borderColor: "transparent",
-                backgroundColor: "#f3f4f6",
+                backgroundColor: darkMode ? "#374151" : "#f3f4f6",
                 fillerColor: "rgba(59,130,246,0.12)",
                 handleStyle: { color: "#3b82f6", borderColor: "#3b82f6" },
                 textStyle: { color: "#9ca3af", fontSize: 10 },
@@ -400,7 +401,7 @@ function getCandleChartOption(data: OHLCVData[], ticker: string) {
     };
 }
 
-function getVolumeChartOption(data: OHLCVData[], ticker: string) {
+function getVolumeChartOption(data: OHLCVData[], ticker: string, darkMode: boolean) {
     const dates = data.map(d => d.date);
     const volumes = data.map(d => d.volume);
     const closes = data.map(d => d.close);
@@ -463,10 +464,10 @@ function getVolumeChartOption(data: OHLCVData[], ticker: string) {
         xAxis: {
             type: "category",
             data: dates,
-            axisLine: { lineStyle: { color: "#e5e7eb" } },
+            axisLine: { lineStyle: { color: darkMode ? "#374151" : "#e5e7eb" } },
             axisTick: { show: false },
             axisLabel: {
-                color: "#9ca3af",
+                color: darkMode ? "#9ca3af" : "#6b7280",
                 fontSize: 11,
                 formatter: (val: string) => formatDate(val, true),
                 interval: Math.max(Math.floor(dates.length / 8), 1),
@@ -478,9 +479,9 @@ function getVolumeChartOption(data: OHLCVData[], ticker: string) {
             type: "value",
             axisLine: { show: false },
             axisTick: { show: false },
-            splitLine: { lineStyle: { color: "#f3f4f6", type: "dashed" } },
+            splitLine: { lineStyle: { color: darkMode ? "#374151" : "#f3f4f6", type: "dashed" } },
             axisLabel: {
-                color: "#9ca3af",
+                color: darkMode ? "#9ca3af" : "#6b7280",
                 fontSize: 11,
                 formatter: (val: number) => formatNumber(val),
             },
@@ -535,6 +536,7 @@ export const MainMarketChart = ({ ticker = "VNINDEX" }: MainMarketChartProps) =>
     const [data, setData] = useState<OHLCVData[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const { darkMode } = useSettings();
 
     // ── Fetch dữ liệu chart từ API ──
     const fetchChart = useCallback(async () => {
@@ -578,11 +580,11 @@ export const MainMarketChart = ({ ticker = "VNINDEX" }: MainMarketChartProps) =>
     const chartOption = useMemo(() => {
         if (data.length === 0) return {};
         switch (chartType) {
-            case "line": return getLineChartOption(data, ticker);
-            case "candle": return getCandleChartOption(data, ticker);
-            case "volume": return getVolumeChartOption(data, ticker);
+            case "line": return getLineChartOption(data, ticker, darkMode);
+            case "candle": return getCandleChartOption(data, ticker, darkMode);
+            case "volume": return getVolumeChartOption(data, ticker, darkMode);
         }
-    }, [data, ticker, chartType]);
+    }, [data, ticker, chartType, darkMode]);
 
     const timeFrames: { value: TimeFrame; label: string }[] = [
         { value: "1W", label: "1W" },
@@ -594,23 +596,23 @@ export const MainMarketChart = ({ ticker = "VNINDEX" }: MainMarketChartProps) =>
     ];
 
     return (
-        <Card className="shadow-sm border-gray-200 overflow-hidden">
+        <Card className="shadow-sm border-border overflow-hidden">
             {/* Header: Ticker info + stats */}
-            <CardHeader className="pb-2 border-b border-gray-100">
+            <CardHeader className="pb-2 border-b border-border/50">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     {/* Left: Ticker name + price */}
                     <div className="flex items-center gap-4">
                         <div>
                             <div className="flex items-center gap-2">
-                                <CardTitle className="text-lg font-bold text-gray-900">
+                                <CardTitle className="text-lg font-bold text-foreground">
                                     {meta.name}
                                 </CardTitle>
-                                <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded font-medium">
+                                <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded font-medium">
                                     {ticker}
                                 </span>
                             </div>
                             <div className="flex items-center gap-3 mt-1">
-                                <span className="text-2xl font-bold tracking-tight text-gray-900">
+                                <span className="text-2xl font-bold tracking-tight text-foreground">
                                     {formatPrice(stats.last)}
                                 </span>
                                 <span className={`text-sm font-semibold px-2 py-0.5 rounded ${stats.change >= 0
@@ -624,19 +626,19 @@ export const MainMarketChart = ({ ticker = "VNINDEX" }: MainMarketChartProps) =>
                     </div>
 
                     {/* Right: Mini stats */}
-                    <div className="flex items-center gap-4 text-xs text-gray-500">
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
                         <div className="text-center">
-                            <div className="font-semibold text-gray-700">{formatPrice(stats.high)}</div>
+                            <div className="font-semibold text-foreground">{formatPrice(stats.high)}</div>
                             <div>Cao nhất</div>
                         </div>
-                        <div className="w-px h-6 bg-gray-200" />
+                        <div className="w-px h-6 bg-border" />
                         <div className="text-center">
-                            <div className="font-semibold text-gray-700">{formatPrice(stats.low)}</div>
+                            <div className="font-semibold text-foreground">{formatPrice(stats.low)}</div>
                             <div>Thấp nhất</div>
                         </div>
-                        <div className="w-px h-6 bg-gray-200" />
+                        <div className="w-px h-6 bg-border" />
                         <div className="text-center">
-                            <div className="font-semibold text-gray-700">{formatNumber(stats.vol)}</div>
+                            <div className="font-semibold text-foreground">{formatNumber(stats.vol)}</div>
                             <div>TB KL</div>
                         </div>
                     </div>
@@ -645,22 +647,22 @@ export const MainMarketChart = ({ ticker = "VNINDEX" }: MainMarketChartProps) =>
                 {/* Tabs: Chart type + Time frame */}
                 <div className="flex items-center justify-between mt-3 gap-2 flex-wrap">
                     <Tabs value={chartType} onValueChange={(v) => setChartType(v as any)} className="w-auto">
-                        <TabsList className="h-8 bg-gray-100">
+                        <TabsList className="h-8 bg-muted">
                             <TabsTrigger
                                 value="line"
-                                className="text-xs px-3 h-7 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm"
+                                className="text-xs px-3 h-7 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
                             >
                                 Đường
                             </TabsTrigger>
                             <TabsTrigger
                                 value="candle"
-                                className="text-xs px-3 h-7 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm"
+                                className="text-xs px-3 h-7 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
                             >
                                 Nến
                             </TabsTrigger>
                             <TabsTrigger
                                 value="volume"
-                                className="text-xs px-3 h-7 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm"
+                                className="text-xs px-3 h-7 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
                             >
                                 Khối lượng
                             </TabsTrigger>
@@ -674,7 +676,7 @@ export const MainMarketChart = ({ ticker = "VNINDEX" }: MainMarketChartProps) =>
                                 onClick={() => setTimeFrame(tf.value)}
                                 className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all ${timeFrame === tf.value
                                         ? "bg-blue-500 text-white shadow-sm"
-                                        : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                                     }`}
                             >
                                 {tf.label}
@@ -688,11 +690,11 @@ export const MainMarketChart = ({ ticker = "VNINDEX" }: MainMarketChartProps) =>
                     <div className="flex items-center gap-4 mt-2 text-xs">
                         <div className="flex items-center gap-1">
                             <div className="w-3 h-0.5 bg-amber-500 rounded" />
-                            <span className="text-gray-500">MA5</span>
+                            <span className="text-muted-foreground">MA5</span>
                         </div>
                         <div className="flex items-center gap-1">
                             <div className="w-3 h-0.5 bg-blue-500 rounded" />
-                            <span className="text-gray-500">MA20</span>
+                            <span className="text-muted-foreground">MA20</span>
                         </div>
                     </div>
                 )}
@@ -702,9 +704,9 @@ export const MainMarketChart = ({ ticker = "VNINDEX" }: MainMarketChartProps) =>
             <CardContent className="p-0 relative">
                 {/* Loading overlay */}
                 {loading && (
-                    <div className="absolute inset-0 bg-white/70 z-20 flex flex-col items-center justify-center gap-2">
+                    <div className="absolute inset-0 bg-background/70 z-20 flex flex-col items-center justify-center gap-2">
                         <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-                        <span className="text-sm text-gray-500">Đang tải dữ liệu...</span>
+                        <span className="text-sm text-muted-foreground">Đang tải dữ liệu...</span>
                     </div>
                 )}
 
@@ -733,7 +735,7 @@ export const MainMarketChart = ({ ticker = "VNINDEX" }: MainMarketChartProps) =>
 
                 {/* Empty state */}
                 {!error && !loading && data.length === 0 && (
-                    <div className="flex items-center justify-center py-20 text-sm text-gray-400">
+                    <div className="flex items-center justify-center py-20 text-sm text-muted-foreground">
                         Không có dữ liệu cho {meta.name} ({timeFrame})
                     </div>
                 )}

@@ -14,14 +14,14 @@ function CashFlowOverview({ stats }: { stats: OverviewStat[] }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {stats.map((s, i) => (
-        <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <div key={i} className="bg-card rounded-xl shadow-sm border border-border/50 p-5">
           <div className="flex items-center gap-2 mb-2">
             <span className={`w-2 h-2 rounded-full ${colors[i % colors.length]}`} />
-            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{s.label}</p>
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{s.label}</p>
           </div>
-          <p className={`text-2xl font-extrabold text-gray-900 ${monoFont}`}>{s.value}</p>
+          <p className={`text-2xl font-extrabold text-foreground ${monoFont}`}>{s.value}</p>
           {s.trend && (
-            <span className={`text-xs font-medium ${s.trend === "up" ? "text-[#00C076]" : s.trend === "down" ? "text-[#EF4444]" : "text-gray-500"}`}>
+            <span className={`text-xs font-medium ${s.trend === "up" ? "text-[#00C076]" : s.trend === "down" ? "text-[#EF4444]" : "text-muted-foreground"}`}>
               {s.trend === "up" ? "↗ Tích cực" : s.trend === "down" ? "↘ Tiêu cực" : ""}
             </span>
           )}
@@ -38,32 +38,32 @@ function EfficiencyAndFunding({ efficiencyMetrics, selfFundingData }: {
 }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-        <h3 className="text-sm font-bold text-gray-800 flex items-center gap-1.5 mb-5"><span>📊</span> Hiệu Quả Dòng Tiền (%)</h3>
+      <div className="bg-card rounded-xl shadow-sm border border-border/50 p-5">
+        <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5 mb-5"><span>📊</span> Hiệu Quả Dòng Tiền (%)</h3>
         {efficiencyMetrics.length > 0 ? (
           <div className="space-y-5">
             {efficiencyMetrics.map((m, i) => {
               const cfToRev = Number(m.cfToRevenue ?? 0);
               const cfToNI = Number(m.cfToNetProfit ?? 0);
               return (
-                <div key={i} className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-xs font-semibold text-gray-500 mb-2">Năm {String(m.year)}</p>
+                <div key={i} className="bg-muted/50 rounded-lg p-3">
+                  <p className="text-xs font-semibold text-muted-foreground mb-2">Năm {String(m.year)}</p>
                   <div className="space-y-2">
                     <div>
                       <div className="flex items-center justify-between mb-0.5">
-                        <span className="text-xs text-gray-600">CF/Doanh thu</span>
+                        <span className="text-xs text-muted-foreground">CF/Doanh thu</span>
                         <span className={`text-sm font-bold ${monoFont}`}>{cfToRev.toFixed(1)}%</span>
                       </div>
-                      <div className="w-full h-1.5 bg-gray-200 rounded-full">
+                      <div className="w-full h-1.5 bg-muted rounded-full">
                         <div className={`h-1.5 rounded-full ${cfToRev > 0 ? "bg-green-500" : "bg-red-500"}`} style={{ width: `${Math.min(Math.abs(cfToRev), 100)}%` }} />
                       </div>
                     </div>
                     <div>
                       <div className="flex items-center justify-between mb-0.5">
-                        <span className="text-xs text-gray-600">CF/LNST</span>
+                        <span className="text-xs text-muted-foreground">CF/LNST</span>
                         <span className={`text-sm font-bold ${monoFont}`}>{cfToNI.toFixed(1)}%</span>
                       </div>
-                      <div className="w-full h-1.5 bg-gray-200 rounded-full">
+                      <div className="w-full h-1.5 bg-muted rounded-full">
                         <div className={`h-1.5 rounded-full ${cfToNI > 80 ? "bg-green-500" : "bg-orange-500"}`} style={{ width: `${Math.min(Math.abs(cfToNI), 200) / 2}%` }} />
                       </div>
                     </div>
@@ -72,11 +72,11 @@ function EfficiencyAndFunding({ efficiencyMetrics, selfFundingData }: {
               );
             })}
           </div>
-        ) : <p className="text-gray-400 text-center py-4">Không có dữ liệu</p>}
+        ) : <p className="text-muted-foreground text-center py-4">Không có dữ liệu</p>}
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-        <h3 className="text-sm font-bold text-gray-800 flex items-center gap-1.5 mb-5"><span>💰</span> Khả Năng Tự Tài Trợ</h3>
+      <div className="bg-card rounded-xl shadow-sm border border-border/50 p-5">
+        <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5 mb-5"><span>💰</span> Khả Năng Tự Tài Trợ</h3>
         {selfFundingData.length > 0 ? (
           <div className="space-y-4">
             {selfFundingData.map((d, i) => {
@@ -84,12 +84,12 @@ function EfficiencyAndFunding({ efficiencyMetrics, selfFundingData }: {
               const icf = Math.abs(Number(d.investingCF ?? 0));
               const ratio = Number(d.selfFundingRatio ?? 0);
               return (
-                <div key={i} className="bg-gray-50 rounded-lg p-3">
+                <div key={i} className="bg-muted/50 rounded-lg p-3">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-semibold text-gray-500">Năm {String(d.year)}</span>
+                    <span className="text-xs font-semibold text-muted-foreground">Năm {String(d.year)}</span>
                     <span className={`text-sm font-bold ${monoFont} ${ratio >= 100 ? "text-[#00C076]" : "text-orange-500"}`}>{ratio.toFixed(0)}%</span>
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-gray-600">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <span>CFO: <strong className="text-green-600">{fmt(Math.round(ocf / 1e9))}</strong></span>
                     <span>|</span>
                     <span>|CFI|: <strong className="text-red-600">{fmt(Math.round(icf / 1e9))}</strong></span>
@@ -98,7 +98,7 @@ function EfficiencyAndFunding({ efficiencyMetrics, selfFundingData }: {
               );
             })}
           </div>
-        ) : <p className="text-gray-400 text-center py-4">Không có dữ liệu</p>}
+        ) : <p className="text-muted-foreground text-center py-4">Không có dữ liệu</p>}
       </div>
     </div>
   );
@@ -127,8 +127,8 @@ function EarningsQualityChart({ earningsQuality }: { earningsQuality: Record<str
 
   if (!option) return null;
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-      <h3 className="text-base font-bold text-gray-800 flex items-center gap-1.5 mb-2">
+    <div className="bg-card rounded-xl shadow-sm border border-border/50 p-6">
+      <h3 className="text-base font-bold text-foreground flex items-center gap-1.5 mb-2">
         <span className="w-1 h-5 bg-orange-500 rounded-full" /> LNST vs CF HĐKD (Tỷ VND — Earnings Quality)
       </h3>
       <ReactECharts option={option} style={{ height: 300 }} />
@@ -158,8 +158,8 @@ function ThreeCashFlows({ trends }: { trends: TrendYear[] }) {
 
   if (!chartOption) return null;
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-      <h3 className="text-sm font-bold text-gray-800 flex items-center gap-1.5 mb-3"><span className="w-3 h-3 rounded-full bg-orange-500" /> 3 Dòng Tiền Chính (Tỷ VND)</h3>
+    <div className="bg-card rounded-xl shadow-sm border border-border/50 p-5">
+      <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5 mb-3"><span className="w-3 h-3 rounded-full bg-orange-500" /> 3 Dòng Tiền Chính (Tỷ VND)</h3>
       <ReactECharts option={chartOption} style={{ height: 280 }} />
     </div>
   );
@@ -209,8 +209,8 @@ function WaterfallChart({ waterfall }: { waterfall: Record<string, unknown>[] })
 
   if (!option) return null;
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-      <h3 className="text-base font-bold text-gray-800 flex items-center gap-1.5 mb-3"><span>✅</span> Tổng Quan Dòng Chảy Tiền Tệ (Tỷ VND)</h3>
+    <div className="bg-card rounded-xl shadow-sm border border-border/50 p-6">
+      <h3 className="text-base font-bold text-foreground flex items-center gap-1.5 mb-3"><span>✅</span> Tổng Quan Dòng Chảy Tiền Tệ (Tỷ VND)</h3>
       <ReactECharts option={option} style={{ height: 340 }} />
     </div>
   );
@@ -222,9 +222,9 @@ export default function CashFlowTab() {
   const { data, loading, error } = useDeepAnalysis(ticker);
   const cf = data?.cashFlow;
 
-  if (loading && !data) return <div className="text-center py-12 text-gray-400 animate-pulse">Đang tải phân tích...</div>;
+  if (loading && !data) return <div className="text-center py-12 text-muted-foreground animate-pulse">Đang tải phân tích...</div>;
   if (error && !data) return <div className="text-center py-12 text-red-500">Lỗi: {error}</div>;
-  if (!cf) return <div className="text-center py-12 text-gray-400">Không có dữ liệu</div>;
+  if (!cf) return <div className="text-center py-12 text-muted-foreground">Không có dữ liệu</div>;
 
   return (
     <div className="space-y-5">

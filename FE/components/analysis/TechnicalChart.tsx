@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import ReactECharts from "echarts-for-react";
 import type { StockAnalysisData } from "@/lib/technicalAnalysisData";
 
@@ -13,6 +13,15 @@ interface TechnicalChartProps {
 const TechnicalChart: React.FC<TechnicalChartProps> = ({ data, overlays, subIndicator }) => {
   const [timeframe, setTimeframe] = useState("1Y");
   const [chartType, setChartType] = useState<"candle" | "line">("candle");
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsDark(document.documentElement.classList.contains("dark"));
+    check();
+    const observer = new MutationObserver(check);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
 
   const timeframes = ["1M", "3M", "6M", "1Y", "Tất cả"];
 
@@ -374,8 +383,8 @@ const TechnicalChart: React.FC<TechnicalChartProps> = ({ data, overlays, subIndi
         type: "category",
         data: dates,
         boundaryGap: true,
-        axisLine: { lineStyle: { color: "#e5e7eb" } },
-        axisLabel: { color: "#9ca3af", fontSize: 11, interval: Math.floor(dates.length / 8) },
+        axisLine: { lineStyle: { color: isDark ? "#374151" : "#e5e7eb" } },
+        axisLabel: { color: isDark ? "#6b7280" : "#9ca3af", fontSize: 11, interval: Math.floor(dates.length / 8) },
         splitLine: { show: false },
         gridIndex: 0,
       },
@@ -384,8 +393,8 @@ const TechnicalChart: React.FC<TechnicalChartProps> = ({ data, overlays, subIndi
         data: dates,
         gridIndex: 1,
         boundaryGap: true,
-        axisLine: { lineStyle: { color: "#e5e7eb" } },
-        axisLabel: { show: !hasSubIndicator, color: "#9ca3af", fontSize: 11, interval: Math.floor(dates.length / 8) },
+        axisLine: { lineStyle: { color: isDark ? "#374151" : "#e5e7eb" } },
+        axisLabel: { show: !hasSubIndicator, color: isDark ? "#6b7280" : "#9ca3af", fontSize: 11, interval: Math.floor(dates.length / 8) },
         splitLine: { show: false },
       },
     ];
@@ -396,8 +405,8 @@ const TechnicalChart: React.FC<TechnicalChartProps> = ({ data, overlays, subIndi
         scale: true,
         gridIndex: 0,
         axisLine: { show: false },
-        axisLabel: { color: "#9ca3af", fontSize: 11, formatter: (v: number) => (v / 1000).toFixed(1) + "k" },
-        splitLine: { lineStyle: { color: "#f3f4f6", type: "dashed" } },
+        axisLabel: { color: isDark ? "#6b7280" : "#9ca3af", fontSize: 11, formatter: (v: number) => (v / 1000).toFixed(1) + "k" },
+        splitLine: { lineStyle: { color: isDark ? "#1f2937" : "#f3f4f6", type: "dashed" } },
       },
       {
         type: "value",
@@ -405,8 +414,8 @@ const TechnicalChart: React.FC<TechnicalChartProps> = ({ data, overlays, subIndi
         gridIndex: 1,
         scale: true,
         axisLine: { show: false },
-        axisLabel: { color: "#9ca3af", fontSize: 10, formatter: (v: number) => (v / 1000000).toFixed(0) + "M" },
-        splitLine: { lineStyle: { color: "#f3f4f6", type: "dashed" } },
+        axisLabel: { color: isDark ? "#6b7280" : "#9ca3af", fontSize: 10, formatter: (v: number) => (v / 1000000).toFixed(0) + "M" },
+        splitLine: { lineStyle: { color: isDark ? "#1f2937" : "#f3f4f6", type: "dashed" } },
       },
     ];
 
@@ -483,8 +492,8 @@ const TechnicalChart: React.FC<TechnicalChartProps> = ({ data, overlays, subIndi
         data: dates,
         gridIndex: 2,
         boundaryGap: true,
-        axisLine: { lineStyle: { color: "#e5e7eb" } },
-        axisLabel: { color: "#9ca3af", fontSize: 11, interval: Math.floor(dates.length / 8) },
+        axisLine: { lineStyle: { color: isDark ? "#374151" : "#e5e7eb" } },
+        axisLabel: { color: isDark ? "#6b7280" : "#9ca3af", fontSize: 11, interval: Math.floor(dates.length / 8) },
         splitLine: { show: false },
       });
 
@@ -495,8 +504,8 @@ const TechnicalChart: React.FC<TechnicalChartProps> = ({ data, overlays, subIndi
         scale: true,
         ...subConfig.yAxisConfig,
         axisLine: { show: false },
-        axisLabel: { color: "#9ca3af", fontSize: 10 },
-        splitLine: { lineStyle: { color: "#f3f4f6", type: "dashed" } },
+        axisLabel: { color: isDark ? "#6b7280" : "#9ca3af", fontSize: 10 },
+        splitLine: { lineStyle: { color: isDark ? "#1f2937" : "#f3f4f6", type: "dashed" } },
       });
 
       subConfig.series.forEach((s: any, idx: number) => {
@@ -510,7 +519,7 @@ const TechnicalChart: React.FC<TechnicalChartProps> = ({ data, overlays, subIndi
           seriesItem.markLine = {
             silent: true,
             symbol: "none",
-            label: { show: true, position: "end", fontSize: 10, color: "#9ca3af" },
+            label: { show: true, position: "end", fontSize: 10, color: isDark ? "#6b7280" : "#9ca3af" },
             data: subConfig.markLines,
           };
         }
@@ -524,11 +533,11 @@ const TechnicalChart: React.FC<TechnicalChartProps> = ({ data, overlays, subIndi
       animation: false,
       tooltip: {
         trigger: "axis",
-        axisPointer: { type: "cross", crossStyle: { color: "#999" } },
-        backgroundColor: "rgba(255, 255, 255, 0.96)",
-        borderColor: "#e5e7eb",
+        axisPointer: { type: "cross", crossStyle: { color: isDark ? "#6b7280" : "#999" } },
+        backgroundColor: isDark ? "rgba(17, 24, 39, 0.96)" : "rgba(255, 255, 255, 0.96)",
+        borderColor: isDark ? "#374151" : "#e5e7eb",
         borderWidth: 1,
-        textStyle: { color: "#374151", fontSize: 12 },
+        textStyle: { color: isDark ? "#f9fafb" : "#374151", fontSize: 12 },
         formatter: function (params: any) {
           if (!params || params.length === 0) return "";
           const idx = params[0].dataIndex;
@@ -566,7 +575,7 @@ const TechnicalChart: React.FC<TechnicalChartProps> = ({ data, overlays, subIndi
         show: true,
         top: 0,
         left: "center",
-        textStyle: { fontSize: 11, color: "#6b7280" },
+        textStyle: { fontSize: 11, color: isDark ? "#9ca3af" : "#6b7280" },
         itemWidth: 14,
         itemHeight: 8,
         itemGap: 12,
@@ -586,19 +595,19 @@ const TechnicalChart: React.FC<TechnicalChartProps> = ({ data, overlays, subIndi
       ],
       series,
     };
-  }, [chartType, dates, candlestickData, closePrices, volumeData, volumeColors, overlaySeries, slicedOHLCV, hasSubIndicator, subConfig, mainHeight, volumeHeight, volumeTop]);
+  }, [chartType, dates, candlestickData, closePrices, volumeData, volumeColors, overlaySeries, slicedOHLCV, hasSubIndicator, subConfig, mainHeight, volumeHeight, volumeTop, isDark]);
 
   return (
     <div className="flex flex-col h-full">
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-gray-100 flex-wrap gap-2">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-border/50 flex-wrap gap-2">
         <div className="flex items-center gap-2">
           {/* Chart type toggle */}
-          <div className="flex items-center gap-0.5 bg-gray-100 rounded-lg p-0.5">
+          <div className="flex items-center gap-0.5 bg-muted rounded-lg p-0.5">
             <button
               onClick={() => setChartType("candle")}
               className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                chartType === "candle" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                chartType === "candle" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
               }`}
             >
               🕯️ Nến
@@ -606,7 +615,7 @@ const TechnicalChart: React.FC<TechnicalChartProps> = ({ data, overlays, subIndi
             <button
               onClick={() => setChartType("line")}
               className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                chartType === "line" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                chartType === "line" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
               }`}
             >
               📈 Đường
@@ -615,13 +624,13 @@ const TechnicalChart: React.FC<TechnicalChartProps> = ({ data, overlays, subIndi
         </div>
 
         {/* Timeframe */}
-        <div className="flex items-center gap-0.5 bg-gray-100 rounded-lg p-0.5">
+        <div className="flex items-center gap-0.5 bg-muted rounded-lg p-0.5">
           {timeframes.map((tf) => (
             <button
               key={tf}
               onClick={() => setTimeframe(tf)}
               className={`px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                timeframe === tf ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                timeframe === tf ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
               }`}
             >
               {tf}

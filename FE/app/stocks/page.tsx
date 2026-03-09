@@ -226,7 +226,7 @@ export default function StocksPage() {
 
     const SortHeader = ({ label, field, className = "" }: { label: string; field: SortKey; className?: string }) => (
         <TableHead
-            className={`cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap ${className}`}
+            className={`cursor-pointer hover:bg-muted/50 select-none whitespace-nowrap ${className}`}
             onClick={() => toggleSort(field)}
         >
             <div className="flex items-center gap-1">
@@ -237,21 +237,21 @@ export default function StocksPage() {
     );
 
     return (
-        <div className="min-h-screen bg-gray-50 p-6">
+        <div className="min-h-screen bg-background p-6">
             <div className="max-w-[1600px] mx-auto space-y-5">
                 {/* Header */}
                 <div className="flex items-center justify-between">
-                    <h1 className="text-2xl font-bold text-gray-900">
+                    <h1 className="text-2xl font-bold text-foreground">
                         Bảng phân tích cổ phiếu <span className="text-orange-500">StockPro</span>
                     </h1>
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm text-muted-foreground">
                         {total} mã · Cập nhật: Vừa xong
                     </div>
                 </div>
 
                 {/* Tabs */}
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
-                    <TabsList className="bg-white border border-gray-200 shadow-sm p-1 h-auto">
+                    <TabsList className="bg-card border border-border shadow-sm p-1 h-auto">
                         <TabsTrigger
                             value="overview"
                             className="flex items-center gap-1.5 text-xs data-[state=active]:bg-orange-500 data-[state=active]:text-white px-4 py-2 rounded-md"
@@ -276,7 +276,7 @@ export default function StocksPage() {
                     {initialLoad ? (
                         // Skeleton summary cards
                         Array.from({ length: 4 }).map((_, i) => (
-                            <Card key={i} className="shadow-sm border-gray-200">
+                            <Card key={i} className="shadow-sm border-border">
                                 <CardContent className="p-4 flex items-center gap-3">
                                     <Skeleton className="w-9 h-9 rounded-lg" />
                                     <div className="space-y-1.5 flex-1">
@@ -288,47 +288,47 @@ export default function StocksPage() {
                         ))
                     ) : (
                         <>
-                    <Card className="shadow-sm border-gray-200">
+                    <Card className="shadow-sm border-border">
                         <CardContent className="p-4 flex items-center gap-3">
                             <div className="p-2 bg-green-100 rounded-lg">
                                 <TrendingUp className="w-5 h-5 text-green-600" />
                             </div>
                             <div>
-                                <p className="text-xs text-gray-500">Mã tăng</p>
+                                <p className="text-xs text-muted-foreground">Mã tăng</p>
                                 <p className="text-xl font-bold text-green-600">{summary.total_up}</p>
                             </div>
                         </CardContent>
                     </Card>
-                    <Card className="shadow-sm border-gray-200">
+                    <Card className="shadow-sm border-border">
                         <CardContent className="p-4 flex items-center gap-3">
                             <div className="p-2 bg-red-100 rounded-lg">
                                 <TrendingDown className="w-5 h-5 text-red-600" />
                             </div>
                             <div>
-                                <p className="text-xs text-gray-500">Mã giảm</p>
+                                <p className="text-xs text-muted-foreground">Mã giảm</p>
                                 <p className="text-xl font-bold text-red-600">{summary.total_down}</p>
                             </div>
                         </CardContent>
                     </Card>
-                    <Card className="shadow-sm border-gray-200">
+                    <Card className="shadow-sm border-border">
                         <CardContent className="p-4 flex items-center gap-3">
                             <div className="p-2 bg-blue-100 rounded-lg">
                                 <BarChart3 className="w-5 h-5 text-blue-600" />
                             </div>
                             <div>
-                                <p className="text-xs text-gray-500">Tổng KLGD</p>
-                                <p className="text-xl font-bold text-gray-800">{formatVolume(summary.total_volume)}</p>
+                                <p className="text-xs text-muted-foreground">Tổng KLGD</p>
+                                <p className="text-xl font-bold text-foreground">{formatVolume(summary.total_volume)}</p>
                             </div>
                         </CardContent>
                     </Card>
-                    <Card className="shadow-sm border-gray-200">
+                    <Card className="shadow-sm border-border">
                         <CardContent className="p-4 flex items-center gap-3">
                             <div className="p-2 bg-amber-100 rounded-lg">
                                 <Filter className="w-5 h-5 text-amber-600" />
                             </div>
                             <div>
-                                <p className="text-xs text-gray-500">P/E Trung bình</p>
-                                <p className="text-xl font-bold text-gray-800">{summary.avg_pe != null ? `${summary.avg_pe.toFixed(1)}x` : "—"}</p>
+                                <p className="text-xs text-muted-foreground">P/E Trung bình</p>
+                                <p className="text-xl font-bold text-foreground">{summary.avg_pe != null ? `${summary.avg_pe.toFixed(1)}x` : "—"}</p>
                             </div>
                         </CardContent>
                     </Card>
@@ -337,7 +337,7 @@ export default function StocksPage() {
                 </div>
 
                 {/* Filters */}
-                <Card className="shadow-sm border-gray-200">
+                <Card className="shadow-sm border-border">
                     <CardContent className="p-4 space-y-3">
                         {/* Search */}
                         <div className="relative">
@@ -347,13 +347,13 @@ export default function StocksPage() {
                                 placeholder="Tìm mã cổ phiếu hoặc tên công ty..."
                                 value={search}
                                 onChange={(e) => handleSearch(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-400"
+                                className="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-400 bg-background text-foreground"
                             />
                         </div>
 
                         {/* Sector filter */}
                         <div className="flex flex-wrap gap-2">
-                            <span className="text-xs text-gray-500 flex items-center mr-1">Ngành:</span>
+                            <span className="text-xs text-muted-foreground flex items-center mr-1">Ngành:</span>
                             {sectorsLoading ? (
                                 Array.from({ length: 8 }).map((_, i) => (
                                     <Skeleton key={i} className="h-6 w-20 rounded-full" />
@@ -384,9 +384,9 @@ export default function StocksPage() {
                 </Card>
 
                 {/* Stock Table */}
-                <Card className="shadow-sm border-gray-200">
+                <Card className="shadow-sm border-border">
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-base font-bold text-gray-800 flex items-center justify-between">
+                        <CardTitle className="text-base font-bold text-foreground flex items-center justify-between">
                             <span>Danh sách cổ phiếu ({total} mã)</span>
                             {loading && <Loader2 className="w-4 h-4 animate-spin text-orange-500" />}
                         </CardTitle>
@@ -395,20 +395,20 @@ export default function StocksPage() {
                         <div className="overflow-x-auto relative">
                             {/* Loading overlay for subsequent loads */}
                             {loading && !initialLoad && (
-                                <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] z-20 flex items-center justify-center">
+                                <div className="absolute inset-0 bg-card/60 backdrop-blur-[1px] z-20 flex items-center justify-center">
                                     <div className="flex flex-col items-center gap-3">
                                         <div className="relative">
                                             <div className="w-10 h-10 border-3 border-orange-200 rounded-full" />
                                             <div className="absolute inset-0 w-10 h-10 border-3 border-orange-500 rounded-full border-t-transparent animate-spin" />
                                         </div>
-                                        <span className="text-xs text-gray-500 font-medium">Đang tải dữ liệu...</span>
+                                        <span className="text-xs text-muted-foreground font-medium">Đang tải dữ liệu...</span>
                                     </div>
                                 </div>
                             )}
                             <Table>
                                 <TableHeader>
-                                    <TableRow className="bg-gray-50 text-xs">
-                                        <TableHead className="w-[160px] sticky left-0 bg-gray-50 z-10">Mã CK</TableHead>
+                                    <TableRow className="bg-muted/50 text-xs">
+                                        <TableHead className="w-[160px] sticky left-0 bg-muted/50 z-10">Mã CK</TableHead>
                                         <SortHeader label="Giá" field="current_price" className="text-right" />
                                         <SortHeader label="Thay đổi" field="price_change_percent" className="text-right" />
                                         <TableHead className="text-center w-[90px]">Xu hướng</TableHead>
@@ -426,7 +426,7 @@ export default function StocksPage() {
                                     {initialLoad && stocks.length === 0 && (
                                         Array.from({ length: 10 }).map((_, i) => (
                                             <TableRow key={`skeleton-${i}`} className="animate-pulse">
-                                                <TableCell className="sticky left-0 bg-white z-10">
+                                                <TableCell className="sticky left-0 bg-card z-10">
                                                     <div className="flex items-center gap-2">
                                                         <Skeleton className="w-8 h-8 rounded-lg" />
                                                         <div className="space-y-1">
@@ -455,7 +455,7 @@ export default function StocksPage() {
                                     )}
                                     {stocks.length === 0 && !loading && !initialLoad && (
                                         <TableRow>
-                                            <TableCell colSpan={11} className="text-center py-12 text-gray-400">
+                                            <TableCell colSpan={11} className="text-center py-12 text-muted-foreground">
                                                 Không tìm thấy cổ phiếu nào
                                             </TableCell>
                                         </TableRow>
@@ -468,7 +468,7 @@ export default function StocksPage() {
                                                 className="hover:bg-orange-50/50 transition-colors group"
                                             >
                                                 {/* Ticker + Company */}
-                                                <TableCell className="sticky left-0 bg-white group-hover:bg-orange-50/50 z-10">
+                                                <TableCell className="sticky left-0 bg-card group-hover:bg-orange-50/50 z-10">
                                                     <Link
                                                         href={`/stock/${stock.ticker}`}
                                                         className="block"
@@ -479,10 +479,10 @@ export default function StocksPage() {
                                                                 {stock.ticker.charAt(0)}
                                                             </div>
                                                             <div>
-                                                                <div className="font-bold text-sm text-gray-900 group-hover:text-orange-600 transition-colors">
+                                                                <div className="font-bold text-sm text-foreground group-hover:text-orange-600 transition-colors">
                                                                     {stock.ticker}
                                                                 </div>
-                                                                <div className="text-[10px] text-gray-400 truncate max-w-[120px]">
+                                                                <div className="text-[10px] text-muted-foreground truncate max-w-[120px]">
                                                                     {stock.company_name ?? stock.sector ?? "—"}
                                                                 </div>
                                                             </div>
@@ -519,34 +519,34 @@ export default function StocksPage() {
                                                 </TableCell>
 
                                                 {/* Volume */}
-                                                <TableCell className="text-right text-xs text-gray-700 font-medium">
+                                                <TableCell className="text-right text-xs text-foreground font-medium">
                                                     {stock.volume != null ? formatVolume(stock.volume) : "—"}
                                                 </TableCell>
 
                                                 {/* Market Cap */}
-                                                <TableCell className="text-right text-xs text-gray-700 font-medium">
+                                                <TableCell className="text-right text-xs text-foreground font-medium">
                                                     {stock.market_cap != null ? formatMarketCap(stock.market_cap) : "—"}
                                                 </TableCell>
 
                                                 {/* P/E */}
-                                                <TableCell className="text-right text-xs text-gray-700">
+                                                <TableCell className="text-right text-xs text-foreground">
                                                     {stock.pe != null ? stock.pe.toFixed(1) : "—"}
                                                 </TableCell>
 
                                                 {/* P/B */}
-                                                <TableCell className="text-right text-xs text-gray-700">
+                                                <TableCell className="text-right text-xs text-foreground">
                                                     {stock.pb != null ? stock.pb.toFixed(1) : "—"}
                                                 </TableCell>
 
                                                 {/* EPS */}
-                                                <TableCell className="text-right text-xs text-gray-700">
+                                                <TableCell className="text-right text-xs text-foreground">
                                                     {stock.eps != null ? stock.eps.toLocaleString() : "—"}
                                                 </TableCell>
 
                                                 {/* ROE */}
                                                 <TableCell className="text-right">
                                                     {stock.roe != null ? (
-                                                        <span className={`text-xs font-medium ${stock.roe >= 15 ? "text-green-600" : stock.roe >= 0 ? "text-gray-700" : "text-red-600"}`}>
+                                                        <span className={`text-xs font-medium ${stock.roe >= 15 ? "text-green-600" : stock.roe >= 0 ? "text-foreground" : "text-red-600"}`}>
                                                             {stock.roe.toFixed(1)}%
                                                         </span>
                                                     ) : <span className="text-xs text-gray-400">—</span>}
@@ -569,15 +569,15 @@ export default function StocksPage() {
 
                         {/* Pagination */}
                         {totalPages > 1 && (
-                            <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
-                                <span className="text-xs text-gray-500">
+                            <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+                                <span className="text-xs text-muted-foreground">
                                     Trang {page}/{totalPages} · Hiển thị {stocks.length}/{total} mã
                                 </span>
                                 <div className="flex items-center gap-1">
                                     <button
                                         disabled={page <= 1}
                                         onClick={() => setPage(p => Math.max(1, p - 1))}
-                                        className="p-1.5 rounded-md border border-gray-200 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                                        className="p-1.5 rounded-md border border-border hover:bg-muted/50 disabled:opacity-30 disabled:cursor-not-allowed"
                                     >
                                         <ChevronLeft className="w-4 h-4" />
                                     </button>
@@ -598,7 +598,7 @@ export default function StocksPage() {
                                                 onClick={() => setPage(pageNum)}
                                                 className={`w-8 h-8 rounded-md text-xs font-medium ${page === pageNum
                                                     ? "bg-orange-500 text-white"
-                                                    : "border border-gray-200 hover:bg-gray-100 text-gray-700"
+                                                    : "border border-border hover:bg-muted/50 text-foreground"
                                                     }`}
                                             >
                                                 {pageNum}
@@ -608,7 +608,7 @@ export default function StocksPage() {
                                     <button
                                         disabled={page >= totalPages}
                                         onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                                        className="p-1.5 rounded-md border border-gray-200 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                                        className="p-1.5 rounded-md border border-border hover:bg-muted/50 disabled:opacity-30 disabled:cursor-not-allowed"
                                     >
                                         <ChevronRight className="w-4 h-4" />
                                     </button>

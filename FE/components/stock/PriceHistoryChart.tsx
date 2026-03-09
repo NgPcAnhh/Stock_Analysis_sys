@@ -226,24 +226,24 @@ const PriceHistoryChart = () => {
     );
 
     return (
-        <Card className="shadow-sm border-gray-200 h-full flex flex-col">
+        <Card className="shadow-sm border-border h-full flex flex-col">
             <CardHeader className="pb-2 pt-3 px-4">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                     <div className="flex items-center gap-3">
-                        <CardTitle className="text-lg font-bold text-gray-800">
+                        <CardTitle className="text-lg font-bold text-foreground">
                             Biểu đồ giá
                         </CardTitle>
-                        <div className="flex items-center gap-0.5 bg-gray-100 rounded-lg p-0.5">
+                        <div className="flex items-center gap-0.5 bg-muted rounded-lg p-0.5">
                             <button
                                 onClick={() => setChartType("line")}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${chartType === "line" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${chartType === "line" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                             >
                                 <LineChart className="w-3.5 h-3.5" />
                                 Line
                             </button>
                             <button
                                 onClick={() => setChartType("candle")}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${chartType === "candle" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${chartType === "candle" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                             >
                                 <CandlestickChart className="w-3.5 h-3.5" />
                                 Candlestick
@@ -253,18 +253,18 @@ const PriceHistoryChart = () => {
 
                     <div className="flex items-center gap-2">
                         {/* Period Pills */}
-                        <div className="flex items-center gap-0.5 bg-gray-100 rounded-lg p-0.5">
+                        <div className="flex items-center gap-0.5 bg-muted rounded-lg p-0.5">
                             {PERIODS.map((p) => (
                                 <button
                                     key={p.value}
                                     onClick={() => setPeriod(p.value)}
-                                    className={`px-2 py-1 text-xs font-medium rounded-md transition-colors ${period === p.value ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                                    className={`px-2 py-1 text-xs font-medium rounded-md transition-colors ${period === p.value ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                                 >
                                     {p.label}
                                 </button>
                             ))}
                         </div>
-                        <div className="flex items-center gap-0.5 border-l border-gray-200 pl-2">
+                        <div className="flex items-center gap-0.5 border-l border-border/50 pl-2">
                             <ToolbarButton icon={<Star className="w-3.5 h-3.5" />} />
                             <ToolbarButton icon={<Bell className="w-3.5 h-3.5" />} />
                             <ToolbarButton icon={<GitCompare className="w-3.5 h-3.5" />} />
@@ -277,12 +277,12 @@ const PriceHistoryChart = () => {
             </CardHeader>
             <CardContent className="p-2 flex-1 relative">
                 {loading && !apiData && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-white/60 z-10">
+                    <div className="absolute inset-0 flex items-center justify-center bg-background/60 z-10">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
                     </div>
                 )}
                 {priceData.length === 0 && !loading ? (
-                    <div className="flex items-center justify-center h-[400px] text-gray-400 text-sm">
+                    <div className="flex items-center justify-center h-[400px] text-muted-foreground text-sm">
                         Không có dữ liệu giá cho khoảng thời gian này
                     </div>
                 ) : chartType === "line" ? (
@@ -304,7 +304,7 @@ const PriceHistoryChart = () => {
 };
 
 const ToolbarButton = ({ icon }: { icon: React.ReactNode }) => (
-    <button className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors">
+    <button className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors">
         {icon}
     </button>
 );

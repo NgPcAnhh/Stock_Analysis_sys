@@ -5,6 +5,7 @@ import ReactECharts from "echarts-for-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2, RefreshCw } from "lucide-react";
+import { useSettings } from "@/lib/SettingsContext";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -18,6 +19,7 @@ export const MarketBreadth = () => {
     const [data, setData] = useState<BreadthData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const { darkMode } = useSettings();
 
     const fetchData = useCallback(async () => {
         try {
@@ -48,6 +50,8 @@ export const MarketBreadth = () => {
 
     const option = useMemo(() => {
         if (!data) return {};
+        const textColor = darkMode ? "#e5e7eb" : "#1f2937";
+        const mutedColor = darkMode ? "#9ca3af" : "#9ca3af";
         return {
             tooltip: {
                 trigger: "item",
@@ -58,7 +62,7 @@ export const MarketBreadth = () => {
                 bottom: 0,
                 itemWidth: 12,
                 itemHeight: 12,
-                textStyle: { fontSize: 13, color: "#555" },
+                textStyle: { fontSize: 13, color: darkMode ? "#d1d5db" : "#555" },
             },
             graphic: [
                 {
@@ -69,7 +73,7 @@ export const MarketBreadth = () => {
                         text: `${total}`,
                         fontSize: 32,
                         fontWeight: "bold",
-                        fill: "#1f2937",
+                        fill: textColor,
                         textAlign: "center",
                     },
                 },
@@ -80,7 +84,7 @@ export const MarketBreadth = () => {
                     style: {
                         text: "Tổng mã",
                         fontSize: 13,
-                        fill: "#9ca3af",
+                        fill: mutedColor,
                         textAlign: "center",
                     },
                 },
@@ -124,13 +128,13 @@ export const MarketBreadth = () => {
                 },
             ],
         };
-    }, [data, total]);
+    }, [data, total, darkMode]);
 
     return (
-        <Card className="shadow-sm border-gray-200 h-full flex flex-col">
+        <Card className="shadow-sm border-border h-full flex flex-col">
             <CardHeader className="pb-2 shrink-0">
                 <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg font-bold text-gray-800">
+                    <CardTitle className="text-lg font-bold text-foreground">
                         Độ rộng thị trường
                     </CardTitle>
                     {!loading && (

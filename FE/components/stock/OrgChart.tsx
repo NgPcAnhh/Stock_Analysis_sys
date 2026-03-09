@@ -145,24 +145,24 @@ function buildOrgTree(shareholders: Shareholder[]): {
    ─────────────────────────────────────────────────────── */
 
 const COLOR_MAP: Record<string, { bg: string; border: string; text: string; accent: string; light: string }> = {
-    blue:    { bg: "bg-blue-50",    border: "border-blue-300",    text: "text-blue-700",    accent: "bg-blue-500",    light: "bg-blue-100" },
+    blue: { bg: "bg-blue-50", border: "border-blue-300", text: "text-blue-700", accent: "bg-blue-500", light: "bg-blue-100" },
     emerald: { bg: "bg-emerald-50", border: "border-emerald-300", text: "text-emerald-700", accent: "bg-emerald-500", light: "bg-emerald-100" },
-    amber:   { bg: "bg-amber-50",   border: "border-amber-300",   text: "text-amber-700",   accent: "bg-amber-500",   light: "bg-amber-100" },
-    purple:  { bg: "bg-purple-50",  border: "border-purple-300",  text: "text-purple-700",  accent: "bg-purple-500",  light: "bg-purple-100" },
-    gray:    { bg: "bg-gray-50",    border: "border-gray-300",    text: "text-gray-700",    accent: "bg-gray-500",    light: "bg-gray-100" },
-    red:     { bg: "bg-red-50",     border: "border-red-200",     text: "text-red-700",     accent: "bg-red-500",     light: "bg-red-100" },
+    amber: { bg: "bg-amber-50", border: "border-amber-300", text: "text-amber-700", accent: "bg-amber-500", light: "bg-amber-100" },
+    purple: { bg: "bg-purple-50", border: "border-purple-300", text: "text-purple-700", accent: "bg-purple-500", light: "bg-purple-100" },
+    gray: { bg: "bg-muted/50", border: "border-border", text: "text-foreground", accent: "bg-muted", light: "bg-muted" },
+    red: { bg: "bg-red-50", border: "border-red-200", text: "text-red-700", accent: "bg-red-500", light: "bg-red-100" },
 };
 
 function PersonCard({ person, compact }: { person: ClassifiedPerson; compact?: boolean }) {
     const initial = person.name.split(" ").pop()?.charAt(0) || "?";
     return (
-        <div className={`flex items-center gap-3 ${compact ? "py-2" : "p-3"} rounded-lg hover:bg-gray-50 transition-colors`}>
+        <div className={`flex items-center gap-3 ${compact ? "py-2" : "p-3"} rounded-lg hover:bg-muted/50 transition-colors`}>
             <div className={`${compact ? "w-8 h-8 text-xs" : "w-10 h-10 text-sm"} rounded-full bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center text-white font-bold shrink-0`}>
                 {initial}
             </div>
             <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
-                    <span className={`${compact ? "text-xs" : "text-sm"} font-bold text-gray-800 truncate`}>
+                    <span className={`${compact ? "text-xs" : "text-sm"} font-bold text-foreground truncate`}>
                         {person.name}
                     </span>
                     {person.isIndependent && (
@@ -171,7 +171,7 @@ function PersonCard({ person, compact }: { person: ClassifiedPerson; compact?: b
                         </span>
                     )}
                 </div>
-                <p className={`${compact ? "text-[11px]" : "text-xs"} text-gray-500 truncate mt-0.5`}>{person.role}</p>
+                <p className={`${compact ? "text-[11px]" : "text-xs"} text-muted-foreground truncate mt-0.5`}>{person.role}</p>
             </div>
         </div>
     );
@@ -185,7 +185,7 @@ function TopLeaderCard({ person }: { person: ClassifiedPerson }) {
             <div className={`w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-xl ${isChairman ? "bg-gradient-to-br from-amber-500 to-amber-700" : "bg-gradient-to-br from-emerald-500 to-emerald-700"}`}>
                 {initial}
             </div>
-            <span className="mt-2.5 text-base font-bold text-gray-800 text-center leading-tight">{person.name}</span>
+            <span className="mt-2.5 text-base font-bold text-foreground text-center leading-tight">{person.name}</span>
             <span className={`mt-1 text-xs font-semibold text-center ${isChairman ? "text-amber-600" : "text-emerald-600"}`}>
                 {person.role}
             </span>
@@ -214,12 +214,12 @@ function BranchCard({ branch }: { branch: OrgBranch }) {
             </button>
 
             {expanded && (
-                <div className="bg-white px-3 py-2 space-y-0.5">
+                <div className="bg-card px-3 py-2 space-y-0.5">
                     {/* Head of branch — slightly larger */}
                     {head && <PersonCard person={head} />}
                     {/* Other members */}
                     {members.length > 0 && (
-                        <div className="ml-4 border-l-2 border-gray-200 pl-2 space-y-0.5">
+                        <div className="ml-4 border-l-2 border-border pl-2 space-y-0.5">
                             {members.map((p, i) => (
                                 <PersonCard key={i} person={p} compact />
                             ))}
@@ -244,7 +244,7 @@ export default function OrgChart({ shareholders }: OrgChartProps) {
 
     if (!shareholders.length) {
         return (
-            <div className="text-center py-10 text-xs text-gray-400">
+            <div className="text-center py-10 text-xs text-muted-foreground">
                 Chưa có dữ liệu bộ máy tổ chức
             </div>
         );
@@ -262,7 +262,7 @@ export default function OrgChart({ shareholders }: OrgChartProps) {
                     </div>
                     {/* Connector line down */}
                     {branches.length > 0 && (
-                        <div className="w-0.5 h-6 bg-gray-300" />
+                        <div className="w-0.5 h-6 bg-border" />
                     )}
                 </div>
             )}
@@ -272,7 +272,7 @@ export default function OrgChart({ shareholders }: OrgChartProps) {
                 <div className="flex items-start justify-center">
                     <div className="relative w-full max-w-4xl">
                         {/* Horizontal bar */}
-                        <div className="absolute top-0 left-[calc(50%/(var(--cols)))] right-[calc(50%/(var(--cols)))] h-0.5 bg-gray-300"
+                        <div className="absolute top-0 left-[calc(50%/(var(--cols)))] right-[calc(50%/(var(--cols)))] h-0.5 bg-border"
                             style={{ "--cols": branches.length } as React.CSSProperties}
                         />
                     </div>
@@ -280,31 +280,30 @@ export default function OrgChart({ shareholders }: OrgChartProps) {
             )}
 
             {/* ── Branch cards grid ── */}
-            <div className={`grid gap-4 ${
-                branches.length === 1 ? "grid-cols-1 max-w-md mx-auto" :
-                branches.length === 2 ? "grid-cols-1 md:grid-cols-2" :
-                branches.length === 3 ? "grid-cols-1 md:grid-cols-3" :
-                "grid-cols-1 md:grid-cols-2 lg:grid-cols-4"
-            }`}>
+            <div className={`grid gap-4 ${branches.length === 1 ? "grid-cols-1 max-w-md mx-auto" :
+                    branches.length === 2 ? "grid-cols-1 md:grid-cols-2" :
+                        branches.length === 3 ? "grid-cols-1 md:grid-cols-3" :
+                            "grid-cols-1 md:grid-cols-2 lg:grid-cols-4"
+                }`}>
                 {branches.map((branch) => (
                     <BranchCard key={branch.id} branch={branch} />
                 ))}
             </div>
 
             {/* ── Legend ── */}
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 pt-3 border-t border-gray-100">
-                <span className="text-[11px] text-gray-400 font-semibold uppercase tracking-wider">Chú thích:</span>
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 pt-3 border-t border-border/50">
+                <span className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider">Chú thích:</span>
                 <div className="flex items-center gap-1.5">
                     <div className="w-3.5 h-3.5 rounded-full bg-gradient-to-br from-amber-500 to-amber-700" />
-                    <span className="text-[11px] text-gray-600 font-medium">Chủ tịch HĐQT</span>
+                    <span className="text-[11px] text-muted-foreground font-medium">Chủ tịch HĐQT</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                     <div className="w-3.5 h-3.5 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700" />
-                    <span className="text-[11px] text-gray-600 font-medium">Tổng Giám đốc</span>
+                    <span className="text-[11px] text-muted-foreground font-medium">Tổng Giám đốc</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                     <span className="text-[10px] px-1.5 py-0.5 bg-sky-100 text-sky-700 rounded-full font-semibold">Độc lập</span>
-                    <span className="text-[11px] text-gray-600 font-medium">Thành viên HĐQT độc lập</span>
+                    <span className="text-[11px] text-muted-foreground font-medium">Thành viên HĐQT độc lập</span>
                 </div>
             </div>
         </div>

@@ -8,13 +8,13 @@ import { Card } from "@/components/ui/card";
 
 const StockDetailHeader = () => {
     return (
-        <Card className="p-4 shadow-sm border-gray-200 bg-white">
+        <Card className="p-4 shadow-sm border-border bg-card">
             <div className="space-y-4">
                 {/* Top Row: Stock Identity (with AI box inside) */}
                 <StockIdentityCard />
 
                 {/* Divider */}
-                <div className="border-t border-gray-100" />
+                <div className="border-t border-border/50" />
 
                 {/* Bottom Row: Price Board + Financial Matrix */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -24,7 +24,7 @@ const StockDetailHeader = () => {
                     </div>
 
                     {/* Divider */}
-                    <div className="hidden lg:block lg:col-span-1 border-l border-gray-100" />
+                    <div className="hidden lg:block lg:col-span-1 border-l border-border/50" />
 
                     {/* Financial Matrix - 6 cols */}
                     <div className="lg:col-span-6">

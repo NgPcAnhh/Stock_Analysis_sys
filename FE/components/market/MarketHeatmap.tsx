@@ -251,10 +251,10 @@ const MarketHeatmap = () => {
     }, [data, zoomedSector]);
 
     return (
-        <Card className="shadow-sm border-gray-200">
+        <Card className="shadow-sm border-border">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <div className="flex items-center gap-4">
-                    <CardTitle className="text-lg font-bold text-gray-800">
+                    <CardTitle className="text-lg font-bold text-foreground">
                         Bản đồ thị trường
                     </CardTitle>
                     {!loading && (
@@ -282,7 +282,7 @@ const MarketHeatmap = () => {
                     )}
                 </div>
                 <Tabs value={exchange} className="w-[300px]" onValueChange={setExchange}>
-                    <TabsList className="grid w-full grid-cols-4 bg-gray-100">
+                    <TabsList className="grid w-full grid-cols-4 bg-muted">
                         <TabsTrigger value="HOSE" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white text-xs">HOSE</TabsTrigger>
                         <TabsTrigger value="HNX" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white text-xs">HNX</TabsTrigger>
                         <TabsTrigger value="UPCOM" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white text-xs">UPCOM</TabsTrigger>
@@ -307,13 +307,13 @@ const MarketHeatmap = () => {
                     <div className="flex items-center gap-1.5 mb-2 px-1 animate-in fade-in slide-in-from-left-2 duration-300">
                         <button
                             onClick={handleZoomOut}
-                            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-orange-50 hover:text-orange-600 rounded-md transition-colors border border-gray-200 hover:border-orange-300"
+                            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-muted-foreground bg-muted hover:bg-orange-50 hover:text-orange-600 rounded-md transition-colors border border-border hover:border-orange-300"
                             title="Quay lại tổng quan (Esc)"
                         >
                             <ZoomOut className="h-3 w-3" />
                             Thu nhỏ
                         </button>
-                        <div className="flex items-center gap-1 text-xs text-gray-500">
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
                             <button
                                 onClick={handleZoomOut}
                                 className="hover:text-orange-600 transition-colors flex items-center gap-1"
@@ -332,7 +332,7 @@ const MarketHeatmap = () => {
 
                 {/* Zoom hint when not zoomed */}
                 {!zoomedSector && !loading && !error && (
-                    <div className="flex items-center justify-center gap-1 mb-1 text-[10px] text-gray-400">
+                    <div className="flex items-center justify-center gap-1 mb-1 text-[10px] text-muted-foreground">
                         <ZoomIn className="h-3 w-3" />
                         <span>Click vào nhóm ngành để phóng to</span>
                     </div>

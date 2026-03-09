@@ -59,24 +59,24 @@ const StockRecommendationCard = ({ stock }: StockRecommendationCardProps) => {
     };
 
     return (
-        <Card className="shadow-sm border-gray-200 overflow-hidden hover:shadow-md transition-shadow cursor-pointer group flex flex-col">
+        <Card className="shadow-sm border-border overflow-hidden hover:shadow-md transition-shadow cursor-pointer group flex flex-col">
             {/* Header */}
             <div className="p-3 pb-2 flex-shrink-0">
                 <div className="flex items-start gap-2">
                     {/* Logo */}
-                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold text-xs ${isPositive ? 'bg-gradient-to-br from-blue-500 to-blue-700' : 'bg-gradient-to-br from-gray-500 to-gray-700'
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold text-xs ${isPositive ? 'bg-gradient-to-br from-blue-500 to-blue-700' : 'bg-gradient-to-br from-muted-foreground/60 to-muted-foreground/90'
                         }`}>
                         {stock.ticker.charAt(0)}
                     </div>
 
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1">
-                            <span className="font-bold text-sm text-gray-900 group-hover:text-blue-600 transition-colors">
+                            <span className="font-bold text-sm text-foreground group-hover:text-blue-600 transition-colors">
                                 {stock.ticker}
                             </span>
-                            <span className="text-[10px] text-gray-400">({stock.exchange})</span>
+                            <span className="text-[10px] text-muted-foreground">({stock.exchange})</span>
                         </div>
-                        <p className="text-[10px] text-gray-500 truncate">{stock.companyName}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">{stock.companyName}</p>
                     </div>
                 </div>
 
@@ -115,7 +115,7 @@ const StockRecommendationCard = ({ stock }: StockRecommendationCardProps) => {
             </div>
 
             {/* Footer Stats */}
-            <div className="grid grid-cols-3 divide-x divide-gray-100 border-t border-gray-100 bg-gray-50/50 text-center flex-shrink-0">
+            <div className="grid grid-cols-3 divide-x divide-border/50 border-t border-border/50 bg-muted/30 text-center flex-shrink-0">
                 <StatItem label="Vốn hóa" value={stock.marketCap} />
                 <StatItem label="Khối lượng giao dịch" value={stock.volume} />
                 <StatItem label="P/E" value={stock.pe} />
@@ -126,8 +126,8 @@ const StockRecommendationCard = ({ stock }: StockRecommendationCardProps) => {
 
 const StatItem = ({ label, value }: { label: string; value: string }) => (
     <div className="py-2 px-1">
-        <div className="text-[9px] text-gray-400 truncate">{label}</div>
-        <div className="text-[11px] font-semibold text-gray-700 font-[var(--font-roboto-mono)]">
+        <div className="text-[9px] text-muted-foreground truncate">{label}</div>
+        <div className="text-[11px] font-semibold text-foreground font-[var(--font-roboto-mono)]">
             {value}
         </div>
     </div>

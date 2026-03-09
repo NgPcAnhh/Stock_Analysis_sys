@@ -32,7 +32,7 @@ const changeBg = (v: number) =>
         ? "bg-green-50 text-green-700"
         : v < 0
             ? "bg-red-50 text-red-700"
-            : "bg-gray-50 text-gray-500";
+            : "bg-muted text-muted-foreground";
 
 interface MacroIndicatorsTableProps {
     data: MacroIndicator[];
@@ -96,13 +96,13 @@ export default function MacroIndicatorsTable({ data }: MacroIndicatorsTableProps
         className?: string;
     }) => (
         <TableHead
-            className={`text-right cursor-pointer select-none hover:bg-gray-100/80 transition-colors whitespace-nowrap px-4 ${className}`}
+            className={`text-right cursor-pointer select-none hover:bg-muted/50 transition-colors whitespace-nowrap px-4 ${className}`}
             onClick={() => handleSort(colKey)}
         >
             <span className="inline-flex items-center gap-1">
                 {label}
                 <ArrowUpDown
-                    className={`h-3 w-3 ${sortKey === colKey ? "text-orange-500" : "text-gray-400"}`}
+                    className={`h-3 w-3 ${sortKey === colKey ? "text-orange-500" : "text-muted-foreground"}`}
                 />
             </span>
         </TableHead>
@@ -116,10 +116,10 @@ export default function MacroIndicatorsTable({ data }: MacroIndicatorsTableProps
     };
 
     return (
-        <Card className="shadow-sm border-gray-200 overflow-hidden">
-            <div className="px-5 py-4 border-b bg-white">
-                <h3 className="text-lg font-bold text-gray-900">Chỉ số vĩ mô Việt Nam</h3>
-                <p className="text-sm text-gray-500 mt-0.5">
+        <Card className="shadow-sm border-border overflow-hidden">
+            <div className="px-5 py-4 border-b bg-card">
+                <h3 className="text-lg font-bold text-foreground">Chỉ số vĩ mô Việt Nam</h3>
+                <p className="text-sm text-muted-foreground mt-0.5">
                     Tổng hợp các chỉ số kinh tế vĩ mô quan trọng
                 </p>
             </div>
@@ -127,15 +127,15 @@ export default function MacroIndicatorsTable({ data }: MacroIndicatorsTableProps
                 <div className="overflow-x-auto">
                     <Table>
                         <TableHeader>
-                            <TableRow className="bg-gray-50/80">
+                            <TableRow className="bg-muted/50">
                                 <TableHead
-                                    className="sticky left-0 bg-gray-50/80 z-10 min-w-[220px] cursor-pointer select-none hover:bg-gray-100/80 transition-colors px-4"
+                                    className="sticky left-0 bg-muted/50 z-10 min-w-[220px] cursor-pointer select-none hover:bg-muted/50 transition-colors px-4"
                                     onClick={() => handleSort("name")}
                                 >
                                     <span className="inline-flex items-center gap-1">
                                         Chỉ số
                                         <ArrowUpDown
-                                            className={`h-3 w-3 ${sortKey === "name" ? "text-orange-500" : "text-gray-400"}`}
+                                            className={`h-3 w-3 ${sortKey === "name" ? "text-orange-500" : "text-muted-foreground"}`}
                                         />
                                     </span>
                                 </TableHead>
@@ -155,25 +155,25 @@ export default function MacroIndicatorsTable({ data }: MacroIndicatorsTableProps
                                     <React.Fragment key={category}>
                                         {/* Category header row */}
                                         <TableRow
-                                            className="bg-gray-100/60 hover:bg-gray-100 cursor-pointer transition-colors"
+                                            className="bg-muted/40 hover:bg-muted/60 cursor-pointer transition-colors"
                                             onClick={() => toggleCategory(category)}
                                         >
                                             <TableCell
                                                 colSpan={8}
-                                                className="sticky left-0 z-10 bg-gray-100/60 px-4 py-2.5"
+                                                className="sticky left-0 z-10 bg-muted/40 px-4 py-2.5"
                                             >
                                                 <div className="flex items-center gap-2">
                                                     <span className="text-base">
                                                         {categoryIcons[category] || "📈"}
                                                     </span>
-                                                    <span className="font-bold text-gray-800 text-sm">
+                                                    <span className="font-bold text-foreground text-sm">
                                                         {category}
                                                     </span>
-                                                    <span className="text-xs text-gray-500 font-normal">
+                                                    <span className="text-xs text-muted-foreground font-normal">
                                                         ({items.length} chỉ số)
                                                     </span>
                                                     <span
-                                                        className={`ml-auto text-gray-400 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                                                        className={`ml-auto text-muted-foreground transition-transform ${isExpanded ? "rotate-180" : ""}`}
                                                     >
                                                         ▼
                                                     </span>
@@ -187,15 +187,15 @@ export default function MacroIndicatorsTable({ data }: MacroIndicatorsTableProps
                                                     key={row.name}
                                                     className="hover:bg-orange-50/40 transition-colors"
                                                 >
-                                                    <TableCell className="sticky left-0 bg-white z-10 px-4 pl-8">
-                                                        <span className="font-medium text-gray-900 text-sm">
+                                                    <TableCell className="sticky left-0 bg-card z-10 px-4 pl-8">
+                                                        <span className="font-medium text-foreground text-sm">
                                                             {row.name}
                                                         </span>
                                                     </TableCell>
-                                                    <TableCell className="text-right font-bold text-gray-900 px-4 tabular-nums">
+                                                    <TableCell className="text-right font-bold text-foreground px-4 tabular-nums">
                                                         {row.value}
                                                     </TableCell>
-                                                    <TableCell className="text-center text-gray-500 text-xs px-4">
+                                                    <TableCell className="text-center text-muted-foreground text-xs px-4">
                                                         {row.unit}
                                                     </TableCell>
                                                     <TableCell className="text-right px-4">
@@ -222,10 +222,10 @@ export default function MacroIndicatorsTable({ data }: MacroIndicatorsTableProps
                                                     <TableCell className="text-center px-4">
                                                         {trendIcon(row.trend)}
                                                     </TableCell>
-                                                    <TableCell className="text-right text-gray-600 px-4 tabular-nums">
+                                                    <TableCell className="text-right text-muted-foreground px-4 tabular-nums">
                                                         {row.previousValue}
                                                     </TableCell>
-                                                    <TableCell className="text-center text-gray-500 text-xs px-4 whitespace-nowrap">
+                                                    <TableCell className="text-center text-muted-foreground text-xs px-4 whitespace-nowrap">
                                                         {row.period}
                                                     </TableCell>
                                                 </TableRow>

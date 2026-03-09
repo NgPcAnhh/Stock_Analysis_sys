@@ -120,7 +120,7 @@ const LatestNewsSlider: React.FC = () => {
 
     if (items.length === 0) {
         return (
-            <div className="flex items-center justify-center h-[280px] text-gray-400 text-sm rounded-xl border border-dashed">
+            <div className="flex items-center justify-center h-[280px] text-muted-foreground text-sm rounded-xl border border-dashed">
                 Không có tin tức
             </div>
         );
@@ -131,17 +131,17 @@ const LatestNewsSlider: React.FC = () => {
             {canLeft && (
                 <button
                     onClick={() => scroll("left")}
-                    className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full p-2 -ml-3 opacity-0 group-hover/slider:opacity-100 transition-opacity"
+                    className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-card/90 hover:bg-card shadow-lg rounded-full p-2 -ml-3 opacity-0 group-hover/slider:opacity-100 transition-opacity"
                 >
-                    <ChevronLeft className="h-5 w-5 text-gray-700" />
+                    <ChevronLeft className="h-5 w-5 text-foreground" />
                 </button>
             )}
             {canRight && (
                 <button
                     onClick={() => scroll("right")}
-                    className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full p-2 -mr-3 opacity-0 group-hover/slider:opacity-100 transition-opacity"
+                    className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-card/90 hover:bg-card shadow-lg rounded-full p-2 -mr-3 opacity-0 group-hover/slider:opacity-100 transition-opacity"
                 >
-                    <ChevronRight className="h-5 w-5 text-gray-700" />
+                    <ChevronRight className="h-5 w-5 text-foreground" />
                 </button>
             )}
 
@@ -162,9 +162,9 @@ const LatestNewsSlider: React.FC = () => {
                             rel="noopener noreferrer"
                             data-news-card
                             onClick={() => trackClick(item.id)}
-                            className="w-[calc((100%-48px)/4)] min-w-[calc((100%-48px)/4)] shrink-0 snap-start rounded-xl border bg-white overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer group flex flex-col"
+                            className="w-[calc((100%-48px)/4)] min-w-[calc((100%-48px)/4)] shrink-0 snap-start rounded-xl border bg-card overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer group flex flex-col"
                         >
-                            <div className="relative w-full h-[140px] bg-gradient-to-br from-gray-100 to-gray-50 overflow-hidden">
+                                <div className="relative w-full h-[140px] bg-gradient-to-br from-muted to-muted/50 overflow-hidden">
                                 {hasImg ? (
                                     <img
                                         src={item.summary!.match(/<img[^>]+src=["']([^"']+)["']/i)?.[1] ?? ""}
@@ -173,7 +173,7 @@ const LatestNewsSlider: React.FC = () => {
                                         loading="lazy"
                                     />
                                 ) : (
-                                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-50 to-amber-50">
+                                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-50/50 to-amber-50/50 dark:from-orange-950/30 dark:to-amber-950/30">
                                         <Newspaper className="h-10 w-10 text-orange-300" />
                                     </div>
                                 )}
@@ -186,7 +186,7 @@ const LatestNewsSlider: React.FC = () => {
                                     {item.title}
                                 </h3>
                                 <div className="flex items-center justify-between mt-auto pt-2">
-                                    <span className="text-xs text-gray-400 flex items-center gap-1">
+                                    <span className="text-xs text-muted-foreground flex items-center gap-1">
                                         <Clock className="w-3 h-3" />
                                         {timeAgo(item.published)}
                                     </span>

@@ -45,11 +45,11 @@ const StockSearchBar: React.FC<StockSearchBarProps> = ({ currentTicker, classNam
           className={cn(
             "flex items-center gap-2 px-3 py-2 rounded-lg border transition-all",
             isFocused
-              ? "border-primary ring-2 ring-primary/20 bg-white"
-              : "border-gray-200 bg-white hover:border-gray-300"
+              ? "border-primary ring-2 ring-primary/20 bg-card"
+              : "border-border bg-card hover:border-border"
           )}
         >
-          <Search size={16} className="text-gray-400 flex-shrink-0" />
+          <Search size={16} className="text-muted-foreground flex-shrink-0" />
           <input
             type="text"
             value={query}
@@ -57,13 +57,13 @@ const StockSearchBar: React.FC<StockSearchBarProps> = ({ currentTicker, classNam
             onFocus={() => setIsFocused(true)}
             onBlur={() => setTimeout(() => setIsFocused(false), 200)}
             placeholder="Nhập mã cổ phiếu (VD: VIC, FPT, HPG...)"
-            className="flex-1 text-sm bg-transparent outline-none placeholder:text-gray-400"
+            className="flex-1 text-sm bg-transparent outline-none placeholder:text-muted-foreground"
           />
           {query && (
             <button
               type="button"
               onClick={() => setQuery("")}
-              className="p-0.5 text-gray-400 hover:text-gray-600"
+              className="p-0.5 text-muted-foreground hover:text-foreground"
             >
               <X size={14} />
             </button>
@@ -73,16 +73,16 @@ const StockSearchBar: React.FC<StockSearchBarProps> = ({ currentTicker, classNam
 
       {/* Dropdown */}
       {isFocused && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 z-50 overflow-hidden max-h-80 overflow-y-auto">
+          <div className="absolute top-full left-0 right-0 mt-1 bg-card rounded-lg shadow-lg border border-border z-50 overflow-hidden max-h-80 overflow-y-auto">
           {!query && (
-            <div className="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+            <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
               <TrendingUp size={12} />
               Mã phổ biến
             </div>
           )}
 
           {filteredTickers.length === 0 ? (
-            <div className="px-3 py-4 text-center text-sm text-gray-400">
+            <div className="px-3 py-4 text-center text-sm text-muted-foreground">
               Không tìm thấy mã cổ phiếu
             </div>
           ) : (
@@ -94,7 +94,7 @@ const StockSearchBar: React.FC<StockSearchBarProps> = ({ currentTicker, classNam
                   handleSelect(t.ticker);
                 }}
                 className={cn(
-                  "w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-gray-50 transition-colors",
+                  "w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-muted/50 transition-colors",
                   currentTicker === t.ticker && "bg-primary/5"
                 )}
               >
@@ -102,8 +102,8 @@ const StockSearchBar: React.FC<StockSearchBarProps> = ({ currentTicker, classNam
                   {t.ticker.charAt(0)}
                 </div>
                 <div className="flex-1">
-                  <div className="text-sm font-semibold text-gray-800">{t.ticker}</div>
-                  <div className="text-xs text-gray-400">{t.name}</div>
+                  <div className="text-sm font-semibold text-foreground">{t.ticker}</div>
+                  <div className="text-xs text-muted-foreground">{t.name}</div>
                 </div>
                 {currentTicker === t.ticker && (
                   <div className="text-xs text-primary font-medium">Đang xem</div>
@@ -118,16 +118,16 @@ const StockSearchBar: React.FC<StockSearchBarProps> = ({ currentTicker, classNam
                 e.preventDefault();
                 handleSelect(query.trim().toUpperCase());
               }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-gray-50 transition-colors border-t border-gray-100"
+              className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-muted/50 transition-colors border-t border-border/50"
             >
-              <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
-                <Search size={14} className="text-gray-400" />
+              <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+                <Search size={14} className="text-muted-foreground" />
               </div>
               <div className="flex-1">
-                <div className="text-sm font-medium text-gray-700">
+                <div className="text-sm font-medium text-foreground">
                   Tìm &quot;{query.trim().toUpperCase()}&quot;
                 </div>
-                <div className="text-xs text-gray-400">Nhấn Enter để phân tích</div>
+                <div className="text-xs text-muted-foreground">Nhấn Enter để phân tích</div>
               </div>
             </button>
           )}

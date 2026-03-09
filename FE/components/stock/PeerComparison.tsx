@@ -8,15 +8,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 const PeerComparison = () => {
     const { peerStocks: PEER_STOCKS } = useStockDetail();
     return (
-        <Card className="shadow-sm border-gray-200 h-full flex flex-col">
+        <Card className="shadow-sm border-border h-full flex flex-col">
             <CardHeader className="pb-2">
-                <CardTitle className="text-lg font-bold text-gray-800">
+                <CardTitle className="text-lg font-bold text-foreground">
                     Công ty cùng ngành
                 </CardTitle>
             </CardHeader>
             <CardContent className="p-0 flex-1 overflow-y-auto max-h-[320px]">
                 {/* Table Header */}
-                <div className="grid grid-cols-4 gap-2 px-4 py-2.5 bg-gray-50 text-sm font-medium text-gray-500 border-y border-gray-100 sticky top-0 z-10">
+                <div className="grid grid-cols-4 gap-2 px-4 py-2.5 bg-muted text-sm font-medium text-muted-foreground border-y border-border sticky top-0 z-10">
                     <span>Mã</span>
                     <span className="text-center"></span>
                     <span className="text-right">Giá</span>
@@ -24,7 +24,7 @@ const PeerComparison = () => {
                 </div>
 
                 {/* Table Body */}
-                <div className="divide-y divide-gray-50">
+                <div className="divide-y divide-border/30">
                     {PEER_STOCKS.map((stock, index) => {
                         const isPositive = stock.priceChange >= 0;
 
@@ -77,7 +77,7 @@ const PeerComparison = () => {
                         return (
                             <div
                                 key={index}
-                                className="grid grid-cols-4 gap-2 px-4 py-2.5 items-center hover:bg-gray-50 transition-colors cursor-pointer"
+                                className="grid grid-cols-4 gap-2 px-4 py-2.5 items-center hover:bg-muted/50 transition-colors cursor-pointer"
                             >
                                 {/* Ticker */}
                                 <span className="text-base font-bold text-blue-600 hover:underline">
@@ -112,7 +112,7 @@ const PeerComparison = () => {
                                 </div>
 
                                 {/* Volume */}
-                                <span className="text-right text-sm text-gray-600 font-[var(--font-roboto-mono)]">
+                                <span className="text-right text-sm text-muted-foreground font-[var(--font-roboto-mono)]">
                                     {stock.volume.toLocaleString()}
                                 </span>
                             </div>

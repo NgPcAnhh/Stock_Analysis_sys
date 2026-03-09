@@ -97,10 +97,10 @@ const IndexImpactLiquidity = () => {
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card className="shadow-sm border-gray-200">
+            <Card className="shadow-sm border-border">
                 <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
-                        <CardTitle className="text-sm font-bold text-gray-800">
+                        <CardTitle className="text-sm font-bold text-foreground">
                             Tác động tới Index
                         </CardTitle>
                         {!loading && (
@@ -116,7 +116,7 @@ const IndexImpactLiquidity = () => {
                             <Skeleton className="h-full w-full" />
                             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
                                 <Loader2 className="w-6 h-6 text-orange-500 animate-spin" />
-                                <span className="text-[10px] text-slate-400">Đang tải...</span>
+                                <span className="text-[10px] text-muted-foreground">Đang tải...</span>
                             </div>
                         </div>
                     ) : error ? (
@@ -130,9 +130,9 @@ const IndexImpactLiquidity = () => {
                 </CardContent>
             </Card>
 
-            <Card className="shadow-sm border-gray-200">
+            <Card className="shadow-sm border-border">
                 <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-bold text-gray-800">
+                    <CardTitle className="text-sm font-bold text-foreground">
                         Giao dịch Khối ngoại
                     </CardTitle>
                 </CardHeader>
@@ -142,7 +142,7 @@ const IndexImpactLiquidity = () => {
                             <Skeleton className="h-full w-full" />
                             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
                                 <Loader2 className="w-6 h-6 text-orange-500 animate-spin" />
-                                <span className="text-[10px] text-slate-400">Đang tải...</span>
+                                <span className="text-[10px] text-muted-foreground">Đang tải...</span>
                             </div>
                         </div>
                     ) : error ? (

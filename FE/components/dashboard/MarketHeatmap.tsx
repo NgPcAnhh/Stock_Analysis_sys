@@ -101,11 +101,11 @@ export const MarketHeatmap = () => {
     };
 
     return (
-        <Card className="shadow-sm border-gray-200 h-full">
-            <CardHeader className="pb-3 flex flex-row items-center justify-between border-b border-gray-100">
-                <CardTitle className="text-lg font-bold text-gray-800">Cấu trúc thị trường</CardTitle>
+        <Card className="shadow-sm border-border h-full">
+            <CardHeader className="pb-3 flex flex-row items-center justify-between border-b border-border">
+                <CardTitle className="text-lg font-bold text-foreground">Cấu trúc thị trường</CardTitle>
                 <Tabs value={exchange} onValueChange={setExchange} className="w-auto">
-                    <TabsList className="h-8 bg-gray-100">
+                    <TabsList className="h-8 bg-muted">
                         <TabsTrigger value="all" className="text-xs px-3 h-6 data-[state=active]:bg-green-500 data-[state=active]:text-white">Tất cả</TabsTrigger>
                         <TabsTrigger value="HOSE" className="text-xs px-3 h-6 data-[state=active]:bg-green-500 data-[state=active]:text-white">HOSE</TabsTrigger>
                         <TabsTrigger value="HNX" className="text-xs px-3 h-6 data-[state=active]:bg-green-500 data-[state=active]:text-white">HNX</TabsTrigger>
@@ -119,7 +119,7 @@ export const MarketHeatmap = () => {
                         <Skeleton className="h-full w-full" />
                     </div>
                 ) : data.length === 0 ? (
-                    <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+                    <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
                         Không có dữ liệu
                     </div>
                 ) : (

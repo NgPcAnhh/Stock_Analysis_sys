@@ -19,7 +19,7 @@ function getCategoryColor(category: string) {
     for (const [key, val] of Object.entries(CATEGORY_COLORS)) {
         if (category.toLowerCase().includes(key.toLowerCase())) return val;
     }
-    return "bg-gray-100 text-gray-600";
+    return "bg-muted text-muted-foreground";
 }
 
 function formatDate(dateStr: string | null): string {
@@ -47,7 +47,7 @@ function NewsCard({ ev, idx }: { ev: { id?: string; title: string; time: string;
     return (
         <article
             key={ev.id ?? idx}
-            className="group rounded-lg border border-gray-200 bg-white p-4 hover:shadow-md hover:border-blue-200 transition-all duration-200 flex flex-col justify-between"
+            className="group rounded-lg border border-border bg-card p-4 hover:shadow-md hover:border-blue-200 transition-all duration-200 flex flex-col justify-between"
         >
             {/* Category & date */}
             <div>
@@ -60,7 +60,7 @@ function NewsCard({ ev, idx }: { ev: { id?: string; title: string; time: string;
                     )}
                 </div>
                 {/* Title */}
-                <h3 className="text-sm font-semibold text-gray-800 group-hover:text-blue-600 transition-colors leading-relaxed line-clamp-3 mb-2">
+                <h3 className="text-sm font-semibold text-foreground group-hover:text-blue-600 transition-colors leading-relaxed line-clamp-3 mb-2">
                     {ev.source ? (
                         <a href={ev.source} target="_blank" rel="noopener noreferrer" className="hover:underline">
                             {ev.title}
@@ -71,8 +71,8 @@ function NewsCard({ ev, idx }: { ev: { id?: string; title: string; time: string;
                 </h3>
             </div>
             {/* Footer: date + source */}
-            <div className="flex items-center justify-between mt-auto pt-2 border-t border-gray-100">
-                <div className="text-xs text-gray-500 flex items-center gap-1">
+            <div className="flex items-center justify-between mt-auto pt-2 border-t border-border/50">
+                <div className="text-xs text-muted-foreground flex items-center gap-1">
                     <Calendar className="w-3 h-3" />
                     {formatDate(ev.time)}
                 </div>
@@ -104,7 +104,7 @@ const CorporateNews = ({ mode = "overview" }: CorporateNewsProps) => {
 
     if (!events.length) {
         return (
-            <div className="rounded-lg border border-gray-200 bg-white py-8 text-center text-sm text-gray-400">
+            <div className="rounded-lg border border-border bg-card py-8 text-center text-sm text-muted-foreground">
                 Chưa có sự kiện nào cho mã này.
             </div>
         );

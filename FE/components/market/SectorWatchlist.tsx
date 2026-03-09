@@ -116,8 +116,8 @@ export function SectorWatchlist() {
     /* ── Loading skeleton ── */
     if (loading) {
         return (
-            <Card className="shadow-md border-slate-200">
-                <CardHeader className="pb-3 border-b border-slate-100">
+            <Card className="shadow-md border-border">
+                <CardHeader className="pb-3 border-b border-border/50">
                     <Skeleton className="h-5 w-48" />
                 </CardHeader>
                 <CardContent className="pt-4 space-y-4 animate-pulse">
@@ -148,8 +148,8 @@ export function SectorWatchlist() {
     /* ── Error state ── */
     if (error || !watchlistData) {
         return (
-            <Card className="shadow-md border-slate-200">
-                <CardContent className="flex flex-col items-center justify-center py-12 text-gray-500 gap-3">
+            <Card className="shadow-md border-border">
+                <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-3">
                     <p>{error || "Không có dữ liệu"}</p>
                     <button onClick={fetchData} className="flex items-center gap-1 text-blue-600 hover:underline text-sm">
                         <RefreshCw className="w-4 h-4" /> Thử lại
@@ -163,14 +163,14 @@ export function SectorWatchlist() {
     const visibleSectors = sectors.filter((s) => selectedSectors.includes(s.id));
 
     return (
-        <Card className="shadow-md border-slate-200">
+        <Card className="shadow-md border-border">
             {/* ── Header with title + color legend ── */}
-            <CardHeader className="pb-3 border-b border-slate-100">
+            <CardHeader className="pb-3 border-b border-border/50">
                 <div className="flex items-center justify-between">
-                    <CardTitle className="text-base font-bold text-slate-800">
+                    <CardTitle className="text-base font-bold text-foreground">
                         Bảng giá chi tiết theo ngành
                     </CardTitle>
-                    <button onClick={fetchData} className="text-gray-400 hover:text-gray-600" title="Làm mới">
+                    <button onClick={fetchData} className="text-muted-foreground hover:text-foreground" title="Làm mới">
                         <RefreshCw className="w-4 h-4" />
                     </button>
                 </div>
@@ -179,7 +179,7 @@ export function SectorWatchlist() {
                     {(["floor", "strongDown", "down", "ref", "up", "strongUp", "ceiling"] as PriceLevel[]).map((level) => (
                         <span key={level} className="flex items-center gap-1 text-[10px]">
                             <span className={`inline-block w-3 h-3 rounded-sm ${LEVEL_COLORS[level].dot}`} />
-                            <span className="text-slate-500">{LEVEL_LABELS[level]}</span>
+                            <span className="text-muted-foreground">{LEVEL_LABELS[level]}</span>
                         </span>
                     ))}
                 </div>
@@ -196,7 +196,7 @@ export function SectorWatchlist() {
                     </button>
                     <button
                         onClick={() => setSelectedSectors([])}
-                        className="text-xs text-gray-400 hover:underline font-medium mr-2"
+                        className="text-xs text-muted-foreground hover:underline font-medium mr-2"
                     >
                         Bỏ chọn
                     </button>
@@ -209,12 +209,12 @@ export function SectorWatchlist() {
                                 className={`cursor-pointer transition-all hover:opacity-80 px-3 py-1 text-xs ${
                                     isSelected
                                         ? "bg-orange-500 hover:bg-orange-600 text-white border-orange-500"
-                                        : "bg-white text-slate-600 border-slate-200 hover:border-orange-300 hover:text-orange-600"
+                                        : "bg-card text-muted-foreground border-border hover:border-orange-300 hover:text-orange-600"
                                 }`}
                                 onClick={() => toggleSector(sector.id)}
                             >
                                 {sector.name}
-                                <span className={`ml-1.5 ${isSelected ? "text-white/80" : "text-slate-400"}`}>
+                                <span className={`ml-1.5 ${isSelected ? "text-white/80" : "text-muted-foreground"}`}>
                                     {sector.count}
                                 </span>
                             </Badge>
@@ -236,26 +236,26 @@ export function SectorWatchlist() {
                         return (
                             <div
                                 key={sector.id}
-                                className="border border-slate-200 rounded-lg overflow-hidden"
+                                className="border border-border rounded-lg overflow-hidden"
                             >
                                 {/* Sector header */}
-                                <div className="flex justify-between items-center px-3 py-2 bg-slate-50 border-b border-slate-100">
-                                    <span className="text-xs font-bold text-slate-700 truncate">
+                                <div className="flex justify-between items-center px-3 py-2 bg-muted/50 border-b border-border/50">
+                                    <span className="text-xs font-bold text-foreground truncate">
                                         {sector.name}
                                     </span>
                                     <div className="flex items-center gap-1.5 text-[10px] shrink-0 ml-2">
                                         <span className="text-green-600 font-semibold">{sectorUp}&#8593;</span>
                                         <span className="text-yellow-500 font-semibold">{sectorUnch}&#8722;</span>
                                         <span className="text-red-600 font-semibold">{sectorDown}&#8595;</span>
-                                        <span className="text-slate-400">({items.length})</span>
+                                        <span className="text-muted-foreground">({items.length})</span>
                                     </div>
                                 </div>
 
                                 {/* Stock list — compact: Mã | Giá | % */}
                                 <div className="overflow-y-auto max-h-[280px]">
                                     <table className="w-full text-xs">
-                                        <thead className="sticky top-0 bg-white z-10">
-                                            <tr className="border-b border-slate-100 text-slate-400">
+                                        <thead className="sticky top-0 bg-card z-10">
+                                            <tr className="border-b border-border/50 text-muted-foreground">
                                                 <th className="text-left py-1 px-2 font-medium">Mã</th>
                                                 <th className="text-right py-1 px-2 font-medium">Giá</th>
                                                 <th className="text-right py-1 px-2 font-medium">%</th>
@@ -268,7 +268,7 @@ export function SectorWatchlist() {
                                                 return (
                                                     <tr
                                                         key={stock.symbol}
-                                                        className="border-b border-slate-50 hover:bg-slate-50/80 transition-colors"
+                                                        className="border-b border-border/50 hover:bg-muted/40 transition-colors"
                                                     >
                                                         <td className="py-1 px-2">
                                                             <Link
@@ -300,7 +300,7 @@ export function SectorWatchlist() {
                 </div>
 
                 {selectedSectors.length === 0 && (
-                    <div className="text-center py-12 text-gray-400 text-sm">
+                    <div className="text-center py-12 text-muted-foreground text-sm">
                         Chọn ít nhất một ngành để xem bảng giá chi tiết
                     </div>
                 )}

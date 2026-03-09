@@ -8,10 +8,10 @@ import { Download } from "lucide-react";
 const HistoricalDataTable = () => {
     const { historicalData: HISTORICAL_DATA } = useStockDetail();
     return (
-        <Card className="shadow-sm border-gray-200 h-full flex flex-col">
+        <Card className="shadow-sm border-border h-full flex flex-col">
             <CardHeader className="pb-2">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                    <CardTitle className="text-lg font-bold text-gray-800">
+                    <CardTitle className="text-lg font-bold text-foreground">
                         Dữ liệu lịch sử
                     </CardTitle>
                     <div className="flex items-center gap-2">
@@ -31,37 +31,37 @@ const HistoricalDataTable = () => {
                 <div className="overflow-x-auto overflow-y-auto max-h-[320px]">
                     <table className="w-full text-sm">
                         <thead className="sticky top-0 z-10">
-                            <tr className="bg-gray-50 border-y border-gray-100">
-                                <th className="px-4 py-3 text-left font-medium text-gray-500">Ngày</th>
-                                <th className="px-4 py-3 text-right font-medium text-gray-500">Giá mở cửa</th>
-                                <th className="px-4 py-3 text-right font-medium text-gray-500">Giá cao nhất</th>
-                                <th className="px-4 py-3 text-right font-medium text-gray-500">Giá thấp nhất</th>
-                                <th className="px-4 py-3 text-right font-medium text-gray-500">Giá đóng cửa</th>
-                                <th className="px-4 py-3 text-right font-medium text-gray-500">Thay đổi giá</th>
-                                <th className="px-4 py-3 text-right font-medium text-gray-500">% thay đổi</th>
-                                <th className="px-4 py-3 text-right font-medium text-gray-500">Khối lượng</th>
+                            <tr className="bg-muted/50 border-y border-border/50">
+                                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Ngày</th>
+                                <th className="px-4 py-3 text-right font-medium text-muted-foreground">Giá mở cửa</th>
+                                <th className="px-4 py-3 text-right font-medium text-muted-foreground">Giá cao nhất</th>
+                                <th className="px-4 py-3 text-right font-medium text-muted-foreground">Giá thấp nhất</th>
+                                <th className="px-4 py-3 text-right font-medium text-muted-foreground">Giá đóng cửa</th>
+                                <th className="px-4 py-3 text-right font-medium text-muted-foreground">Thay đổi giá</th>
+                                <th className="px-4 py-3 text-right font-medium text-muted-foreground">% thay đổi</th>
+                                <th className="px-4 py-3 text-right font-medium text-muted-foreground">Khối lượng</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-50">
+                        <tbody className="divide-y divide-border/30">
                             {HISTORICAL_DATA.map((row, index) => {
                                 const isPositive = row.change >= 0;
                                 return (
                                     <tr
                                         key={index}
-                                        className={`hover:bg-gray-50 transition-colors ${index % 2 === 0 ? "bg-white" : "bg-gray-50/50"
+                                        className={`hover:bg-muted/50 transition-colors ${index % 2 === 0 ? "bg-card" : "bg-muted/30"
                                             }`}
                                     >
-                                        <td className="px-4 py-3 text-gray-700 font-medium">{row.date}</td>
-                                        <td className="px-4 py-3 text-right text-gray-900 font-[var(--font-roboto-mono)]">
+                                        <td className="px-4 py-3 text-muted-foreground font-medium">{row.date}</td>
+                                        <td className="px-4 py-3 text-right text-foreground font-[var(--font-roboto-mono)]">
                                             {row.open.toLocaleString()}
                                         </td>
-                                        <td className="px-4 py-3 text-right text-gray-900 font-[var(--font-roboto-mono)]">
+                                        <td className="px-4 py-3 text-right text-foreground font-[var(--font-roboto-mono)]">
                                             {row.high.toLocaleString()}
                                         </td>
-                                        <td className="px-4 py-3 text-right text-gray-900 font-[var(--font-roboto-mono)]">
+                                        <td className="px-4 py-3 text-right text-foreground font-[var(--font-roboto-mono)]">
                                             {row.low.toLocaleString()}
                                         </td>
-                                        <td className="px-4 py-3 text-right text-gray-900 font-semibold font-[var(--font-roboto-mono)]">
+                                        <td className="px-4 py-3 text-right text-foreground font-semibold font-[var(--font-roboto-mono)]">
                                             {row.close.toLocaleString()}
                                         </td>
                                         <td
@@ -78,7 +78,7 @@ const HistoricalDataTable = () => {
                                             {isPositive ? "" : ""}
                                             {row.changePercent.toFixed(2)}%
                                         </td>
-                                        <td className="px-4 py-3 text-right text-gray-700 font-[var(--font-roboto-mono)]">
+                                        <td className="px-4 py-3 text-right text-muted-foreground font-[var(--font-roboto-mono)]">
                                             {row.volume.toLocaleString()}
                                         </td>
                                     </tr>

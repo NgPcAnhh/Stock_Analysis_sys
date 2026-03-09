@@ -100,8 +100,8 @@ const SectorMarketOverview = () => {
     if (loading) {
         return (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card className="shadow-sm border-gray-200">
-                    <CardHeader className="pb-2"><CardTitle className="text-lg font-bold text-gray-800">Biến động ngành</CardTitle></CardHeader>
+                <Card className="shadow-sm border-border">
+                    <CardHeader className="pb-2"><CardTitle className="text-lg font-bold text-foreground">Biến động ngành</CardTitle></CardHeader>
                     <CardContent>
                         <div className="h-[350px] relative overflow-hidden rounded-lg">
                             <Skeleton className="h-full w-full" />
@@ -112,8 +112,8 @@ const SectorMarketOverview = () => {
                         </div>
                     </CardContent>
                 </Card>
-                <Card className="shadow-sm border-gray-200">
-                    <CardHeader className="pb-2"><CardTitle className="text-lg font-bold text-gray-800">Chi tiết ngành</CardTitle></CardHeader>
+                <Card className="shadow-sm border-border">
+                    <CardHeader className="pb-2"><CardTitle className="text-lg font-bold text-foreground">Chi tiết ngành</CardTitle></CardHeader>
                     <CardContent>
                         <div className="space-y-2.5 animate-pulse">
                             <div className="flex justify-between border-b pb-2">
@@ -137,7 +137,7 @@ const SectorMarketOverview = () => {
 
     if (error) {
         return (
-            <div className="flex flex-col items-center justify-center py-12 text-gray-500 gap-3">
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-3">
                 <p>{error}</p>
                 <button onClick={fetchData} className="flex items-center gap-1 text-blue-600 hover:underline text-sm">
                     <RefreshCw className="w-4 h-4" /> Thử lại
@@ -151,8 +151,8 @@ const SectorMarketOverview = () => {
             <Card className="shadow-sm border-gray-200">
                 <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg font-bold text-gray-800">Biến động ngành</CardTitle>
-                        <button onClick={fetchData} className="text-gray-400 hover:text-gray-600"><RefreshCw className="w-4 h-4" /></button>
+                        <CardTitle className="text-lg font-bold text-foreground">Biến động ngành</CardTitle>
+                        <button onClick={fetchData} className="text-muted-foreground hover:text-foreground"><RefreshCw className="w-4 h-4" /></button>
                     </div>
                 </CardHeader>
                 <CardContent>
@@ -162,7 +162,7 @@ const SectorMarketOverview = () => {
 
             <Card className="shadow-sm border-gray-200">
                 <CardHeader className="pb-2">
-                    <CardTitle className="text-lg font-bold text-gray-800">Chi tiết ngành</CardTitle>
+                        <CardTitle className="text-lg font-bold text-foreground">Chi tiết ngành</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="overflow-auto max-h-[350px]">

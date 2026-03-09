@@ -74,7 +74,7 @@ const IndicatorSelector: React.FC<IndicatorSelectorProps> = ({
       <div>
         <button
           onClick={() => setExpandOverlays(!expandOverlays)}
-          className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider hover:bg-gray-50 rounded-lg transition-colors"
+          className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:bg-muted/50 rounded-lg transition-colors"
         >
           <span>Chỉ báo trên biểu đồ</span>
           {expandOverlays ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -92,25 +92,25 @@ const IndicatorSelector: React.FC<IndicatorSelectorProps> = ({
                     "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all",
                     isSelected
                       ? "bg-primary/10 text-primary border border-primary/20"
-                      : "text-gray-600 hover:bg-gray-50 border border-transparent"
+                      : "text-muted-foreground hover:bg-muted/50 border border-transparent"
                   )}
                 >
                   <div
                     className={cn(
                       "flex items-center justify-center w-6 h-6 rounded-md transition-colors",
-                      isSelected ? "bg-primary/20 text-primary" : "bg-gray-100 text-gray-400"
+                      isSelected ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
                     )}
                   >
                     {ind.icon}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-xs font-semibold truncate">{ind.name}</div>
-                    <div className="text-[10px] text-gray-400 truncate">{ind.description}</div>
+                    <div className="text-[10px] text-muted-foreground truncate">{ind.description}</div>
                   </div>
                   <div
                     className={cn(
                       "w-4 h-4 rounded border-2 flex items-center justify-center transition-colors",
-                      isSelected ? "bg-primary border-primary" : "border-gray-300"
+                      isSelected ? "bg-primary border-primary" : "border-border"
                     )}
                   >
                     {isSelected && (
@@ -130,7 +130,7 @@ const IndicatorSelector: React.FC<IndicatorSelectorProps> = ({
       <div>
         <button
           onClick={() => setExpandSub(!expandSub)}
-          className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider hover:bg-gray-50 rounded-lg transition-colors"
+          className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:bg-muted/50 rounded-lg transition-colors"
         >
           <span>Chỉ báo phụ</span>
           {expandSub ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -148,25 +148,25 @@ const IndicatorSelector: React.FC<IndicatorSelectorProps> = ({
                     "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all",
                     isSelected
                       ? "bg-primary/10 text-primary border border-primary/20"
-                      : "text-gray-600 hover:bg-gray-50 border border-transparent"
+                      : "text-muted-foreground hover:bg-muted/50 border border-transparent"
                   )}
                 >
                   <div
                     className={cn(
                       "flex items-center justify-center w-6 h-6 rounded-md transition-colors",
-                      isSelected ? "bg-primary/20 text-primary" : "bg-gray-100 text-gray-400"
+                      isSelected ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
                     )}
                   >
                     {ind.icon}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-xs font-semibold truncate">{ind.name}</div>
-                    <div className="text-[10px] text-gray-400 truncate">{ind.description}</div>
+                    <div className="text-[10px] text-muted-foreground truncate">{ind.description}</div>
                   </div>
                   <div
                     className={cn(
                       "w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors",
-                      isSelected ? "border-primary" : "border-gray-300"
+                      isSelected ? "border-primary" : "border-border"
                     )}
                   >
                     {isSelected && <div className="w-2 h-2 rounded-full bg-primary" />}

@@ -102,7 +102,7 @@ const HeroNewsSection = () => {
 
     if (items.length === 0) {
         return (
-            <div className="flex items-center justify-center h-[280px] text-gray-400 text-sm rounded-xl border border-dashed">
+            <div className="flex items-center justify-center h-[280px] text-muted-foreground text-sm rounded-xl border border-dashed">
                 Không có tin tức
             </div>
         );
@@ -114,7 +114,7 @@ const HeroNewsSection = () => {
             {canLeft && (
                 <button
                     onClick={() => scroll("left")}
-                    className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full p-2 -ml-3 opacity-0 group-hover/slider:opacity-100 transition-opacity"
+                    className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-card/90 hover:bg-card shadow-lg rounded-full p-2 -ml-3 opacity-0 group-hover/slider:opacity-100 transition-opacity"
                 >
                     <ChevronLeft className="h-5 w-5 text-gray-700" />
                 </button>
@@ -123,7 +123,7 @@ const HeroNewsSection = () => {
             {canRight && (
                 <button
                     onClick={() => scroll("right")}
-                    className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full p-2 -mr-3 opacity-0 group-hover/slider:opacity-100 transition-opacity"
+                    className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-card/90 hover:bg-card shadow-lg rounded-full p-2 -mr-3 opacity-0 group-hover/slider:opacity-100 transition-opacity"
                 >
                     <ChevronRight className="h-5 w-5 text-gray-700" />
                 </button>
@@ -149,10 +149,10 @@ const HeroNewsSection = () => {
                             key={item.id}
                             {...(wrapperProps as any)}
                             data-news-card
-                            className="w-[calc((100%-48px)/4)] min-w-[calc((100%-48px)/4)] shrink-0 snap-start rounded-lg border bg-white overflow-hidden shadow-sm hover:shadow-lg transition-all cursor-pointer group flex flex-col"
+                            className="w-[calc((100%-48px)/4)] min-w-[calc((100%-48px)/4)] shrink-0 snap-start rounded-lg border bg-card overflow-hidden shadow-sm hover:shadow-lg transition-all cursor-pointer group flex flex-col"
                         >
                             {/* Thumbnail */}
-                            <div className="relative w-full h-[140px] bg-gradient-to-br from-gray-100 to-gray-50 overflow-hidden">
+                            <div className="relative w-full h-[140px] bg-gradient-to-br from-muted to-muted/50 overflow-hidden">
                                 {hasImg ? (
                                     <img
                                         src={item.summary!.match(/<img[^>]+src=["']([^"']+)["']/i)?.[1] ?? ""}
@@ -162,7 +162,7 @@ const HeroNewsSection = () => {
                                     />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center">
-                                        <Newspaper className="h-10 w-10 text-gray-300" />
+                                        <Newspaper className="h-10 w-10 text-muted-foreground" />
                                     </div>
                                 )}
                                 <Badge className={`absolute top-2 left-2 ${badgeColor} text-white text-[11px] px-2 py-0.5`}>
@@ -176,7 +176,7 @@ const HeroNewsSection = () => {
                                     {item.title}
                                 </h3>
                                 <div className="flex items-center justify-between mt-auto pt-2">
-                                    <span className="text-xs text-gray-400 flex items-center gap-1">
+                                    <span className="text-xs text-muted-foreground flex items-center gap-1">
                                         <Clock className="w-3 h-3" />
                                         {timeAgo(item.published)}
                                     </span>

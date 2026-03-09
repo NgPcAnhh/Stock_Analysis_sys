@@ -70,7 +70,7 @@ const MostClickedNews: React.FC = () => {
 
     if (loading) {
         return (
-            <Card className="border-gray-200 shadow-sm">
+            <Card className="border-border shadow-sm">
                 <CardHeader className="pb-3">
                     <Skeleton className="h-5 w-40" />
                 </CardHeader>
@@ -84,20 +84,20 @@ const MostClickedNews: React.FC = () => {
     }
 
     return (
-        <Card className="border-gray-200 shadow-sm">
+        <Card className="border-border shadow-sm">
             <CardHeader className="pb-3">
-                <CardTitle className="text-base font-bold text-gray-800 flex items-center gap-2">
+                <CardTitle className="text-base font-bold text-foreground flex items-center gap-2">
                     <TrendingUp className="w-4 h-4 text-orange-500" />
                     Đọc nhiều nhất
                 </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
                 {items.length === 0 ? (
-                    <div className="py-8 text-center text-sm text-gray-400">
+                    <div className="py-8 text-center text-sm text-muted-foreground">
                         Chưa có dữ liệu
                     </div>
                 ) : (
-                    <div className="divide-y divide-gray-100">
+                    <div className="divide-y divide-border/50">
                         {items.map((item, index) => (
                             <a
                                 key={item.id}
@@ -109,16 +109,16 @@ const MostClickedNews: React.FC = () => {
                             >
                                 <span
                                     className={`text-lg font-black w-7 text-center shrink-0 ${
-                                        index < 3 ? "text-orange-500" : "text-gray-300"
+                                        index < 3 ? "text-orange-500" : "text-muted-foreground"
                                     }`}
                                 >
                                     {index + 1}
                                 </span>
                                 <div className="flex-1 min-w-0">
-                                    <h4 className="text-sm font-medium text-gray-700 line-clamp-2 group-hover:text-orange-600 transition-colors leading-snug">
+                                    <h4 className="text-sm font-medium text-foreground line-clamp-2 group-hover:text-orange-600 transition-colors leading-snug">
                                         {item.title}
                                     </h4>
-                                    <div className="flex items-center gap-2 mt-1 text-[11px] text-gray-400">
+                                    <div className="flex items-center gap-2 mt-1 text-[11px] text-muted-foreground">
                                         <span className="flex items-center gap-0.5">
                                             <Eye className="w-3 h-3" />
                                             {item.click_count}
@@ -130,7 +130,7 @@ const MostClickedNews: React.FC = () => {
                                         </span>
                                     </div>
                                 </div>
-                                <ExternalLink className="w-3.5 h-3.5 text-gray-300 group-hover:text-orange-400 shrink-0 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <ExternalLink className="w-3.5 h-3.5 text-muted-foreground group-hover:text-orange-400 shrink-0 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity" />
                             </a>
                         ))}
                     </div>

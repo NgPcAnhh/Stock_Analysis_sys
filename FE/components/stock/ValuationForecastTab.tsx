@@ -21,11 +21,11 @@ const CardWrapper = ({
   className?: string;
   accent?: string;
 }) => (
-  <div className={`bg-white rounded-xl shadow-sm border border-gray-100 ${accent ?? ""} ${className}`}>
+  <div className={`bg-card rounded-xl shadow-sm border border-border/50 ${accent ?? ""} ${className}`}>
     {title && (
       <div className="px-5 pt-4 pb-2 flex items-center gap-2">
         {icon && <span className="text-lg">{icon}</span>}
-        <h3 className="text-sm font-semibold text-gray-700">{title}</h3>
+        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
       </div>
     )}
     <div className="px-5 pb-5">{children}</div>
@@ -36,8 +36,8 @@ const SectionHeading = ({ icon, title, subtitle }: { icon: string; title: string
   <div className="flex items-start gap-3 mb-4 mt-2">
     <span className="text-xl leading-none mt-0.5">{icon}</span>
     <div>
-      <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">{title}</h3>
-      {subtitle && <p className="text-[11px] text-gray-400 mt-0.5">{subtitle}</p>}
+      <h3 className="text-sm font-bold text-foreground uppercase tracking-wide">{title}</h3>
+      {subtitle && <p className="text-[11px] text-muted-foreground mt-0.5">{subtitle}</p>}
     </div>
   </div>
 );
@@ -48,12 +48,12 @@ const InsightBlock = ({ level, children }: { level: InsightLevel; children: Reac
     positive: { border: "border-[#00C076]", bg: "bg-green-50", icon: "✅" },
     warning: { border: "border-[#FBBF24]", bg: "bg-yellow-50", icon: "⚠️" },
     negative: { border: "border-[#EF4444]", bg: "bg-red-50", icon: "🚨" },
-    neutral: { border: "border-gray-300", bg: "bg-gray-50", icon: "💡" },
+    neutral: { border: "border-border", bg: "bg-muted/50", icon: "💡" },
   };
   const s = styles[level];
   return (
     <div className={`border-l-4 ${s.border} ${s.bg} rounded-r-lg py-2 px-3 mt-3`}>
-      <p className="text-xs text-gray-600"><span className="mr-1">{s.icon}</span>{children}</p>
+      <p className="text-xs text-muted-foreground"><span className="mr-1">{s.icon}</span>{children}</p>
     </div>
   );
 };
@@ -75,12 +75,12 @@ function ValuationSummaryRow({ summary }: { summary: ValuationData["summary"] })
           <CardWrapper className="h-full">
             <div className="flex flex-col items-center justify-center h-full pt-2 gap-3">
               <div className="text-center">
-                <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-1">Gia hien tai</p>
-                <p className="text-3xl font-extrabold text-gray-800 font-mono">{fmtVND(currentPrice)}</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">Gia hien tai</p>
+                <p className="text-3xl font-extrabold text-foreground font-mono">{fmtVND(currentPrice)}</p>
               </div>
-              <div className="w-12 border-t-2 border-dashed border-gray-300" />
+              <div className="w-12 border-t-2 border-dashed border-border" />
               <div className="text-center">
-                <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-1">Gia tri noi tai</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">Gia tri noi tai</p>
                 <p className="text-3xl font-extrabold font-mono" style={{ color: verdictColor }}>{fmtVND(intrinsicValue)}</p>
               </div>
               <div className="px-4 py-1.5 rounded-full text-xs font-bold text-white" style={{ backgroundColor: verdictColor }}>
@@ -94,9 +94,9 @@ function ValuationSummaryRow({ summary }: { summary: ValuationData["summary"] })
             {methods.length > 0 ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-2">
                 {methods.map((m) => (
-                  <div key={m.method} className="bg-gray-50 rounded-xl border border-gray-100 px-4 py-3 text-center">
-                    <p className="text-[11px] text-gray-500 mb-1">{m.method}</p>
-                    <p className="text-lg font-extrabold text-gray-800 font-mono">{m.value > 0 ? fmtVND(m.value) : "N/A"}</p>
+                  <div key={m.method} className="bg-muted/50 rounded-xl border border-border/50 px-4 py-3 text-center">
+                    <p className="text-[11px] text-muted-foreground mb-1">{m.method}</p>
+                    <p className="text-lg font-extrabold text-foreground font-mono">{m.value > 0 ? fmtVND(m.value) : "N/A"}</p>
                     {m.value > 0 && (
                       <p className={`text-[10px] ${m.value > currentPrice ? "text-[#00C076]" : "text-[#EF4444]"}`}>
                         {m.value > currentPrice ? "↑" : "↓"} {((m.value / currentPrice - 1) * 100).toFixed(1)}% vs gia
@@ -105,7 +105,7 @@ function ValuationSummaryRow({ summary }: { summary: ValuationData["summary"] })
                   </div>
                 ))}
               </div>
-            ) : <p className="text-gray-400 text-center py-4">Khong co du lieu</p>}
+            ) : <p className="text-muted-foreground text-center py-4">Khong co du lieu</p>}
           </CardWrapper>
         </div>
       </div>
@@ -184,20 +184,20 @@ function DCFSection({ dcf }: { dcf: ValuationData["dcf"] }) {
           { label: "Terminal Growth", value: `${(terminalGrowth * 100).toFixed(1)}%` },
           { label: "Fair Value (DCF)", value: fmtVND(intrinsicValue), color: "text-[#00C076]" },
         ].map((item) => (
-          <div key={item.label} className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
-            <span className="text-[10px] text-gray-400 uppercase">{item.label}</span>
-            <p className={`text-sm font-bold font-mono ${item.color ?? "text-gray-800"}`}>{item.value}</p>
+          <div key={item.label} className="bg-muted/50 rounded-lg px-3 py-2 border border-border/50">
+            <span className="text-[10px] text-muted-foreground uppercase">{item.label}</span>
+            <p className={`text-sm font-bold font-mono ${item.color ?? "text-foreground"}`}>{item.value}</p>
           </div>
         ))}
       </div>
 
       {projections.length > 0 && (
         <>
-          <p className="text-xs font-semibold text-gray-600 mb-2">Du phong FCF & PV</p>
+          <p className="text-xs font-semibold text-muted-foreground mb-2">Du phong FCF & PV</p>
           <div className="overflow-x-auto mb-4">
             <table className="w-full text-[11px]">
               <thead>
-                <tr className="bg-gray-50 text-gray-500 uppercase tracking-wider">
+                <tr className="bg-muted text-muted-foreground uppercase tracking-wider">
                   <th className="text-left px-3 py-2 font-semibold">Nam</th>
                   <th className="text-right px-3 py-2 font-semibold">FCF (ty VND)</th>
                   <th className="text-right px-3 py-2 font-semibold">PV (ty VND)</th>
@@ -205,8 +205,8 @@ function DCFSection({ dcf }: { dcf: ValuationData["dcf"] }) {
               </thead>
               <tbody>
                 {projections.map((p) => (
-                  <tr key={p.year} className="border-b border-gray-100">
-                    <td className="px-3 py-2 font-medium text-gray-700">Y{p.year}</td>
+                  <tr key={p.year} className="border-b border-border/50">
+                    <td className="px-3 py-2 font-medium text-foreground">Y{p.year}</td>
                     <td className="text-right px-3 py-2 font-mono">{p.fcf.toLocaleString("vi-VN")}</td>
                     <td className="text-right px-3 py-2 font-mono">{p.pv.toLocaleString("vi-VN")}</td>
                   </tr>
@@ -219,26 +219,26 @@ function DCFSection({ dcf }: { dcf: ValuationData["dcf"] }) {
 
       {sensitivityMatrix.length > 0 && (
         <>
-          <p className="text-xs font-semibold text-gray-600 mb-2">Bang nhay cam (WACC vs Terminal Growth)</p>
+          <p className="text-xs font-semibold text-muted-foreground mb-2">Bang nhay cam (WACC vs Terminal Growth)</p>
           <div className="overflow-x-auto">
             <table className="w-full text-[11px]">
               <thead>
-                <tr className="bg-gray-50">
-                  <th className="px-2 py-1.5 text-left text-gray-400 font-semibold">WACC \ g</th>
+                <tr className="bg-muted">
+                  <th className="px-2 py-1.5 text-left text-muted-foreground font-semibold">WACC \ g</th>
                   {[2, 2.5, 3, 3.5, 4].map((g) => (
-                    <th key={g} className="px-2 py-1.5 text-right text-gray-500 font-semibold">{g}%</th>
+                    <th key={g} className="px-2 py-1.5 text-right text-muted-foreground font-semibold">{g}%</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {[10, 11, 12, 13, 14].map((w, wi) => (
-                  <tr key={w} className={`border-b border-gray-100 ${w === Math.round(wacc * 100) ? "bg-orange-50 font-bold" : ""}`}>
-                    <td className="px-2 py-1.5 font-semibold text-gray-600">{w}%</td>
+                  <tr key={w} className={`border-b border-border/50 ${w === Math.round(wacc * 100) ? "bg-orange-50 font-bold" : ""}`}>
+                    <td className="px-2 py-1.5 font-semibold text-muted-foreground">{w}%</td>
                     {sensitivityMatrix[wi]?.map((val, gi) => (
-                      <td key={gi} className={`text-right px-2 py-1.5 font-mono ${val > 0 ? "text-gray-700" : "text-gray-300"}`}>
+                      <td key={gi} className={`text-right px-2 py-1.5 font-mono ${val > 0 ? "text-foreground" : "text-muted-foreground/60"}`}>
                         {val > 0 ? fmtVND(val) : "—"}
                       </td>
-                    )) ?? <td colSpan={5} className="text-gray-300">—</td>}
+                    )) ?? <td colSpan={5} className="text-muted-foreground/60">—</td>}
                   </tr>
                 ))}
               </tbody>
@@ -270,9 +270,9 @@ function DDMSection({ ddm }: { ddm: ValuationData["ddm"] }) {
           { label: "Growth Rate (g)", value: `${(g * 100).toFixed(1)}%` },
           { label: "Fair Value (DDM)", value: `${fmtVND(intrinsic)} VND`, color: "text-[#00C076]" },
         ].map((item) => (
-          <div key={item.label} className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-100 text-center">
-            <p className="text-[10px] text-gray-400 uppercase">{item.label}</p>
-            <p className={`text-sm font-bold font-mono ${item.color ?? "text-gray-800"}`}>{item.value}</p>
+          <div key={item.label} className="bg-muted/50 rounded-lg px-3 py-2 border border-border/50 text-center">
+            <p className="text-[10px] text-muted-foreground uppercase">{item.label}</p>
+            <p className={`text-sm font-bold font-mono ${item.color ?? "text-foreground"}`}>{item.value}</p>
           </div>
         ))}
       </div>
@@ -354,7 +354,7 @@ function PeerValuationSection({ peerValuation }: { peerValuation: ValuationData[
         <div className="overflow-x-auto mb-4">
           <table className="w-full text-[11px]">
             <thead>
-              <tr className="bg-gray-50 text-gray-500 uppercase tracking-wider">
+              <tr className="bg-muted text-muted-foreground uppercase tracking-wider">
                 <th className="text-left px-3 py-2 font-semibold">Ticker</th>
                 <th className="text-left px-2 py-2 font-semibold">Ten</th>
                 <th className="text-right px-2 py-2 font-semibold">P/E</th>
@@ -366,13 +366,13 @@ function PeerValuationSection({ peerValuation }: { peerValuation: ValuationData[
             </thead>
             <tbody>
               {peerValuation.map((p) => (
-                <tr key={p.ticker} className="border-b border-gray-100 hover:bg-gray-50/60 transition-colors">
-                  <td className="px-3 py-2 font-bold text-gray-800">{p.ticker}</td>
-                  <td className="px-2 py-2 text-gray-600 max-w-[180px] truncate">{p.companyName}</td>
-                  <td className={`text-right px-2 py-2 font-mono ${p.pe && p.pe < avgPE ? "text-[#00C076]" : "text-gray-700"}`}>{p.pe?.toFixed(1) ?? "—"}</td>
-                  <td className={`text-right px-2 py-2 font-mono ${p.pb && p.pb < avgPB ? "text-[#00C076]" : "text-gray-700"}`}>{p.pb?.toFixed(1) ?? "—"}</td>
+                <tr key={p.ticker} className="border-b border-border/50 hover:bg-muted/50 transition-colors">
+                  <td className="px-3 py-2 font-bold text-foreground">{p.ticker}</td>
+                  <td className="px-2 py-2 text-muted-foreground max-w-[180px] truncate">{p.companyName}</td>
+                  <td className={`text-right px-2 py-2 font-mono ${p.pe && p.pe < avgPE ? "text-[#00C076]" : "text-foreground"}`}>{p.pe?.toFixed(1) ?? "—"}</td>
+                  <td className={`text-right px-2 py-2 font-mono ${p.pb && p.pb < avgPB ? "text-[#00C076]" : "text-foreground"}`}>{p.pb?.toFixed(1) ?? "—"}</td>
                   <td className="text-right px-2 py-2 font-mono">{p.evEbitda?.toFixed(1) ?? "—"}</td>
-                  <td className={`text-right px-2 py-2 font-mono ${p.roe && p.roe > avgROE ? "text-[#00C076]" : "text-gray-700"}`}>{p.roe?.toFixed(1) ?? "—"}</td>
+                  <td className={`text-right px-2 py-2 font-mono ${p.roe && p.roe > avgROE ? "text-[#00C076]" : "text-foreground"}`}>{p.roe?.toFixed(1) ?? "—"}</td>
                   <td className="text-right px-2 py-2 font-mono">{p.marketCap ? (p.marketCap / 1e9).toFixed(0) : "—"}</td>
                 </tr>
               ))}
@@ -399,9 +399,9 @@ export default function ValuationForecastTab() {
   const { ticker } = useStockDetail();
   const { data, loading, error } = useValuation(ticker);
 
-  if (loading && !data) return <div className="text-center py-12 text-gray-400 animate-pulse">Dang tai dinh gia...</div>;
+  if (loading && !data) return <div className="text-center py-12 text-muted-foreground animate-pulse">Dang tai dinh gia...</div>;
   if (error && !data) return <div className="text-center py-12 text-red-500">Loi: {error}</div>;
-  if (!data) return <div className="text-center py-12 text-gray-400">Khong co du lieu</div>;
+  if (!data) return <div className="text-center py-12 text-muted-foreground">Khong co du lieu</div>;
 
   return (
     <div className="space-y-6">
