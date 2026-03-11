@@ -2,10 +2,8 @@
 
 import React, { useState, useMemo } from "react";
 import ReactECharts from "echarts-for-react";
-import IncomeStatementTab from "@/components/stock/IncomeStatementTab";
-import CashFlowTab from "@/components/stock/CashFlowTab";
-import QuantAnalysisTab from "@/components/stock/QuantAnalysisTab";
-import ValuationForecastTab from "@/components/stock/ValuationForecastTab";
+import IncomeStatementDeepDive from "@/components/stock/IncomeStatementDeepDive";
+import CashFlowDeepDive from "@/components/stock/CashFlowDeepDive";
 import { useStockDetail } from "@/lib/StockDetailContext";
 import {
   useDeepAnalysis,
@@ -15,13 +13,14 @@ import {
   type HealthIndicator,
   type TrendYear,
 } from "@/hooks/useStockData";
+import BalanceSheetDeepDive from "@/components/stock/BalanceSheetDeepDive";
 
 // ==================== HELPER FUNCTIONS ====================
 const formatNumber = (n: number) => n.toLocaleString("vi-VN");
 const monoFont = "font-[var(--font-roboto-mono)]";
 
 // ==================== ROW 0: PAGE HEADER (SHARED) ====================
-type SubTab = "balance" | "income" | "cashflow" | "quant" | "valuation";
+type SubTab = "balance" | "income" | "cashflow";
 
 function PageHeader({
   ticker,
@@ -37,8 +36,6 @@ function PageHeader({
     { id: "balance", icon: "📊", label: "Bảng Cân Đối Kế Toán" },
     { id: "income", icon: "📈", label: "Kết Quả Kinh Doanh" },
     { id: "cashflow", icon: "💰", label: "Lưu Chuyển Tiền Tệ" },
-    { id: "quant", icon: "📐", label: "Phân tích 360" },
-    { id: "valuation", icon: "💰", label: "Định giá & Dự phóng" },
   ];
   return (
     <div className="bg-card rounded-xl shadow-sm border border-border/50">
@@ -327,26 +324,7 @@ function CCCAndLiquidity({ liquidityData, ratios }: { liquidityData: Record<stri
 
 // ==================== BALANCE SHEET CONTENT ====================
 function BalanceSheetContent() {
-  const { ticker } = useStockDetail();
-  const { data, loading, error } = useDeepAnalysis(ticker);
-  const { data: ratioData } = useFinancialRatios(ticker, 4);
-
-  const bs = data?.balanceSheet;
-  const latestRatio = ratioData && ratioData.length > 0 ? ratioData[0] : null;
-
-  if (loading && !data) return <div className="text-center py-12 text-muted-foreground animate-pulse">Đang tải phân tích...</div>;
-  if (error && !data) return <div className="text-center py-12 text-red-500">Lỗi: {error}</div>;
-  if (!bs) return <div className="text-center py-12 text-muted-foreground">Không có dữ liệu phân tích</div>;
-
-  return (
-    <>
-      <KeyMetricCards stats={bs.overviewStats} />
-      <FinancialHealthSection indicators={bs.healthIndicators} />
-      <AssetCapitalStructure trends={bs.trends} />
-      <LeverageSection leverageData={bs.leverageData} />
-      <CCCAndLiquidity liquidityData={bs.liquidityData} ratios={latestRatio ? { inventoryDays: latestRatio.inventoryDays, receivableDays: latestRatio.receivableDays, payableDays: latestRatio.payableDays, cashConversionCycle: latestRatio.cashConversionCycle } : null} />
-    </>
-  );
+  return <BalanceSheetDeepDive />;
 }
 
 // ==================== MAIN COMPONENT ====================
@@ -357,10 +335,8 @@ export default function BalanceSheetTab() {
     <div className="space-y-5">
       <PageHeader ticker={stockInfo.ticker} activeSubTab={subTab} onSubTabChange={setSubTab} />
       {subTab === "balance" && <BalanceSheetContent />}
-      {subTab === "income" && <IncomeStatementTab />}
-      {subTab === "cashflow" && <CashFlowTab />}
-      {subTab === "quant" && <QuantAnalysisTab />}
-      {subTab === "valuation" && <ValuationForecastTab />}
+      {subTab === "income" && <IncomeStatementDeepDive />}
+      {subTab === "cashflow" && <CashFlowDeepDive />}
     </div>
   );
 }

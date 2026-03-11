@@ -32,6 +32,154 @@ export default function Home() {
                 <div className="absolute top-0 w-full h-[800px] overflow-hidden -z-10 pointer-events-none">
                     <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/20 blur-[120px] mix-blend-screen opacity-60"></div>
                     <div className="absolute top-[20%] right-[-10%] w-[40%] h-[60%] rounded-full bg-blue-500/10 blur-[120px] mix-blend-screen opacity-50"></div>
+
+                    {/* Faint stock chart watermark */}
+                    <svg
+                        viewBox="0 0 1400 800"
+                        className="absolute inset-0 w-full h-full opacity-[0.11]"
+                        preserveAspectRatio="xMidYMid slice"
+                        xmlns="http://www.w3.org/2000/svg"
+                    >
+                        <defs>
+                            <linearGradient id="heroChartGrad" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.55" />
+                                <stop offset="65%" stopColor="hsl(var(--primary))" stopOpacity="0.1" />
+                                <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0" />
+                            </linearGradient>
+                        </defs>
+
+                        {/* Horizontal grid lines */}
+                        <line x1="0" y1="120" x2="1400" y2="120" stroke="hsl(var(--primary))" strokeWidth="0.6" strokeOpacity="0.35" />
+                        <line x1="0" y1="240" x2="1400" y2="240" stroke="hsl(var(--primary))" strokeWidth="0.6" strokeOpacity="0.35" />
+                        <line x1="0" y1="360" x2="1400" y2="360" stroke="hsl(var(--primary))" strokeWidth="0.6" strokeOpacity="0.35" />
+                        <line x1="0" y1="480" x2="1400" y2="480" stroke="hsl(var(--primary))" strokeWidth="0.6" strokeOpacity="0.35" />
+                        <line x1="0" y1="600" x2="1400" y2="600" stroke="hsl(var(--primary))" strokeWidth="0.6" strokeOpacity="0.35" />
+                        {/* Vertical grid lines */}
+                        <line x1="200" y1="0" x2="200" y2="680" stroke="hsl(var(--primary))" strokeWidth="0.6" strokeOpacity="0.2" />
+                        <line x1="400" y1="0" x2="400" y2="680" stroke="hsl(var(--primary))" strokeWidth="0.6" strokeOpacity="0.2" />
+                        <line x1="600" y1="0" x2="600" y2="680" stroke="hsl(var(--primary))" strokeWidth="0.6" strokeOpacity="0.2" />
+                        <line x1="800" y1="0" x2="800" y2="680" stroke="hsl(var(--primary))" strokeWidth="0.6" strokeOpacity="0.2" />
+                        <line x1="1000" y1="0" x2="1000" y2="680" stroke="hsl(var(--primary))" strokeWidth="0.6" strokeOpacity="0.2" />
+                        <line x1="1200" y1="0" x2="1200" y2="680" stroke="hsl(var(--primary))" strokeWidth="0.6" strokeOpacity="0.2" />
+
+                        {/* Area chart fill */}
+                        <path
+                            d="M0,520 L40,505 L80,488 L120,500 L160,480 L200,462 L240,475 L280,452 L320,435 L360,450 L400,428 L440,408 L480,422 L520,398 L560,378 L600,392 L640,365 L680,345 L720,358 L760,332 L800,312 L840,326 L880,298 L920,278 L960,292 L1000,268 L1040,248 L1080,262 L1120,235 L1160,215 L1200,228 L1240,202 L1280,182 L1320,195 L1360,168 L1400,148 L1400,680 L0,680 Z"
+                            fill="url(#heroChartGrad)"
+                        />
+
+                        {/* Main price line */}
+                        <polyline
+                            points="0,520 40,505 80,488 120,500 160,480 200,462 240,475 280,452 320,435 360,450 400,428 440,408 480,422 520,398 560,378 600,392 640,365 680,345 720,358 760,332 800,312 840,326 880,298 920,278 960,292 1000,268 1040,248 1080,262 1120,235 1160,215 1200,228 1240,202 1280,182 1320,195 1360,168 1400,148"
+                            fill="none"
+                            stroke="hsl(var(--primary))"
+                            strokeWidth="2.5"
+                            strokeOpacity="0.9"
+                            strokeLinejoin="round"
+                        />
+
+                        {/* Moving average line (dashed) */}
+                        <polyline
+                            points="0,535 160,492 320,450 480,428 640,372 800,318 960,285 1120,242 1280,188 1400,155"
+                            fill="none"
+                            stroke="hsl(var(--primary))"
+                            strokeWidth="1.5"
+                            strokeDasharray="12,6"
+                            strokeOpacity="0.45"
+                        />
+
+                        {/* Bullish candlestick bodies */}
+                        <g fill="hsl(var(--primary))" fillOpacity="0.55">
+                            <rect x="30" y="498" width="20" height="18" rx="1" />
+                            <rect x="150" y="472" width="20" height="18" rx="1" />
+                            <rect x="270" y="444" width="20" height="18" rx="1" />
+                            <rect x="430" y="400" width="20" height="18" rx="1" />
+                            <rect x="630" y="357" width="20" height="18" rx="1" />
+                            <rect x="750" y="324" width="20" height="18" rx="1" />
+                            <rect x="870" y="290" width="20" height="18" rx="1" />
+                            <rect x="1030" y="240" width="20" height="18" rx="1" />
+                            <rect x="1150" y="207" width="20" height="18" rx="1" />
+                            <rect x="1350" y="160" width="20" height="18" rx="1" />
+                        </g>
+                        {/* Bullish wicks */}
+                        <g stroke="hsl(var(--primary))" strokeWidth="1.5" strokeOpacity="0.5">
+                            <line x1="40" y1="490" x2="40" y2="522" />
+                            <line x1="160" y1="464" x2="160" y2="496" />
+                            <line x1="280" y1="436" x2="280" y2="468" />
+                            <line x1="440" y1="392" x2="440" y2="424" />
+                            <line x1="640" y1="349" x2="640" y2="381" />
+                            <line x1="760" y1="316" x2="760" y2="348" />
+                            <line x1="880" y1="282" x2="880" y2="314" />
+                            <line x1="1040" y1="232" x2="1040" y2="264" />
+                            <line x1="1160" y1="199" x2="1160" y2="231" />
+                            <line x1="1360" y1="152" x2="1360" y2="184" />
+                        </g>
+
+                        {/* Bearish candlestick bodies */}
+                        <g fill="hsl(var(--destructive))" fillOpacity="0.45">
+                            <rect x="110" y="482" width="20" height="22" rx="1" />
+                            <rect x="230" y="466" width="20" height="22" rx="1" />
+                            <rect x="350" y="432" width="20" height="22" rx="1" />
+                            <rect x="550" y="370" width="20" height="22" rx="1" />
+                            <rect x="710" y="340" width="20" height="22" rx="1" />
+                            <rect x="950" y="272" width="20" height="22" rx="1" />
+                            <rect x="1200" y="218" width="20" height="22" rx="1" />
+                            <rect x="1310" y="186" width="20" height="22" rx="1" />
+                        </g>
+                        {/* Bearish wicks */}
+                        <g stroke="hsl(var(--destructive))" strokeWidth="1.5" strokeOpacity="0.4">
+                            <line x1="120" y1="474" x2="120" y2="510" />
+                            <line x1="240" y1="458" x2="240" y2="494" />
+                            <line x1="360" y1="424" x2="360" y2="460" />
+                            <line x1="560" y1="362" x2="560" y2="398" />
+                            <line x1="720" y1="332" x2="720" y2="368" />
+                            <line x1="960" y1="264" x2="960" y2="300" />
+                            <line x1="1210" y1="210" x2="1210" y2="246" />
+                            <line x1="1320" y1="178" x2="1320" y2="214" />
+                        </g>
+
+                        {/* Volume bars — green */}
+                        <g fill="hsl(var(--primary))" fillOpacity="0.35">
+                            <rect x="0" y="653" width="35" height="27" rx="1" />
+                            <rect x="40" y="656" width="35" height="24" rx="1" />
+                            <rect x="80" y="648" width="35" height="32" rx="1" />
+                            <rect x="160" y="657" width="35" height="23" rx="1" />
+                            <rect x="240" y="650" width="35" height="30" rx="1" />
+                            <rect x="280" y="654" width="35" height="26" rx="1" />
+                            <rect x="360" y="658" width="35" height="22" rx="1" />
+                            <rect x="440" y="647" width="35" height="33" rx="1" />
+                            <rect x="480" y="655" width="35" height="25" rx="1" />
+                            <rect x="520" y="652" width="35" height="28" rx="1" />
+                            <rect x="600" y="657" width="35" height="23" rx="1" />
+                            <rect x="640" y="648" width="35" height="32" rx="1" />
+                            <rect x="760" y="653" width="35" height="27" rx="1" />
+                            <rect x="800" y="646" width="35" height="34" rx="1" />
+                            <rect x="880" y="656" width="35" height="24" rx="1" />
+                            <rect x="920" y="651" width="35" height="29" rx="1" />
+                            <rect x="1000" y="654" width="35" height="26" rx="1" />
+                            <rect x="1040" y="648" width="35" height="32" rx="1" />
+                            <rect x="1120" y="656" width="35" height="24" rx="1" />
+                            <rect x="1160" y="650" width="35" height="30" rx="1" />
+                            <rect x="1240" y="647" width="35" height="33" rx="1" />
+                            <rect x="1280" y="654" width="35" height="26" rx="1" />
+                            <rect x="1360" y="649" width="35" height="31" rx="1" />
+                        </g>
+                        {/* Volume bars — red */}
+                        <g fill="hsl(var(--destructive))" fillOpacity="0.3">
+                            <rect x="120" y="658" width="35" height="22" rx="1" />
+                            <rect x="200" y="651" width="35" height="29" rx="1" />
+                            <rect x="320" y="655" width="35" height="25" rx="1" />
+                            <rect x="400" y="649" width="35" height="31" rx="1" />
+                            <rect x="560" y="656" width="35" height="24" rx="1" />
+                            <rect x="680" y="652" width="35" height="28" rx="1" />
+                            <rect x="720" y="658" width="35" height="22" rx="1" />
+                            <rect x="840" y="650" width="35" height="30" rx="1" />
+                            <rect x="960" y="655" width="35" height="25" rx="1" />
+                            <rect x="1080" y="651" width="35" height="29" rx="1" />
+                            <rect x="1200" y="658" width="35" height="22" rx="1" />
+                            <rect x="1320" y="653" width="35" height="27" rx="1" />
+                        </g>
+                    </svg>
                 </div>
             )}
 

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useMemo, useState, useRef, useEffect, useCallback } from "react";
 import ReactECharts from "echarts-for-react";
@@ -40,50 +40,42 @@ interface SearchResultItem {
 export default function StockComparisonTab() {
     const { stockInfo, ticker } = useStockDetail();
 
-    /* ── Extra peers the user selected (UI state) ── */
+    /* ── Extra peers the user explicitly selected (UI state) ── */
     const [extraPeers, setExtraPeers] = useState<string[]>([]);
-
-    /* ── Excluded peers (sector peers the user explicitly removed) ── */
-    const [excludedPeers, setExcludedPeers] = useState<string[]>([]);
 
     /* ── Committed peers (sent to API only on button click) ── */
     const [committedPeers, setCommittedPeers] = useState<string>("");
-    const [committedExcluded, setCommittedExcluded] = useState<string[]>([]);
     const [showResults, setShowResults] = useState(false);
 
     /* ── Comparison data (auto-detect + committed peers) ── */
     const { data, loading, error, refresh } = useStockComparison(ticker, committedPeers);
 
     /* Track if selection differs from last committed comparison */
-    const selectionChanged =
-        extraPeers.join(",") !== committedPeers ||
-        excludedPeers.slice().sort().join(",") !== committedExcluded.slice().sort().join(",");
+    const selectionChanged = extraPeers.join(",") !== committedPeers;
 
     const allStocks = useMemo(() => {
         if (!data) return [];
-        const peers = data.peers.filter((p) => !excludedPeers.includes(p.ticker));
+        // `allStocks` are only the main stock + any peer that is selected in `extraPeers`
+        const peers = data.peers.filter((p) => extraPeers.includes(p.ticker));
         return [data.main, ...peers];
-    }, [data, excludedPeers]);
+    }, [data, extraPeers]);
 
-    /* ── Same-sector suggestions: sector peers excluded by user + not-yet-added ── */
+    /* ── Same-sector suggestions: sector peers returned by backend but not yet selected ── */
     const sectorPeers = useMemo(() => {
         if (!data) return [];
-        return data.peers.filter(
-            (p) => !extraPeers.includes(p.ticker) || excludedPeers.includes(p.ticker)
-        );
-    }, [data, extraPeers, excludedPeers]);
+        return data.peers.filter((p) => !extraPeers.includes(p.ticker));
+    }, [data, extraPeers]);
 
     /* ── Handle Compare button click ── */
     const handleCompare = useCallback(() => {
         const newPeers = extraPeers.join(",");
         setCommittedPeers(newPeers);
-        setCommittedExcluded([...excludedPeers]);
         setShowResults(true);
         // If peers param hasn't changed, force a refresh
         if (newPeers === committedPeers) {
             refresh();
         }
-    }, [extraPeers, excludedPeers, committedPeers, refresh]);
+    }, [extraPeers, committedPeers, refresh]);
 
     /* ── Search state ── */
     const [searchQuery, setSearchQuery] = useState("");
@@ -148,14 +140,6 @@ export default function StockComparisonTab() {
     const addPeer = (t: string) => {
         const upper = t.toUpperCase();
         if (upper === ticker.toUpperCase()) return;
-        // Re-adding an excluded peer: just un-exclude it
-        if (excludedPeers.includes(upper)) {
-            setExcludedPeers((prev) => prev.filter((p) => p !== upper));
-            setSearchQuery("");
-            setSearchResults([]);
-            setShowDropdown(false);
-            return;
-        }
         if (extraPeers.includes(upper)) return;
         if (extraPeers.length >= 6) return;
         setExtraPeers((prev) => [...prev, upper]);
@@ -165,12 +149,7 @@ export default function StockComparisonTab() {
     };
 
     const removePeer = (t: string) => {
-        if (extraPeers.includes(t)) {
-            setExtraPeers((prev) => prev.filter((p) => p !== t));
-        } else {
-            // Sector peer — mark as excluded
-            setExcludedPeers((prev) => [...prev, t]);
-        }
+        setExtraPeers((prev) => prev.filter((p) => p !== t));
     };
 
     /* ── Table sections ── */
@@ -251,21 +230,33 @@ export default function StockComparisonTab() {
     /* ── Radar Chart ── */
     const radarChartOption = useMemo(() => {
         if (allStocks.length < 2) return null;
+        
+        // Find max values for auto-scaling bounds (with 20% padding to prevent overflow)
+        const maxVals = {
+            roe: Math.max(0.1, ...allStocks.map(s => s.roe ?? 0)) * 1.2,
+            roa: Math.max(0.1, ...allStocks.map(s => s.roa ?? 0)) * 1.2,
+            pe: Math.max(1, ...allStocks.map(s => s.pe ?? 0)) * 1.2,
+            pb: Math.max(1, ...allStocks.map(s => s.pb ?? 0)) * 1.2,
+            gross: Math.max(0.1, ...allStocks.map(s => s.grossMargin ?? 0)) * 1.2,
+            net: Math.max(0.1, ...allStocks.map(s => s.netMargin ?? 0)) * 1.2,
+        };
+
         const indicators = [
-            { name: "ROE", max: 35 },
-            { name: "ROA", max: 20 },
-            { name: "P/E", max: 50 },
-            { name: "P/B", max: 6 },
-            { name: "Biên gộp", max: 80 },
-            { name: "Biên ròng", max: 40 },
+            { name: "ROE", max: maxVals.roe },
+            { name: "ROA", max: maxVals.roa },
+            { name: "P/E", max: maxVals.pe },
+            { name: "P/B", max: maxVals.pb },
+            { name: "Biên gộp", max: maxVals.gross },
+            { name: "Biên ròng", max: maxVals.net },
         ];
+        
         const series = allStocks.map((stock, i) => ({
             name: stock.ticker,
             value: [
                 Math.max(0, stock.roe ?? 0),
                 Math.max(0, stock.roa ?? 0),
-                Math.min(50, Math.max(0, stock.pe ?? 0)),
-                Math.min(6, Math.max(0, stock.pb ?? 0)),
+                Math.max(0, stock.pe ?? 0),
+                Math.max(0, stock.pb ?? 0),
                 Math.max(0, stock.grossMargin ?? 0),
                 Math.max(0, stock.netMargin ?? 0),
             ],
@@ -273,17 +264,83 @@ export default function StockComparisonTab() {
             areaStyle: { color: CHART_COLORS[i % CHART_COLORS.length], opacity: 0.1 },
             itemStyle: { color: CHART_COLORS[i % CHART_COLORS.length] },
         }));
+        
         return {
             tooltip: { trigger: "item" },
-            legend: { data: allStocks.map((s) => s.ticker), top: 4 },
+            legend: { data: allStocks.map((s) => s.ticker), bottom: 0 },
+            grid: { top: 40, bottom: 40, left: 20, right: 20 },
             radar: {
                 indicator: indicators,
-                radius: "60%",
-                axisName: { color: "#6B7280", fontSize: 11 },
+                radius: "60%", // Reduced radius to leave space for labels
+                center: ["50%", "45%"], // Move up slightly to fit legend at bottom
+                nameGap: 10,
+                axisName: { color: "#6B7280", fontSize: 11, fontWeight: 500 },
                 splitArea: { areaStyle: { color: ["#fff", "#f9fafb"] } },
                 splitLine: { lineStyle: { color: "#e5e7eb" } },
             },
             series: [{ type: "radar", data: series }],
+        };
+    }, [allStocks]);
+
+    /* ── Bubble Chart (Correlation) ── */
+    const bubbleChartOption = useMemo(() => {
+        if (allStocks.length < 2) return null;
+        
+        const seriesData = allStocks.map((stock, i) => {
+            const mc = stock.marketCap ?? 0;
+            const size = Math.max(10, Math.min(50, mc / 5e9)); // Scale bubble size
+            return {
+                name: stock.ticker,
+                value: [
+                    stock.priceChangePercent ?? 0, // X: Price Change %
+                    stock.pe ?? 0,                // Y: P/E
+                    mc,                           // Z: Market Cap (for tooltip/real size)
+                    stock.ticker
+                ],
+                itemStyle: { color: CHART_COLORS[i % CHART_COLORS.length] },
+                symbolSize: size,
+            };
+        });
+
+        return {
+            tooltip: {
+                formatter: function (param: any) {
+                    const data = param.data.value;
+                    return `
+                        <div style="font-weight:bold;margin-bottom:4px">${data[3]}</div>
+                        <div>Thay đổi giá: <span style="font-weight:600;color:${data[0] >= 0 ? '#10B981' : '#EF4444'}">${data[0].toFixed(2)}%</span></div>
+                        <div>P/E: <span style="font-weight:600">${data[1].toFixed(2)}</span></div>
+                        <div>Vốn hóa: <span style="font-weight:600">${fmt(Math.round(data[2] / 1e9))} tỷ</span></div>
+                    `;
+                }
+            },
+            grid: { top: 40, right: 30, bottom: 40, left: 50 },
+            xAxis: {
+                type: 'value',
+                name: '% Đổi Giá',
+                nameLocation: 'middle',
+                nameGap: 25,
+                axisLabel: { formatter: '{value}%' },
+                splitLine: { lineStyle: { type: 'dashed' } },
+            },
+            yAxis: {
+                type: 'value',
+                name: 'P/E',
+                nameLocation: 'middle',
+                nameGap: 30,
+                splitLine: { lineStyle: { type: 'dashed' } },
+            },
+            series: [{
+                type: 'scatter',
+                data: seriesData,
+                itemStyle: {
+                    opacity: 0.8,
+                    shadowBlur: 10,
+                    shadowOffsetX: 0,
+                    shadowOffsetY: 0,
+                    shadowColor: 'rgba(0, 0, 0, 0.2)'
+                }
+            }]
         };
     }, [allStocks]);
 
@@ -410,14 +467,7 @@ export default function StockComparisonTab() {
                                 Các mã đang so sánh
                             </span>
                             <span className="text-[10px] text-muted-foreground ml-auto">
-                                {1 +
-                                    extraPeers.length +
-                                    (data?.peers.filter(
-                                        (p) =>
-                                            !excludedPeers.includes(p.ticker) &&
-                                            !extraPeers.includes(p.ticker)
-                                    ).length ?? 0)}{" "}
-                                mã
+                                {allStocks.length} mã
                             </span>
                         </div>
                         <div className="flex flex-wrap items-center gap-2 p-3 bg-muted/50 rounded-xl border border-border/50 min-h-[48px]">
@@ -437,7 +487,7 @@ export default function StockComparisonTab() {
                                 <span className="text-[10px] text-blue-500">(Hiện tại)</span>
                             </div>
 
-                            {/* Extra peers added via search — always visible, removable */}
+                            {/* Extra peers selected by user */}
                             {extraPeers.map((peerTicker, idx) => {
                                 const colorIdx = idx + 1;
                                 const peerData = data?.peers.find(
@@ -477,57 +527,12 @@ export default function StockComparisonTab() {
                                 );
                             })}
 
-                            {/* API-returned sector peers NOT in extraPeers and NOT excluded */}
-                            {data?.peers
-                                .filter(
-                                    (stock) =>
-                                        !excludedPeers.includes(stock.ticker) &&
-                                        !extraPeers.includes(stock.ticker)
-                                )
-                                .map((stock, idx) => {
-                                    const colorIdx = extraPeers.length + idx + 1;
-                                    return (
-                                        <div
-                                            key={stock.ticker}
-                                            className="flex items-center gap-2 px-3 py-1.5 rounded-full border-2 text-sm font-medium group"
-                                            style={{
-                                                borderColor:
-                                                    CHART_COLORS[colorIdx % CHART_COLORS.length],
-                                                backgroundColor: `${CHART_COLORS[colorIdx % CHART_COLORS.length]}10`,
-                                            }}
-                                        >
-                                            <span
-                                                className="w-2.5 h-2.5 rounded-full"
-                                                style={{
-                                                    backgroundColor:
-                                                        CHART_COLORS[colorIdx % CHART_COLORS.length],
-                                                }}
-                                            />
-                                            <span className="font-semibold">{stock.ticker}</span>
-                                            <span className="text-xs text-muted-foreground truncate max-w-[80px]">
-                                                {stock.companyName}
-                                            </span>
-                                            <button
-                                                onClick={() => removePeer(stock.ticker)}
-                                                className="ml-0.5 p-0.5 rounded-full hover:bg-red-100 transition-colors opacity-0 group-hover:opacity-100"
-                                                title="Xóa khỏi so sánh"
-                                            >
-                                                <X className="w-3.5 h-3.5 text-muted-foreground hover:text-red-500" />
-                                            </button>
-                                        </div>
-                                    );
-                                })}
-
                             {/* Empty state placeholder */}
-                            {extraPeers.length === 0 &&
-                                (!data ||
-                                    data.peers.filter(
-                                        (p) => !excludedPeers.includes(p.ticker)
-                                    ).length === 0) && (
-                                    <span className="text-xs text-muted-foreground italic">
-                                        Chưa có mã nào — Tìm kiếm hoặc chọn từ gợi ý bên dưới
-                                    </span>
-                                )}
+                            {extraPeers.length === 0 && (
+                                <span className="text-xs text-muted-foreground italic">
+                                    Tìm kiếm hoặc chọn từ gợi ý bên dưới để thêm mã
+                                </span>
+                            )}
                         </div>
                     </div>
 
@@ -625,9 +630,7 @@ export default function StockComparisonTab() {
                             </div>
                             <div className="flex flex-wrap gap-2">
                                 {sectorPeers.map((peer) => {
-                                    const isExcluded = excludedPeers.includes(peer.ticker);
-                                    const isSelected =
-                                        extraPeers.includes(peer.ticker) && !isExcluded;
+                                    const isSelected = extraPeers.includes(peer.ticker);
                                     return (
                                         <button
                                             key={peer.ticker}
@@ -636,9 +639,7 @@ export default function StockComparisonTab() {
                                             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all duration-150 ${
                                                 isSelected
                                                     ? "border-border bg-muted text-muted-foreground cursor-not-allowed"
-                                                    : isExcluded
-                                                    ? "border-dashed border-amber-300 bg-amber-50 text-amber-700 hover:border-amber-400 hover:bg-amber-100 cursor-pointer"
-                                                    : "border-border bg-card text-foreground hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600 cursor-pointer shadow-sm hover:shadow"
+                                                    : "border-dashed border-amber-300 bg-amber-50 text-amber-700 hover:border-amber-400 hover:bg-amber-100 cursor-pointer"
                                             }`}
                                         >
                                             <Plus className="w-3 h-3" />
@@ -706,8 +707,10 @@ export default function StockComparisonTab() {
             {showResults && data && allStocks.length >= 2 && (
                 <>
                     {/* ── Charts ── */}
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-                        <div className="lg:col-span-7">
+                    <div className="grid grid-cols-1 gap-4">
+                        {/* ── Row 1: Price Return (65%) and Radar Chart (35%) ── */}
+                        <div className="grid grid-cols-1 lg:grid-cols-[65fr_35fr] gap-4">
+                            {/* ── Line Chart (Price Return) ── */}
                             <Card className="shadow-sm border-border">
                                 <CardHeader className="pb-2">
                                     <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -717,16 +720,16 @@ export default function StockComparisonTab() {
                                 </CardHeader>
                                 <CardContent>
                                     {priceChartOption ? (
-                                        <ReactECharts option={priceChartOption} style={{ height: 360 }} />
+                                        <ReactECharts option={priceChartOption} style={{ height: 400 }} />
                                     ) : (
-                                        <div className="h-[360px] flex items-center justify-center text-sm text-muted-foreground">
+                                        <div className="h-[400px] flex items-center justify-center text-sm text-muted-foreground">
                                             Chưa có dữ liệu lịch sử giá
                                         </div>
                                     )}
                                 </CardContent>
                             </Card>
-                        </div>
-                        <div className="lg:col-span-5">
+
+                            {/* ── Radar Chart (Performance) ── */}
                             <Card className="shadow-sm border-border">
                                 <CardHeader className="pb-2">
                                     <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -736,15 +739,34 @@ export default function StockComparisonTab() {
                                 </CardHeader>
                                 <CardContent>
                                     {radarChartOption ? (
-                                        <ReactECharts option={radarChartOption} style={{ height: 360 }} />
+                                        <ReactECharts option={radarChartOption} style={{ height: 400 }} />
                                     ) : (
-                                        <div className="h-[360px] flex items-center justify-center text-sm text-muted-foreground">
+                                        <div className="h-[400px] flex items-center justify-center text-sm text-muted-foreground">
                                             Không đủ dữ liệu
                                         </div>
                                     )}
                                 </CardContent>
                             </Card>
                         </div>
+                        
+                        {/* ── Row 2: Bubble Chart (Correlation) Full Width ── */}
+                        <Card className="shadow-sm border-border">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
+                                    <TrendingUp className="w-4 h-4 text-emerald-500" />
+                                    Tương quan cổ phiếu
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {bubbleChartOption ? (
+                                    <ReactECharts option={bubbleChartOption} style={{ height: 400 }} />
+                                ) : (
+                                    <div className="h-[400px] flex items-center justify-center text-sm text-muted-foreground">
+                                        Không đủ dữ liệu
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
                     </div>
 
                     {/* ── Comparison Table ── */}

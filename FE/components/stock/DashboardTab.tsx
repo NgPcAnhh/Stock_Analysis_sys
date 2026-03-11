@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useMemo } from "react";
 import ReactECharts from "echarts-for-react";
@@ -252,20 +252,20 @@ function RevenueProfitChart({ reportData }: { reportData: ReturnType<typeof useF
                 itemWidth: 12,
                 itemHeight: 6,
             },
-            grid: { top: 46, bottom: 20, left: 50, right: 20 },
+            grid: { top: 46, bottom: 24, left: 60, right: 20 },
             xAxis: {
                 type: "category" as const,
                 data: periods,
-                axisLabel: { fontSize: 10, color: "#94a3b8", fontFamily: "Inter,sans-serif" },
+                axisLabel: { fontSize: 12, color: "#94a3b8", fontFamily: "Inter,sans-serif" },
                 axisLine: { lineStyle: { color: "#e2e8f0" } },
                 axisTick: { show: false },
             },
             yAxis: {
                 type: "value" as const,
                 name: "Tỷ VND",
-                nameTextStyle: { fontSize: 9, color: "#94a3b8" },
+                nameTextStyle: { fontSize: 11, color: "#94a3b8" },
                 axisLabel: {
-                    fontSize: 9,
+                    fontSize: 12,
                     color: "#94a3b8",
                     fontFamily: "Roboto Mono,monospace",
                     formatter: (v: number) => fmtNum(v, 0),
@@ -302,7 +302,7 @@ function RevenueProfitChart({ reportData }: { reportData: ReturnType<typeof useF
             </div>
         );
 
-    return <ReactECharts option={option} style={{ height: 250 }} />;
+    return <ReactECharts option={option} style={{ height: "100%", minHeight: 240 }} />;
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -486,108 +486,705 @@ function QuantSnapshot({ quantData }: { quantData: ReturnType<typeof useQuantAna
 }
 
 // ══════════════════════════════════════════════════════════════════
-//  5. VALUATION SNAPSHOT
+//  5. VALUATION DASHBOARD (full multi-layer)
 // ══════════════════════════════════════════════════════════════════
-function ValuationSnapshot({ valuationData }: { valuationData: ReturnType<typeof useValuation>["data"] }) {
-    if (!valuationData) return <div className="py-6 text-center text-xs text-muted-foreground animate-pulse">Đang tải định giá…</div>;
 
+/* ── helpers ── */
+const fmtVND = (v: number) => v.toLocaleString("vi-VN");
+
+function UpsideBadge({ upside }: { upside: number }) {
+    const isUnder = upside > 5;
+    const isOver = upside < -5;
+    const cls = isUnder
+        ? "bg-green-100 text-green-700 border-green-300"
+        : isOver
+        ? "bg-red-100 text-red-700 border-red-300"
+        : "bg-yellow-100 text-yellow-700 border-yellow-300";
+    const label = isUnder ? "Rẻ" : isOver ? "Đắt" : "Theo dõi";
+    return (
+        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border ${cls}`}>
+            {label} · {upside > 0 ? "+" : ""}{upside.toFixed(1)}%
+        </span>
+    );
+}
+
+/* ── A. Executive Summary ── */
+function ValuationExecSummary({
+    valuationData,
+    appliedWeights,
+    onApplyWeights,
+    onResetWeights,
+}: {
+    valuationData: NonNullable<ReturnType<typeof useValuation>["data"]>;
+    appliedWeights: { method: string; weight: number }[];
+    onApplyWeights: (w: { method: string; weight: number }[]) => void;
+    onResetWeights: () => void;
+}) {
     const { summary } = valuationData;
-    const upsidePct = summary.upside;
-    const upside = upsidePct > 5 ? "positive" : upsidePct < -5 ? "negative" : "neutral";
-    const upsideColor = upside === "positive" ? "text-green-600 bg-green-50 border-green-200" : upside === "negative" ? "text-red-500 bg-red-50 border-red-200" : "text-amber-600 bg-amber-50 border-amber-200";
-    const upsideLabel = upside === "positive" ? "Tiềm năng tăng" : upside === "negative" ? "Rủi ro giảm" : "Gần giá trị hợp lý";
+    const upside = summary.upside;
+    const verdictColor = upside > 5 ? "#00C076" : upside < -5 ? "#EF4444" : "#FBBF24";
 
-    const color = upside === "positive" ? "#10b981" : upside === "negative" ? "#ef4444" : "#f59e0b";
+    const [sliderWeights, setSliderWeights] = React.useState(appliedWeights);
 
-    // Bar chart: method vs intrinsic
-    const methodOption = useMemo(() => {
-        if (!summary.methods || summary.methods.length === 0) return null;
-        const names = summary.methods.map((m) => m.method);
-        const vals = summary.methods.map((m) => m.value);
+    React.useEffect(() => {
+        setSliderWeights(appliedWeights);
+    }, [appliedWeights]);
+
+    /* Weighted intrinsic from user-adjusted weights (APPLIED) */
+    const totalW = appliedWeights.reduce((s, w) => s + w.weight, 0);
+    const weightedIV = useMemo(() => {
+        if (!appliedWeights.length || !totalW) return summary.intrinsicValue;
+        const methodMap = Object.fromEntries(summary.methods.map((m) => [m.method, m.value]));
+        const sum = appliedWeights.reduce((s, w) => s + (methodMap[w.method] ?? 0) * w.weight, 0);
+        return totalW ? sum / totalW : summary.intrinsicValue;
+    }, [appliedWeights, summary, totalW]);
+
+    const weightedUpside = summary.currentPrice
+        ? ((weightedIV / summary.currentPrice - 1) * 100)
+        : upside;
+
+    const sliderTotalW = sliderWeights.reduce((s, w) => s + w.weight, 0);
+
+    return (
+        <div className="space-y-4">
+            {/* Hero row */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="bg-muted/50 rounded-xl border border-border/50 p-4 flex flex-col items-center justify-center gap-1 text-center">
+                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Giá hiện tại</span>
+                    <span className="text-2xl font-extrabold font-mono text-foreground">{fmtVND(summary.currentPrice)}</span>
+                </div>
+                <div className="rounded-xl border-2 p-4 flex flex-col items-center justify-center gap-1 text-center"
+                    style={{ borderColor: verdictColor, background: `${verdictColor}12` }}>
+                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Giá trị Nội tại (Hợp nhất)</span>
+                    <span className="text-2xl font-extrabold font-mono" style={{ color: verdictColor }}>{fmtVND(Math.round(weightedIV))}</span>
+                    <UpsideBadge upside={weightedUpside} />
+                </div>
+                <div className="bg-muted/50 rounded-xl border border-border/50 p-3 flex flex-col gap-2">
+                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Theo từng phương pháp</span>
+                    <div className="space-y-1.5">
+                        {summary.methods.filter((m) => m.value > 0).map((m) => {
+                            const pct = summary.currentPrice
+                                ? ((m.value / summary.currentPrice - 1) * 100)
+                                : 0;
+                            return (
+                                <div key={m.method} className="flex items-center justify-between gap-2">
+                                    <span className="text-[10px] text-muted-foreground truncate max-w-[80px]">{m.method}</span>
+                                    <span className="text-xs font-mono font-bold text-foreground">{fmtVND(m.value)}</span>
+                                    <span className={`text-[10px] font-bold font-mono ${pct >= 0 ? "text-green-600" : "text-red-500"}`}>
+                                        {pct >= 0 ? "+" : ""}{pct.toFixed(1)}%
+                                    </span>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            </div>
+
+            {/* Weight customizer */}
+            {sliderWeights.length > 0 && (
+                <div className="bg-muted/30 rounded-xl border border-border/50 p-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-2">
+                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+                            Bảng trọng số định giá (tùy chỉnh) — Tổng: <span className={sliderTotalW !== 100 ? "text-red-500" : ""}>{sliderTotalW}%</span>
+                        </p>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={onResetWeights}
+                                className="px-3 py-1.5 height-8 flex items-center justify-center text-[10px] font-bold rounded-md bg-muted text-muted-foreground hover:bg-muted/80 transition-colors focus:ring-2 focus:ring-ring focus:outline-none"
+                            >
+                                Reset
+                            </button>
+                            <button
+                                onClick={() => onApplyWeights(sliderWeights)}
+                                className="px-3 py-1.5 height-8 flex items-center justify-center text-[10px] font-bold rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors focus:ring-2 focus:ring-ring focus:outline-none"
+                            >
+                                Áp dụng
+                            </button>
+                        </div>
+                    </div>
+                    <div className="flex flex-wrap justify-center gap-4">
+                        {sliderWeights.map((w) => (
+                            <div key={w.method} className="flex flex-col items-center gap-1 min-w-[80px]">
+                                <span className="text-[10px] text-muted-foreground text-center leading-tight">{w.method}</span>
+                                <input
+                                    type="range"
+                                    min={0}
+                                    max={100}
+                                    step={5}
+                                    value={w.weight}
+                                    onChange={(e) => setSliderWeights((prev) => prev.map((x) => x.method === w.method ? { ...x, weight: Number(e.target.value) } : x))}
+                                    className="w-full accent-primary h-1.5 cursor-pointer"
+                                />
+                                <span className="text-[10px] font-bold font-mono text-primary">{w.weight}%</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+/* ── B. Football Field Chart ── */
+function ValuationFootballField({
+    footballField,
+    currentPrice,
+}: {
+    footballField: NonNullable<ReturnType<typeof useValuation>["data"]>["footballField"];
+    currentPrice: number;
+}) {
+    const option = useMemo(() => {
+        if (!footballField || footballField.length < 2) return null;
+        const methods = footballField.map((d) => d.method);
+        const allValues = footballField.flatMap((d) => [d.low, d.high]).filter((v) => v > 0);
+        if (allValues.length < 2) return null;
+        const minVal = Math.min(...allValues, currentPrice) * 0.9;
+        const maxVal = Math.max(...allValues, currentPrice) * 1.08;
+        const colors = ["#3B82F6", "#00C076", "#8B5CF6", "#F97316", "#EF4444", "#64748B", "#06B6D4"];
+
         return {
             tooltip: {
                 trigger: "axis" as const,
-                backgroundColor: "#1e293b",
-                textStyle: { color: "#f1f5f9", fontSize: 10, fontFamily: "Roboto Mono,monospace" },
+                axisPointer: { type: "shadow" as const },
+                formatter: (params: { name: string }[]) => {
+                    const idx = methods.indexOf(params[0]?.name ?? "");
+                    if (idx < 0) return "";
+                    const row = footballField[idx];
+                    return `<b>${row.method}</b><br/>Thấp: <b>${fmtVND(row.low)}</b><br/>TB: <b>${fmtVND(row.mid)}</b><br/>Cao: <b>${fmtVND(row.high)}</b>`;
+                },
             },
-            grid: { top: 8, bottom: 40, left: 10, right: 10 },
+            grid: { top: 20, left: 130, right: 50, bottom: 30 },
             xAxis: {
-                type: "category" as const,
-                data: names,
-                axisLabel: { fontSize: 9, color: "#94a3b8", rotate: 20, fontFamily: "Inter,sans-serif" },
-                axisLine: { lineStyle: { color: "#e2e8f0" } },
-                axisTick: { show: false },
+                type: "value" as const,
+                min: minVal,
+                max: maxVal,
+                axisLabel: { formatter: (v: number) => fmtVND(v), fontSize: 10, color: "#94a3b8" },
+                splitLine: { lineStyle: { color: "#f1f5f9" } },
             },
             yAxis: {
-                type: "value" as const,
-                axisLabel: { fontSize: 9, color: "#94a3b8", fontFamily: "Roboto Mono,monospace" },
-                splitLine: { lineStyle: { color: "#f1f5f9" } },
+                type: "category" as const,
+                data: methods,
+                inverse: true,
+                axisLabel: { fontSize: 11, fontWeight: 600, color: "#374151" },
             },
             series: [
                 {
-                    type: "bar" as const,
-                    data: vals.map((v) => ({
-                        value: v,
-                        itemStyle: { color: color + "cc", borderRadius: [4, 4, 0, 0] },
-                    })),
-                    barMaxWidth: 32,
+                    name: "_gap",
+                    type: "bar",
+                    stack: "range",
+                    data: footballField.map((d) => Math.max(0, d.low - minVal)),
+                    itemStyle: { color: "transparent" },
+                    barWidth: 20,
+                    silent: true,
                 },
                 {
-                    type: "line" as const,
-                    data: vals.map(() => summary.currentPrice),
+                    name: "Vùng định giá",
+                    type: "bar",
+                    stack: "range",
+                    data: footballField.map((d, i) => ({
+                        value: Math.max(0, d.high - d.low),
+                        itemStyle: { color: colors[i % colors.length], borderRadius: [4, 4, 4, 4], opacity: 0.75 },
+                    })),
+                    barWidth: 20,
+                },
+                {
+                    name: "Trung vị",
+                    type: "scatter",
+                    data: footballField.map((d, i) => [d.mid, i]),
+                    symbol: "diamond",
+                    symbolSize: 14,
+                    itemStyle: { color: "#1F2937", borderColor: "#fff", borderWidth: 2 },
+                    z: 10,
+                },
+                {
+                    name: "Giá hiện tại",
+                    type: "line",
+                    data: [],
+                    markLine: {
+                        silent: true,
+                        symbol: "none",
+                        lineStyle: { color: "#F97316", width: 2.5, type: "dashed" as const },
+                        data: [{ xAxis: currentPrice }],
+                        label: {
+                            formatter: `Giá: ${fmtVND(currentPrice)}`,
+                            fontSize: 11,
+                            fontWeight: 700,
+                            color: "#F97316",
+                            position: "end" as const,
+                        },
+                    },
+                    lineStyle: { width: 0 },
                     symbol: "none",
-                    lineStyle: { color: "#94a3b8", type: "dashed" as const, width: 1.5 },
                     silent: true,
-                    tooltip: { show: false },
                 },
             ],
         };
-    }, [summary, color]);
+    }, [footballField, currentPrice]);
+
+    if (!option) return null;
+
+    return (
+        <div>
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                Football Field — biên định giá tất cả phương pháp (đường cam = Giá hiện tại)
+            </p>
+            <ReactECharts option={option} style={{ height: Math.max(220, footballField.length * 40 + 60) }} />
+        </div>
+    );
+}
+
+/* ── C. DCF Section ── */
+function ValuationDCF({
+    dcf,
+    currentPrice,
+}: {
+    dcf: NonNullable<ReturnType<typeof useValuation>["data"]>["dcf"];
+    currentPrice: number;
+}) {
+    const [wacc, setWacc] = React.useState(dcf.wacc);
+    const [g, setG] = React.useState(dcf.terminalGrowth);
+
+    /* Live DCF estimate when sliders change */
+    const liveValue = useMemo(() => {
+        if (!dcf.projections.length) return dcf.intrinsicValue;
+        // Sum PV of FCF projections (simplified: fixed projections, adjust terminal)
+        const terminalFCF = dcf.projections[dcf.projections.length - 1]?.fcf ?? 0;
+        const nYears = dcf.projections.length;
+        const tVal = terminalFCF * (1 + g) / Math.max(wacc - g, 0.001);
+        const tPV = tVal / Math.pow(1 + wacc, nYears);
+        const pvSum = dcf.projections.reduce((s, p, i) => s + p.fcf / Math.pow(1 + wacc, i + 1), 0);
+        return Math.round(pvSum + tPV);
+    }, [wacc, g, dcf]);
+
+    const negativeFcfYears = dcf.negativeFcfYears ?? 0;
+    const showWarning = negativeFcfYears >= 3;
 
     return (
         <div className="space-y-3">
-            {/* Hero: intrinsic vs current */}
-            <div className="grid grid-cols-2 gap-2">
-                <div className="bg-muted/50 rounded-lg border border-border/50 p-3">
-                    <span className="text-[9px] font-semibold text-muted-foreground uppercase">Giá hiện tại</span>
-                    <div className="text-lg font-extrabold font-mono text-foreground mt-0.5">
-                        {summary.currentPrice.toLocaleString("vi-VN")}
-                    </div>
-                </div>
-                <div className={`rounded-lg border px-3 py-2 ${upsideColor}`}>
-                    <span className="text-[9px] font-semibold uppercase">{upsideLabel}</span>
-                    <div className="text-lg font-extrabold font-mono mt-0.5">
-                        {upsidePct > 0 ? "+" : ""}{upsidePct.toFixed(1)}%
-                    </div>
-                </div>
-            </div>
-
-            <div className="bg-muted/50 rounded-lg border border-border/50 p-3">
-                <span className="text-[9px] font-semibold text-muted-foreground uppercase">Giá trị nội tại TB</span>
-                <div className={`text-lg font-extrabold font-mono mt-0.5 ${color === "#10b981" ? "text-green-600" : color === "#ef4444" ? "text-red-500" : "text-amber-600"}`}>
-                    {summary.intrinsicValue.toLocaleString("vi-VN")}
-                </div>
-            </div>
-
-            {/* Method chart */}
-            {methodOption && (
-                <div className="bg-muted/50 rounded-lg border border-border/50 p-2">
-                    <span className="text-[10px] text-muted-foreground font-medium block mb-1">So sánh phương pháp định giá</span>
-                    <ReactECharts option={methodOption} style={{ height: 120 }} />
+            {/* Warning if persistent negative FCF */}
+            {showWarning && (
+                <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2.5">
+                    <span className="text-base mt-0.5">🚨</span>
+                    <p className="text-xs text-red-700">
+                        <b>Cảnh báo:</b> FCF âm trong {negativeFcfYears}/5 năm gần nhất. Kết quả DCF có thể không đáng tin cậy — cân nhắc chuyển sang phương pháp định giá tài sản (RNAV, P/B).
+                    </p>
                 </div>
             )}
 
-            {/* DCF details */}
-            <div className="grid grid-cols-2 gap-2 text-[11px]">
-                <div className="bg-muted/50 rounded-lg border border-border/50 p-2">
-                    <div className="text-[9px] text-muted-foreground uppercase font-semibold">WACC</div>
-                    <div className="font-mono font-bold text-muted-foreground mt-0.5">{(valuationData.dcf.wacc * 100).toFixed(1)}%</div>
+            {/* Slider controls */}
+            <div className="grid grid-cols-2 gap-3">
+                <div className="bg-muted/50 rounded-xl border border-border/50 p-3">
+                    <div className="flex justify-between items-center mb-1">
+                        <span className="text-[10px] font-semibold text-muted-foreground uppercase">WACC</span>
+                        <span className="text-xs font-bold font-mono text-primary">{(wacc * 100).toFixed(1)}%</span>
+                    </div>
+                    <input
+                        type="range"
+                        min={6}
+                        max={20}
+                        step={0.5}
+                        value={wacc * 100}
+                        onChange={(e) => setWacc(Number(e.target.value) / 100)}
+                        className="w-full accent-primary h-1.5"
+                    />
+                    <div className="flex justify-between text-[9px] text-muted-foreground mt-0.5">
+                        <span>6%</span><span>20%</span>
+                    </div>
                 </div>
-                <div className="bg-muted/50 rounded-lg border border-border/50 p-2">
-                    <div className="text-[9px] text-muted-foreground uppercase font-semibold">Tăng trưởng dài hạn</div>
-                    <div className="font-mono font-bold text-muted-foreground mt-0.5">{(valuationData.dcf.terminalGrowth * 100).toFixed(1)}%</div>
+                <div className="bg-muted/50 rounded-xl border border-border/50 p-3">
+                    <div className="flex justify-between items-center mb-1">
+                        <span className="text-[10px] font-semibold text-muted-foreground uppercase">Terminal Growth (g)</span>
+                        <span className="text-xs font-bold font-mono text-primary">{(g * 100).toFixed(1)}%</span>
+                    </div>
+                    <input
+                        type="range"
+                        min={0}
+                        max={6}
+                        step={0.5}
+                        value={g * 100}
+                        onChange={(e) => setG(Number(e.target.value) / 100)}
+                        className="w-full accent-primary h-1.5"
+                    />
+                    <div className="flex justify-between text-[9px] text-muted-foreground mt-0.5">
+                        <span>0%</span><span>6%</span>
+                    </div>
                 </div>
             </div>
+
+            {/* Live value pill */}
+            <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-xl px-3 py-2">
+                    <span className="text-[10px] text-blue-600 font-semibold uppercase">Fair Value (DCF live)</span>
+                    <span className={`text-base font-extrabold font-mono ${liveValue >= currentPrice ? "text-green-600" : "text-red-500"}`}>
+                        {fmtVND(liveValue)}
+                    </span>
+                    <UpsideBadge upside={(liveValue / currentPrice - 1) * 100} />
+                </div>
+            </div>
+
+            {/* FCF projections table */}
+            {dcf.projections.length > 0 && (
+                <div className="overflow-x-auto">
+                    <table className="w-full text-[11px]">
+                        <thead>
+                            <tr className="bg-muted text-muted-foreground uppercase tracking-wider">
+                                <th className="text-left px-3 py-2 font-semibold">Năm</th>
+                                <th className="text-right px-3 py-2 font-semibold">FCF (tỷ)</th>
+                                <th className="text-right px-3 py-2 font-semibold">PV (tỷ)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {dcf.projections.map((p) => (
+                                <tr key={p.year} className="border-b border-border/50">
+                                    <td className="px-3 py-2 font-medium">Y{p.year}</td>
+                                    <td className={`text-right px-3 py-2 font-mono ${p.fcf < 0 ? "text-red-500" : "text-foreground"}`}>
+                                        {p.fcf < 0 ? "(" + fmtVND(Math.abs(p.fcf)) + ")" : fmtVND(p.fcf)}
+                                    </td>
+                                    <td className="text-right px-3 py-2 font-mono text-muted-foreground">{p.pv > 0 ? fmtVND(p.pv) : "—"}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+
+            {/* Sensitivity Matrix */}
+            {dcf.sensitivityMatrix.length > 0 && (
+                <div>
+                    <p className="text-[10px] font-semibold text-muted-foreground mb-1.5 uppercase">Bảng nhạy cảm — WACC × g</p>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-[11px]">
+                            <thead>
+                                <tr className="bg-muted">
+                                    <th className="px-2 py-1.5 text-left text-muted-foreground font-semibold">WACC \ g</th>
+                                    {[2, 2.5, 3, 3.5, 4].map((gv) => (
+                                        <th key={gv} className="px-2 py-1.5 text-right text-muted-foreground font-semibold">{gv}%</th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {[10, 11, 12, 13, 14].map((wv, wi) => {
+                                    const isActive = Math.abs(wv / 100 - dcf.wacc) < 0.006;
+                                    return (
+                                        <tr key={wv} className={`border-b border-border/50 ${isActive ? "bg-orange-50 font-bold" : ""}`}>
+                                            <td className="px-2 py-1.5 font-semibold text-muted-foreground">{wv}%</td>
+                                            {(dcf.sensitivityMatrix[wi] ?? []).map((val, gi) => (
+                                                <td
+                                                    key={gi}
+                                                    className={`text-right px-2 py-1.5 font-mono text-xs ${
+                                                        val > 0
+                                                            ? val > currentPrice
+                                                                ? "text-green-700 font-semibold"
+                                                                : "text-red-600"
+                                                            : "text-muted-foreground/50"
+                                                    }`}
+                                                >
+                                                    {val > 0 ? fmtVND(val) : "—"}
+                                                </td>
+                                            ))}
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+/* ── D. RNAV Section ── */
+function ValuationRNAV({ rnav, currentPrice }: {
+    rnav: NonNullable<NonNullable<ReturnType<typeof useValuation>["data"]>["rnav"]>;
+    currentPrice: number;
+}) {
+    return (
+        <div className="space-y-3">
+            <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
+                <span className="text-base">🏗️</span>
+                <p className="text-xs text-amber-800">
+                    <b>RNAV</b> — Tính lại giá trị thị trường của quỹ đất và dự án đang triển khai. Đặc biệt quan trọng cho cổ phiếu BĐS/hạ tầng.
+                </p>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {[
+                    { label: "Giá trị Quỹ đất", value: rnav.landBankValue },
+                    { label: "Giá trị Dự án", value: rnav.projectsValue },
+                    { label: "NAV điều chỉnh", value: rnav.adjustedNAV },
+                    { label: "Chiết khấu RNAV", value: rnav.discount * 100, suffix: "%", isSuffix: true },
+                    { label: "Fair Value (RNAV)", value: rnav.intrinsicValue, highlight: true },
+                ].map((item) => (
+                    <div
+                        key={item.label}
+                        className={`rounded-xl border px-3 py-2.5 text-center ${
+                            item.highlight
+                                ? rnav.intrinsicValue >= currentPrice
+                                    ? "border-green-300 bg-green-50"
+                                    : "border-red-300 bg-red-50"
+                                : "border-border/50 bg-muted/50"
+                        }`}
+                    >
+                        <p className="text-[9px] text-muted-foreground uppercase font-semibold mb-0.5">{item.label}</p>
+                        <p className={`text-sm font-bold font-mono ${
+                            item.highlight
+                                ? rnav.intrinsicValue >= currentPrice ? "text-green-700" : "text-red-600"
+                                : "text-foreground"
+                        }`}>
+                            {item.isSuffix ? `${item.value.toFixed(1)}%` : fmtVND(Math.round(item.value))}
+                        </p>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+/* ── E. DDM Section (conditional: only when yield > 3%) ── */
+function ValuationDDM({ ddm, currentPrice }: {
+    ddm: NonNullable<ReturnType<typeof useValuation>["data"]>["ddm"];
+    currentPrice: number;
+}) {
+    const divYield = ddm.dividendYield ?? (ddm.dividendPerShare > 0 && currentPrice > 0 ? ddm.dividendPerShare / currentPrice : 0);
+    if (divYield < 0.03 && ddm.intrinsicValue <= 0) return (
+        <div className="flex items-center gap-2 bg-muted/50 rounded-xl border border-border/50 px-3 py-2.5 text-xs text-muted-foreground">
+            <span>💡</span>
+            DDM không hiển thị vì tỷ suất cổ tức &lt; 3% (hiện tại: {(divYield * 100).toFixed(1)}%)
+        </div>
+    );
+
+    return (
+        <div className="space-y-3">
+            <div className="flex items-start gap-2 bg-green-50 border border-green-200 rounded-xl px-3 py-2.5">
+                <span className="text-base">💎</span>
+                <p className="text-xs text-green-800">
+                    DDM Gordon Growth — Tỷ suất cổ tức: <b>{(divYield * 100).toFixed(1)}%</b>. Mô hình phù hợp cho cổ phiếu chi trả cổ tức đều đặn.
+                </p>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                    { label: "DPS hiện tại", value: `${fmtVND(ddm.dividendPerShare)} đ` },
+                    { label: "Ke (Required Return)", value: `${(ddm.costOfEquity * 100).toFixed(1)}%` },
+                    { label: "Growth (g)", value: `${(ddm.growthRate * 100).toFixed(1)}%` },
+                    { label: "Fair Value (DDM)", value: `${fmtVND(ddm.intrinsicValue)} đ`, color: ddm.intrinsicValue >= currentPrice ? "text-green-700" : "text-red-600" },
+                ].map((item) => (
+                    <div key={item.label} className="bg-muted/50 rounded-xl border border-border/50 px-3 py-2.5 text-center">
+                        <p className="text-[9px] text-muted-foreground uppercase font-semibold">{item.label}</p>
+                        <p className={`text-sm font-bold font-mono mt-0.5 ${item.color ?? "text-foreground"}`}>{item.value}</p>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+/* ── F. P/E & P/B Bands ── */
+function ValuationMultipleBands({
+    peBand,
+    pbBand,
+}: {
+    peBand: NonNullable<ReturnType<typeof useValuation>["data"]>["peBand"];
+    pbBand: NonNullable<ReturnType<typeof useValuation>["data"]>["pbBand"];
+}) {
+    const makeBandOption = (
+        band: typeof peBand,
+        label: string,
+    ) => {
+        if (!band.dates.length || !band.prices.length) return null;
+        return {
+            tooltip: { trigger: "axis" as const },
+            legend: {
+                top: 4,
+                textStyle: { fontSize: 10 },
+                data: ["Giá thực tế", `${label} +2SD`, `${label} +1SD`, `${label} TB`, `${label} -1SD`, `${label} -2SD`],
+            },
+            grid: { top: 46, left: 60, right: 20, bottom: 34 },
+            xAxis: {
+                type: "category" as const,
+                data: band.dates,
+                axisLabel: { fontSize: 9, color: "#94a3b8", interval: Math.floor(band.dates.length / 6) },
+            },
+            yAxis: {
+                type: "value" as const,
+                axisLabel: { formatter: (v: number) => fmtVND(v), fontSize: 9, color: "#94a3b8" },
+                splitLine: { lineStyle: { color: "#f1f5f9" } },
+            },
+            series: [
+                { name: `${label} +2SD`, type: "line", data: band.sdBands?.sd2High ?? band.highBand, lineStyle: { width: 1, type: "dashed" as const, color: "#EF4444" }, itemStyle: { color: "#EF4444" }, symbol: "none" },
+                { name: `${label} +1SD`, type: "line", data: band.sdBands?.sd1High ?? band.avgBand, lineStyle: { width: 1, type: "dashed" as const, color: "#F97316" }, itemStyle: { color: "#F97316" }, symbol: "none" },
+                { name: `${label} TB`, type: "line", data: band.midBand, lineStyle: { width: 1.5, type: "dashed" as const, color: "#3B82F6" }, itemStyle: { color: "#3B82F6" }, symbol: "none" },
+                { name: `${label} -1SD`, type: "line", data: band.sdBands?.sd1Low ?? band.avgBand, lineStyle: { width: 1, type: "dashed" as const, color: "#10B981" }, itemStyle: { color: "#10B981" }, symbol: "none" },
+                { name: `${label} -2SD`, type: "line", data: band.sdBands?.sd2Low ?? band.lowBand, lineStyle: { width: 1, type: "dashed" as const, color: "#00C076" }, itemStyle: { color: "#00C076" }, symbol: "none" },
+                { name: "Giá thực tế", type: "line", data: band.prices, lineStyle: { width: 2.5, color: "#F97316" }, itemStyle: { color: "#F97316" }, symbol: "none", z: 10 },
+            ],
+        };
+    };
+
+    const peOption = useMemo(() => makeBandOption(peBand, "P/E"), [peBand]);
+    const pbOption = useMemo(() => makeBandOption(pbBand, "P/B"), [pbBand]);
+
+    if (!peOption && !pbOption) return (
+        <p className="text-center py-4 text-xs text-muted-foreground">Chưa đủ dữ liệu lịch sử P/E & P/B Bands</p>
+    );
+
+    return (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {peOption && (
+                <div>
+                    <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1.5">P/E Bands (5 năm)</p>
+                    <ReactECharts option={peOption} style={{ height: 320 }} />
+                </div>
+            )}
+            {pbOption && (
+                <div>
+                    <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1.5">P/B Bands (5 năm)</p>
+                    <ReactECharts option={pbOption} style={{ height: 320 }} />
+                </div>
+            )}
+        </div>
+    );
+}
+
+/* ── G. Peer Group with PEG ── */
+function ValuationPeerGroup({
+    peerValuation,
+    currentTicker,
+}: {
+    peerValuation: NonNullable<ReturnType<typeof useValuation>["data"]>["peerValuation"];
+    currentTicker: string;
+}) {
+    /* Filter "junk" peers: P/E < 0, P/E > 100, all-null */
+    const cleaned = peerValuation.filter((p) => {
+        if (p.pe !== null && (p.pe < 0 || p.pe > 100)) return false;
+        if (p.pe === null && p.pb === null && p.roe === null) return false;
+        return true;
+    });
+
+    if (cleaned.length === 0) return (
+        <p className="text-center py-4 text-xs text-muted-foreground">Không có dữ liệu đối thủ cùng ngành</p>
+    );
+
+    const validPE = cleaned.filter((p) => p.pe != null && p.pe! > 0);
+    const validPB = cleaned.filter((p) => p.pb != null && p.pb! > 0);
+    const validROE = cleaned.filter((p) => p.roe != null);
+    const avgPE = validPE.length ? validPE.reduce((s, p) => s + p.pe!, 0) / validPE.length : 0;
+    const avgPB = validPB.length ? validPB.reduce((s, p) => s + p.pb!, 0) / validPB.length : 0;
+    const avgROE = validROE.length ? validROE.reduce((s, p) => s + p.roe!, 0) / validROE.length : 0;
+
+    return (
+        <div>
+            <div className="overflow-x-auto mb-3">
+                <table className="w-full text-[11px]">
+                    <thead>
+                        <tr className="bg-muted text-muted-foreground uppercase tracking-wider">
+                            <th className="text-left px-3 py-2 font-semibold">Ticker</th>
+                            <th className="text-left px-2 py-2 font-semibold">Công ty</th>
+                            <th className="text-right px-2 py-2 font-semibold">P/E</th>
+                            <th className="text-right px-2 py-2 font-semibold">P/B</th>
+                            <th className="text-right px-2 py-2 font-semibold">EV/EBITDA</th>
+                            <th className="text-right px-2 py-2 font-semibold">ROE (%)</th>
+                            <th className="text-right px-2 py-2 font-semibold">PEG</th>
+                            <th className="text-right px-2 py-2 font-semibold">MCap (tỷ)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {cleaned.map((p) => {
+                            const isSelf = p.ticker === currentTicker;
+                            const peg = p.peg ?? (p.pe != null && p.epsGrowth != null && p.epsGrowth > 0
+                                ? p.pe / p.epsGrowth
+                                : null);
+                            return (
+                                <tr
+                                    key={p.ticker}
+                                    className={`border-b border-border/50 hover:bg-muted/50 transition-colors ${isSelf ? "bg-blue-50 font-semibold" : ""}`}
+                                >
+                                    <td className={`px-3 py-2 font-bold ${isSelf ? "text-blue-700" : "text-foreground"}`}>{p.ticker}</td>
+                                    <td className="px-2 py-2 text-muted-foreground max-w-[160px] truncate">{p.companyName}</td>
+                                    <td className={`text-right px-2 py-2 font-mono ${p.pe != null && avgPE > 0 && p.pe < avgPE ? "text-green-600 font-semibold" : "text-foreground"}`}>
+                                        {p.pe != null ? p.pe.toFixed(1) : "—"}
+                                    </td>
+                                    <td className={`text-right px-2 py-2 font-mono ${p.pb != null && avgPB > 0 && p.pb < avgPB ? "text-green-600 font-semibold" : "text-foreground"}`}>
+                                        {p.pb != null ? p.pb.toFixed(2) : "—"}
+                                    </td>
+                                    <td className="text-right px-2 py-2 font-mono">{p.evEbitda != null ? p.evEbitda.toFixed(1) : "—"}</td>
+                                    <td className={`text-right px-2 py-2 font-mono ${p.roe != null && avgROE > 0 && p.roe > avgROE ? "text-green-600 font-semibold" : "text-foreground"}`}>
+                                        {p.roe != null ? p.roe.toFixed(1) : "—"}
+                                    </td>
+                                    <td className={`text-right px-2 py-2 font-mono ${peg != null ? (peg < 1 ? "text-green-600 font-semibold" : peg < 2 ? "text-amber-600" : "text-red-500") : "text-muted-foreground"}`}>
+                                        {peg != null ? peg.toFixed(2) : "—"}
+                                    </td>
+                                    <td className="text-right px-2 py-2 font-mono text-muted-foreground">
+                                        {p.marketCap ? (p.marketCap / 1e9).toFixed(0) : "—"}
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                        <tr className="bg-blue-50 font-bold border-t-2 border-blue-200">
+                            <td className="px-3 py-2 text-blue-700" colSpan={2}>TB ngành ({cleaned.length} mã)</td>
+                            <td className="text-right px-2 py-2 font-mono text-blue-700">{avgPE > 0 ? avgPE.toFixed(1) : "—"}</td>
+                            <td className="text-right px-2 py-2 font-mono text-blue-700">{avgPB > 0 ? avgPB.toFixed(2) : "—"}</td>
+                            <td className="text-right px-2 py-2">—</td>
+                            <td className="text-right px-2 py-2 font-mono text-blue-700">{avgROE > 0 ? avgROE.toFixed(1) : "—"}</td>
+                            <td className="text-right px-2 py-2">—</td>
+                            <td className="text-right px-2 py-2">—</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p className="text-[9px] text-muted-foreground">
+                * Đã lọc tự động các mã có P/E âm, P/E &gt; 100 hoặc thiếu toàn bộ dữ liệu. PEG = P/E ÷ tăng trưởng EPS (PEG &lt; 1 = rẻ theo tăng trưởng).
+            </p>
+        </div>
+    );
+}
+
+/* ── MAIN Valuation Section (Full Dashboard) ── */
+function ValuationDashboardSection({ valuationData }: {
+    valuationData: NonNullable<ReturnType<typeof useValuation>["data"]>;
+}) {
+    const defaultWeights = useMemo(() => {
+        return valuationData.weights ?? valuationData.summary.methods.map((m, i) => ({
+            method: m.method,
+            weight: Math.round(100 / valuationData.summary.methods.length),
+        }));
+    }, [valuationData]);
+
+    const [appliedWeights, setAppliedWeights] = React.useState<{ method: string; weight: number }[]>(defaultWeights);
+
+    const { ticker } = useStockDetail();
+    const { summary, footballField, peBand, pbBand } = valuationData;
+
+    const hasBands = peBand.dates.length > 0 || pbBand.dates.length > 0;
+    const hasFootball = footballField.length >= 2;
+
+    return (
+        <div className="space-y-6">
+            {/* Tầng 1: Executive Summary */}
+            <Card>
+                <SectionHead icon="🎯" title="Tổng quan Định giá" sub="Giá trị Nội tại Hợp nhất — Trọng số từng phương pháp" />
+                <ValuationExecSummary
+                    valuationData={valuationData}
+                    appliedWeights={appliedWeights}
+                    onApplyWeights={setAppliedWeights}
+                    onResetWeights={() => setAppliedWeights(defaultWeights)}
+                />
+            </Card>
+
+            {/* Football Field */}
+            {hasFootball && (
+                <Card>
+                    <SectionHead icon="🏈" title="Football Field Chart" sub="Biên định giá tổng hợp tất cả phương pháp" />
+                    <ValuationFootballField footballField={footballField} currentPrice={summary.currentPrice} />
+                </Card>
+            )}
+
+            {/* P/E & P/B Bands */}
+            {hasBands && (
+                <Card>
+                    <SectionHead icon="📉" title="P/E & P/B Historical Bands" sub="Dải Standard Deviation 5 năm — vùng quá mua / quá bán" />
+                    <ValuationMultipleBands peBand={peBand} pbBand={pbBand} />
+                </Card>
+            )}
         </div>
     );
 }
@@ -595,18 +1192,53 @@ function ValuationSnapshot({ valuationData }: { valuationData: ReturnType<typeof
 // ══════════════════════════════════════════════════════════════════
 //  6. FINANCIAL HEALTH SCORECARD
 // ══════════════════════════════════════════════════════════════════
-function HealthScorecard({ ratios }: { ratios: FinancialRatioItem[] | null }) {
+function HealthScorecard({ ratios, reportData }: {
+    ratios: FinancialRatioItem[] | null;
+    reportData: ReturnType<typeof useFinancialReports>["data"];
+}) {
     if (!ratios || ratios.length === 0) return null;
     const r = ratios[0];
+    const bs  = reportData?.balanceSheet[0];
+    const is0 = reportData?.incomeStatement[0];
+    const cf  = reportData?.cashFlow;
+
+    // Compute missing ratios from raw financial statements
+    const debtToEquity = r.debtToEquity
+        ?? (bs?.totalEquity ? bs.totalLiabilities / bs.totalEquity : null);
+
+    const currentRatio = r.currentRatio
+        ?? (bs?.currentLiabilities ? bs.currentAssets / bs.currentLiabilities : null);
+
+    const quickRatio = r.quickRatio
+        ?? (bs?.currentLiabilities ? (bs.currentAssets - (bs.inventory ?? 0)) / bs.currentLiabilities : null);
+
+    const interestCoverageRatio = (() => {
+        if (r.interestCoverageRatio != null) return r.interestCoverageRatio;
+        if (!is0) return null;
+        let ebit = is0.operatingProfit ?? 0;
+        if (!ebit) ebit = (is0.grossProfit ?? 0) - (is0.sellingExpenses ?? 0) - (is0.adminExpenses ?? 0);
+        const intExp = is0.interestExpenses ?? 0;
+        return intExp ? ebit / intExp : null;
+    })();
+
+    const assetTurnover = r.assetTurnover
+        ?? (bs?.totalAssets && is0?.revenue ? is0.revenue / bs.totalAssets : null);
+
+    const dividendYield = (() => {
+        if (r.dividendYield != null) return r.dividendYield;
+        if (!cf || cf.length === 0 || !r.marketCap) return null;
+        const ttmDiv = cf.slice(0, 4).reduce((s, q) => s + Math.abs(q.dividendsPaid ?? 0), 0);
+        return ttmDiv ? ttmDiv / r.marketCap : null;
+    })();
 
     type Metric = { label: string; value: number | null; good: (v: number) => boolean; fmt: (v: number) => string };
     const metrics: Metric[] = [
-        { label: "D/E Ratio", value: r.debtToEquity, good: (v) => v < 1.5, fmt: (v) => v.toFixed(2) + "x" },
-        { label: "Current Ratio", value: r.currentRatio, good: (v) => v >= 1.5, fmt: (v) => v.toFixed(2) + "x" },
-        { label: "Quick Ratio", value: r.quickRatio, good: (v) => v >= 1, fmt: (v) => v.toFixed(2) + "x" },
-        { label: "Interest Coverage", value: r.interestCoverageRatio, good: (v) => v >= 3, fmt: (v) => v.toFixed(1) + "x" },
-        { label: "Asset Turnover", value: r.assetTurnover, good: (v) => v >= 0.5, fmt: (v) => v.toFixed(2) + "x" },
-        { label: "Dividend Yield", value: r.dividendYield, good: (v) => v > 0, fmt: (v) => fmtPctNosign(v) },
+        { label: "D/E Ratio",          value: debtToEquity,          good: (v) => v < 1.5,  fmt: (v) => v.toFixed(2) + "x" },
+        { label: "Current Ratio",      value: currentRatio,          good: (v) => v >= 1.5, fmt: (v) => v.toFixed(2) + "x" },
+        { label: "Quick Ratio",        value: quickRatio,            good: (v) => v >= 1,   fmt: (v) => v.toFixed(2) + "x" },
+        { label: "Interest Coverage",  value: interestCoverageRatio, good: (v) => v >= 3,   fmt: (v) => v.toFixed(1) + "x" },
+        { label: "Asset Turnover",     value: assetTurnover,         good: (v) => v >= 0.5, fmt: (v) => v.toFixed(2) + "x" },
+        { label: "Dividend Yield",     value: dividendYield,         good: (v) => v > 0,   fmt: (v) => fmtPctNosign(v) },
     ];
 
     return (
@@ -819,23 +1451,24 @@ function DuPontDecomposition({ reportData }: { reportData: ReturnType<typeof use
     const roeBg = roe > 0.15 ? "bg-green-50 border-green-200" : roe > 0.08 ? "bg-amber-50 border-amber-200" : "bg-red-50 border-red-200";
 
     return (
-        <div className="space-y-3">
-            <div className={`rounded-lg border p-3 text-center ${roeBg}`}>
+        <div className="space-y-2">
+            <div className={`rounded-lg border px-3 py-2 text-center ${roeBg}`}>
                 <div className="text-[9px] font-semibold text-muted-foreground uppercase">ROE (DuPont 5-Factor)</div>
-                <div className={`text-2xl font-extrabold font-mono ${roeColor}`}>{fmtPctNosign(roe * 100)}</div>
+                <div className={`text-xl font-extrabold font-mono ${roeColor}`}>{fmtPctNosign(roe * 100)}</div>
             </div>
-            <div className="space-y-1.5">
+            {/* 5 horizontal factor boxes */}
+            <div className="flex items-stretch gap-1">
                 {factors.map((f, i) => (
-                    <div key={f.label} className="flex items-center gap-2">
-                        <div className="flex-1 flex items-center justify-between bg-muted/50 rounded-lg border border-border/50 px-3 py-1.5">
-                            <div>
-                                <span className="text-[10px] font-semibold text-muted-foreground">{f.label}</span>
-                                <span className="text-[8px] text-muted-foreground/50 ml-1">({f.desc})</span>
-                            </div>
-                            <span className={`text-sm font-bold font-mono ${f.good ? "text-green-600" : "text-amber-600"}`}>{f.fmt}</span>
+                    <React.Fragment key={f.label}>
+                        <div className="flex-1 flex flex-col items-center justify-between bg-muted/50 rounded-lg border border-border/50 px-1 py-2 text-center gap-1">
+                            <div className="text-[8px] font-semibold text-muted-foreground uppercase leading-tight">{f.label}</div>
+                            <div className="text-[7px] text-muted-foreground/60 leading-tight">{f.desc}</div>
+                            <div className={`text-sm font-bold font-mono ${f.good ? "text-green-600" : "text-amber-600"}`}>{f.fmt}</div>
                         </div>
-                        {i < factors.length - 1 && <span className="text-muted-foreground/40 text-xs font-bold">×</span>}
-                    </div>
+                        {i < factors.length - 1 && (
+                            <span className="flex items-center text-muted-foreground/40 text-xs font-bold self-center shrink-0">×</span>
+                        )}
+                    </React.Fragment>
                 ))}
             </div>
         </div>
@@ -916,15 +1549,19 @@ function AltmanZScoreGauge({ reportData, ratios }: {
     }), [z, zone]);
 
     return (
-        <div className="space-y-2">
-            <ReactECharts option={gaugeOption} style={{ height: 170 }} />
-            <div className={`rounded-lg border px-3 py-2 text-center ${zoneBg}`}>
-                <span className={`text-sm font-bold ${zoneColor}`}>{zoneLabel}</span>
-                <span className={`text-[10px] text-muted-foreground ml-2`}>
-                    {zone === "safe" ? "> 2.99" : zone === "grey" ? "1.81 – 2.99" : "< 1.81"}
-                </span>
+        <div className="flex items-center gap-3 w-full">
+            {/* LEFT: Gauge centered + zone badge */}
+            <div className="flex flex-col items-center justify-center flex-1 min-w-0">
+                <ReactECharts option={gaugeOption} style={{ height: 150, width: "100%" }} />
+                <div className={`rounded-lg border px-3 py-1 text-center w-full ${zoneBg}`}>
+                    <span className={`text-sm font-bold ${zoneColor}`}>{zoneLabel}</span>
+                    <span className="text-[10px] text-muted-foreground ml-2">
+                        {zone === "safe" ? "> 2.99" : zone === "grey" ? "1.81 – 2.99" : "< 1.81"}
+                    </span>
+                </div>
             </div>
-            <div className="grid grid-cols-5 gap-1 text-center">
+            {/* RIGHT: 5 component indicators stacked vertically — larger */}
+            <div className="flex flex-col gap-1.5 shrink-0 w-[88px]">
                 {[
                     { l: "WC/TA", v: result.x1 },
                     { l: "RE/TA", v: result.x2 },
@@ -932,9 +1569,9 @@ function AltmanZScoreGauge({ reportData, ratios }: {
                     { l: "MVE/TL", v: result.x4 },
                     { l: "Rev/TA", v: result.x5 },
                 ].map((it) => (
-                    <div key={it.l} className="bg-muted/50 rounded border border-border/50 p-1">
-                        <div className="text-[7px] text-muted-foreground uppercase font-semibold">{it.l}</div>
-                        <div className="text-[10px] font-mono font-bold text-muted-foreground">{it.v.toFixed(2)}</div>
+                    <div key={it.l} className="bg-muted/50 rounded border border-border/50 px-2 py-1.5 flex flex-col items-center gap-0.5">
+                        <span className="text-[9px] text-muted-foreground uppercase font-semibold leading-none tracking-wide">{it.l}</span>
+                        <span className="text-sm font-mono font-bold text-foreground leading-none">{it.v.toFixed(2)}</span>
                     </div>
                 ))}
             </div>
@@ -1571,18 +2208,45 @@ export default function DashboardTab() {
                 </div>
             </div>
 
-            {/* ── PHẦN 2: PHÂN TÍCH CƠ BẢN (CHƯƠNG 1 & 2) ── */}
+            {/* ── PHẦN 2: ĐỊNH GIÁ ĐA CHIỀU ── */}
             <div className="space-y-4">
                 <h3 className="text-sm font-bold text-foreground flex items-center gap-2 border-b pb-2 uppercase tracking-wider">
                     <span className="bg-primary/10 text-primary p-1 rounded">1</span>
-                    Khả năng Sinh lời & Sức khỏe Tài chính
+                    Định giá Đa chiều
+                </h3>
+
+                {/* Full Valuation Dashboard */}
+                {valuationLoading && !valuationData
+                    ? (
+                        <Card>
+                            <div className="space-y-3 py-4">
+                                {Array(5).fill(0).map((_, i) => <Skel key={i} h="h-14" />)}
+                            </div>
+                        </Card>
+                    )
+                    : valuationData
+                    ? <ValuationDashboardSection valuationData={valuationData} />
+                    : (
+                        <Card>
+                            <p className="text-center py-6 text-sm text-muted-foreground">Không có dữ liệu định giá</p>
+                        </Card>
+                    )
+                }
+
+            </div>
+
+            {/* ── PHẦN 3: PHÂN TÍCH CƠ BẢN (CHƯƠNG 1 & 2) ── */}
+            <div className="space-y-4 pt-4 border-t">
+                <h3 className="text-sm font-bold text-foreground flex items-center gap-2 border-b pb-2 uppercase tracking-wider">
+                    <span className="bg-primary/10 text-primary p-1 rounded">2</span>
+                    Sức khỏe Tài chính & Dự báo khủng hoảng
                 </h3>
 
                 {/* Nửa trên (Kinh doanh) */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
                     <Card className="lg:col-span-7 flex flex-col">
                         <SectionHead icon="📊" title="Doanh thu & Lợi nhuận" sub="8 quý gần nhất — tỷ VND" />
-                        <div className="flex-1 -mb-4">
+                        <div className="flex-1 min-h-0">
                             {reportLoading && !reportData
                                 ? <Skel h="h-52" />
                                 : <RevenueProfitChart reportData={reportData ?? null} />
@@ -1601,18 +2265,18 @@ export default function DashboardTab() {
                         {latestRatio && (
                             <div className="mt-auto pt-3 border-t">
                                 <p className="text-[10px] text-muted-foreground mb-1.5 font-semibold uppercase tracking-wide">Chỉ số sức khỏe tài chính</p>
-                                <HealthScorecard ratios={ratios ?? null} />
+                                <HealthScorecard ratios={ratios ?? null} reportData={reportData ?? null} />
                             </div>
                         )}
                     </Card>
                 </div>
 
                 {/* Nửa dưới (Sức khỏe) - Piotroski bên trái, Altman & DuPont xếp dọc bên phải */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
                     {/* LEFT COLUMN: Piotroski F-Score */}
-                    <Card className="lg:col-span-6 flex flex-col">
-                        <SectionHead icon="�" title="Piotroski F-Score" sub="Chấm điểm cơ bản 9 tiêu chí" />
-                        <div className="flex-1">
+                    <Card className="lg:col-span-7">
+                        <SectionHead icon="🏅" title="Piotroski F-Score" sub="Chấm điểm cơ bản 9 tiêu chí" />
+                        <div>
                             {(reportLoading || ratioLoading) && !reportData
                                 ? <Skel h="h-48" />
                                 : <PiotroskiFScore reportData={reportData ?? null} ratios={ratios ?? null} />
@@ -1621,19 +2285,19 @@ export default function DashboardTab() {
                     </Card>
 
                     {/* RIGHT COLUMN: Stacked Altman & DuPont */}
-                    <div className="lg:col-span-6 flex flex-col gap-4">
-                        <Card className="flex-1 flex flex-col">
+                    <div className="lg:col-span-5 flex flex-col gap-4">
+                        <Card className="flex flex-col">
                             <SectionHead icon="📐" title="Altman Z-Score" sub="Rủi ro phá sản" />
-                            <div className="flex-1 flex items-center justify-center">
+                            <div>
                                 {(reportLoading || ratioLoading) && !reportData
                                     ? <Skel h="h-48" />
                                     : <AltmanZScoreGauge reportData={reportData ?? null} ratios={ratios ?? null} />
                                 }
                             </div>
                         </Card>
-                        <Card className="flex-1 flex flex-col">
+                        <Card className="flex flex-col">
                             <SectionHead icon="🧮" title="DuPont ROE" sub="Phân rã 5 nhân tố" />
-                            <div className="flex-1">
+                            <div>
                                 {reportLoading && !reportData
                                     ? <Skel h="h-48" />
                                     : <DuPontDecomposition reportData={reportData ?? null} />
@@ -1642,55 +2306,6 @@ export default function DashboardTab() {
                         </Card>
                     </div>
                 </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-                    <Card className="lg:col-span-7">
-                        <SectionHead icon="🔄" title="Chu kỳ chuyển đổi tiền mặt" sub="Receivable · Inventory · Payable Days" />
-                        {ratioLoading && !ratios
-                            ? <Skel h="h-44" />
-                            : <CashConversionCycleChart ratios={ratios ?? null} />
-                        }
-                    </Card>
-                    <Card className="lg:col-span-5">
-                        <SectionHead icon="💎" title="Phân tích cổ tức" sub="Dividend Yield · EPS" />
-                        {ratioLoading && !ratios
-                            ? <Skel h="h-44" />
-                            : <DividendAnalysis ratios={ratios ?? null} />
-                        }
-                    </Card>
-                </div>
-            </div>
-
-            {/* ── PHẦN 3: ĐỊNH GIÁ & THỊ TRƯỜNG (CHƯƠNG 3) ── */}
-            <div className="space-y-4 pt-4 border-t">
-                <h3 className="text-sm font-bold text-foreground flex items-center gap-2 border-b pb-2 uppercase tracking-wider">
-                    <span className="bg-primary/10 text-primary p-1 rounded">2</span>
-                    Định giá & Thị trường
-                </h3>
-
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-                    {/* Bên trái (60%): Bội số định giá */}
-                    <Card className="lg:col-span-7">
-                        <SectionHead icon="💹" title="Bội số định giá" sub="P/E · P/B · EV/EBITDA" />
-                        {ratioLoading && !ratios
-                            ? <Skel h="h-40" />
-                            : <ValuationRatioChart ratios={ratios ?? null} />
-                        }
-                    </Card>
-                    {/* Bên phải (40%): Định giá tổng hợp */}
-                    <Card className="lg:col-span-5">
-                        <SectionHead icon="🎯" title="Định giá tổng hợp" sub="DCF · DDM · So sánh ngành" />
-                        {valuationLoading && !valuationData
-                            ? <div className="space-y-2">{Array(4).fill(0).map((_, i) => <Skel key={i} h="h-12" />)}</div>
-                            : <ValuationSnapshot valuationData={valuationData ?? null} />
-                        }
-                    </Card>
-                </div>
-
-                <Card>
-                    <SectionHead icon="🏢" title="So sánh cùng ngành" sub="Biến động giá và Cấu trúc vốn" />
-                    <PeerWidget />
-                </Card>
             </div>
 
             {/* ── PHẦN 4: RỦI RO ĐỊNH LƯỢNG (CHƯƠNG 4) ── */}

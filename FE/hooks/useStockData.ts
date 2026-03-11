@@ -515,7 +515,9 @@ export interface ValuationData {
         intrinsicValue: number;
         currentPrice: number;
         upside: number;
-        methods: { method: string; value: number }[];
+        methods: { method: string; value: number; weight?: number }[];
+        sector?: string;
+        valuationLabel?: string; // "Rẻ" | "Đắt" | "Hợp lý"
     };
     dcf: {
         wacc: number;
@@ -523,12 +525,21 @@ export interface ValuationData {
         projections: { year: number; fcf: number; pv: number }[];
         sensitivityMatrix: number[][];
         intrinsicValue: number;
+        negativeFcfYears?: number; // số năm FCF âm trong 5 năm gần nhất
     };
     ddm: {
         intrinsicValue: number;
         dividendPerShare: number;
         costOfEquity: number;
         growthRate: number;
+        dividendYield?: number; // % tỷ suất cổ tức
+    };
+    rnav?: {
+        adjustedNAV: number;
+        landBankValue: number;
+        projectsValue: number;
+        discount: number;
+        intrinsicValue: number;
     };
     peBand: {
         dates: string[];
@@ -537,6 +548,7 @@ export interface ValuationData {
         midBand: number[];
         lowBand: number[];
         avgBand: number[];
+        sdBands?: { sd1High: number[]; sd1Low: number[]; sd2High: number[]; sd2Low: number[] };
     };
     pbBand: {
         dates: string[];
@@ -545,6 +557,7 @@ export interface ValuationData {
         midBand: number[];
         lowBand: number[];
         avgBand: number[];
+        sdBands?: { sd1High: number[]; sd1Low: number[]; sd2High: number[]; sd2Low: number[] };
     };
     peerValuation: {
         ticker: string;
@@ -554,6 +567,8 @@ export interface ValuationData {
         evEbitda: number | null;
         roe: number | null;
         marketCap: number | null;
+        epsGrowth?: number | null; // % tăng trưởng EPS để tính PEG
+        peg?: number | null;
     }[];
     footballField: {
         method: string;
@@ -561,4 +576,5 @@ export interface ValuationData {
         mid: number;
         high: number;
     }[];
+    weights?: { method: string; weight: number }[]; // trọng số tuỳ chỉnh (tổng = 100)
 }

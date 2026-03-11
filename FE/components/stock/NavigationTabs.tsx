@@ -6,8 +6,8 @@ const NAVIGATION_TABS = [
     { id: "overview",   label: "Tổng quan" },
     { id: "news",       label: "Tin tức" },
     { id: "financials", label: "Số liệu tài chính" },
-    { id: "quant",      label: "Dashboard" },
-    { id: "valuation",  label: "Định giá" },
+    { id: "dashboard",   label: "Dashboard - TCDN" },
+    { id: "quant",      label: "Dashboard - Định lượng" },
     { id: "compare",    label: "So sánh" },
     { id: "profile",    label: "Hồ sơ doanh nghiệp" },
 ];
