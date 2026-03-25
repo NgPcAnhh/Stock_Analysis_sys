@@ -1,6 +1,7 @@
 ﻿"use client";
+import { AlertPopup } from './AlertPopup';
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import ReactECharts from "echarts-for-react";
 import { useStockDetail } from "@/lib/StockDetailContext";
 import { usePriceHistory, type PriceHistoryPeriod, type PriceHistoryItem } from "@/hooks/useStockData";
@@ -15,6 +16,17 @@ import {
     LineChart,
     CandlestickChart,
 } from "lucide-react";
+
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
+
+function getOrCreateSessionId(): string {
+    const key = "session_id";
+    const existing = localStorage.getItem(key);
+    if (existing) return existing;
+    const generated = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    localStorage.setItem(key, generated);
+    return generated;
+}
 
 /* Period UI labels */
 const PERIODS: { label: string; value: PriceHistoryPeriod }[] = [
@@ -56,6 +68,14 @@ const PriceHistoryChart = () => {
     const { ticker, priceHistory: contextHistory } = useStockDetail();
     const [period, setPeriod] = useState<PriceHistoryPeriod>("1Y");
     const [chartType, setChartType] = useState<"line" | "candle">("line");
+    const [isFavorite, setIsFavorite] = useState(false);
+        const [showAlert, setShowAlert] = useState(false);
+    const [priceAlert, setPriceAlert] = useState<number | null>(null);
+    const [showCompareMa20, setShowCompareMa20] = useState(false);
+    const [analysisNote, setAnalysisNote] = useState("");
+    const [showGridLines, setShowGridLines] = useState(true);
+    const [isFullscreen, setIsFullscreen] = useState(false);
+    const cardRef = useRef<HTMLDivElement | null>(null);
 
     /* Fetch price data for the selected period */
     const { data: apiData, loading } = usePriceHistory(ticker, period);
@@ -79,6 +99,124 @@ const PriceHistoryChart = () => {
     }, [priceData, period]);
 
     const axisInterval = useMemo(() => computeInterval(dates.length), [dates.length]);
+    const latestClosePrice = closePrices.length > 0 ? closePrices[closePrices.length - 1] : null;
+
+    const ma20Data = useMemo(() => {
+        if (closePrices.length < 20) return closePrices.map(() => null);
+        return closePrices.map((_, index, arr) => {
+            if (index < 19) return null;
+            const window = arr.slice(index - 19, index + 1);
+            const avg = window.reduce((sum, val) => sum + val, 0) / 20;
+            return Number(avg.toFixed(2));
+        });
+    }, [closePrices]);
+
+    useEffect(() => {
+        const handleFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
+        document.addEventListener("fullscreenchange", handleFullscreenChange);
+        return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    }, []);
+
+    useEffect(() => {
+        const noteKey = "stock_analysis_notes";
+
+        const loadRemoteState = async () => {
+            try {
+                const sessionId = getOrCreateSessionId();
+
+                const [favRes, alertRes] = await Promise.all([
+                    fetch(`${API}/tracking/favorite?session_id=${encodeURIComponent(sessionId)}`),
+                    fetch(`${API}/alerts?session_id=${encodeURIComponent(sessionId)}`),
+                ]);
+
+                if (favRes.ok) {
+                    const favorites: string[] = await favRes.json();
+                    setIsFavorite(favorites.includes(ticker));
+                } else {
+                    setIsFavorite(false);
+                }
+
+                if (alertRes.ok) {
+                    const alerts = (await alertRes.json()) as Array<{
+                        ticker: string;
+                        target_price: number;
+                        status: string;
+                    }>;
+                    const active = alerts.find((a) => a.ticker === ticker && a.status === "ACTIVE");
+                    setPriceAlert(active ? Number(active.target_price) : null);
+                } else {
+                    setPriceAlert(null);
+                }
+            } catch {
+                setIsFavorite(false);
+                setPriceAlert(null);
+            }
+        };
+
+        loadRemoteState();
+
+        try {
+            const notesRaw = localStorage.getItem(noteKey);
+            const notes = notesRaw ? (JSON.parse(notesRaw) as Record<string, string>) : {};
+            setAnalysisNote(notes[ticker] || "");
+        } catch {
+            setAnalysisNote("");
+        }
+    }, [ticker]);
+
+    const toggleFavorite = useCallback(() => {
+        const run = async () => {
+            try {
+                const res = await fetch(`${API}/tracking/favorite`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        ticker,
+                        session_id: getOrCreateSessionId(),
+                    }),
+                });
+                if (!res.ok) return;
+                setIsFavorite((prev) => !prev);
+            } catch {
+                // noop
+            }
+        };
+        run();
+    }, [ticker]);
+
+    const setupPriceAlert = useCallback(() => {
+        setShowAlert(true);
+    }, []);
+
+    const editAnalysisNote = useCallback(() => {
+        const noteKey = "stock_analysis_notes";
+        const input = window.prompt("Ghi chú phân tích cho mã này:", analysisNote);
+        if (input === null) return;
+
+        const nextValue = input.trim();
+        try {
+            const notesRaw = localStorage.getItem(noteKey);
+            const notes = notesRaw ? (JSON.parse(notesRaw) as Record<string, string>) : {};
+            if (!nextValue) {
+                delete notes[ticker];
+            } else {
+                notes[ticker] = nextValue;
+            }
+            localStorage.setItem(noteKey, JSON.stringify(notes));
+            setAnalysisNote(nextValue);
+        } catch {
+            // noop
+        }
+    }, [analysisNote, ticker]);
+
+    const toggleFullscreen = useCallback(async () => {
+        if (!cardRef.current) return;
+        if (document.fullscreenElement) {
+            await document.exitFullscreen();
+            return;
+        }
+        await cardRef.current.requestFullscreen();
+    }, []);
 
     /* Tooltip formatter shared by both chart types */
     const tooltipFormatter = (params: any) => {
@@ -121,7 +259,7 @@ const PriceHistoryChart = () => {
                 scale: true,
                 axisLine: { show: false },
                 axisLabel: { color: "#6b7280", fontSize: 12, formatter: (v: number) => v.toLocaleString() },
-                splitLine: { lineStyle: { color: "#f3f4f6", type: "dashed" } },
+                splitLine: { show: showGridLines, lineStyle: { color: "#f3f4f6", type: "dashed" } },
             },
             dataZoom: [
                 { type: "inside", xAxisIndex: 0, start: 0, end: 100, zoomOnMouseWheel: true, moveOnMouseMove: true, moveOnMouseWheel: false },
@@ -145,9 +283,21 @@ const PriceHistoryChart = () => {
                         },
                     },
                 },
+                ...(showCompareMa20
+                    ? [
+                        {
+                            name: "MA20",
+                            type: "line",
+                            data: ma20Data,
+                            smooth: true,
+                            symbol: "none",
+                            lineStyle: { color: "#3B82F6", width: 1.5, type: "dashed" },
+                        },
+                    ]
+                    : []),
             ],
         }),
-        [dates, closePrices, axisInterval],
+        [dates, closePrices, axisInterval, showCompareMa20, ma20Data, showGridLines],
     );
 
     const candleChartOption = useMemo(
@@ -183,13 +333,13 @@ const PriceHistoryChart = () => {
                     type: "value", position: "right", scale: true,
                     axisLine: { show: false },
                     axisLabel: { color: "#6b7280", fontSize: 12, formatter: (v: number) => v.toLocaleString() },
-                    splitLine: { lineStyle: { color: "#f3f4f6", type: "dashed" } },
+                    splitLine: { show: showGridLines, lineStyle: { color: "#f3f4f6", type: "dashed" } },
                 },
                 {
                     type: "value", gridIndex: 1, position: "right", scale: true,
                     axisLine: { show: false },
                     axisLabel: { color: "#6b7280", fontSize: 10, formatter: (v: number) => (v / 1000000).toFixed(1) + "M" },
-                    splitLine: { lineStyle: { color: "#f3f4f6", type: "dashed" } },
+                    splitLine: { show: showGridLines, lineStyle: { color: "#f3f4f6", type: "dashed" } },
                 },
             ],
             dataZoom: [
@@ -210,6 +360,19 @@ const PriceHistoryChart = () => {
                         borderColor0: "#EF4444",
                     },
                 },
+                ...(showCompareMa20
+                    ? [
+                        {
+                            name: "MA20",
+                            type: "line",
+                            data: ma20Data,
+                            xAxisIndex: 0,
+                            yAxisIndex: 0,
+                            symbol: "none",
+                            lineStyle: { color: "#3B82F6", width: 1.5, type: "dashed" },
+                        },
+                    ]
+                    : []),
                 {
                     name: "Volume",
                     type: "bar",
@@ -222,17 +385,27 @@ const PriceHistoryChart = () => {
                 },
             ],
         }),
-        [dates, candlestickData, volumeData, volumeColors, axisInterval],
+        [dates, candlestickData, volumeData, volumeColors, axisInterval, showCompareMa20, ma20Data, showGridLines],
     );
 
     return (
-        <Card className="shadow-sm border-border h-full flex flex-col">
+        <Card ref={cardRef} className="shadow-sm border-border h-full flex flex-col">
             <CardHeader className="pb-2 pt-3 px-4">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                     <div className="flex items-center gap-3">
                         <CardTitle className="text-lg font-bold text-foreground">
                             Biểu đồ giá
                         </CardTitle>
+                        {priceAlert !== null && (
+                            <span className="text-xs px-2 py-1 rounded-md bg-amber-50 text-amber-700 border border-amber-200">
+                                Cảnh báo: {priceAlert.toLocaleString()}
+                            </span>
+                        )}
+                        {analysisNote && (
+                            <span className="text-xs px-2 py-1 rounded-md bg-blue-50 text-blue-700 border border-blue-200 max-w-[280px] truncate" title={analysisNote}>
+                                Ghi chú: {analysisNote}
+                            </span>
+                        )}
                         <div className="flex items-center gap-0.5 bg-muted rounded-lg p-0.5">
                             <button
                                 onClick={() => setChartType("line")}
@@ -265,12 +438,42 @@ const PriceHistoryChart = () => {
                             ))}
                         </div>
                         <div className="flex items-center gap-0.5 border-l border-border/50 pl-2">
-                            <ToolbarButton icon={<Star className="w-3.5 h-3.5" />} />
-                            <ToolbarButton icon={<Bell className="w-3.5 h-3.5" />} />
-                            <ToolbarButton icon={<GitCompare className="w-3.5 h-3.5" />} />
-                            <ToolbarButton icon={<Pencil className="w-3.5 h-3.5" />} />
-                            <ToolbarButton icon={<Settings className="w-3.5 h-3.5" />} />
-                            <ToolbarButton icon={<Maximize2 className="w-3.5 h-3.5" />} />
+                            <ToolbarButton
+                                icon={<Star className="w-3.5 h-3.5" fill={isFavorite ? "currentColor" : "none"} />}
+                                title={isFavorite ? "Bỏ khỏi danh sách theo dõi" : "Thêm vào danh sách theo dõi"}
+                                active={isFavorite}
+                                activeClassName="text-yellow-500 bg-yellow-50 dark:bg-yellow-500/10"
+                                onClick={toggleFavorite}
+                            />
+                            <ToolbarButton
+                                icon={<Bell className="w-3.5 h-3.5" />}
+                                title="Thiết lập cảnh báo giá"
+                                active={priceAlert !== null && latestClosePrice !== null && latestClosePrice >= priceAlert}
+                                onClick={setupPriceAlert}
+                            />
+                            <ToolbarButton
+                                icon={<GitCompare className="w-3.5 h-3.5" />}
+                                title="Bật/tắt MA20"
+                                active={showCompareMa20}
+                                onClick={() => setShowCompareMa20((prev) => !prev)}
+                            />
+                            <ToolbarButton
+                                icon={<Pencil className="w-3.5 h-3.5" />}
+                                title="Thêm ghi chú nhanh"
+                                active={Boolean(analysisNote)}
+                                onClick={editAnalysisNote}
+                            />
+                            <ToolbarButton
+                                icon={<Settings className="w-3.5 h-3.5" />}
+                                title="Bật/tắt lưới biểu đồ"
+                                active={showGridLines}
+                                onClick={() => setShowGridLines((prev) => !prev)}
+                            />
+                            <ToolbarButton
+                                icon={<Maximize2 className="w-3.5 h-3.5" />}
+                                title="Toàn màn hình"
+                                onClick={toggleFullscreen}
+                            />
                         </div>
                     </div>
                 </div>
@@ -288,23 +491,50 @@ const PriceHistoryChart = () => {
                 ) : chartType === "line" ? (
                     <ReactECharts
                         option={lineChartOption}
-                        style={{ height: "400px", width: "100%" }}
+                        style={{ height: isFullscreen ? "100%" : "400px", width: "100%" }}
                         notMerge={true}
                     />
                 ) : (
                     <ReactECharts
                         option={candleChartOption}
-                        style={{ height: "400px", width: "100%" }}
+                        style={{ height: isFullscreen ? "100%" : "400px", width: "100%" }}
                         notMerge={true}
                     />
                 )}
             </CardContent>
-        </Card>
+            {showAlert && (
+                <AlertPopup
+                    ticker={ticker}
+                    onClose={() => setShowAlert(false)}
+                    onSaved={(targetPrice) => setPriceAlert(targetPrice)}
+                />
+            )}
+    </Card>
     );
 };
 
-const ToolbarButton = ({ icon }: { icon: React.ReactNode }) => (
-    <button className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors">
+const ToolbarButton = ({
+    icon,
+    title,
+    active,
+    activeClassName = "text-foreground bg-muted",
+    onClick,
+}: {
+    icon: React.ReactNode;
+    title: string;
+    active?: boolean;
+    activeClassName?: string;
+    onClick: () => void;
+}) => (
+    <button
+        type="button"
+        title={title}
+        onClick={onClick}
+        className={`p-1.5 rounded transition-colors ${active
+            ? activeClassName
+            : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            }`}
+    >
         {icon}
     </button>
 );

@@ -7,7 +7,7 @@ import sys
 CONTAINER_NAME = "dwh-postgres"
 DB_USER = "admin"
 DB_NAME = "postgres"
-
+password = '123456'
 SCHEMAS = [
     "hethong_phantich_chungkhoan",
     "system"

@@ -11,7 +11,8 @@ import {
     TrendingUp,
     Newspaper,
     Briefcase,
-    Loader2
+    Loader2,
+    ShieldCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/AuthContext";
@@ -48,11 +49,45 @@ export function Header({ onMenuClick }: HeaderProps) {
     const [liveStocks, setLiveStocks] = useState<StockSearchResult[]>([]);
     const [liveNews, setLiveNews] = useState<NewsSearchResult[]>([]);
     const [isSearching, setIsSearching] = useState(false);
+    const [activeAlertCount, setActiveAlertCount] = useState(0);
 
     const searchInputRef = useRef<HTMLInputElement>(null);
     const searchTimerRef = useRef<NodeJS.Timeout | undefined>(undefined);
     const router = useRouter();
     const { trackSearch, trackStockSearch } = useTracking(user?.id);
+
+    const getOrCreateSessionId = () => {
+        const key = "session_id";
+        const existing = localStorage.getItem(key);
+        if (existing) return existing;
+        const generated = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+        localStorage.setItem(key, generated);
+        return generated;
+    };
+
+    useEffect(() => {
+        let mounted = true;
+
+        const fetchAlertCount = async () => {
+            try {
+                const sessionId = getOrCreateSessionId();
+                const res = await fetch(`${API}/alerts?session_id=${encodeURIComponent(sessionId)}`);
+                if (!res.ok || !mounted) return;
+                const alerts = (await res.json()) as Array<{ status: string }>;
+                const count = alerts.filter((a) => a.status === "ACTIVE" || a.status === "TRIGGERED").length;
+                setActiveAlertCount(count);
+            } catch {
+                if (mounted) setActiveAlertCount(0);
+            }
+        };
+
+        fetchAlertCount();
+        const timer = setInterval(fetchAlertCount, 15000);
+        return () => {
+            mounted = false;
+            clearInterval(timer);
+        };
+    }, []);
 
     // Handle escape key to close search
     useEffect(() => {
@@ -330,7 +365,14 @@ export function Header({ onMenuClick }: HeaderProps) {
                 <div className="flex items-center gap-3">
                     <Button variant="ghost" size="icon" className="relative rounded-full text-muted-foreground hover:text-foreground">
                         <Bell className="h-5 w-5" />
-                        <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-background" />
+                        {activeAlertCount > 0 && (
+                            <>
+                                <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-background" />
+                                <span className="absolute -top-1 -right-1 text-[10px] leading-none min-w-4 h-4 px-1 rounded-full bg-red-500 text-white flex items-center justify-center">
+                                    {activeAlertCount > 9 ? "9+" : activeAlertCount}
+                                </span>
+                            </>
+                        )}
                     </Button>
 
                     <div className="flex items-center gap-2 pl-2 border-l border-border/50">
@@ -347,6 +389,12 @@ export function Header({ onMenuClick }: HeaderProps) {
                                     <p className="font-medium leading-none">{user.full_name || user.email.split('@')[0]}</p>
                                     <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
                                 </div>
+                                {user.role === 'admin' && (
+                                    <Button variant="outline" size="sm" onClick={() => router.push('/admin')} className="ml-2 hidden lg:flex items-center gap-1 border-primary/50 text-primary hover:bg-primary/10">
+                                        <ShieldCheck className="h-4 w-4" />
+                                        <span className="hidden xl:inline">Quản Trị</span>
+                                    </Button>
+                                )}
                                 <Button variant="ghost" size="icon" onClick={() => logout()} title="Đăng xuất" className="ml-2 h-8 w-8 text-muted-foreground hover:text-red-500">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
                                 </Button>

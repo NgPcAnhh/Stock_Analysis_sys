@@ -30,10 +30,16 @@ CREATE TABLE IF NOT EXISTS system.users (
     google_id VARCHAR(255) UNIQUE,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     is_verified BOOLEAN NOT NULL DEFAULT FALSE,
+    totp_secret VARCHAR(64),
+    is_totp_enabled BOOLEAN NOT NULL DEFAULT FALSE,
     last_login_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Migration: thêm cột 2FA cho bảng users đã tồn tại
+ALTER TABLE system.users ADD COLUMN IF NOT EXISTS totp_secret VARCHAR(64);
+ALTER TABLE system.users ADD COLUMN IF NOT EXISTS is_totp_enabled BOOLEAN NOT NULL DEFAULT FALSE;
 CREATE INDEX IF NOT EXISTS idx_users_email ON system.users (email);
 CREATE INDEX IF NOT EXISTS idx_users_google_id ON system.users (google_id)
 WHERE google_id IS NOT NULL;

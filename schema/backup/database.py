@@ -1,98 +1,22 @@
-import subprocess
-import gzip
-import os
-import datetime
-import sys
-
-# ===== CONFIG =====
-
-CONTAINER_NAME = "postgres_target"   # container postgres máy đích
-DB_USER = "admin"
-DB_NAME = "postgres"
-
-BACKUP_FILES = [
-    "backup/hethong_phantich_chungkhoan.sql.gz",
-    "backup/system.sql.gz"
-]
-
-# ==================
-
-
-def log(message):
-    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    print(f"[{now}] {message}")
-    sys.stdout.flush()
+1. Confirm lại số liệu so với cùng kỳ với anh Xuân (pending)
+2. Biểu đồ "Sản lượng sản xuất trong ngày theo nhà máy": Label "Tỷ lệ huy động" đổi thành "SL Max" (done)
+3. Đồng nhất làm tròn 2 số thập phân sau dấu phẩy ở tất cả biểu đồ (done)
+4. 2 biểu đồ cột của Khối lượng nhiên liệu cần tổng hợp theo đúng nhà máy than và nhà máy khí (done)
+5. Biểu đồ mực nước đo hàng ngày sai tên biểu đồ (done)
+6. Bỏ zoom biểu đồ (done)
+7. Căn chỉnh lại các label trong 2 biểu đồ cột khối lượng nhiên liệu (done)
+8. Droplist (filter) tháng và nhà máy điện chưa sắp xếp theo đúng thứ tự  (core dmp)
+9. Droplist (filter) ngày cần hiển thị giá trị mặc định là ngày N-1 (core dmp)
+10. Tên các nhà máy trong tất cả biểu đồ cần bỏ chữ "NMĐ" (nhờ DE cấu hình đồng nhất dữ liệu)
+11. Cần nhập thêm dữ liệu doanh thu thực tế của năm 2025 (a xuân phụ trách)
+12. Biểu đồ "Mức độ sản lượng hoàn thành kế hoạch giữa các nhà máy" cần sắp xếp tên nhà máy theo ABC (done)
+13. Số và đơn vị ở các card Sản lượng, Doanh thu, Lợi nhuận cần căn gióng thẳng hàng lại
+14. Nhiên liệu than và nhiên liệu khí theo ngày chưa khớp với DB 
+15. Biểu đồ "SL thương mại lũy kế theo loại nhà máy" ở tab Ngày cần sửa lại tên (done)
+16. Droplist (filter) Đơn vị và Nhà máy không có option Tất cả (core dmp)
+17. Biểu đồ mực nước đo hàng ngày bị lặp dữ liệu và chưa sắp xếp ngày đúng thứ tự (done)
+18. Biểu đồ mực nước vẫn hiển thị khi chọn droplist Nhà máy là giá trị khác với thủy điện (done)
 
 
-def restore_schema(file_path):
-
-    schema_name = os.path.basename(file_path).replace(".sql.gz", "")
-
-    log(f"Start restoring schema: {schema_name}")
-    log(f"Source file: {file_path}")
-
-    cmd = [
-        "docker",
-        "exec",
-        "-i",
-        CONTAINER_NAME,
-        "psql",
-        "-U",
-        DB_USER,
-        "-d",
-        DB_NAME
-    ]
-
-    log("Command: " + " ".join(cmd))
-
-    try:
-
-        process = subprocess.Popen(
-            cmd,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
-
-        with gzip.open(file_path, "rb") as f:
-
-            total = 0
-
-            while True:
-                chunk = f.read(8192)
-                if not chunk:
-                    break
-
-                process.stdin.write(chunk)
-                total += len(chunk)
-
-                if total % (50 * 1024 * 1024) < 8192:
-                    log(f"{schema_name}: restored {round(total/1024/1024,2)} MB")
-
-        process.stdin.close()
-
-        stdout, stderr = process.communicate()
-
-        if process.returncode != 0:
-            log("ERROR during restore")
-            log(stderr.decode())
-            return
-
-        log(f"Finished restore schema: {schema_name}")
-
-    except Exception as e:
-        log(f"Exception: {e}")
 
 
-def main():
-
-    log("===== START RESTORE =====")
-
-    for file in BACKUP_FILES:
-        restore_schema(file)
-
-    log("===== RESTORE FINISHED =====")
-
-
-if __name__ == "__main__":
-    main()

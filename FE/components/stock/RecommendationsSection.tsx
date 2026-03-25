@@ -71,15 +71,15 @@ function RecommendationCard({ stock }: { stock: RecommendedStock }) {
     const positive = stock.priceChange >= 0;
     return (
         <Link href={`/stock/${stock.ticker}`} className="block">
-            <div className="rounded-xl border border-border bg-card overflow-hidden hover:shadow-lg hover:border-blue-200 transition-all duration-200 flex flex-col h-full">
+            <div className="group rounded-2xl border border-slate-200/90 bg-white/95 backdrop-blur-sm overflow-hidden shadow-[0_6px_18px_rgba(15,23,42,0.06)] hover:shadow-[0_14px_30px_rgba(15,23,42,0.16)] hover:-translate-y-0.5 transition-all duration-300 flex flex-col h-full">
                 {/* Info: ticker name + price + change */}
-                <div className="px-3 pt-3">
+                <div className="px-4 pt-4">
                     {/* Ticker row */}
-                    <div className="flex items-center gap-2 mb-1.5">
+                    <div className="flex items-center gap-2.5 mb-2">
                         <img
                             src={stock.logoUrl}
                             alt={stock.ticker}
-                            className="w-6 h-6 rounded-full border border-border object-cover bg-muted"
+                            className="w-7 h-7 rounded-full border border-slate-200 object-cover bg-slate-100"
                             onError={(e) => {
                                 const el = e.currentTarget as HTMLImageElement;
                                 el.style.display = "none";
@@ -88,32 +88,32 @@ function RecommendationCard({ stock }: { stock: RecommendedStock }) {
                             }}
                         />
                         <div
-                            className="w-6 h-6 rounded-full bg-blue-600 text-white items-center justify-center text-[10px] font-bold hidden"
+                            className="w-7 h-7 rounded-full bg-sky-600 text-white items-center justify-center text-[10px] font-bold hidden"
                         >
                             {stock.ticker.charAt(0)}
                         </div>
-                        <span className="font-bold text-sm text-foreground group-hover:text-blue-600 transition-colors">
+                        <span className="font-bold text-sm text-slate-900 group-hover:text-sky-700 transition-colors">
                             {stock.ticker}
                         </span>
                     </div>
 
                     {/* Price */}
-                    <div className={`text-base font-bold tabular-nums ${positive ? "text-[#25B770]" : "text-[#EF4444]"}`}>
+                    <div className={`text-lg font-extrabold tabular-nums tracking-tight ${positive ? "text-emerald-600" : "text-rose-600"}`}>
                         {stock.price.toLocaleString("vi-VN")}
                     </div>
 
                     {/* Change (below price) */}
-                    <div className="flex items-center gap-1.5 mt-1">
+                    <div className="flex items-center gap-1.5 mt-1.5">
                         {positive ? (
-                            <TrendingUp className="w-3 h-3 text-[#25B770]" />
+                            <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
                         ) : (
-                            <TrendingDown className="w-3 h-3 text-[#EF4444]" />
+                            <TrendingDown className="w-3.5 h-3.5 text-rose-600" />
                         )}
-                        <span className={`text-xs font-medium tabular-nums ${positive ? "text-[#25B770]" : "text-[#EF4444]"}`}>
+                        <span className={`text-xs font-semibold tabular-nums ${positive ? "text-emerald-600" : "text-rose-600"}`}>
                             {positive ? "+" : ""}{stock.priceChange.toLocaleString("vi-VN")}
                         </span>
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
-                            positive ? "bg-green-50 text-[#25B770]" : "bg-red-50 text-[#EF4444]"
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                            positive ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"
                         }`}>
                             {positive ? "+" : ""}{stock.priceChangePercent.toFixed(2)}%
                         </span>
@@ -121,10 +121,10 @@ function RecommendationCard({ stock }: { stock: RecommendedStock }) {
                 </div>
 
                 {/* Spacer */}
-                <div className="h-3" />
+                <div className="h-4" />
 
                 {/* Chart area */}
-                <div className="px-2 pb-3">
+                <div className="px-3 pb-3 bg-gradient-to-b from-white to-slate-50/80 border-t border-slate-100">
                     <SparklineChart data={stock.chartData} positive={positive} />
                 </div>
             </div>
@@ -138,7 +138,7 @@ const RecommendationsSection = () => {
 
     if (!recommendations.length) {
         return (
-            <div className="rounded-lg border border-border bg-card p-6 text-center text-sm text-muted-foreground">
+            <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
                 Không có gợi ý.
             </div>
         );
@@ -147,10 +147,20 @@ const RecommendationsSection = () => {
     const items = recommendations.slice(0, 4);
 
     return (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {items.map((stock: RecommendedStock) => (
-                <RecommendationCard key={stock.ticker} stock={stock} />
-            ))}
+        <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-sky-50/60 p-4 sm:p-5">
+            <div className="pointer-events-none absolute -top-20 -right-16 h-48 w-48 rounded-full bg-sky-200/20 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-24 -left-10 h-52 w-52 rounded-full bg-emerald-200/20 blur-3xl" />
+
+            <div className="relative mb-4 sm:mb-5">
+                <p className="text-[11px] sm:text-xs uppercase tracking-[0.16em] text-slate-500 font-semibold">Gợi ý cùng nhịp thị trường</p>
+                <h3 className="text-sm sm:text-base font-semibold text-slate-900 mt-1 leading-relaxed">Các mã có thanh khoản cao và xu hướng giá đáng chú ý</h3>
+            </div>
+
+            <div className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {items.map((stock: RecommendedStock) => (
+                    <RecommendationCard key={stock.ticker} stock={stock} />
+                ))}
+            </div>
         </div>
     );
 };

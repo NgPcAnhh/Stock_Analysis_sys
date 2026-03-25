@@ -21,7 +21,7 @@ SYSTEM_SCHEMA = "system"
 
 # Allowed sort fields → actual SQL expression
 SORT_MAP = {
-    "ticker": "hp.ticker",
+    "ticker": "bs.ticker",
     "current_price": "hp.close",
     "price_change_percent": "price_change_percent",
     "volume": "hp.volume",
@@ -58,7 +58,7 @@ async def get_stock_overview(
         return cached
 
     # Validate sort
-    sort_col = SORT_MAP.get(sort_by, "fr.market_cap")
+    sort_col = SORT_MAP.get(sort_by, "computed_market_cap")
     sort_direction = "ASC" if sort_dir.lower() == "asc" else "DESC"
 
     # ── Build WHERE conditions ──
@@ -67,15 +67,15 @@ async def get_stock_overview(
 
     if search:
         conditions.append(
-            "(hp.ticker ILIKE :search OR co.organ_short_name ILIKE :search)"
+            "(bs.ticker ILIKE :search OR COALESCE(co.company_name, '') ILIKE :search)"
         )
         params["search"] = f"%{search}%"
     if sector:
-        conditions.append("co.icb_name2 = :sector")
+        conditions.append("co.sector = :sector")
         params["sector"] = sector
     if exchange:
-        conditions.append("co.exchange = :exchange")
-        params["exchange"] = exchange
+        conditions.append("co.exchange_norm = :exchange")
+        params["exchange"] = exchange.upper().strip()
 
     where_clause = " AND ".join(conditions) if conditions else "1=1"
 
@@ -98,25 +98,54 @@ async def get_stock_overview(
 
     # ── Count total ──
     count_sql = text(f"""
-        WITH co_dedup AS (
-            SELECT DISTINCT ON (ticker)
-                ticker,
+        WITH ticker_universe AS (
+            SELECT ticker FROM {SCHEMA}.company_overview
+            UNION
+            SELECT ticker FROM {SCHEMA}.history_price
+            WHERE trading_date = :latest_date
+            UNION
+            SELECT ticker FROM {SCHEMA}.financial_ratio
+            UNION
+            SELECT ticker FROM {SCHEMA}.bctc
+            UNION
+            SELECT ticker FROM {SCHEMA}.electric_board
+            WHERE trading_date = (SELECT MAX(trading_date) FROM {SCHEMA}.electric_board)
+        ),
+        base_stocks AS (
+            SELECT DISTINCT UPPER(BTRIM(ticker)) AS ticker
+            FROM ticker_universe
+            WHERE ticker IS NOT NULL
+              AND BTRIM(ticker) NOT IN ('', 'NaN')
+              AND UPPER(BTRIM(ticker)) NOT LIKE '%INDEX'
+        ),
+        co_dedup AS (
+            SELECT DISTINCT ON (UPPER(BTRIM(ticker)))
+                UPPER(BTRIM(ticker)) AS ticker,
                 CASE
-                    WHEN organ_short_name IS NOT NULL AND organ_short_name != 'NaN' THEN organ_short_name
-                    WHEN organ_name IS NOT NULL AND organ_name != 'NaN' THEN organ_name
+                    WHEN organ_short_name IS NOT NULL AND BTRIM(organ_short_name) NOT IN ('', 'NaN') THEN BTRIM(organ_short_name)
+                    WHEN organ_name IS NOT NULL AND BTRIM(organ_name) NOT IN ('', 'NaN') THEN BTRIM(organ_name)
                     ELSE NULL
-                END AS organ_short_name,
-                icb_name2, exchange
+                END AS company_name,
+                CASE
+                    WHEN icb_name3 IS NOT NULL AND BTRIM(icb_name3) NOT IN ('', 'NaN') THEN BTRIM(icb_name3)
+                    WHEN icb_name2 IS NOT NULL AND BTRIM(icb_name2) NOT IN ('', 'NaN') THEN BTRIM(icb_name2)
+                    ELSE 'Chưa phân loại'
+                END AS sector,
+                CASE
+                    WHEN exchange = 'HSX' THEN 'HOSE'
+                    WHEN exchange IS NOT NULL AND BTRIM(exchange) NOT IN ('', 'NaN') THEN BTRIM(exchange)
+                    ELSE NULL
+                END AS exchange_norm
             FROM {SCHEMA}.company_overview
-            WHERE exchange IS NOT NULL AND exchange != 'NaN' AND exchange != 'DELISTED'
-            ORDER BY ticker,
+            WHERE exchange IS NULL OR (BTRIM(exchange) != 'NaN' AND BTRIM(exchange) != 'DELISTED')
+            ORDER BY UPPER(BTRIM(ticker)),
                 CASE WHEN organ_short_name IS NOT NULL AND organ_short_name != 'NaN' THEN 0 ELSE 1 END,
                 exchange
         )
-        SELECT COUNT(DISTINCT hp.ticker)
-        FROM {SCHEMA}.history_price hp
-        LEFT JOIN co_dedup co ON co.ticker = hp.ticker
-        WHERE hp.trading_date = :latest_date AND {where_clause}
+        SELECT COUNT(DISTINCT bs.ticker)
+        FROM base_stocks bs
+        LEFT JOIN co_dedup co ON co.ticker = bs.ticker
+        WHERE {where_clause}
     """)
     count_params = {"latest_date": latest_date, **params}
     count_res = await db.execute(count_sql, count_params)
@@ -131,8 +160,28 @@ async def get_stock_overview(
     # ── Main query ──
     # Join latest financial_ratio + BCTC to compute P/E, P/B, EPS
     main_sql = text(f"""
-        WITH bctc_data AS (
-            SELECT ticker, year, quarter, ind_code, value
+        WITH ticker_universe AS (
+            SELECT ticker FROM {SCHEMA}.company_overview
+            UNION
+            SELECT ticker FROM {SCHEMA}.history_price
+            WHERE trading_date = :latest_date
+            UNION
+            SELECT ticker FROM {SCHEMA}.financial_ratio
+            UNION
+            SELECT ticker FROM {SCHEMA}.bctc
+            UNION
+            SELECT ticker FROM {SCHEMA}.electric_board
+            WHERE trading_date = (SELECT MAX(trading_date) FROM {SCHEMA}.electric_board)
+        ),
+        base_stocks AS (
+            SELECT DISTINCT UPPER(BTRIM(ticker)) AS ticker
+            FROM ticker_universe
+            WHERE ticker IS NOT NULL
+              AND BTRIM(ticker) NOT IN ('', 'NaN')
+              AND UPPER(BTRIM(ticker)) NOT LIKE '%INDEX'
+        ),
+        bctc_data AS (
+            SELECT UPPER(BTRIM(ticker)) AS ticker, year, quarter, ind_code, value
             FROM {SCHEMA}.bctc
             WHERE ind_code IN (
                 'C_PHI_U_PH_TH_NG_NG',
@@ -166,32 +215,51 @@ async def get_stock_overview(
             GROUP BY ticker HAVING COUNT(*) >= 2
         ),
         latest_fr AS (
-            SELECT DISTINCT ON (ticker)
-                ticker, roe, roa, market_cap,
+            SELECT DISTINCT ON (UPPER(BTRIM(ticker)))
+                UPPER(BTRIM(ticker)) AS ticker, roe, roa, market_cap,
                 dividend_yield, debt_to_equity, outstanding_shares
             FROM {SCHEMA}.financial_ratio
-            ORDER BY ticker, year DESC, quarter DESC
+            ORDER BY UPPER(BTRIM(ticker)), year DESC, quarter DESC
+        ),
+        hp_latest AS (
+            SELECT UPPER(BTRIM(ticker)) AS ticker, close, volume
+            FROM {SCHEMA}.history_price
+            WHERE trading_date = :latest_date
+        ),
+        hp_prev AS (
+            SELECT UPPER(BTRIM(ticker)) AS ticker, close
+            FROM {SCHEMA}.history_price
+            WHERE trading_date = :prev_date
         ),
         co_dedup AS (
-            SELECT DISTINCT ON (ticker)
-                ticker,
+            SELECT DISTINCT ON (UPPER(BTRIM(ticker)))
+                UPPER(BTRIM(ticker)) AS ticker,
                 CASE
-                    WHEN organ_short_name IS NOT NULL AND organ_short_name != 'NaN' THEN organ_short_name
-                    WHEN organ_name IS NOT NULL AND organ_name != 'NaN' THEN organ_name
+                    WHEN organ_short_name IS NOT NULL AND BTRIM(organ_short_name) NOT IN ('', 'NaN') THEN BTRIM(organ_short_name)
+                    WHEN organ_name IS NOT NULL AND BTRIM(organ_name) NOT IN ('', 'NaN') THEN BTRIM(organ_name)
                     ELSE NULL
-                END AS organ_short_name,
-                icb_name2, exchange
+                END AS company_name,
+                CASE
+                    WHEN icb_name3 IS NOT NULL AND BTRIM(icb_name3) NOT IN ('', 'NaN') THEN BTRIM(icb_name3)
+                    WHEN icb_name2 IS NOT NULL AND BTRIM(icb_name2) NOT IN ('', 'NaN') THEN BTRIM(icb_name2)
+                    ELSE 'Chưa phân loại'
+                END AS sector,
+                CASE
+                    WHEN exchange = 'HSX' THEN 'HOSE'
+                    WHEN exchange IS NOT NULL AND BTRIM(exchange) NOT IN ('', 'NaN') THEN BTRIM(exchange)
+                    ELSE NULL
+                END AS exchange_norm
             FROM {SCHEMA}.company_overview
-            WHERE exchange IS NOT NULL AND exchange != 'NaN' AND exchange != 'DELISTED'
-            ORDER BY ticker,
+            WHERE exchange IS NULL OR (BTRIM(exchange) != 'NaN' AND BTRIM(exchange) != 'DELISTED')
+            ORDER BY UPPER(BTRIM(ticker)),
                 CASE WHEN organ_short_name IS NOT NULL AND organ_short_name != 'NaN' THEN 0 ELSE 1 END,
                 exchange
         )
         SELECT
-            hp.ticker,
-            co.organ_short_name AS company_name,
-            co.icb_name2 AS sector,
-            co.exchange,
+            bs.ticker,
+            co.company_name,
+            co.sector,
+            co.exchange_norm AS exchange,
             hp.close AS current_price,
             CASE WHEN hp_prev.close > 0
                 THEN hp.close - hp_prev.close
@@ -230,23 +298,23 @@ async def get_stock_overview(
             fr.roa,
             fr.debt_to_equity,
             fr.dividend_yield
-        FROM {SCHEMA}.history_price hp
-        LEFT JOIN co_dedup co ON co.ticker = hp.ticker
-        LEFT JOIN {SCHEMA}.history_price hp_prev ON hp_prev.ticker = hp.ticker
-            AND hp_prev.trading_date = :prev_date
-        LEFT JOIN latest_fr fr ON fr.ticker = hp.ticker
-        LEFT JOIN shares sh ON sh.ticker = hp.ticker
-        LEFT JOIN equity eq ON eq.ticker = hp.ticker
-        LEFT JOIN ttm_ni ni ON ni.ticker = hp.ticker
-        WHERE hp.trading_date = :latest_date AND {where_clause}
+        FROM base_stocks bs
+        LEFT JOIN co_dedup co ON co.ticker = bs.ticker
+        LEFT JOIN hp_latest hp ON hp.ticker = bs.ticker
+        LEFT JOIN hp_prev ON hp_prev.ticker = bs.ticker
+        LEFT JOIN latest_fr fr ON fr.ticker = bs.ticker
+        LEFT JOIN shares sh ON sh.ticker = bs.ticker
+        LEFT JOIN equity eq ON eq.ticker = bs.ticker
+        LEFT JOIN ttm_ni ni ON ni.ticker = bs.ticker
+        WHERE {where_clause}
         ORDER BY {sort_col} {sort_direction} NULLS LAST
         LIMIT :limit OFFSET :offset
     """)
     query_params = {
-        "latest_date": latest_date,
-        "prev_date": prev_date,
         "limit": page_size,
         "offset": offset,
+        "latest_date": latest_date,
+        "prev_date": prev_date,
         **params,
     }
 
@@ -316,7 +384,7 @@ async def get_stock_overview(
         "total_pages": total_pages,
         "summary": summary,
     }
-    await cache_set(cache_key, result, ttl=120)
+    await cache_set(cache_key, result, ttl=180)
     return result
 
 
@@ -330,14 +398,29 @@ async def get_sectors(db: AsyncSession) -> List[Dict[str, Any]]:
         return cached
 
     sql = text(f"""
-        SELECT
-            co.icb_name2 AS name,
-            COUNT(DISTINCT co.ticker) AS count
-        FROM {SCHEMA}.company_overview co
-        WHERE co.icb_name2 IS NOT NULL AND co.icb_name2 != 'NaN'
-            AND co.exchange IS NOT NULL AND co.exchange != 'NaN'
-            AND co.exchange != 'DELISTED'
-        GROUP BY co.icb_name2
+        WITH co_dedup AS (
+            SELECT DISTINCT ON (UPPER(BTRIM(ticker)))
+                UPPER(BTRIM(ticker)) AS ticker,
+                CASE
+                    WHEN icb_name3 IS NOT NULL AND BTRIM(icb_name3) NOT IN ('', 'NaN') THEN BTRIM(icb_name3)
+                    WHEN icb_name2 IS NOT NULL AND BTRIM(icb_name2) NOT IN ('', 'NaN') THEN BTRIM(icb_name2)
+                    ELSE 'Chưa phân loại'
+                END AS sector
+            FROM {SCHEMA}.company_overview
+            WHERE ticker IS NOT NULL
+              AND BTRIM(ticker) NOT IN ('', 'NaN')
+              AND UPPER(BTRIM(ticker)) NOT LIKE '%INDEX'
+              AND (exchange IS NULL OR (BTRIM(exchange) != 'NaN' AND BTRIM(exchange) != 'DELISTED'))
+            ORDER BY UPPER(BTRIM(ticker)),
+                CASE
+                    WHEN icb_name3 IS NOT NULL AND BTRIM(icb_name3) NOT IN ('', 'NaN') THEN 0
+                    WHEN icb_name2 IS NOT NULL AND BTRIM(icb_name2) NOT IN ('', 'NaN') THEN 1
+                    ELSE 2
+                END
+        )
+        SELECT sector AS name, COUNT(*) AS count
+        FROM co_dedup
+        GROUP BY sector
         ORDER BY count DESC
     """)
     res = await db.execute(sql)
@@ -741,19 +824,20 @@ async def get_screener_data(db: AsyncSession) -> Dict[str, Any]:
         return cached
 
     # ── Latest & previous trading dates ──
-    date_sql = text(f"""
-        SELECT
-            (SELECT MAX(trading_date) FROM {SCHEMA}.history_price) AS latest,
-            (SELECT MAX(trading_date) FROM {SCHEMA}.history_price
-             WHERE trading_date < (SELECT MAX(trading_date) FROM {SCHEMA}.history_price)) AS prev
+    latest_date_sql = text(f"""
+        SELECT MAX(trading_date) FROM {SCHEMA}.history_price
     """)
-    res = await db.execute(date_sql)
-    dates = res.first()
-    if not dates or not dates.latest:
+    res = await db.execute(latest_date_sql)
+    latest_date = res.scalar()
+    if not latest_date:
         return {"data": [], "total": 0}
 
-    latest_date = dates.latest
-    prev_date = dates.prev
+    prev_date_sql = text(f"""
+        SELECT MAX(trading_date) FROM {SCHEMA}.history_price
+        WHERE trading_date < :latest_date
+    """)
+    res = await db.execute(prev_date_sql, {"latest_date": latest_date})
+    prev_date = res.scalar()
 
     # Compute date boundaries
     try:
@@ -765,8 +849,28 @@ async def get_screener_data(db: AsyncSession) -> Dict[str, Any]:
 
     # ── Main query: price + company + BCTC valuations + financial ratios + foreign ──
     main_sql = text(f"""
-        WITH bctc_data AS (
-            SELECT ticker, year, quarter, ind_code, value
+        WITH ticker_universe AS (
+            SELECT ticker FROM {SCHEMA}.company_overview
+            UNION
+            SELECT ticker FROM {SCHEMA}.history_price
+            WHERE trading_date = :latest_date
+            UNION
+            SELECT ticker FROM {SCHEMA}.financial_ratio
+            UNION
+            SELECT ticker FROM {SCHEMA}.bctc
+            UNION
+            SELECT ticker FROM {SCHEMA}.electric_board
+            WHERE trading_date = (SELECT MAX(trading_date) FROM {SCHEMA}.electric_board)
+        ),
+        base_stocks AS (
+            SELECT DISTINCT UPPER(BTRIM(ticker)) AS ticker
+            FROM ticker_universe
+            WHERE ticker IS NOT NULL
+              AND BTRIM(ticker) NOT IN ('', 'NaN')
+              AND UPPER(BTRIM(ticker)) NOT LIKE '%INDEX'
+        ),
+        bctc_data AS (
+            SELECT UPPER(BTRIM(ticker)) AS ticker, year, quarter, ind_code, value
             FROM {SCHEMA}.bctc
             WHERE ind_code IN (
                 'C_PHI_U_PH_TH_NG_NG',
@@ -842,51 +946,74 @@ async def get_screener_data(db: AsyncSession) -> Dict[str, Any]:
             GROUP BY ticker HAVING COUNT(*) = 4
         ),
         latest_fr AS (
-            SELECT DISTINCT ON (ticker)
-                ticker, roe, roa, debt_to_equity, dividend_yield
+            SELECT DISTINCT ON (UPPER(BTRIM(ticker)))
+                UPPER(BTRIM(ticker)) AS ticker, roe, roa, debt_to_equity, dividend_yield
             FROM {SCHEMA}.financial_ratio
-            ORDER BY ticker, year DESC, quarter DESC
+            ORDER BY UPPER(BTRIM(ticker)), year DESC, quarter DESC
+        ),
+        hp_latest AS (
+            SELECT UPPER(BTRIM(ticker)) AS ticker, close, volume
+            FROM {SCHEMA}.history_price
+            WHERE trading_date = :latest_date
+        ),
+        hp_prev AS (
+            SELECT UPPER(BTRIM(ticker)) AS ticker, close
+            FROM {SCHEMA}.history_price
+            WHERE trading_date = :prev_date
         ),
         co_dedup AS (
-            SELECT DISTINCT ON (ticker)
-                ticker,
+            SELECT DISTINCT ON (UPPER(BTRIM(ticker)))
+                UPPER(BTRIM(ticker)) AS ticker,
                 CASE
-                    WHEN organ_short_name IS NOT NULL AND organ_short_name != 'NaN'
-                        THEN organ_short_name
-                    WHEN organ_name IS NOT NULL AND organ_name != 'NaN'
-                        THEN organ_name
+                    WHEN organ_short_name IS NOT NULL AND BTRIM(organ_short_name) NOT IN ('', 'NaN')
+                        THEN BTRIM(organ_short_name)
+                    WHEN organ_name IS NOT NULL AND BTRIM(organ_name) NOT IN ('', 'NaN')
+                        THEN BTRIM(organ_name)
                     ELSE NULL
                 END AS company_name,
-                icb_name2 AS sector,
-                exchange
+                CASE
+                    WHEN icb_name3 IS NOT NULL AND BTRIM(icb_name3) NOT IN ('', 'NaN') THEN BTRIM(icb_name3)
+                    WHEN icb_name2 IS NOT NULL AND BTRIM(icb_name2) NOT IN ('', 'NaN') THEN BTRIM(icb_name2)
+                    ELSE 'Chưa phân loại'
+                END AS sector,
+                CASE
+                    WHEN icb_name2 IS NOT NULL AND BTRIM(icb_name2) NOT IN ('', 'NaN') THEN BTRIM(icb_name2)
+                    ELSE NULL
+                END AS sector2,
+                CASE
+                    WHEN exchange = 'HSX' THEN 'HOSE'
+                    WHEN exchange IS NOT NULL AND BTRIM(exchange) NOT IN ('', 'NaN') THEN BTRIM(exchange)
+                    ELSE NULL
+                END AS exchange
             FROM {SCHEMA}.company_overview
-            WHERE exchange IS NOT NULL AND exchange != 'NaN' AND exchange != 'DELISTED'
-            ORDER BY ticker,
+            WHERE exchange IS NULL OR (BTRIM(exchange) != 'NaN' AND BTRIM(exchange) != 'DELISTED')
+            ORDER BY UPPER(BTRIM(ticker)),
                 CASE WHEN organ_short_name IS NOT NULL AND organ_short_name != 'NaN' THEN 0 ELSE 1 END,
                 exchange
         ),
         latest_eb AS (
-            SELECT DISTINCT ON (ticker)
-                ticker,
+            SELECT DISTINCT ON (UPPER(BTRIM(ticker)))
+                UPPER(BTRIM(ticker)) AS ticker,
                 COALESCE(foreign_buy_volume, 0) AS foreign_buy,
                 COALESCE(foreign_sell_volume, 0) AS foreign_sell,
                 CASE WHEN match_price > 0 THEN match_price ELSE ref_price END AS eb_price
             FROM {SCHEMA}.electric_board
             WHERE match_price > 0 OR ref_price > 0
-            ORDER BY ticker, trading_date DESC
+            ORDER BY UPPER(BTRIM(ticker)), trading_date DESC
         ),
         week52 AS (
-            SELECT ticker,
+            SELECT UPPER(BTRIM(ticker)) AS ticker,
                 MAX(high) AS high_52w,
                 MIN(low) AS low_52w
             FROM {SCHEMA}.history_price
             WHERE trading_date >= :date_1y_ago
-            GROUP BY ticker
+            GROUP BY UPPER(BTRIM(ticker))
         )
         SELECT
-            hp.ticker,
+            bs.ticker,
             co.company_name,
             co.sector,
+            co.sector2,
             co.exchange,
             hp.close AS close_raw,
             hp_prev.close AS prev_close_raw,
@@ -908,24 +1035,23 @@ async def get_screener_data(db: AsyncSession) -> Dict[str, Any]:
             eb.eb_price,
             w52.high_52w,
             w52.low_52w
-        FROM {SCHEMA}.history_price hp
-        LEFT JOIN co_dedup co ON co.ticker = hp.ticker
-        LEFT JOIN {SCHEMA}.history_price hp_prev
-            ON hp_prev.ticker = hp.ticker AND hp_prev.trading_date = :prev_date
-        LEFT JOIN shares sh ON sh.ticker = hp.ticker
-        LEFT JOIN equity eq ON eq.ticker = hp.ticker
-        LEFT JOIN ttm_ni ni ON ni.ticker = hp.ticker
-        LEFT JOIN prev_ni pn ON pn.ticker = hp.ticker
-        LEFT JOIN ttm_rev tr ON tr.ticker = hp.ticker
-        LEFT JOIN prev_rev pr ON pr.ticker = hp.ticker
-        LEFT JOIN latest_fr fr ON fr.ticker = hp.ticker
-        LEFT JOIN total_liabilities tl ON tl.ticker = hp.ticker
-        LEFT JOIN ttm_div dv ON dv.ticker = hp.ticker
-        LEFT JOIN latest_eb eb ON eb.ticker = hp.ticker
-        LEFT JOIN week52 w52 ON w52.ticker = hp.ticker
-        WHERE hp.trading_date = :latest_date
+        FROM base_stocks bs
+        LEFT JOIN hp_latest hp ON hp.ticker = bs.ticker
+        LEFT JOIN hp_prev ON hp_prev.ticker = bs.ticker
+        LEFT JOIN co_dedup co ON co.ticker = bs.ticker
+        LEFT JOIN shares sh ON sh.ticker = bs.ticker
+        LEFT JOIN equity eq ON eq.ticker = bs.ticker
+        LEFT JOIN ttm_ni ni ON ni.ticker = bs.ticker
+        LEFT JOIN prev_ni pn ON pn.ticker = bs.ticker
+        LEFT JOIN ttm_rev tr ON tr.ticker = bs.ticker
+        LEFT JOIN prev_rev pr ON pr.ticker = bs.ticker
+        LEFT JOIN latest_fr fr ON fr.ticker = bs.ticker
+        LEFT JOIN total_liabilities tl ON tl.ticker = bs.ticker
+        LEFT JOIN ttm_div dv ON dv.ticker = bs.ticker
+        LEFT JOIN latest_eb eb ON eb.ticker = bs.ticker
+        LEFT JOIN week52 w52 ON w52.ticker = bs.ticker
         ORDER BY
-            CASE WHEN sh.shares > 0 THEN hp.close * sh.shares ELSE 0 END DESC NULLS LAST
+            CASE WHEN sh.shares > 0 AND hp.close IS NOT NULL THEN hp.close * sh.shares ELSE 0 END DESC NULLS LAST
     """)
 
     try:
@@ -943,21 +1069,26 @@ async def get_screener_data(db: AsyncSession) -> Dict[str, Any]:
         return {"data": [], "total": 0}
 
     # ── Price history (last ~60 trading days) for technical indicators ──
-    history_sql = text(f"""
-        SELECT ticker, trading_date, close, volume
-        FROM {SCHEMA}.history_price
-        WHERE trading_date >= :date_90d_ago AND trading_date <= :latest_date
-        ORDER BY ticker, trading_date ASC
-    """)
-    try:
-        res = await db.execute(history_sql, {
-            "date_90d_ago": date_90d_ago,
-            "latest_date": latest_date,
-        })
-        history_rows = res.fetchall()
-    except Exception as exc:
-        logger.warning("screener history query error: %s", exc)
-        history_rows = []
+    ticker_list = [r["ticker"] for r in base_rows if r.get("ticker")]
+
+    history_rows = []
+    if ticker_list:
+        history_sql = text(f"""
+            SELECT UPPER(BTRIM(ticker)) AS ticker, trading_date, close, volume
+            FROM {SCHEMA}.history_price
+            WHERE trading_date >= :date_90d_ago AND trading_date <= :latest_date
+              AND UPPER(BTRIM(ticker)) = ANY(:tickers)
+            ORDER BY UPPER(BTRIM(ticker)), trading_date ASC
+        """)
+        try:
+            res = await db.execute(history_sql, {
+                "date_90d_ago": date_90d_ago,
+                "latest_date": latest_date,
+                "tickers": ticker_list,
+            })
+            history_rows = res.fetchall()
+        except Exception as exc:
+            logger.warning("screener history query error: %s", exc)
 
     # Build per-ticker price & volume series
     price_series: Dict[str, List[float]] = defaultdict(list)
@@ -1116,6 +1247,7 @@ async def get_screener_data(db: AsyncSession) -> Dict[str, Any]:
             "ticker": t,
             "companyName": r["company_name"],
             "sector": r["sector"],
+            "sector2": r["sector2"],
             "exchange": raw_exchange,
             "currentPrice": current_price,
             "priceChange": price_change,

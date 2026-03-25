@@ -78,14 +78,14 @@ export default function StockDetailPage({ params }: StockDetailPageProps) {
                 )}
 
                 {activeTab === "overview" && (
-                    <>
+                    <div className="space-y-8">
                         {/* ── Biểu đồ & Khớp lệnh ── */}
-                        <section className="space-y-3">
+                        <section className="space-y-4">
                             <h2 className="text-base font-semibold text-muted-foreground flex items-center gap-2">
                                 <span className="w-1 h-5 bg-blue-500 rounded-full" />
                                 Biểu đồ & Khớp lệnh
                             </h2>
-                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
                                 <div className="lg:col-span-8">
                                     <PriceHistoryChart />
                                 </div>
@@ -96,12 +96,12 @@ export default function StockDetailPage({ params }: StockDetailPageProps) {
                         </section>
 
                         {/* ── Dữ liệu giao dịch ── */}
-                        <section className="space-y-3">
+                        <section className="space-y-4">
                             <h2 className="text-base font-semibold text-muted-foreground flex items-center gap-2">
                                 <span className="w-1 h-5 bg-green-500 rounded-full" />
                                 Dữ liệu giao dịch & So sánh
                             </h2>
-                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
                                 <div className="lg:col-span-8">
                                     <HistoricalDataTable />
                                 </div>
@@ -112,14 +112,14 @@ export default function StockDetailPage({ params }: StockDetailPageProps) {
                         </section>
 
                         {/* ── Cơ cấu cổ đông ── */}
-                        <section className="space-y-3">
+                        <section className="space-y-4">
                             <h2 className="text-base font-semibold text-muted-foreground flex items-center gap-2">
                                 <span className="w-1 h-5 bg-amber-500 rounded-full" />
                                 Cơ cấu cổ đông
                             </h2>
                             <Card className="shadow-sm border-border">
                                 <CardContent className="p-4">
-                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                                         <div className="flex items-center justify-center">
                                             <ShareholderDonutChart />
                                         </div>
@@ -132,7 +132,7 @@ export default function StockDetailPage({ params }: StockDetailPageProps) {
                         </section>
 
                         {/* ── Tin tức doanh nghiệp ── */}
-                        <section className="space-y-3">
+                        <section className="space-y-4">
                             <h2 className="text-base font-semibold text-muted-foreground flex items-center gap-2">
                                 <span className="w-1 h-5 bg-purple-500 rounded-full" />
                                 Tin tức doanh nghiệp
@@ -141,14 +141,14 @@ export default function StockDetailPage({ params }: StockDetailPageProps) {
                         </section>
 
                         {/* ── Khuyến nghị ── */}
-                        <section className="space-y-3">
+                        <section className="space-y-4">
                             <h2 className="text-base font-semibold text-muted-foreground flex items-center gap-2">
                                 <span className="w-1 h-5 bg-red-500 rounded-full" />
                                 Có thể bạn sẽ quan tâm
                             </h2>
                             <RecommendationsSection />
                         </section>
-                    </>
+                    </div>
                 )}
 
                 {activeTab === "news" && (

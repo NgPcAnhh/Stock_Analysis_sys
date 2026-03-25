@@ -145,7 +145,7 @@ async def get_market_indices(db: AsyncSession) -> List[Dict[str, Any]]:
 
     sql = text("""
         SELECT asset_type, date, close
-        FROM hethong_phantich_chungkhoan.macro_economy
+        FROM macro_economy
         WHERE close IS NOT NULL
         ORDER BY asset_type, date DESC
     """)

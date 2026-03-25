@@ -108,6 +108,10 @@ const MarketHeatmap = () => {
 
     const option = useMemo(() => ({
         tooltip: {
+            textStyle: {
+                fontFamily: "var(--font-roboto), Roboto, sans-serif",
+            },
+            extraCssText: "font-family: var(--font-roboto), Roboto, sans-serif;",
             formatter: function (info: any) {
                 const value = info.value;
                 if (!value || value.length < 3) return echarts.format.encodeHTML(info.name);

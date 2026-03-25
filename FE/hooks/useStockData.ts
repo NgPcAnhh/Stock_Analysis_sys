@@ -27,9 +27,10 @@ export function usePriceHistory(ticker: string, period: PriceHistoryPeriod = "1Y
 }
 
 // ── Financial Ratios ──────────────────────────────────────────
-export function useFinancialRatios(ticker: string, periods = 20) {
+export function useFinancialRatios(ticker: string, periods = 20, year?: number | null) {
+    const q = year ? `&year=${year}` : "";
     return useOptimizedFetch<FinancialRatioItem[]>({
-        url: `${API_BASE}/api/v1/stock/${ticker}/financial-ratios?periods=${periods}`,
+        url: `${API_BASE}/api/v1/stock/${ticker}/financial-ratios?periods=${periods}${q}`,
         refreshInterval: 300_000,
     });
 }
@@ -57,22 +58,37 @@ function normalisePeriod(item: Record<string, unknown>): Record<string, unknown>
 function transformFinancialReports(json: unknown): FinancialReportsData {
     const raw = json as Record<string, unknown>;
     const rawArr = raw as Record<string, unknown[]>;
+    // Ensure arrays are arrays
+    const incomeStatement = Array.isArray(rawArr.incomeStatement) ? rawArr.incomeStatement : [];
+    const balanceSheet = Array.isArray(rawArr.balanceSheet) ? rawArr.balanceSheet : [];
+    const cashFlow = Array.isArray(rawArr.cashFlow) ? rawArr.cashFlow : [];
+
     return {
         isBank: !!(raw.isBank),
         industry: String(raw.industry || ""),
-        incomeStatement: (rawArr.incomeStatement || []).map((i) => normalisePeriod(i as Record<string, unknown>) as unknown as IncomeStatementItem),
-        balanceSheet: (rawArr.balanceSheet || []).map((i) => normalisePeriod(i as Record<string, unknown>) as unknown as BalanceSheetItem),
-        cashFlow: (rawArr.cashFlow || []).map((i) => normalisePeriod(i as Record<string, unknown>) as unknown as CashFlowItem),
+        incomeStatement: incomeStatement.map((i) => normalisePeriod(i as Record<string, unknown>) as unknown as IncomeStatementItem),
+        balanceSheet: balanceSheet.map((i) => normalisePeriod(i as Record<string, unknown>) as unknown as BalanceSheetItem),
+        cashFlow: cashFlow.map((i) => normalisePeriod(i as Record<string, unknown>) as unknown as CashFlowItem),
     };
 }
 
-export function useFinancialReports(ticker: string, periods = 12) {
+export function useFinancialReports(ticker: string, periods = 12, year?: number | null) {
+    const q = year ? `&year=${year}` : "";
     return useOptimizedFetch<FinancialReportsData>({
-        url: `${API_BASE}/api/v1/stock/${ticker}/financial-reports?periods=${periods}`,
+        url: `${API_BASE}/api/v1/stock/${ticker}/financial-reports?periods=${periods}${q}`,
         refreshInterval: 300_000,
         transform: transformFinancialReports,
     });
 }
+
+// ── Available Periods ─────────────────────────────────────────
+export function useAvailablePeriods(ticker: string) {
+    return useOptimizedFetch<number[]>({
+        url: `${API_BASE}/api/v1/stock/${ticker}/available-periods`,
+        refreshInterval: 600_000,
+    });
+}
+
 
 // ── Company Profile ───────────────────────────────────────────
 export function useCompanyProfile(ticker: string) {
@@ -92,9 +108,10 @@ export function useStockComparison(ticker: string, peers = "") {
 }
 
 // ── Deep Analysis ─────────────────────────────────────────────
-export function useDeepAnalysis(ticker: string) {
+export function useDeepAnalysis(ticker: string, year?: number) {
+    const q = year ? `?year=${year}` : "";
     return useOptimizedFetch<DeepAnalysisData>({
-        url: `${API_BASE}/api/v1/stock/${ticker}/deep-analysis`,
+        url: `${API_BASE}/api/v1/stock/${ticker}/deep-analysis${q}`,
         refreshInterval: 300_000,
     });
 }
@@ -425,6 +442,7 @@ export interface DeepAnalysisData {
         trends: TrendYear[];
         leverageData: Record<string, unknown>[];
         liquidityData: Record<string, unknown>[];
+        [key: string]: unknown;
     };
     incomeStatement: {
         overviewStats: OverviewStat[];
@@ -433,6 +451,7 @@ export interface DeepAnalysisData {
         costStructure: Record<string, unknown>[];
         growthData: Record<string, unknown>[];
         revenueBreakdown: Record<string, unknown>[];
+        [key: string]: unknown;
     };
     cashFlow: {
         overviewStats: OverviewStat[];
@@ -441,6 +460,7 @@ export interface DeepAnalysisData {
         earningsQuality: Record<string, unknown>[];
         trends: TrendYear[];
         waterfall: Record<string, unknown>[];
+        [key: string]: unknown;
     };
 }
 

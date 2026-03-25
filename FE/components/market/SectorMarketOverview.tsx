@@ -54,6 +54,9 @@ const SectorMarketOverview = () => {
         tooltip: {
             trigger: "axis",
             axisPointer: { type: "shadow" },
+            textStyle: {
+                fontFamily: "var(--font-roboto), Roboto, sans-serif",
+            },
         },
         grid: {
             left: "3%",

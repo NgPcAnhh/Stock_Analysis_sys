@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useMemo, useState } from "react";
 import ReactECharts from "echarts-for-react";
@@ -129,6 +129,41 @@ function ProfitGrowthChart({ data }: { data: IncomeStatementItem[] }) {
                 <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
                     <TrendingUp className="w-4 h-4 text-green-500" />
                     Lợi nhuận &amp; Tăng trưởng lợi nhuận (8 kỳ)
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="px-2 pb-3">
+                <ReactECharts option={option} style={{ height: 280 }} opts={{ devicePixelRatio: 2 }} />
+            </CardContent>
+        </Card>
+    );
+}
+
+// ---- 3a. Revenue Structure ----
+function RevenueStructureChart({ data }: { data: IncomeStatementItem[] }) {
+    const rows = useMemo(() => annualData(data), [data]);
+    const option = useMemo(() => {
+        const labels  = rows.map((d) => d.period.period);
+        const revenue = rows.map((d) => +toTy(Math.abs(d.revenue)).toFixed(1));
+        const finInc  = rows.map((d) => +toTy(Math.abs(d.financialIncome)).toFixed(1));
+        const mkS = (name: string, dt: number[], color: string) => ({
+            name, type: "bar" as const, stack: "revenue", data: dt, barMaxWidth: 48,
+            itemStyle: { color }, emphasis: { focus: "series" as const },
+            tooltip: { valueFormatter: (v: number) => `${v.toLocaleString("vi-VN")} tỷ` },
+        });
+        return {
+            ...baseOpt(),
+            legend: { data: ["Doanh thu thuần", "Doanh thu tài chính"], top: 4, textStyle: { fontSize: 11, fontFamily: "Inter, sans-serif" }, itemGap: 12 },
+            xAxis: { type: "category" as const, data: labels, axisLabel: { ...AX, rotate: 30 }, axisTick: { alignWithLabel: true } },
+            yAxis: { type: "value" as const, name: "Tỷ VND", nameTextStyle: { fontSize: 10, color: "#9CA3AF", fontFamily: "Inter, sans-serif" }, axisLabel: { formatter: (v: number) => fmtTy(v), ...AX }, splitLine: { lineStyle: { color: "#F3F4F6" } } },
+            series: [mkS("Doanh thu thuần", revenue, C.blue), mkS("Doanh thu tài chính", finInc, C.green)],
+        };
+    }, [rows]);
+    return (
+        <Card className="shadow-sm border-border">
+            <CardHeader className="pb-1 pt-3 px-4">
+                <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
+                    <PieChart className="w-4 h-4 text-blue-500" />
+                    Cơ cấu doanh thu qua các năm
                 </CardTitle>
             </CardHeader>
             <CardContent className="px-2 pb-3">
@@ -536,7 +571,7 @@ function FinancialSummaryTable({ data }: { data: IncomeStatementItem[] }) {
     const periods = annual.slice(-6);
 
     // Track which parent groups are expanded
-    const [expanded, setExpanded] = useState<Set<string>>(new Set());
+    const [expanded, setExpanded] = useState<Set<string>>(new Set(["revenue", "gross", "pbt", "net"]));
     const toggle = (id: string) =>
         setExpanded((prev) => {
             const next = new Set(prev);
@@ -732,7 +767,10 @@ export default function FinancialOverviewCharts({
                 <ProfitGrowthChart data={incomeStatement} />
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <RevenueStructureChart data={incomeStatement} />
                 <CostStructureChart data={incomeStatement} />
+            </div>
+            <div className="grid grid-cols-1 gap-4">
                 <FinancialIndicesChart data={incomeStatement} ratios={financialRatios} />
             </div>
             <ProfitBeforeTaxChart data={incomeStatement} />

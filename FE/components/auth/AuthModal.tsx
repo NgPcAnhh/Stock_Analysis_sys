@@ -3,9 +3,9 @@
 import { useState } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import { setTokens, AuthResponse } from '@/lib/auth';
-import { X, Mail, Lock, User as UserIcon } from 'lucide-react';
+import { X, Mail, Lock, User as UserIcon, ShieldCheck, Loader2 } from 'lucide-react';
 
-type AuthView = 'login' | 'register' | 'forgot-password';
+type AuthView = 'login' | 'register' | 'forgot-password' | '2fa';
 
 export function AuthModal() {
     const { isAuthModalOpen, closeAuthModal, login } = useAuth();
@@ -14,6 +14,10 @@ export function AuthModal() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [fullName, setFullName] = useState('');
+
+    // 2FA state
+    const [tempToken, setTempToken] = useState('');
+    const [otp, setOtp] = useState('');
 
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
@@ -38,12 +42,46 @@ export function AuthModal() {
             const data = await res.json();
             if (!res.ok) throw new Error(data.detail || 'Login failed');
 
+            // Check if 2FA is required
+            if (data.status === 'requires_2fa') {
+                setTempToken(data.temp_token);
+                setOtp('');
+                setView('2fa');
+                setLoading(false);
+                return;
+            }
+
             const authData = data as AuthResponse;
             setTokens(authData.access_token, authData.refresh_token);
             login(authData.user);
             closeAuthModal();
         } catch (err: any) {
             setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handle2FAVerify = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+        setLoading(true);
+        try {
+            const res = await fetch('http://localhost:8000/api/v1/auth/login/2fa', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ temp_token: tempToken, otp }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || 'OTP verification failed');
+
+            const authData = data as AuthResponse;
+            setTokens(authData.access_token, authData.refresh_token);
+            login(authData.user);
+            closeAuthModal();
+        } catch (err: any) {
+            setError(err.message);
+            setOtp('');
         } finally {
             setLoading(false);
         }
@@ -117,11 +155,13 @@ export function AuthModal() {
                         {view === 'login' && 'Chào mừng trở lại'}
                         {view === 'register' && 'Tạo tài khoản'}
                         {view === 'forgot-password' && 'Khôi phục mật khẩu'}
+                        {view === '2fa' && 'Xác thực 2 bước'}
                     </h2>
                     <p className="text-sm text-slate-500 dark:text-slate-400">
                         {view === 'login' && 'Đăng nhập để lưu danh mục đầu tư'}
                         {view === 'register' && 'Bắt đầu hành trình đầu tư thông minh'}
                         {view === 'forgot-password' && 'Nhập email để nhận link tạo lại mật khẩu'}
+                        {view === '2fa' && 'Nhập mã 6 chữ số từ ứng dụng Google Authenticator'}
                     </p>
                 </div>
 
@@ -184,6 +224,54 @@ export function AuthModal() {
                                 className="w-full rounded-lg bg-blue-600 py-2.5 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-70 disabled:cursor-not-allowed transition-all"
                             >
                                 {loading ? 'Đang xử lý...' : 'Đăng nhập'}
+                            </button>
+                        </form>
+                    )}
+
+                    {view === '2fa' && (
+                        <form onSubmit={handle2FAVerify} className="space-y-5">
+                            <div className="flex justify-center">
+                                <div className="size-16 rounded-full bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center">
+                                    <ShieldCheck className="size-8 text-emerald-500" />
+                                </div>
+                            </div>
+
+                            <div className="space-y-1">
+                                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Mã xác thực (6 chữ số)</label>
+                                <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    maxLength={6}
+                                    required
+                                    value={otp}
+                                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                                    className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 text-center text-2xl font-mono tracking-[0.5em] focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all dark:text-white"
+                                    placeholder="000000"
+                                    autoFocus
+                                />
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={loading || otp.length !== 6}
+                                className="w-full rounded-lg bg-blue-600 py-2.5 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-70 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                            >
+                                {loading ? (
+                                    <>
+                                        <Loader2 className="size-4 animate-spin" />
+                                        Đang xác thực...
+                                    </>
+                                ) : (
+                                    'Xác thực'
+                                )}
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => { setView('login'); setError(''); setOtp(''); }}
+                                className="w-full text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
+                            >
+                                ← Quay lại đăng nhập
                             </button>
                         </form>
                     )}
@@ -277,7 +365,7 @@ export function AuthModal() {
                     )}
 
                     {/* Social Auth & Toggles */}
-                    {view !== 'forgot-password' && (
+                    {(view === 'login' || view === 'register') && (
                         <>
                             <div className="mt-6 relative">
                                 <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200 dark:border-slate-800"></div></div>

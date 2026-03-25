@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useCallback, useEffect } from "react";
+import React, { useState, useRef, useMemo, useCallback, useEffect } from "react";
 import ReactECharts from "echarts-for-react";
 import type { StockAnalysisData } from "@/lib/technicalAnalysisData";
 
@@ -8,12 +8,15 @@ interface TechnicalChartProps {
   data: StockAnalysisData;
   overlays: string[];
   subIndicator: string;
+  onChartReady?: (instance: any) => void;
 }
 
-const TechnicalChart: React.FC<TechnicalChartProps> = ({ data, overlays, subIndicator }) => {
+const TechnicalChart: React.FC<TechnicalChartProps> = ({ data, overlays, subIndicator, onChartReady }) => {
   const [timeframe, setTimeframe] = useState("1Y");
   const [chartType, setChartType] = useState<"candle" | "line">("candle");
   const [isDark, setIsDark] = useState(false);
+  const zoomRef = useRef({ start: 0, end: 100 });
+  const chartRef = useRef<any>(null);
 
   useEffect(() => {
     const check = () => setIsDark(document.documentElement.classList.contains("dark"));
@@ -136,6 +139,39 @@ const TechnicalChart: React.FC<TechnicalChartProps> = ({ data, overlays, subIndi
         z: 5,
       });
     }
+    if (overlays.includes("psar")) {
+      series.push({
+        name: "PSAR",
+        type: "scatter",
+        data: sliceIndicator(data.indicators.psar),
+        itemStyle: { color: "#000000" },
+        symbolSize: 4,
+        z: 6,
+      });
+    }
+    if (overlays.includes("keltner")) {
+      series.push(
+        {
+          name: "KC Upper",
+          type: "line",
+          data: sliceIndicator(data.indicators.keltnerUpper),
+          smooth: true,
+          symbol: "none",
+          lineStyle: { color: "#3B82F6", width: 1, type: "dashed" },
+          z: 4,
+        },
+        {
+          name: "KC Lower",
+          type: "line",
+          data: sliceIndicator(data.indicators.keltnerLower),
+          smooth: true,
+          symbol: "none",
+          lineStyle: { color: "#3B82F6", width: 1, type: "dashed" },
+          areaStyle: { color: "rgba(59, 130, 246, 0.05)" },
+          z: 4,
+        }
+      );
+    }
     if (overlays.includes("bollinger")) {
       series.push(
         {
@@ -217,6 +253,26 @@ const TechnicalChart: React.FC<TechnicalChartProps> = ({ data, overlays, subIndi
     const slice = (arr: (number | null)[]) => arr.slice(filteredData);
 
     switch (subIndicator) {
+      case "mfi":
+        return {
+          title: "MFI (14)",
+          height: "18%",
+          series: [
+            {
+              name: "MFI",
+              type: "line",
+              data: slice(data.indicators.mfi),
+              smooth: false,
+              symbol: "none",
+              lineStyle: { color: "#059669", width: 1.5 },
+            },
+          ],
+          yAxisConfig: { min: 0, max: 100 },
+          markLines: [
+            { yAxis: 80, lineStyle: { color: "#EF4444", type: "dashed", width: 1 } },
+            { yAxis: 20, lineStyle: { color: "#22C55E", type: "dashed", width: 1 } },
+          ],
+        };
       case "rsi":
         return {
           title: "RSI (14)",
@@ -563,7 +619,22 @@ const TechnicalChart: React.FC<TechnicalChartProps> = ({ data, overlays, subIndi
             ) {
               const val = typeof p.value === "object" ? p.value.value : p.value;
               if (val !== null && val !== undefined) {
-                html += `<div>${p.marker} ${p.seriesName}: <b>${typeof val === 'number' ? val.toLocaleString() : val}</b></div>`;
+                // Precise descriptive indicators formula logic
+                let tooltipInfo = "";
+                if (p.seriesName === "RSI") tooltipInfo = " <span style='font-size:10px;color:#888;'>(100 - 100/(1+RS))</span>";
+                else if (p.seriesName === "MACD") tooltipInfo = " <span style='font-size:10px;color:#888;'>(EMA12 - EMA26)</span>";
+                else if (p.seriesName.includes("SMA")) tooltipInfo = " <span style='font-size:10px;color:#888;'>(Trung bình động đơn giản)</span>";
+                else if (p.seriesName.includes("EMA")) tooltipInfo = " <span style='font-size:10px;color:#888;'>(Trung bình động hàm mũ)</span>";
+                else if (p.seriesName === "VWAP") tooltipInfo = " <span style='font-size:10px;color:#888;'>(Giá TB gia quyền KL)</span>";
+                else if (p.seriesName.includes("BB ")) tooltipInfo = " <span style='font-size:10px;color:#888;'>(SMA ± 2σ)</span>";
+                else if (p.seriesName.includes("Senkou") || p.seriesName.includes("Kijun") || p.seriesName.includes("Tenkan")) tooltipInfo = " <span style='font-size:10px;color:#888;'>(Cân bằng đỉnh/đáy)</span>";
+                else if (p.seriesName.includes("MFI")) tooltipInfo = " <span style='font-size:10px;color:#888;'>(100-100/(1+MFR))</span>";
+                else if (p.seriesName.includes("Keltner")) tooltipInfo = " <span style='font-size:10px;color:#888;'>(EMA ± 2*ATR)</span>";
+                else if (p.seriesName.includes("PSAR")) tooltipInfo = " <span style='font-size:10px;color:#888;'>(Dừng & Đảo chiều)</span>";
+                else if (p.seriesName === "ADX") tooltipInfo = " <span style='font-size:10px;color:#888;'>(Sức mạnh xu hướng)</span>";
+                else if (p.seriesName === "CCI") tooltipInfo = " <span style='font-size:10px;color:#888;'>(Quá mua/Quá bán hàng hóa)</span>";
+
+                html += `<div>${p.marker} ${p.seriesName}${tooltipInfo}: <b>${typeof val === 'number' ? val.toLocaleString(undefined, { maximumFractionDigits: 2 }) : val}</b></div>`;
               }
             }
           });
@@ -587,8 +658,8 @@ const TechnicalChart: React.FC<TechnicalChartProps> = ({ data, overlays, subIndi
         {
           type: "inside",
           xAxisIndex: dataZoomAxes,
-          start: 0,
-          end: 100,
+          start: zoomRef.current.start,
+          end: zoomRef.current.end,
           zoomOnMouseWheel: true,
           moveOnMouseMove: true,
         },
@@ -642,9 +713,21 @@ const TechnicalChart: React.FC<TechnicalChartProps> = ({ data, overlays, subIndi
       {/* Chart */}
       <div className="flex-1 min-h-0">
         <ReactECharts
+          ref={chartRef}
+          onChartReady={(inst: any) => {
+            onChartReady?.(inst);
+            inst.on('datazoom', (params: any) => {
+              if (params.batch && params.batch.length > 0) {
+                zoomRef.current = { start: params.batch[0].start, end: params.batch[0].end };
+              } else if (params.start !== undefined) {
+                zoomRef.current = { start: params.start, end: params.end };
+              }
+            });
+          }}
           option={getOption()}
           style={{ height: "100%", width: "100%" }}
-          notMerge={true}
+          notMerge={false}
+          lazyUpdate={true}
           opts={{ renderer: "canvas" }}
         />
       </div>

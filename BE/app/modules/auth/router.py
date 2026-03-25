@@ -1,4 +1,4 @@
-"""API Router for Auth module — register, login, Google OAuth, password reset."""
+"""API Router for Auth module — register, login, Google OAuth, password reset, 2FA, change password."""
 
 import logging
 
@@ -14,14 +14,20 @@ from app.modules.auth.email_service import send_reset_email
 from app.modules.auth.google_oauth import exchange_code_for_user, get_google_auth_url
 from app.modules.auth.schemas import (
     AuthResponse,
+    ChangePasswordRequest,
+    Disable2FARequest,
     ForgotPasswordRequest,
+    Login2FARequest,
     LoginRequest,
     MessageResponse,
     RefreshTokenRequest,
     RegisterRequest,
     ResetPasswordRequest,
+    Setup2FAResponse,
+    TwoFactorRequiredResponse,
     UpdateProfileRequest,
     UserResponse,
+    Verify2FARequest,
 )
 
 logger = logging.getLogger(__name__)
@@ -58,9 +64,9 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
 # ── 2. Login ──────────────────────────────────────────────────────
 
 
-@router.post("/login", response_model=AuthResponse)
+@router.post("/login")
 async def login(body: LoginRequest, request: Request, db: AsyncSession = Depends(get_db)):
-    """Đăng nhập bằng email + password."""
+    """Đăng nhập bằng email + password. Trả về tokens hoặc yêu cầu 2FA."""
     from app.modules.tracking.logic import track_login as _track_login
 
     ip = _client_ip(request)
@@ -73,8 +79,9 @@ async def login(body: LoginRequest, request: Request, db: AsyncSession = Depends
         ip_address=ip,
         device_info=device,
     )
+
+    # result là error string
     if isinstance(result, str):
-        # Ghi log đăng nhập thất bại (không có user_id)
         await _track_login(db, user_id=None, method="local", success=False,
                            ip_address=ip, device_info=device)
         error_map = {
@@ -84,10 +91,43 @@ async def login(body: LoginRequest, request: Request, db: AsyncSession = Depends
         }
         code, msg = error_map.get(result, (401, "Lỗi xác thực"))
         raise HTTPException(status_code=code, detail=msg)
+
+    # result là dict — có thể là AuthResponse hoặc TwoFactorRequiredResponse
+    if isinstance(result, dict) and result.get("status") == "requires_2fa":
+        return result  # { status, temp_token, message }
+
     return result
 
 
-# ── 3. Refresh Token ─────────────────────────────────────────────
+# ── 3. Login 2FA ─────────────────────────────────────────────────
+
+
+@router.post("/login/2fa", response_model=AuthResponse)
+async def login_2fa(body: Login2FARequest, request: Request, db: AsyncSession = Depends(get_db)):
+    """Xác thực OTP sau khi login (bước 2 của 2FA)."""
+    ip = _client_ip(request)
+    device = request.headers.get("user-agent", "")
+
+    result = await logic.verify_login_2fa(
+        db,
+        temp_token=body.temp_token,
+        otp=body.otp,
+        ip_address=ip,
+        device_info=device,
+    )
+    if isinstance(result, str):
+        error_map = {
+            "invalid_token": (401, "Token không hợp lệ hoặc đã hết hạn"),
+            "user_not_found": (401, "Người dùng không tồn tại"),
+            "2fa_not_enabled": (400, "2FA chưa được bật"),
+            "invalid_otp": (401, "Mã OTP không đúng"),
+        }
+        code, msg = error_map.get(result, (401, "Lỗi xác thực"))
+        raise HTTPException(status_code=code, detail=msg)
+    return result
+
+
+# ── 4. Refresh Token ─────────────────────────────────────────────
 
 
 @router.post("/refresh", response_model=AuthResponse)
@@ -105,7 +145,7 @@ async def refresh_token(body: RefreshTokenRequest, db: AsyncSession = Depends(ge
     return result
 
 
-# ── 4. Logout ─────────────────────────────────────────────────────
+# ── 5. Logout ─────────────────────────────────────────────────────
 
 
 @router.post("/logout", response_model=MessageResponse)
@@ -117,7 +157,7 @@ async def logout(body: RefreshTokenRequest, db: AsyncSession = Depends(get_db)):
     return MessageResponse(success=False, message="Token không tìm thấy")
 
 
-# ── 5. Google OAuth ───────────────────────────────────────────────
+# ── 6. Google OAuth ───────────────────────────────────────────────
 
 
 @router.get("/google/login")
@@ -167,7 +207,7 @@ async def google_callback(
     return RedirectResponse(url=fe_callback)
 
 
-# ── 6. Forgot Password ───────────────────────────────────────────
+# ── 7. Forgot Password ───────────────────────────────────────────
 
 
 @router.post("/forgot-password", response_model=MessageResponse)
@@ -186,7 +226,7 @@ async def forgot_password(body: ForgotPasswordRequest, db: AsyncSession = Depend
     )
 
 
-# ── 7. Reset Password ────────────────────────────────────────────
+# ── 8. Reset Password ────────────────────────────────────────────
 
 
 @router.post("/reset-password", response_model=MessageResponse)
@@ -206,7 +246,35 @@ async def reset_password(body: ResetPasswordRequest, db: AsyncSession = Depends(
     raise HTTPException(status_code=code, detail=msg)
 
 
-# ── 8. Get Current User (protected) ──────────────────────────────
+# ── 9. Change Password (protected) ───────────────────────────────
+
+
+@router.post("/change-password", response_model=MessageResponse)
+async def change_password_endpoint(
+    body: ChangePasswordRequest,
+    user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Đổi mật khẩu cho user đã đăng nhập (cần JWT)."""
+    result = await logic.change_password(
+        db,
+        user_id=user.id,
+        old_password=body.old_password,
+        new_password=body.new_password,
+    )
+    if result == "success":
+        return MessageResponse(success=True, message="Đã đổi mật khẩu thành công. Vui lòng đăng nhập lại.")
+
+    error_map = {
+        "wrong_password": (400, "Mật khẩu hiện tại không đúng"),
+        "google_account": (400, "Tài khoản Google không có mật khẩu. Vui lòng sử dụng đăng nhập Google."),
+        "user_not_found": (404, "Không tìm thấy người dùng"),
+    }
+    code, msg = error_map.get(result, (400, "Lỗi đổi mật khẩu"))
+    raise HTTPException(status_code=code, detail=msg)
+
+
+# ── 10. Get Current User (protected) ─────────────────────────────
 
 
 @router.get("/me", response_model=UserResponse)
@@ -220,11 +288,12 @@ async def get_me(user=Depends(get_current_user)):
         role=user.role.name if user.role else "user",
         auth_provider=user.auth_provider,
         is_verified=user.is_verified,
+        is_totp_enabled=user.is_totp_enabled,
         created_at=user.created_at,
     )
 
 
-# ── 9. Update Profile (protected) ────────────────────────────────
+# ── 11. Update Profile (protected) ───────────────────────────────
 
 
 @router.put("/me", response_model=UserResponse)
@@ -251,5 +320,73 @@ async def update_me(
         role=updated.role.name if updated.role else "user",
         auth_provider=updated.auth_provider,
         is_verified=updated.is_verified,
+        is_totp_enabled=updated.is_totp_enabled,
         created_at=updated.created_at,
     )
+
+
+# ── 12. 2FA Setup (protected) ────────────────────────────────────
+
+
+@router.post("/2fa/setup", response_model=Setup2FAResponse)
+async def setup_2fa(
+    user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Tạo TOTP secret và QR code cho user (cần JWT)."""
+    result = await logic.setup_totp(db, user_id=user.id)
+    if isinstance(result, str):
+        error_map = {
+            "user_not_found": (404, "Không tìm thấy người dùng"),
+            "already_enabled": (400, "2FA đã được bật. Tắt trước khi thiết lập lại."),
+        }
+        code, msg = error_map.get(result, (400, "Lỗi thiết lập 2FA"))
+        raise HTTPException(status_code=code, detail=msg)
+    return result
+
+
+# ── 13. 2FA Enable (protected) ───────────────────────────────────
+
+
+@router.post("/2fa/enable", response_model=MessageResponse)
+async def enable_2fa(
+    body: Verify2FARequest,
+    user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Xác thực OTP và bật 2FA cho user (cần JWT)."""
+    result = await logic.enable_totp(db, user_id=user.id, otp=body.otp)
+    if result == "success":
+        return MessageResponse(success=True, message="Đã bật xác thực 2 bước thành công")
+
+    error_map = {
+        "invalid_otp": (400, "Mã OTP không đúng. Vui lòng thử lại."),
+        "no_secret": (400, "Chưa thiết lập 2FA. Vui lòng gọi /2fa/setup trước."),
+        "already_enabled": (400, "2FA đã được bật."),
+        "user_not_found": (404, "Không tìm thấy người dùng"),
+    }
+    code, msg = error_map.get(result, (400, "Lỗi bật 2FA"))
+    raise HTTPException(status_code=code, detail=msg)
+
+
+# ── 14. 2FA Disable (protected) ──────────────────────────────────
+
+
+@router.post("/2fa/disable", response_model=MessageResponse)
+async def disable_2fa(
+    body: Disable2FARequest,
+    user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Tắt 2FA cho user (cần JWT + OTP)."""
+    result = await logic.disable_totp(db, user_id=user.id, otp=body.otp)
+    if result == "success":
+        return MessageResponse(success=True, message="Đã tắt xác thực 2 bước")
+
+    error_map = {
+        "invalid_otp": (400, "Mã OTP không đúng"),
+        "not_enabled": (400, "2FA chưa được bật"),
+        "user_not_found": (404, "Không tìm thấy người dùng"),
+    }
+    code, msg = error_map.get(result, (400, "Lỗi tắt 2FA"))
+    raise HTTPException(status_code=code, detail=msg)

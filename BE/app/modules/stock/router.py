@@ -18,6 +18,16 @@ async def stock_overview(
     return await logic.get_stock_overview(db, ticker=ticker)
 
 
+# ── 1.1 Available Periods ─────────────────────────────────────────
+@router.get("/{ticker}/available-periods")
+async def available_periods(
+    ticker: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """Lấy danh sách các năm có dữ liệu báo cáo tài chính."""
+    return await logic.get_available_periods(db, ticker=ticker)
+
+
 # ── 2. Price History ──────────────────────────────────────────────
 @router.get("/{ticker}/price-history")
 async def price_history(
@@ -35,10 +45,11 @@ async def price_history(
 async def financial_ratios(
     ticker: str,
     periods: int = Query(20, ge=4, le=40),
+    year: int | None = Query(None, description="Lọc theo năm cụ thể (VD: 2024)"),
     db: AsyncSession = Depends(get_db),
 ):
     """Các chỉ số tài chính (PE, PB, ROE, ROA, …)."""
-    return await logic.get_financial_ratios(db, ticker=ticker, periods=periods)
+    return await logic.get_financial_ratios(db, ticker=ticker, periods=periods, year=year)
 
 
 # ── 4. Financial Reports (IS, BS, CF) ────────────────────────────
@@ -46,10 +57,11 @@ async def financial_ratios(
 async def financial_reports(
     ticker: str,
     periods: int = Query(12, ge=4, le=20),
+    year: int | None = Query(None, description="Lọc theo năm cụ thể (VD: 2024)"),
     db: AsyncSession = Depends(get_db),
 ):
-    """Báo cáo tài chính: KQKD, CĐKT, LCTT."""
-    return await logic.get_financial_reports(db, ticker=ticker, periods=periods)
+    """Báo cáo tài chính (IS, BS, CF)."""
+    return await logic.get_financial_reports(db, ticker=ticker, periods=periods, year=year)
 
 
 # ── 5. Company Profile ───────────────────────────────────────────
@@ -77,10 +89,11 @@ async def stock_comparison(
 @router.get("/{ticker}/deep-analysis")
 async def deep_analysis(
     ticker: str,
+    year: int | None = Query(None, description="Lọc theo năm cụ thể (VD: 2024)"),
     db: AsyncSession = Depends(get_db),
 ):
     """Phân tích chuyên sâu: Bảng cân đối, KQKD, dòng tiền."""
-    return await logic.get_deep_analysis(db, ticker=ticker)
+    return await logic.get_deep_analysis(db, ticker=ticker, year=year)
 
 
 # ── 8. Quant Analysis ────────────────────────────────────────────

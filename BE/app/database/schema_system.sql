@@ -207,4 +207,52 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_session_logs_session_unique
 -- ALTER TABLE system.stock_search_logs   OWNER TO admin;
 -- ALTER TABLE system.sidebar_clicks      OWNER TO admin;
 -- ALTER TABLE system.login_logs          OWNER TO admin;
--- ALTER TABLE system.session_logs        OWNER TO admin;
+
+-- ────────────────────────────────────────────────────────────
+-- 8. stock_price_alerts — Cảnh báo giá theo user/session
+-- ────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS system.stock_price_alerts (
+    id              BIGSERIAL PRIMARY KEY,
+    user_id         BIGINT REFERENCES system.users(id) ON DELETE CASCADE,
+    session_id      VARCHAR(64),
+    ticker          VARCHAR(20) NOT NULL,
+    condition_type  VARCHAR(20) NOT NULL,
+    target_price    NUMERIC(15,2) NOT NULL,
+    status          VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    triggered_at    TIMESTAMPTZ,
+    CONSTRAINT alerts_user_or_session CHECK (user_id IS NOT NULL OR session_id IS NOT NULL)
+);
+
+CREATE INDEX IF NOT EXISTS idx_stock_price_alerts_ticker_status
+    ON system.stock_price_alerts (ticker, status);
+
+CREATE INDEX IF NOT EXISTS idx_stock_price_alerts_user
+    ON system.stock_price_alerts (user_id)
+    WHERE user_id IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_stock_price_alerts_session
+    ON system.stock_price_alerts (session_id)
+    WHERE session_id IS NOT NULL;
+
+-- ────────────────────────────────────────────────────────────
+-- 9. user_favorite_stocks — Danh sách mã yêu thích
+-- ────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS system.user_favorite_stocks (
+    id          BIGSERIAL PRIMARY KEY,
+    user_id     BIGINT REFERENCES system.users(id) ON DELETE CASCADE,
+    session_id  VARCHAR(64),
+    ticker      VARCHAR(20) NOT NULL,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT fav_user_or_session CHECK (user_id IS NOT NULL OR session_id IS NOT NULL),
+    CONSTRAINT uq_user_favorite UNIQUE NULLS NOT DISTINCT (user_id, ticker),
+    CONSTRAINT uq_session_favorite UNIQUE NULLS NOT DISTINCT (session_id, ticker)
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_favorite_stocks_user
+    ON system.user_favorite_stocks (user_id)
+    WHERE user_id IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_user_favorite_stocks_session
+    ON system.user_favorite_stocks (session_id)
+    WHERE session_id IS NOT NULL;

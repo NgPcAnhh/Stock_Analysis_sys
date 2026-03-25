@@ -76,6 +76,7 @@ IS_CODES: Dict[str, str] = {
     "netProfit":        "L_I_NHU_N_THU_N",                            # LNST
     "netProfitParent":  "L_I_NHU_N_SAU_THU_C_A_C_NG_C_NG_TY_M_NG",   # LNST của CTMN
     "basicEps":         "L_I_C_B_N_TR_N_C_PHI_U",                     # EPS cơ bản (VND/share)
+    "otherIncome":      "THU_NH_P_KH_C",                               # Thu nhập khác
 }
 
 # Balance Sheet
@@ -507,6 +508,30 @@ async def get_stock_overview(db: AsyncSession, ticker: str = "VIC") -> Dict[str,
         "recommendations": recommendations,
     }
 
+@cached("stock:years", ttl=3600)
+async def get_available_periods(db: AsyncSession, ticker: str) -> List[int]:
+    """Get list of years available in financial reports."""
+    ticker = ticker.upper()
+    sql = text(f"""
+        SELECT DISTINCT year
+        FROM {SCHEMA}.financial_ratio
+        WHERE ticker = :ticker
+        ORDER BY year DESC
+    """)
+    res = await db.execute(sql, {"ticker": ticker})
+    # If no results from financial_ratio, query bctc
+    years = [r["year"] for r in res.mappings().all()]
+    if not years:
+        sql = text(f"""
+            SELECT DISTINCT year
+            FROM {SCHEMA}.bctc
+            WHERE ticker = :ticker
+            ORDER BY year DESC
+        """)
+        res = await db.execute(sql, {"ticker": ticker})
+        years = [r["year"] for r in res.mappings().all()]
+    return list(map(int, years))
+
 
 # ── Sub-queries for overview ──────────────────────────────────────
 
@@ -514,6 +539,23 @@ async def _query_stock_info(db: AsyncSession, ticker: str) -> Optional[Dict]:
     """Get current stock info from electric_board + company_overview."""
     sql = text(f"""
         WITH {_EB_RANKED_DATES_CTE}
+        , dedup_company_overview AS (
+            SELECT DISTINCT ON (UPPER(BTRIM(ticker)))
+                ticker,
+                exchange,
+                organ_short_name,
+                organ_name,
+                icb_name2,
+                icb_name3,
+                overview
+            FROM {SCHEMA}.company_overview
+            WHERE UPPER(BTRIM(ticker)) = :ticker
+            ORDER BY
+                UPPER(BTRIM(ticker)),
+                CASE WHEN overview IS NOT NULL AND BTRIM(overview) != '' THEN 0 ELSE 1 END,
+                CASE WHEN organ_short_name IS NOT NULL AND BTRIM(organ_short_name) != '' THEN 0 ELSE 1 END,
+                CASE WHEN organ_name IS NOT NULL AND BTRIM(organ_name) != '' THEN 0 ELSE 1 END
+        )
         SELECT
             co.ticker, co.exchange, co.organ_short_name, co.organ_name,
             co.icb_name2, co.icb_name3, co.overview,
@@ -524,7 +566,7 @@ async def _query_stock_info(db: AsyncSession, ticker: str) -> Optional[Dict]:
             eb.ask_1_price, eb.ask_1_volume, eb.ask_2_price, eb.ask_2_volume,
             eb.ask_3_price, eb.ask_3_volume,
             hp.close, hp.high, hp.low, hp.volume
-        FROM {SCHEMA}.company_overview co
+        FROM dedup_company_overview co
         LEFT JOIN {SCHEMA}.electric_board eb
             ON eb.ticker = co.ticker
             AND eb.trading_date = (SELECT td FROM eb_latest)
@@ -651,9 +693,27 @@ async def _query_historical_data(db: AsyncSession, ticker: str, days: int = 30) 
 async def _query_shareholders(db: AsyncSession, ticker: str) -> List[Dict]:
     """Shareholder list from owner table."""
     sql = text(f"""
+        WITH dedup AS (
+            SELECT DISTINCT ON (
+                UPPER(BTRIM(COALESCE(name, ''))),
+                UPPER(BTRIM(COALESCE(position, ''))),
+                COALESCE(percent::text, ''),
+                UPPER(BTRIM(COALESCE(type, '')))
+            )
+                BTRIM(COALESCE(name, '')) AS name,
+                BTRIM(COALESCE(position, '')) AS position,
+                percent,
+                type
+            FROM {SCHEMA}.owner
+            WHERE UPPER(BTRIM(ticker)) = :ticker
+            ORDER BY
+                UPPER(BTRIM(COALESCE(name, ''))),
+                UPPER(BTRIM(COALESCE(position, ''))),
+                COALESCE(percent::text, ''),
+                UPPER(BTRIM(COALESCE(type, '')))
+        )
         SELECT name, position, percent, type
-        FROM {SCHEMA}.owner
-        WHERE ticker = :ticker
+        FROM dedup
         ORDER BY percent::numeric DESC NULLS LAST
     """)
     res = await db.execute(sql, {"ticker": ticker})
@@ -762,9 +822,27 @@ async def _query_rec_latest_prices(db: AsyncSession, tickers: List[str]) -> List
 async def _query_stock_events(db: AsyncSession, ticker: str, limit: int = 12) -> List[Dict]:
     """Corporate events from the event table for a given ticker (title starts with ticker)."""
     sql = text(f"""
+        WITH dedup AS (
+            SELECT DISTINCT ON (
+                BTRIM(COALESCE(event_title, '')),
+                public_date,
+                BTRIM(COALESCE(source_url, '')),
+                BTRIM(COALESCE(event_list_name, ''))
+            )
+                event_title,
+                public_date,
+                source_url,
+                event_list_name
+            FROM {SCHEMA}.event
+            WHERE event_title ILIKE :pattern
+            ORDER BY
+                BTRIM(COALESCE(event_title, '')),
+                public_date DESC NULLS LAST,
+                BTRIM(COALESCE(source_url, '')),
+                BTRIM(COALESCE(event_list_name, ''))
+        )
         SELECT event_title, public_date, source_url, event_list_name
-        FROM {SCHEMA}.event
-        WHERE event_title ILIKE :pattern
+        FROM dedup
         ORDER BY public_date DESC NULLS LAST
         LIMIT :limit
     """)
@@ -926,9 +1004,28 @@ async def get_price_history(
 # 3. Financial Ratios
 # ────────────────────────────────────────────────────────────────────
 @cached("stock:ratios", ttl=300)
-async def get_financial_ratios(db: AsyncSession, ticker: str = "VIC", periods: int = 20) -> List[Dict[str, Any]]:
+async def get_financial_ratios(
+    db: AsyncSession,
+    ticker: str = "VIC",
+    periods: int = 20,
+    year: Optional[int] = None,
+) -> List[Dict[str, Any]]:
     await db.execute(_STMT_TIMEOUT)
     ticker = ticker.upper()
+
+    # Build query based on filter
+    if year:
+        # If specific year, get quarters ASC for that year (Q1 -> Q4)
+        where_clause = "WHERE ticker = :ticker AND year = :year"
+        order_clause = "ORDER BY year ASC, quarter ASC"
+        limit_clause = ""
+        params = {"ticker": ticker, "year": year}
+    else:
+        # Default: latest periods DESC (New -> Old)
+        where_clause = "WHERE ticker = :ticker"
+        order_clause = "ORDER BY year DESC, quarter DESC"
+        limit_clause = "LIMIT :limit"
+        params = {"ticker": ticker, "limit": periods}
 
     # Fetch FR rows (base data)
     fr_sql = text(f"""
@@ -941,65 +1038,67 @@ async def get_financial_ratios(db: AsyncSession, ticker: str = "VIC", periods: i
                cash_conversion_cycle, ev_ebitda, dividend_yield,
                market_cap, outstanding_shares, p_cashflow
         FROM {SCHEMA}.financial_ratio
-        WHERE ticker = :ticker
-        ORDER BY year DESC, quarter DESC
-        LIMIT :limit
+        {where_clause}
+        {order_clause}
+        {limit_clause}
     """)
-    fr_res = await db.execute(fr_sql, {"ticker": ticker, "limit": periods})
+    fr_res = await db.execute(fr_sql, params)
     fr_rows = fr_res.mappings().all()
 
     # Fetch BCTC data for computing PE/PB/EPS per quarter
-    bctc_sql = text(f"""
-        WITH shares_data AS (
-            SELECT year, quarter, value / 10000.0 AS shares, 1 AS priority
-            FROM {SCHEMA}.bctc
-            WHERE ind_code = 'C_PHI_U_PH_TH_NG_NG'
-              AND ticker = :ticker AND value IS NOT NULL AND value > 0
-            UNION ALL
-            SELECT year, quarter, value / 10000.0 AS shares, 2 AS priority
-            FROM {SCHEMA}.bctc
-            WHERE ind_code = 'V_N_G_P_C_A_CH_S_H_U_NG'
-              AND ticker = :ticker AND value IS NOT NULL AND value > 0
-        ),
-        ranked_shares AS (
-            SELECT year, quarter, shares,
-                ROW_NUMBER() OVER (PARTITION BY year, quarter ORDER BY priority) AS rn
-            FROM shares_data
-        )
-        SELECT
-            COALESCE(sh.year, eq.year, ni.year) AS year,
-            COALESCE(sh.quarter, eq.quarter, ni.quarter) AS quarter,
-            sh.shares,
-            eq.equity,
-            ni.net_income
-        FROM (
-            SELECT year, quarter, shares FROM ranked_shares WHERE rn = 1
-        ) sh
-        FULL OUTER JOIN (
-            SELECT year, quarter, value AS equity
-            FROM {SCHEMA}.bctc
-            WHERE ind_code = 'V_N_CH_S_H_U_NG'
-              AND ticker = :ticker AND value IS NOT NULL AND value > 0
-        ) eq ON eq.year = sh.year AND eq.quarter = sh.quarter
-        FULL OUTER JOIN (
-            SELECT year, quarter, value AS net_income
-            FROM {SCHEMA}.bctc
-            WHERE ind_code = 'L_I_NHU_N_SAU_THU_C_A_C_NG_C_NG_TY_M_NG'
-              AND ticker = :ticker AND value IS NOT NULL AND value != 0
-        ) ni ON ni.year = COALESCE(sh.year, eq.year) AND ni.quarter = COALESCE(sh.quarter, eq.quarter)
-    """)
-    bctc_res = await db.execute(bctc_sql, {"ticker": ticker})
-    bctc_rows = bctc_res.mappings().all()
+    # Note: BCTC query fetches relevant quarters for ticker to ensure we match.
+    
+    bctc_sql_text = f"""
+        SELECT year, quarter, ind_code, value
+        FROM {SCHEMA}.bctc
+        WHERE ticker = :ticker
+          AND ind_code IN (
+              'C_PHI_U_PH_TH_NG_NG', 
+              'V_N_G_P_C_A_CH_S_H_U_NG', 
+              'V_N_CH_S_H_U_NG', 
+              'L_I_NHU_N_SAU_THU_C_A_C_NG_C_NG_TY_M_NG',
+              'DOANH_THU_THU_N',
+              'L_I_G_P',
+              'T_NG_C_NG_T_I_S_N_NG'
+          )
+          {'AND year = :year' if year else ''}
+    """
+    bctc_res = await db.execute(text(bctc_sql_text), params)
+    bctc_raw = bctc_res.mappings().all()
 
-    # Build BCTC lookup: (year, quarter) -> {shares, equity, net_income}
+    # Process BCTC in memory
     bctc_map: Dict[Tuple, Dict] = {}
-    for b in bctc_rows:
-        key = (int(b["year"]), int(b["quarter"]))
-        bctc_map[key] = {
-            "shares": _safe_float(b.get("shares")),
-            "equity": _safe_float(b.get("equity")),
-            "net_income": _safe_float(b.get("net_income")),
-        }
+    
+    # Helper to update map
+    def update_map(y, q, key, val):
+        k = (int(y), int(q))
+        if k not in bctc_map: bctc_map[k] = {}
+        # Logic for shares priority: prefer C_PHI_U_PH_TH_NG_NG over V_N_G_P_C_A_CH_S_H_U_NG
+        if key == "shares":
+            curr = bctc_map[k].get("shares_prio", 99)
+            # 1 for C_PHI_U..., 2 for V_N_G...
+            prio = 1 if val[1] == 'C_PHI_U_PH_TH_NG_NG' else 2
+            if prio < curr:
+                bctc_map[k]["shares"] = val[0]
+                bctc_map[k]["shares_prio"] = prio
+        else:
+            bctc_map[k][key] = val
+
+    for b in bctc_raw:
+        code = b["ind_code"]
+        val = _safe_float(b["value"])
+        if code in ('C_PHI_U_PH_TH_NG_NG', 'V_N_G_P_C_A_CH_S_H_U_NG'):
+            update_map(b["year"], b["quarter"], "shares", (val / 10000.0, code))
+        elif code == 'V_N_CH_S_H_U_NG':
+            update_map(b["year"], b["quarter"], "equity", val)
+        elif code == 'L_I_NHU_N_SAU_THU_C_A_C_NG_C_NG_TY_M_NG':
+            update_map(b["year"], b["quarter"], "net_income", val)
+        elif code == 'DOANH_THU_THU_N':
+            update_map(b["year"], b["quarter"], "revenue", val)
+        elif code == 'L_I_G_P':
+            update_map(b["year"], b["quarter"], "gross_profit", val)
+        elif code == 'T_NG_C_NG_T_I_S_N_NG':
+            update_map(b["year"], b["quarter"], "total_assets", val)
 
     # Fetch price at each quarter-end for PE/PB computation
     price_sql = text(f"""
@@ -1019,10 +1118,15 @@ async def get_financial_ratios(db: AsyncSession, ticker: str = "VIC", periods: i
         price_map[(int(p["year"]), int(p["quarter"]))] = _safe_float(p["close"])
 
     result = []
+    
+    # Process rows
+    # Note: fr_rows order depends on `year` parameter (ASC if year, DESC if default)
+    # We maintain this order in output.
+    
     for r in fr_rows:
-        year = int(r["year"])
-        quarter = int(r["quarter"])
-        key = (year, quarter)
+        year_val = int(r["year"])
+        quarter_val = int(r["quarter"])
+        key = (year_val, quarter_val)
         bctc = bctc_map.get(key, {})
         close = price_map.get(key, 0)
 
@@ -1031,10 +1135,19 @@ async def get_financial_ratios(db: AsyncSession, ticker: str = "VIC", periods: i
         fr_pb = _safe_round(r["pb"])
         fr_eps = _safe_round(r["eps"])
         fr_mcap = _safe_round(r["market_cap"])
+        
+        # Other ratios
+        fr_roe = _safe_round(r["roe"])
+        fr_roa = _safe_round(r["roa"])
+        fr_gross_margin = _safe_round(r["gross_margin"])
+        fr_net_margin = _safe_round(r["net_margin"])
 
         shares = bctc.get("shares", 0)
         equity = bctc.get("equity", 0)
         net_income = bctc.get("net_income", 0)
+        revenue = bctc.get("revenue", 0)
+        gross_profit = bctc.get("gross_profit", 0)
+        total_assets = bctc.get("total_assets", 0)
 
         # EPS from BCTC
         computed_eps = None
@@ -1062,19 +1175,39 @@ async def get_financial_ratios(db: AsyncSession, ticker: str = "VIC", periods: i
         if close > 0 and shares > 0:
             computed_mcap = round(close * 1000 * shares, 0)
 
+        # ROE (Annualized: Quarterly Net Income * 4 / Equity)
+        computed_roe = None
+        if net_income != 0 and equity > 0:
+            computed_roe = round((net_income * 4 / equity) * 100, 2)
+
+        # ROA (Annualized: Quarterly Net Income * 4 / Total Assets)
+        computed_roa = None
+        if net_income != 0 and total_assets > 0:
+            computed_roa = round((net_income * 4 / total_assets) * 100, 2)
+            
+        # Gross Margin (Gross Profit / Revenue)
+        computed_gross_margin = None
+        if gross_profit != 0 and revenue != 0:
+            computed_gross_margin = round((gross_profit / revenue) * 100, 2)
+            
+        # Net Margin (Net Income / Revenue)
+        computed_net_margin = None
+        if net_income != 0 and revenue != 0:
+            computed_net_margin = round((net_income / revenue) * 100, 2)
+
         result.append({
-            "year": year,
-            "quarter": quarter,
+            "year": year_val,
+            "quarter": quarter_val,
             "pe": computed_pe if fr_pe is None else fr_pe,
             "pb": computed_pb if fr_pb is None else fr_pb,
             "ps": _safe_round(r["ps"]),
             "eps": computed_eps if fr_eps is None else fr_eps,
             "bvps": _safe_round(r["bvps"]),
-            "roe": _safe_round(r["roe"]),
-            "roa": _safe_round(r["roa"]),
+            "roe": computed_roe if fr_roe is None else fr_roe,
+            "roa": computed_roa if fr_roa is None else fr_roa,
             "roic": _safe_round(r["roic"]),
-            "grossMargin": _safe_round(r["gross_margin"]),
-            "netMargin": _safe_round(r["net_margin"]),
+            "grossMargin": computed_gross_margin if fr_gross_margin is None else fr_gross_margin,
+            "netMargin": computed_net_margin if fr_net_margin is None else fr_net_margin,
             "ebitMargin": _safe_round(r["ebit_margin"]),
             "debtToEquity": _safe_round(r["debt_to_equity"]),
             "currentRatio": _safe_round(r["current_ratio"]),
@@ -1093,6 +1226,12 @@ async def get_financial_ratios(db: AsyncSession, ticker: str = "VIC", periods: i
             "outstandingShares": _safe_round(r["outstanding_shares"]),
             "pCashflow": _safe_round(r["p_cashflow"]),
         })
+    
+    # If year filter was NOT used, we fetched DESC (New -> Old).
+    # If year filter WAS used, we fetched ASC (Old -> New, Q1->Q4).
+    # To maintain consistency, let's reverse if year filter was used, so it's New -> Old (Q4->Q1).
+    if year:
+        result.reverse()
 
     return result
 
@@ -1101,7 +1240,12 @@ async def get_financial_ratios(db: AsyncSession, ticker: str = "VIC", periods: i
 # 4. Financial Reports (IS, BS, CF from BCTC table)
 # ────────────────────────────────────────────────────────────────────
 @cached("stock:reports", ttl=300)
-async def get_financial_reports(db: AsyncSession, ticker: str = "VIC", periods: int = 12) -> Dict[str, Any]:
+async def get_financial_reports(
+    db: AsyncSession, 
+    ticker: str = "VIC", 
+    periods: int = 12,
+    year: Optional[int] = None
+) -> Dict[str, Any]:
     """Fetch IS, BS, CF from bctc table, pivoting ind_code rows into columns.
 
     Automatically detects banking/financial-sector tickers and:
@@ -1134,14 +1278,23 @@ async def get_financial_reports(db: AsyncSession, ticker: str = "VIC", periods: 
         all_codes.update(BS_BANK_EXTRA_CODES.values())
 
     # ── Single query for all financial data — efficient pivot ──
+    where_extra = ""
+    params = {"ticker": ticker, "codes": list(all_codes)}
+    
+    if year:
+        where_extra = "AND year = :year"
+        params["year"] = year
+        
     sql = text(f"""
         SELECT year, quarter, ind_code, value
         FROM {SCHEMA}.bctc
         WHERE ticker = :ticker
           AND ind_code = ANY(:codes)
+          {where_extra}
         ORDER BY year DESC, quarter DESC
     """)
-    res = await db.execute(sql, {"ticker": ticker, "codes": list(all_codes)})
+    
+    res = await db.execute(sql, params)
     rows = res.mappings().all()
 
     # Pivot: {(year, quarter)} -> {ind_code: value}
@@ -1153,7 +1306,15 @@ async def get_financial_reports(db: AsyncSession, ticker: str = "VIC", periods: 
         pivot[key][r["ind_code"]] = _safe_float(r["value"])
 
     # Sort periods descending, take latest N
-    sorted_periods = sorted(pivot.keys(), key=lambda x: (x[0], x[1]), reverse=True)[:periods]
+    # If year is filtered, we probably want all quarters of that year, not limited by 'periods' 
+    # unless 'periods' is smaller than 4 (unlikely default).
+    # But usually 'periods' defaults to 12.
+    if year:
+        # If year specified, take all available quarters for that year (max 4)
+        sorted_periods = sorted(pivot.keys(), key=lambda x: (x[0], x[1]), reverse=True)
+    else:
+        # Default behavior: limit by periods
+        sorted_periods = sorted(pivot.keys(), key=lambda x: (x[0], x[1]), reverse=True)[:periods]
 
     def _build_period(year: int, quarter: str) -> Dict:
         return {"period": {"period": f"Q{quarter}/{year}", "year": year, "quarter": int(quarter) if quarter.isdigit() else 0}}
@@ -1206,7 +1367,13 @@ async def get_financial_reports(db: AsyncSession, ticker: str = "VIC", periods: 
             # Compute gross loans if net loans are available but gross is not
             if item.get("loansToCustomers", 0) == 0 and item.get("loansToCustomersGross", 0) != 0:
                 reserves = item.get("loanLossReserves", 0)
-                item["loansToCustomers"] = item["loansToCustomersGross"] + reserves  # reserves typically negative
+                # reserves typically negative, so Gross = Net - Reserves (if reserves < 0) or Net + Reserves?
+                # Usually: Net = Gross - Reserves. So Gross = Net + Reserves.
+                # If reserves is stored as negative number in DB (e.g. -500), then Gross = Net - (-500).
+                # But here code says: item["loansToCustomers"] = item["loansToCustomersGross"] + reserves
+                # This seems to be setting Net from Gross + Reserves.
+                # If Reserves IS negative, then Net = Gross + (-500) = Gross - 500. Correct.
+                pass
 
         balance_sheet.append(item)
 
@@ -1289,10 +1456,23 @@ async def get_company_profile(db: AsyncSession, ticker: str = "VIC") -> Dict[str
 
 async def _query_company_info(db: AsyncSession, ticker: str) -> Optional[Dict]:
     sql = text(f"""
-        SELECT ticker, exchange, organ_short_name, organ_name,
-               icb_name1, icb_name2, icb_name3, overview, type_info
+        SELECT DISTINCT ON (UPPER(BTRIM(ticker)))
+               ticker,
+               exchange,
+               organ_short_name,
+               organ_name,
+               icb_name1,
+               icb_name2,
+               icb_name3,
+               overview,
+               type_info
         FROM {SCHEMA}.company_overview
-        WHERE ticker = :ticker
+        WHERE UPPER(BTRIM(ticker)) = :ticker
+        ORDER BY
+            UPPER(BTRIM(ticker)),
+            CASE WHEN overview IS NOT NULL AND BTRIM(overview) != '' THEN 0 ELSE 1 END,
+            CASE WHEN organ_short_name IS NOT NULL AND BTRIM(organ_short_name) != '' THEN 0 ELSE 1 END,
+            CASE WHEN organ_name IS NOT NULL AND BTRIM(organ_name) != '' THEN 0 ELSE 1 END
         LIMIT 1
     """)
     res = await db.execute(sql, {"ticker": ticker})
@@ -1302,9 +1482,27 @@ async def _query_company_info(db: AsyncSession, ticker: str) -> Optional[Dict]:
 
 async def _query_events(db: AsyncSession, ticker: str) -> List[Dict]:
     sql = text(f"""
+        WITH dedup AS (
+            SELECT DISTINCT ON (
+                BTRIM(COALESCE(event_title, '')),
+                public_date,
+                BTRIM(COALESCE(source_url, '')),
+                BTRIM(COALESCE(event_list_name, ''))
+            )
+                event_title,
+                public_date,
+                source_url,
+                event_list_name
+            FROM {SCHEMA}.event
+            WHERE event_title ILIKE :pattern
+            ORDER BY
+                BTRIM(COALESCE(event_title, '')),
+                public_date DESC NULLS LAST,
+                BTRIM(COALESCE(source_url, '')),
+                BTRIM(COALESCE(event_list_name, ''))
+        )
         SELECT event_title, public_date, source_url, event_list_name
-        FROM {SCHEMA}.event
-        WHERE event_title ILIKE :pattern
+        FROM dedup
         ORDER BY public_date DESC NULLS LAST
         LIMIT 50
     """)
@@ -1652,13 +1850,13 @@ async def get_stock_comparison(
 # 7. Deep Analysis (Balance Sheet, Income Statement, Cash Flow)
 # ────────────────────────────────────────────────────────────────────
 @cached("stock:deep", ttl=300)
-async def get_deep_analysis(db: AsyncSession, ticker: str = "VIC") -> Dict[str, Any]:
+async def get_deep_analysis(db: AsyncSession, ticker: str = "VIC", year: int | None = None) -> Dict[str, Any]:
     await db.execute(_STMT_TIMEOUT)
     ticker = ticker.upper()
 
     reports_res, ratios_res = await asyncio.gather(
-        _query_annual_bctc(db, ticker, years=5),
-        _query_annual_ratios(db, ticker, years=5),
+        _query_annual_bctc(db, ticker, years=5, end_year=year),
+        _query_annual_ratios(db, ticker, years=5, end_year=year),
     )
 
     reports = reports_res
@@ -1675,20 +1873,27 @@ async def get_deep_analysis(db: AsyncSession, ticker: str = "VIC") -> Dict[str, 
     }
 
 
-async def _query_annual_bctc(db: AsyncSession, ticker: str, years: int = 5) -> Dict:
+async def _query_annual_bctc(db: AsyncSession, ticker: str, years: int = 5, end_year: int | None = None) -> Dict:
     """Get annual (Q5=full year or Q4) BCTC data for multiple years."""
     all_codes = set()
     for mapping in (IS_CODES, BS_CODES, CF_CODES):
         all_codes.update(mapping.values())
+
+    params = {"ticker": ticker, "codes": list(all_codes)}
+    year_filter = ""
+    if end_year:
+        year_filter = "AND year <= :end_year"
+        params["end_year"] = end_year
 
     sql = text(f"""
         SELECT year, quarter, ind_code, value
         FROM {SCHEMA}.bctc
         WHERE ticker = :ticker
           AND ind_code = ANY(:codes)
+          {year_filter}
         ORDER BY year DESC, quarter DESC
     """)
-    res = await db.execute(sql, {"ticker": ticker, "codes": list(all_codes)})
+    res = await db.execute(sql, params)
     rows = res.mappings().all()
 
     pivot: Dict[Tuple[int, str], Dict[str, float]] = {}
@@ -1701,127 +1906,474 @@ async def _query_annual_bctc(db: AsyncSession, ticker: str, years: int = 5) -> D
     return pivot
 
 
-async def _query_annual_ratios(db: AsyncSession, ticker: str, years: int = 5) -> List[Dict]:
+async def _query_annual_ratios(db: AsyncSession, ticker: str, years: int = 5, end_year: int | None = None) -> List[Dict]:
     """Get annual financial ratios."""
+    params = {"ticker": ticker, "limit": years * 4 + 4}
+    year_filter = ""
+    if end_year:
+        year_filter = "AND year <= :end_year"
+        params["end_year"] = end_year
+
     sql = text(f"""
         SELECT year, quarter,
                pe, pb, roe, roa, roic,
                gross_margin, net_margin, ebit_margin,
                debt_to_equity, current_ratio, quick_ratio, cash_ratio,
                interest_coverage_ratio, asset_turnover,
-               financial_leverage, market_cap, eps
+               financial_leverage, market_cap, eps,
+               inventory_days, receivable_days, payable_days,
+               cash_conversion_cycle, inventory_turnover,
+               ebitda_value, ebit_value, outstanding_shares
         FROM {SCHEMA}.financial_ratio
         WHERE ticker = :ticker
+        {year_filter}
         ORDER BY year DESC, quarter DESC
         LIMIT :limit
     """)
-    res = await db.execute(sql, {"ticker": ticker, "limit": years * 4 + 4})
+    res = await db.execute(sql, params)
     return [dict(r) for r in res.mappings().all()]
 
 
-def _build_bs_analysis(reports: Dict, ratios: List[Dict]) -> Dict:
-    """Build balance sheet analysis data."""
-    years_set = set()
-    for (y, q) in reports.keys():
-        years_set.add(y)
-    years = sorted(years_set)[-5:]
-
-    # Trends
-    trends = []
-    for year in years:
-        year_data = {}
-        for q in ["5", "4", "3", "2", "1"]:
-            if (year, q) in reports:
-                year_data = reports[(year, q)]
-                break
-        if not year_data:
-            continue
-
-        trends.append({
-            "year": year,
-            "totalAssets": year_data.get(BS_CODES["totalAssets"]),
-            "currentAssets": year_data.get(BS_CODES["currentAssets"]),
-            "nonCurrentAssets": year_data.get(BS_CODES["nonCurrentAssets"]),
-            "totalLiabilities": year_data.get(BS_CODES["totalLiabilities"]),
-            "currentLiabilities": year_data.get(BS_CODES["currentLiabilities"]),
-            "longTermLiabilities": year_data.get(BS_CODES["longTermLiabilities"]),
-            "equity": year_data.get(BS_CODES["totalEquity"]),
-        })
-
-    # Health indicators from latest ratio
-    latest_r = ratios[0] if ratios else {}
-    current_ratio_val = _safe_float(latest_r.get("current_ratio"))
-    de_val = _safe_float(latest_r.get("debt_to_equity"))
-    quick_ratio_val = _safe_float(latest_r.get("quick_ratio"))
-
-    health_indicators = [
-        {
-            "name": "Hệ số thanh toán hiện hành",
-            "value": current_ratio_val,
-            "status": "good" if current_ratio_val >= 1.5 else ("warning" if current_ratio_val >= 1 else "danger"),
-            "description": f"Khả năng thanh toán nợ ngắn hạn: {current_ratio_val:.2f}x",
-            "threshold": ">= 1.5",
-        },
-        {
-            "name": "Hệ số nợ/vốn chủ sở hữu",
-            "value": de_val,
-            "status": "good" if de_val <= 1 else ("warning" if de_val <= 2 else "danger"),
-            "description": f"Đòn bẩy tài chính: {de_val:.2f}x",
-            "threshold": "<= 1.0",
-        },
-        {
-            "name": "Hệ số thanh toán nhanh",
-            "value": quick_ratio_val,
-            "status": "good" if quick_ratio_val >= 1 else ("warning" if quick_ratio_val >= 0.5 else "danger"),
-            "description": f"Thanh khoản nhanh: {quick_ratio_val:.2f}x",
-            "threshold": ">= 1.0",
-        },
-    ]
-
-    # Overview stats
-    latest_bs = {}
+def _get_year_data(reports: Dict, year: int) -> Dict:
+    """Get best available data for a specific year (prefer Q5/annual, then Q4..Q1)."""
     for q in ["5", "4", "3", "2", "1"]:
-        if years and (years[-1], q) in reports:
-            latest_bs = reports[(years[-1], q)]
-            break
+        if (year, q) in reports:
+            return reports[(year, q)]
+    return {}
 
-    total_assets = latest_bs.get(BS_CODES["totalAssets"], 0)
-    total_equity = latest_bs.get(BS_CODES["totalEquity"], 0)
-    total_liab = latest_bs.get(BS_CODES["totalLiabilities"], 0)
+
+def _get_annual_flow(reports: Dict, year: int, code: str) -> float:
+    """Sum a flow item (IS/CF) across all quarters for a year to get annual total.
+    If Q5 (annual) exists, use it directly. Otherwise sum Q1..Q4."""
+    if (year, "5") in reports:
+        return _safe_float(reports[(year, "5")].get(code, 0))
+    total = 0.0
+    n_q = 0
+    for q in ["1", "2", "3", "4"]:
+        if (year, q) in reports and code in reports[(year, q)]:
+            total += _safe_float(reports[(year, q)].get(code, 0))
+            n_q += 1
+    if n_q > 0 and n_q < 4:
+        total = total / n_q * 4  # annualize partial year
+    return total
+
+
+def _get_sorted_years(reports: Dict, n: int = 5) -> List[int]:
+    """Get the last N unique years from reports."""
+    years_set = set()
+    for (y, _q) in reports.keys():
+        years_set.add(y)
+    return sorted(years_set)[-n:]
+
+
+def _yoy_change(cur: float, prev: float) -> Optional[float]:
+    """Compute YoY % change — returns None when not computable."""
+    if not prev or prev == 0:
+        return None
+    return round((cur - prev) / abs(prev) * 100, 1)
+
+
+def _to_ty(v: float) -> str:
+    """Format to Tỷ VND string for display."""
+    if v == 0:
+        return "0"
+    t = v / 1e9
+    if abs(t) >= 1:
+        return f"{t:,.0f}"
+    return f"{t:,.1f}"
+
+
+def _build_bs_analysis(reports: Dict, ratios: List[Dict]) -> Dict:
+    """Build balance sheet analysis data — full detail for DeepDive UI."""
+    years = _get_sorted_years(reports, 5)
+
+    # Per-year BCTC data
+    year_datas = []
+    for year in years:
+        yd = _get_year_data(reports, year)
+        if yd:
+            year_datas.append((year, yd))
+
+    # Latest ratio = most recent from ratios list
+    latest_r = ratios[0] if ratios else {}
+
+    # ── Previous year data for YoY comparisons ──
+    latest_yd = year_datas[-1][1] if year_datas else {}
+    prev_yd = year_datas[-2][1] if len(year_datas) >= 2 else {}
+
+    total_assets = latest_yd.get(BS_CODES["totalAssets"], 0)
+    total_equity = latest_yd.get(BS_CODES["totalEquity"], 0)
+    total_liab = latest_yd.get(BS_CODES["totalLiabilities"], 0)
+    current_assets = latest_yd.get(BS_CODES["currentAssets"], 0)
+    current_liab = latest_yd.get(BS_CODES["currentLiabilities"], 0)
+    working_capital = current_assets - current_liab
+
+    prev_total_assets = prev_yd.get(BS_CODES["totalAssets"], 0)
+    prev_total_equity = prev_yd.get(BS_CODES["totalEquity"], 0)
+    prev_total_liab = prev_yd.get(BS_CODES["totalLiabilities"], 0)
+
+    de_val = _safe_float(latest_r.get("debt_to_equity"))
+    current_ratio_val = _safe_float(latest_r.get("current_ratio"))
+    quick_ratio_val = _safe_float(latest_r.get("quick_ratio"))
+    cash_ratio_val = _safe_float(latest_r.get("cash_ratio"))
+    icr = _safe_float(latest_r.get("interest_coverage_ratio"))
+    fl = _safe_float(latest_r.get("financial_leverage"))
+
+    # ── Fallback: Compute missing ratios from BCTC data ──
+    _inventory = latest_yd.get(BS_CODES["inventory"], 0)
+    _cash = latest_yd.get(BS_CODES["cash"], 0)
+    if not current_ratio_val and current_liab:
+        current_ratio_val = round(current_assets / current_liab, 2)
+    if not quick_ratio_val and current_liab:
+        quick_ratio_val = round((current_assets - _inventory) / current_liab, 2)
+    if not cash_ratio_val and current_liab:
+        cash_ratio_val = round(_cash / current_liab, 2)
+    if not de_val and total_equity:
+        de_val = round(total_liab / total_equity, 2)
+    if not fl and total_equity:
+        _avg_a = (total_assets + prev_total_assets) / 2 if prev_total_assets else total_assets
+        _avg_e = (total_equity + prev_total_equity) / 2 if prev_total_equity else total_equity
+        fl = round(_avg_a / _avg_e, 2) if _avg_e else 0
+
+    # ── 1. Overview Stats (OverviewStatCard[]) ──
+    ta_yoy = _yoy_change(total_assets, prev_total_assets)
+    eq_yoy = _yoy_change(total_equity, prev_total_equity)
+    li_yoy = _yoy_change(total_liab, prev_total_liab)
 
     overview_stats = [
-        {"label": "Tổng tài sản", "value": _fmt_market_cap(total_assets), "subLabel": "", "trend": ""},
-        {"label": "Vốn chủ sở hữu", "value": _fmt_market_cap(total_equity), "subLabel": "", "trend": ""},
-        {"label": "Tổng nợ", "value": _fmt_market_cap(total_liab), "subLabel": "", "trend": ""},
-        {"label": "D/E", "value": f"{de_val:.2f}x", "subLabel": "", "trend": ""},
+        {
+            "label": "Tổng tài sản", "value": _to_ty(total_assets),
+            "rawValue": total_assets, "yoyChange": ta_yoy,
+            "yoyLabel": f"{ta_yoy:+.1f}%" if ta_yoy is not None else "",
+            "badgeText": "Mở rộng" if (ta_yoy or 0) > 0 else "Thu hẹp",
+            "borderColor": "border-t-[#F97316]",
+        },
+        {
+            "label": "Vốn chủ sở hữu", "value": _to_ty(total_equity),
+            "rawValue": total_equity, "yoyChange": eq_yoy,
+            "yoyLabel": f"{eq_yoy:+.1f}%" if eq_yoy is not None else "",
+            "badgeText": "Bền vững" if (eq_yoy or 0) >= 0 else "Giảm",
+            "borderColor": "border-t-[#F97316]",
+        },
+        {
+            "label": "Tổng nợ phải trả", "value": _to_ty(total_liab),
+            "rawValue": total_liab, "yoyChange": li_yoy,
+            "yoyLabel": f"{li_yoy:+.1f}%" if li_yoy is not None else "",
+            "badgeText": "Nợ tăng" if (li_yoy or 0) > 0 else "Nợ giảm",
+            "borderColor": "border-t-[#EF4444]",
+        },
+        {
+            "label": "Vốn lưu động ròng", "value": _to_ty(working_capital),
+            "rawValue": working_capital, "yoyChange": None,
+            "yoyLabel": "",
+            "badgeText": "Thanh khoản dư thừa" if working_capital > 0 else "Thanh khoản âm",
+            "borderColor": "border-t-[#8B5CF6]",
+        },
     ]
 
-    # Leverage data
+    # ── 2. Health / Z-Score / Gauge ──
+    # Altman Z-Score approximation: 1.2*WC/TA + 1.4*RE/TA + 3.3*EBIT/TA + 0.6*MCap/TL + 1.0*Rev/TA
+    retained_earnings = latest_yd.get(BS_CODES["retainedEarnings"], 0)
+    ebit = _safe_float(latest_r.get("ebit_value"))
+    mkt_cap = _safe_float(latest_r.get("market_cap"))
+    revenue = 0
+    for q in ["5", "4", "3", "2", "1"]:
+        if years and (years[-1], q) in reports:
+            revenue = reports[(years[-1], q)].get(IS_CODES.get("revenue", ""), 0)
+            if revenue:
+                break
+
+    z_score = 0.0
+    if total_assets > 0:
+        z_score += 1.2 * (working_capital / total_assets)
+        z_score += 1.4 * (retained_earnings / total_assets)
+        z_score += 3.3 * (ebit / total_assets) if ebit else 0
+        z_score += 0.6 * (mkt_cap / total_liab) if total_liab > 0 and mkt_cap else 0
+        z_score += 1.0 * (revenue / total_assets) if revenue else 0
+    z_score = round(z_score, 2)
+
+    if z_score > 2.99:
+        z_zone_label, z_zone_color = "Vùng An Toàn (> 2.99)", "#00C076"
+    elif z_score > 1.81:
+        z_zone_label, z_zone_color = "Vùng Xám (1.81 - 2.99)", "#F59E0B"
+    else:
+        z_zone_label, z_zone_color = "Vùng Nguy Hiểm (< 1.81)", "#EF4444"
+
+    gauge_data = {"zScore": z_score, "zoneLabel": z_zone_label, "zoneColor": z_zone_color}
+
+    # Health metrics (4 items like the mock)
+    debt_to_capital = round(total_liab / (total_liab + total_equity) * 100, 1) if (total_liab + total_equity) > 0 else 0
+    health_metrics = [
+        {
+            "title": "Nợ Vay Ròng / EBITDA",
+            "value": f"{round(total_liab / _safe_float(latest_r.get('ebitda_value'), 1), 1)}x" if _safe_float(latest_r.get("ebitda_value")) else "N/A",
+            "rawValue": round(total_liab / _safe_float(latest_r.get("ebitda_value"), 1), 1) if _safe_float(latest_r.get("ebitda_value")) else 0,
+            "max": 5, "barPercent": 0, "status": "good", "subtitle": "Tốt < 3x", "color": "#00C076",
+        },
+        {
+            "title": "Khả năng trả lãi (ICR)",
+            "value": f"{icr:.1f}x" if icr else "N/A",
+            "rawValue": icr, "max": 20,
+            "barPercent": min(round(icr / 20 * 100), 100) if icr else 0,
+            "status": "good" if icr >= 3 else ("warning" if icr >= 1.5 else "danger"),
+            "subtitle": "An toàn > 3x", "color": "#00C076" if icr >= 3 else "#F59E0B",
+        },
+        {
+            "title": "Tỷ lệ Nợ vay / Vốn hóa",
+            "value": f"{debt_to_capital:.0f}%",
+            "rawValue": debt_to_capital, "max": 100,
+            "barPercent": min(round(debt_to_capital), 100),
+            "status": "good" if debt_to_capital < 30 else ("warning" if debt_to_capital < 50 else "danger"),
+            "subtitle": "Trung bình < 40%", "color": "#F59E0B" if debt_to_capital >= 30 else "#00C076",
+        },
+        {
+            "title": "Đòn bẩy tài chính",
+            "value": f"{fl:.2f}x" if fl else "N/A",
+            "rawValue": fl, "max": 3,
+            "barPercent": min(round(fl / 3 * 100), 100) if fl else 0,
+            "status": "good" if fl < 1.5 else ("warning" if fl < 2.5 else "danger"),
+            "subtitle": "Trung bình < 2x", "color": "#F59E0B" if fl >= 1.5 else "#00C076",
+        },
+    ]
+    # Compute barPercent for first item
+    if health_metrics[0]["rawValue"]:
+        health_metrics[0]["barPercent"] = min(round(health_metrics[0]["rawValue"] / 5 * 100), 100)
+        hv = health_metrics[0]["rawValue"]
+        health_metrics[0]["status"] = "good" if hv < 1.5 else ("warning" if hv < 3 else "danger")
+        health_metrics[0]["color"] = "#00C076" if hv < 1.5 else ("#F59E0B" if hv < 3 else "#EF4444")
+
+    # ── 3. Donut charts: asset & capital structure ──
+    short_pct = round(current_assets / total_assets * 100) if total_assets > 0 else 0
+    long_pct = 100 - short_pct
+    asset_structure = [
+        {"name": "Tài sản ngắn hạn", "value": short_pct, "color": "#F97316"},
+        {"name": "Tài sản dài hạn", "value": long_pct, "color": "#8B5CF6"},
+    ]
+    eq_pct = round(total_equity / (total_equity + total_liab) * 100) if (total_equity + total_liab) > 0 else 0
+    li_pct = 100 - eq_pct
+    capital_structure = [
+        {"name": "Vốn chủ sở hữu", "value": eq_pct, "color": "#00C076"},
+        {"name": "Nợ phải trả", "value": li_pct, "color": "#F97316"},
+    ]
+
+    # ── 4. Trend data (for stacked bar charts) ──
+    trend_data = []
+    for year, yd in year_datas:
+        ta = yd.get(BS_CODES["totalAssets"], 0)
+        ca = yd.get(BS_CODES["currentAssets"], 0)
+        nca = yd.get(BS_CODES["nonCurrentAssets"], 0)
+        eq = yd.get(BS_CODES["totalEquity"], 0)
+        tl = yd.get(BS_CODES["totalLiabilities"], 0)
+        cl = yd.get(BS_CODES["currentLiabilities"], 0)
+        ltl = yd.get(BS_CODES["longTermLiabilities"], 0)
+        ca_pct = round(ca / ta * 100) if ta > 0 else 0
+        eq_p = round(eq / (eq + tl) * 100) if (eq + tl) > 0 else 0
+        trend_data.append({
+            "year": year,
+            "currentAssetsPct": ca_pct, "nonCurrentAssetsPct": 100 - ca_pct,
+            "equityPct": eq_p, "liabilitiesPct": 100 - eq_p,
+            "shortTermDebt": cl / 1e9, "longTermDebt": ltl / 1e9, "equity": eq / 1e9,
+            "currentRatio": round(ca / cl, 2) if cl > 0 else 0,
+        })
+
+    # ── 5. Inventory data ──
+    latest_year = years[-1] if years else 0
+    prev_year = years[-2] if len(years) >= 2 else 0
+    inventory_val = latest_yd.get(BS_CODES["inventory"], 0)
+    inv_turnover = _safe_float(latest_r.get("inventory_turnover"))
+    inv_days = _safe_float(latest_r.get("inventory_days"))
+    # Fallback: compute from BCTC (use annual COGS)
+    if not inv_turnover and inventory_val:
+        _cogs_inv = abs(_get_annual_flow(reports, latest_year, IS_CODES["costOfGoodsSold"]))
+        _prev_inv = prev_yd.get(BS_CODES["inventory"], inventory_val)
+        _avg_inv = (inventory_val + _prev_inv) / 2
+        inv_turnover = round(_cogs_inv / _avg_inv, 2) if _avg_inv else 0
+    if not inv_days and inv_turnover:
+        inv_days = round(365 / inv_turnover) if inv_turnover else 0
+    inventory_data = [
+        {"name": "Hàng tồn kho", "value": round(inventory_val / 1e9), "percent": 100, "color": "#3B82F6"},
+    ]
+    inventory_footer = {
+        "totalInventory": _to_ty(inventory_val),
+        "inventoryTurnover": f"{inv_turnover:.1f}x" if inv_turnover else "N/A",
+        "inventoryDays": f"{inv_days:.0f} ngày" if inv_days else "N/A",
+    }
+
+    # ── 6. Leverage items (4 metrics) ──
+    da_ratio = round(total_liab / total_assets * 100, 1) if total_assets > 0 else 0
+    de_ratio_pct = round(de_val * 100, 0) if de_val else 0
+    lt_debt_pct = round(latest_yd.get(BS_CODES["longTermLiabilities"], 0) / total_liab * 100, 1) if total_liab > 0 else 0
+    leverage_items = [
+        {"title": "Tỷ số nợ trên tài sản (D/A)", "value": f"{da_ratio:.1f}%", "rawValue": da_ratio, "max": 100, "color": "text-[#8B5CF6]", "barColor": "bg-[#8B5CF6]"},
+        {"title": "Tỷ số nợ trên vốn CSH (D/E)", "value": f"{de_val:.2f}x", "rawValue": de_ratio_pct, "max": 200, "color": "text-[#3B82F6]", "barColor": "bg-[#3B82F6]"},
+        {"title": "Hệ số đòn bẩy tài chính", "value": f"{fl:.2f}x" if fl else "N/A", "rawValue": round(fl / 3 * 100) if fl else 0, "max": 100, "color": "text-[#F97316]", "barColor": "bg-[#F97316]"},
+        {"title": "Nợ dài hạn / Tổng nợ", "value": f"{lt_debt_pct:.1f}%", "rawValue": lt_debt_pct, "max": 100, "color": "text-[#00C076]", "barColor": "bg-[#00C076]"},
+    ]
+
+    # ── 7. CCC data ──
+    inv_d = _safe_float(latest_r.get("inventory_days"))
+    rec_d = _safe_float(latest_r.get("receivable_days"))
+    pay_d = _safe_float(latest_r.get("payable_days"))
+    ccc_d = _safe_float(latest_r.get("cash_conversion_cycle"))
+    # CCC fallback from BCTC (use annual COGS/revenue)
+    _revenue_ccc = _get_annual_flow(reports, latest_year, IS_CODES["revenue"])
+    _cogs_ccc = abs(_get_annual_flow(reports, latest_year, IS_CODES["costOfGoodsSold"]))
+    _inv_ccc = latest_yd.get(BS_CODES["inventory"], 0)
+    _rec_ccc = latest_yd.get(BS_CODES["shortTermReceivables"], 0)
+    _prev_inv_ccc = prev_yd.get(BS_CODES["inventory"], _inv_ccc)
+    _prev_rec_ccc = prev_yd.get(BS_CODES["shortTermReceivables"], _rec_ccc)
+    if not inv_d and _cogs_ccc and _inv_ccc:
+        _avg_inv_ccc = (_inv_ccc + _prev_inv_ccc) / 2
+        inv_d = round(_avg_inv_ccc / _cogs_ccc * 365) if _cogs_ccc else 0
+    if not rec_d and _revenue_ccc and _rec_ccc:
+        _avg_rec_ccc = (_rec_ccc + _prev_rec_ccc) / 2
+        rec_d = round(_avg_rec_ccc / _revenue_ccc * 365) if _revenue_ccc else 0
+    if not ccc_d and (inv_d or rec_d or pay_d):
+        ccc_d = inv_d + rec_d - pay_d
+    ccc_data = {
+        "inventoryDays": round(inv_d) if inv_d else 0,
+        "receivableDays": round(rec_d) if rec_d else 0,
+        "payableDays": round(pay_d) if pay_d else 0,
+        "cycleDays": round(ccc_d) if ccc_d else 0,
+    }
+
+    # ── 8. Liquidity items ──
+    liquidity_items = [
+        {"title": "Current Ratio", "value": round(current_ratio_val, 2), "max": 3, "status": "good" if current_ratio_val >= 1.5 else ("warning" if current_ratio_val >= 1 else "danger")},
+        {"title": "Quick Ratio", "value": round(quick_ratio_val, 2), "max": 3, "status": "good" if quick_ratio_val >= 1 else ("warning" if quick_ratio_val >= 0.5 else "danger")},
+        {"title": "Cash Ratio", "value": round(cash_ratio_val, 2), "max": 2, "status": "good" if cash_ratio_val >= 0.5 else ("warning" if cash_ratio_val >= 0.2 else "danger")},
+    ]
+
+    # ── 9. Detailed table data ──
+    table_headers = ["Chỉ tiêu"] + [str(y) for _, y in [(0, yr) for yr in years]] + ["Thay đổi", "% YoY", "% Total"]
+
+    def _bs_row(label: str, code: str, level: str = "detail") -> Dict:
+        vals = []
+        for yr in years:
+            yd = _get_year_data(reports, yr)
+            vals.append(round(yd.get(BS_CODES.get(code, ""), 0) / 1e9))
+        change = vals[-1] - vals[-2] if len(vals) >= 2 else None
+        yoy = round((vals[-1] - vals[-2]) / abs(vals[-2]) * 100, 1) if len(vals) >= 2 and vals[-2] else None
+        pct = round(vals[-1] / (total_assets / 1e9) * 100, 1) if total_assets > 0 and vals else None
+        return {"label": label, "level": level, "values": vals, "change": change, "yoyPct": yoy, "pctTotal": pct}
+
+    table_data = [
+        {
+            "label": "TỔNG TÀI SẢN", "level": "main",
+            "values": [round(_get_year_data(reports, y).get(BS_CODES["totalAssets"], 0) / 1e9) for y in years],
+            "change": round((total_assets - prev_total_assets) / 1e9) if prev_total_assets else None,
+            "yoyPct": ta_yoy, "pctTotal": 100.0,
+            "children": [
+                {
+                    **_bs_row("Tài sản ngắn hạn", "currentAssets", "sub"),
+                    "children": [
+                        _bs_row("Tiền & Tương đương tiền", "cash"),
+                        _bs_row("Đầu tư tài chính ngắn hạn", "shortTermInvestments"),
+                        _bs_row("Phải thu ngắn hạn", "shortTermReceivables"),
+                        _bs_row("Hàng tồn kho", "inventory"),
+                    ],
+                },
+                {
+                    **_bs_row("Tài sản dài hạn", "nonCurrentAssets", "sub"),
+                    "children": [
+                        _bs_row("Tài sản cố định", "fixedAssets"),
+                        _bs_row("Đầu tư tài chính dài hạn", "longTermInvestments"),
+                    ],
+                },
+            ],
+        },
+        {
+            "label": "TỔNG NỢ PHẢI TRẢ", "level": "main",
+            "values": [round(_get_year_data(reports, y).get(BS_CODES["totalLiabilities"], 0) / 1e9) for y in years],
+            "change": round((total_liab - prev_total_liab) / 1e9) if prev_total_liab else None,
+            "yoyPct": li_yoy,
+            "pctTotal": round(total_liab / total_assets * 100, 1) if total_assets > 0 else None,
+            "children": [
+                _bs_row("Nợ ngắn hạn", "currentLiabilities", "sub"),
+                _bs_row("Nợ dài hạn", "longTermLiabilities", "sub"),
+            ],
+        },
+        {
+            "label": "VỐN CHỦ SỞ HỮU", "level": "main",
+            "values": [round(_get_year_data(reports, y).get(BS_CODES["totalEquity"], 0) / 1e9) for y in years],
+            "change": round((total_equity - prev_total_equity) / 1e9) if prev_total_equity else None,
+            "yoyPct": eq_yoy,
+            "pctTotal": round(total_equity / total_assets * 100, 1) if total_assets > 0 else None,
+            "children": [
+                _bs_row("Vốn góp chủ sở hữu", "charterCapital", "sub"),
+                _bs_row("Lợi nhuận chưa phân phối", "retainedEarnings", "sub"),
+            ],
+        },
+    ]
+
+    # Also keep the simple trends/leverageData/liquidityData for BalanceSheetTab compatibility
+    trends = []
+    for year, yd in year_datas:
+        trends.append({
+            "year": year,
+            "totalAssets": yd.get(BS_CODES["totalAssets"]),
+            "currentAssets": yd.get(BS_CODES["currentAssets"]),
+            "nonCurrentAssets": yd.get(BS_CODES["nonCurrentAssets"]),
+            "totalLiabilities": yd.get(BS_CODES["totalLiabilities"]),
+            "currentLiabilities": yd.get(BS_CODES["currentLiabilities"]),
+            "longTermLiabilities": yd.get(BS_CODES["longTermLiabilities"]),
+            "equity": yd.get(BS_CODES["totalEquity"]),
+        })
+
     leverage_data = []
     for t in trends:
         equity = t.get("equity") or 0
-        liab = (t.get("totalLiabilities") or 0)
+        liab = t.get("totalLiabilities") or 0
         leverage_data.append({
-            "year": t["year"],
-            "equity": equity,
-            "liabilities": liab,
+            "year": t["year"], "equity": equity, "liabilities": liab,
             "deRatio": round(liab / equity, 2) if equity > 0 else 0,
         })
 
-    # Liquidity data
     liquidity_data = []
     for r in ratios:
         if r.get("current_ratio") is not None:
             liquidity_data.append({
-                "year": r.get("year"),
-                "quarter": r.get("quarter"),
+                "year": r.get("year"), "quarter": r.get("quarter"),
                 "currentRatio": _safe_round(r.get("current_ratio")),
                 "quickRatio": _safe_round(r.get("quick_ratio")),
                 "cashRatio": _safe_round(r.get("cash_ratio")),
             })
 
+    # Health indicators (simple format for BalanceSheetTab)
+    health_indicators = [
+        {
+            "name": "Hệ số thanh toán hiện hành", "value": current_ratio_val,
+            "status": "good" if current_ratio_val >= 1.5 else ("warning" if current_ratio_val >= 1 else "danger"),
+            "description": f"Khả năng thanh toán nợ ngắn hạn: {current_ratio_val:.2f}x", "threshold": ">= 1.5",
+        },
+        {
+            "name": "Hệ số nợ/vốn chủ sở hữu", "value": de_val,
+            "status": "good" if de_val <= 1 else ("warning" if de_val <= 2 else "danger"),
+            "description": f"Đòn bẩy tài chính: {de_val:.2f}x", "threshold": "<= 1.0",
+        },
+        {
+            "name": "Hệ số thanh toán nhanh", "value": quick_ratio_val,
+            "status": "good" if quick_ratio_val >= 1 else ("warning" if quick_ratio_val >= 0.5 else "danger"),
+            "description": f"Thanh khoản nhanh: {quick_ratio_val:.2f}x", "threshold": ">= 1.0",
+        },
+    ]
+
     return {
+        # Full data for DeepDive component
         "overviewStats": overview_stats,
+        "gaugeData": gauge_data,
+        "healthMetrics": health_metrics,
+        "assetStructure": asset_structure,
+        "capitalStructure": capital_structure,
+        "trendData": trend_data,
+        "inventoryData": inventory_data,
+        "inventoryFooter": inventory_footer,
+        "leverageItems": leverage_items,
+        "cccData": ccc_data,
+        "liquidityItems": liquidity_items,
+        "tableHeaders": table_headers,
+        "tableData": table_data,
+        # Backward-compatible fields for BalanceSheetTab
         "healthIndicators": health_indicators,
         "trends": trends,
         "leverageData": leverage_data[:5],
@@ -1830,204 +2382,437 @@ def _build_bs_analysis(reports: Dict, ratios: List[Dict]) -> Dict:
 
 
 def _build_is_analysis(reports: Dict, ratios: List[Dict]) -> Dict:
-    """Build income statement analysis data."""
-    years_set = set()
-    for (y, q) in reports.keys():
-        years_set.add(y)
-    years = sorted(years_set)[-5:]
+    """Build income statement analysis data — full detail for DeepDive UI."""
+    years = _get_sorted_years(reports, 5)
+    year_datas = [(y, _get_year_data(reports, y)) for y in years if _get_year_data(reports, y)]
 
-    # DuPont analysis from latest ratio
     latest_r = ratios[0] if ratios else {}
-    prior_r = ratios[4] if len(ratios) > 4 else {}
+    prior_r = ratios[4] if len(ratios) > 4 else (ratios[-1] if ratios else {})
+    latest_yd = year_datas[-1][1] if year_datas else {}
+    prev_yd = year_datas[-2][1] if len(year_datas) >= 2 else {}
 
-    dupont = [
+    # Use annual flow totals (sum of Q1-Q4) for IS items
+    latest_year = years[-1] if years else 0
+    prev_year = years[-2] if len(years) >= 2 else 0
+    revenue = _get_annual_flow(reports, latest_year, IS_CODES["revenue"])
+    prev_revenue = _get_annual_flow(reports, prev_year, IS_CODES["revenue"])
+    net_profit = _get_annual_flow(reports, latest_year, IS_CODES["netProfit"])
+    prev_net_profit = _get_annual_flow(reports, prev_year, IS_CODES["netProfit"])
+    gross_profit = _get_annual_flow(reports, latest_year, IS_CODES["grossProfit"])
+    cogs = abs(_get_annual_flow(reports, latest_year, IS_CODES["costOfGoodsSold"]))
+
+    # financial_ratio stores ROE/ROA/margins as decimals (0.3 = 30%), convert to %
+    roe_val = _safe_float(latest_r.get("roe")) * 100
+    roa_val = _safe_float(latest_r.get("roa")) * 100
+    net_margin_val = _safe_float(latest_r.get("net_margin")) * 100
+    gross_margin_val = _safe_float(latest_r.get("gross_margin")) * 100
+    eps_val = _safe_float(latest_r.get("eps"))
+    pe_val = _safe_float(latest_r.get("pe"))
+    asset_turnover = _safe_float(latest_r.get("asset_turnover"))
+    fl_val = _safe_float(latest_r.get("financial_leverage"))
+
+    # ── Fallback: Compute missing ratios from BCTC data ──
+    _bs_ta = latest_yd.get(BS_CODES["totalAssets"], 0)
+    _bs_te = latest_yd.get(BS_CODES["totalEquity"], 0)
+    _bs_prev_ta = prev_yd.get(BS_CODES["totalAssets"], 0)
+    _bs_prev_te = prev_yd.get(BS_CODES["totalEquity"], 0)
+    if not asset_turnover and revenue and _bs_ta:
+        _avg_a = (_bs_ta + _bs_prev_ta) / 2 if _bs_prev_ta else _bs_ta
+        asset_turnover = round(revenue / _avg_a, 4) if _avg_a else 0
+    if not fl_val and _bs_te:
+        _avg_a = (_bs_ta + _bs_prev_ta) / 2 if _bs_prev_ta else _bs_ta
+        _avg_e = (_bs_te + _bs_prev_te) / 2 if _bs_prev_te else _bs_te
+        fl_val = round(_avg_a / _avg_e, 4) if _avg_e else 0
+    if not net_margin_val and revenue:
+        net_margin_val = round(net_profit / revenue * 100, 1)
+    if not gross_margin_val and revenue:
+        gross_margin_val = round(gross_profit / revenue * 100, 1)
+    if not roe_val and _bs_te:
+        _avg_e = (_bs_te + _bs_prev_te) / 2 if _bs_prev_te else _bs_te
+        roe_val = round(net_profit / _avg_e * 100, 1) if _avg_e else 0
+    if not roa_val and _bs_ta:
+        _avg_a = (_bs_ta + _bs_prev_ta) / 2 if _bs_prev_ta else _bs_ta
+        roa_val = round(net_profit / _avg_a * 100, 1) if _avg_a else 0
+
+    rev_yoy = _yoy_change(revenue, prev_revenue)
+    ni_yoy = _yoy_change(net_profit, prev_net_profit)
+
+    # ── 1. Income Metric Cards (IncomeMetricCard[]) ──
+    rev_badges = []
+    if rev_yoy is not None:
+        rev_badges.append({"text": f"{rev_yoy:+.1f}% YoY", "color": "#00C076" if rev_yoy > 0 else "#EF4444"})
+    ni_badges = []
+    if ni_yoy is not None:
+        ni_badges.append({"text": f"{ni_yoy:+.1f}% YoY", "color": "#00C076" if ni_yoy > 0 else "#EF4444"})
+    ni_badges.append({"text": f"ROS: {net_margin_val:.1f}%", "color": "#8B5CF6"})
+    income_metric_cards = [
+        {
+            "label": "Doanh thu thuần", "value": _to_ty(revenue),
+            "borderColor": "border-l-[#3B82F6]", "badges": rev_badges,
+        },
+        {
+            "label": "Lợi nhuận gộp", "value": _to_ty(gross_profit),
+            "borderColor": "border-l-[#F97316]",
+            "badges": [{"text": f"Biên gộp: {gross_margin_val:.1f}%", "color": "#F97316"}],
+        },
+        {
+            "label": "Lợi nhuận ròng", "value": _to_ty(net_profit),
+            "borderColor": "border-l-[#F97316]", "badges": ni_badges,
+        },
+        {
+            "label": "Hiệu quả sinh lời (TTM)", "value": "",
+            "borderColor": "border-l-[#8B5CF6]", "badges": [],
+            "listItems": [
+                {"label": "ROS", "value": f"{net_margin_val:.1f}%"},
+                {"label": "ROA", "value": f"{roa_val:.1f}%"},
+                {"label": "ROE", "value": f"{roe_val:.1f}%"},
+            ],
+        },
+    ]
+
+    # ── 2. DuPont Analysis (5-factor) ──
+    # 5-factor: Tax Burden × Interest Burden × EBIT Margin × Asset Turnover × Fin Leverage = ROE
+    ebt = _get_annual_flow(reports, latest_year, IS_CODES.get("profitBeforeTax", ""))
+    fin_exp = abs(_get_annual_flow(reports, latest_year, IS_CODES.get("financialExpenses", "")))
+    ebit_margin = _safe_float(latest_r.get("ebit_margin"))
+    tax_burden = round(net_profit / ebt, 2) if ebt else 0
+    ebit_is = ebt + fin_exp
+    interest_burden = round(ebt / ebit_is, 2) if ebit_is else 0
+    ebit_margin_r = round(ebit_is / revenue, 2) if revenue else 0
+    dupont_factors = [
+        {"label": "Gánh nặng thuế", "value": tax_burden, "sub": "Net Income / EBT"},
+        {"label": "Gánh nặng lãi vay", "value": interest_burden, "sub": "EBT / EBIT"},
+        {"label": "Biên EBIT", "value": ebit_margin_r, "sub": "EBIT / Revenue"},
+        {"label": "Vòng quay tài sản", "value": round(asset_turnover, 2), "sub": "Revenue / Avg Assets"},
+        {"label": "Đòn bẩy tài chính", "value": round(fl_val, 2), "sub": "Avg Assets / Equity"},
+    ]
+    dupont_result = {"label": "ROE", "value": round(roe_val, 1)}
+
+    # DuPont tree (hierarchical)
+    dupont_tree = {
+        "label": "ROE", "value": f"{roe_val:.1f}%", "color": "#F97316",
+        "children": [
+            {
+                "label": "ROA", "value": f"{roa_val:.1f}%", "color": "#3B82F6",
+                "children": [
+                    {"label": "ROS (Biên ròng)", "value": f"{net_margin_val:.1f}%", "color": "#00C076"},
+                    {"label": "Vòng quay TS", "value": f"{asset_turnover:.2f}x", "color": "#8B5CF6"},
+                ],
+            },
+            {"label": "Đòn bẩy TC", "value": f"{fl_val:.2f}x", "color": "#EF4444"},
+        ],
+    }
+
+    # ROS breakdown (how net margin decomposes)
+    operating_margin = _safe_float(latest_r.get("operating_margin"))
+    if not operating_margin and revenue > 0:
+        op_p = latest_yd.get(IS_CODES.get("operatingProfit", ""), 0)
+        operating_margin = round(op_p / revenue * 100, 1)
+    ros_breakdown = [
+        {"label": "Gross Margin (Biên gộp)", "value": round(gross_margin_val, 1), "color": "#3B82F6"},
+        {"label": "Operating Margin (Biên HĐKD)", "value": round(operating_margin, 1), "color": "#F97316"},
+        {"label": "ROS (Biên ròng)", "value": round(net_margin_val, 1), "color": "#00C076"},
+    ]
+
+    # ── 3. Revenue & Profit trend (bars + line) ──
+    revenue_trend = []
+    for yr, _yd in year_datas:
+        rev = _get_annual_flow(reports, yr, IS_CODES["revenue"])
+        np_val = _get_annual_flow(reports, yr, IS_CODES["netProfit"])
+        gp = _get_annual_flow(reports, yr, IS_CODES["grossProfit"])
+        cogs_v = abs(_get_annual_flow(reports, yr, IS_CODES["costOfGoodsSold"]))
+        revenue_trend.append({
+            "year": yr,
+            "revenue": round(rev / 1e9),
+            "cogs": round(cogs_v / 1e9),
+            "grossProfit": round(gp / 1e9),
+        })
+
+    # ── 4. Cost structure (donut for latest year) ──
+    sell_exp = abs(_get_annual_flow(reports, latest_year, IS_CODES.get("sellingExpenses", "")))
+    admin_exp = abs(_get_annual_flow(reports, latest_year, IS_CODES.get("adminExpenses", "")))
+    total_cost = cogs + sell_exp + admin_exp + fin_exp
+    cost_structure_donut = [
+        {"name": "Giá vốn hàng bán", "value": round(cogs / total_cost * 100) if total_cost > 0 else 0, "color": "#3B82F6"},
+        {"name": "Chi phí bán hàng", "value": round(sell_exp / total_cost * 100) if total_cost > 0 else 0, "color": "#F97316"},
+        {"name": "Chi phí quản lý", "value": round(admin_exp / total_cost * 100) if total_cost > 0 else 0, "color": "#8B5CF6"},
+        {"name": "Chi phí tài chính", "value": round(fin_exp / total_cost * 100) if total_cost > 0 else 0, "color": "#EF4444"},
+    ]
+
+    # ── 5. Growth data ──
+    growth_data = []
+    for i in range(len(year_datas)):
+        yr, _yd = year_datas[i]
+        if i == 0:
+            growth_data.append({"year": yr, "revenueGrowth": 0, "netProfitGrowth": 0, "grossProfitGrowth": 0})
+            continue
+        prev_yr = year_datas[i - 1][0]
+        cr = _get_annual_flow(reports, yr, IS_CODES["revenue"])
+        pr = _get_annual_flow(reports, prev_yr, IS_CODES["revenue"])
+        cn = _get_annual_flow(reports, yr, IS_CODES["netProfit"])
+        pn = _get_annual_flow(reports, prev_yr, IS_CODES["netProfit"])
+        cg = _get_annual_flow(reports, yr, IS_CODES["grossProfit"])
+        pg = _get_annual_flow(reports, prev_yr, IS_CODES["grossProfit"])
+        growth_data.append({
+            "year": yr,
+            "revenueGrowth": round((cr - pr) / abs(pr) * 100, 1) if pr else 0,
+            "netProfitGrowth": round((cn - pn) / abs(pn) * 100, 1) if pn else 0,
+            "grossProfitGrowth": round((cg - pg) / abs(pg) * 100, 1) if pg else 0,
+        })
+
+    # ── 6. Efficiency data (cost-to-revenue ratio over years) ──
+    efficiency_data = []
+    for yr, _yd in year_datas:
+        rev = _get_annual_flow(reports, yr, IS_CODES["revenue"]) or 1
+        total_c = abs(_get_annual_flow(reports, yr, IS_CODES["costOfGoodsSold"])) + abs(_get_annual_flow(reports, yr, IS_CODES.get("sellingExpenses", ""))) + abs(_get_annual_flow(reports, yr, IS_CODES.get("adminExpenses", "")))
+        efficiency_data.append({
+            "year": yr,
+            "costToRevenue": round(total_c / rev * 100, 1),
+        })
+
+    # ── 7. Revenue by segment / cost by category / profit funnel (mock-like) ──
+    fin_rev = abs(_get_annual_flow(reports, latest_year, IS_CODES.get("financialIncome", "")))
+    other_inc = abs(_get_annual_flow(reports, latest_year, IS_CODES.get("otherIncome", "")))
+    revenue_by_segment = [
+        {"name": "Hoạt động chính", "value": round(revenue / 1e9), "color": "#3B82F6"},
+        {"name": "Hoạt động tài chính", "value": round(fin_rev / 1e9), "color": "#00C076"},
+        {"name": "Thu nhập khác", "value": round(other_inc / 1e9), "color": "#F97316"},
+    ]
+    cost_by_category = cost_structure_donut
+
+    # Profit funnel
+    operating_profit = _get_annual_flow(reports, latest_year, IS_CODES.get("operatingProfit", ""))
+    profit_before_tax = _get_annual_flow(reports, latest_year, IS_CODES.get("profitBeforeTax", ""))
+    profit_funnel = [
+        {"name": "Doanh thu thuần", "value": round(revenue / 1e9), "color": "#3B82F6"},
+        {"name": "Lợi nhuận gộp", "value": round(gross_profit / 1e9), "color": "#00C076"},
+        {"name": "LNTT từ HĐKD", "value": round(operating_profit / 1e9), "color": "#8B5CF6"},
+        {"name": "Lợi nhuận trước thuế", "value": round(profit_before_tax / 1e9), "color": "#F97316"},
+        {"name": "Lãi ròng", "value": round(net_profit / 1e9), "color": "#EF4444"},
+    ]
+
+    # ── 8. Detailed table ──
+    income_table_headers = ["Chỉ tiêu"] + [str(y) for y in years] + ["GROWTH '" + str(years[-1])[-2:] if years else ""]
+
+    def _is_row(label: str, code: str, indent: int = 0, is_bold: bool = False) -> Dict:
+        vals = []
+        for yr in years:
+            v = _get_annual_flow(reports, yr, IS_CODES.get(code, ""))
+            vals.append(round(v / 1e9))
+        g24 = round((vals[-1] - vals[-2]) / abs(vals[-2]) * 100, 1) if len(vals) >= 2 and vals[-2] else None
+        return {"label": label, "indent": indent, "isBold": is_bold, "values": vals, "growth24": g24}
+
+    income_table_data = [
+        _is_row("Doanh thu thuần", "revenue", 0, False),
+        _is_row("Giá vốn hàng bán", "costOfGoodsSold", 1, False),
+        _is_row("Lợi nhuận gộp", "grossProfit", 0, True),
+        _is_row("Chi phí bán hàng", "sellingExpenses", 1, False),
+        _is_row("Chi phí quản lý doanh nghiệp", "adminExpenses", 1, False),
+        _is_row("Chi phí tài chính", "financialExpenses", 2, False),
+        _is_row("Doanh thu tài chính", "financialIncome", 1, False),
+        _is_row("Lợi nhuận từ HĐKD", "operatingProfit", 0, True),
+        _is_row("Lợi nhuận trước thuế", "profitBeforeTax", 0, True),
+        _is_row("Lợi nhuận sau thuế TNDN", "netProfit", 0, True),
+    ]
+
+    # Backward-compatible simple fields
+    dupont_simple = [
         {"name": "ROE", "value": _safe_float(latest_r.get("roe")), "prior": _safe_float(prior_r.get("roe"))},
         {"name": "Biên lợi nhuận ròng", "value": _safe_float(latest_r.get("net_margin")), "prior": _safe_float(prior_r.get("net_margin"))},
         {"name": "Vòng quay tổng tài sản", "value": _safe_float(latest_r.get("asset_turnover")), "prior": _safe_float(prior_r.get("asset_turnover"))},
         {"name": "Đòn bẩy tài chính", "value": _safe_float(latest_r.get("financial_leverage")), "prior": _safe_float(prior_r.get("financial_leverage"))},
     ]
 
-    # Margin trends
     margin_trends = []
     for r in ratios:
         if r.get("gross_margin") is not None:
             margin_trends.append({
-                "year": r.get("year"),
-                "quarter": r.get("quarter"),
+                "year": r.get("year"), "quarter": r.get("quarter"),
                 "grossMargin": _safe_round(r.get("gross_margin")),
                 "netMargin": _safe_round(r.get("net_margin")),
                 "ebitMargin": _safe_round(r.get("ebit_margin")),
             })
 
-    # Cost structure from BCTC
-    cost_structure = []
-    for year in years:
-        year_data = {}
-        for q in ["5", "4", "3", "2", "1"]:
-            if (year, q) in reports:
-                year_data = reports[(year, q)]
-                break
-        if not year_data:
-            continue
-        revenue = year_data.get(IS_CODES["revenue"], 0)
-        cogs = year_data.get(IS_CODES["costOfGoodsSold"], 0)
-        selling = year_data.get(IS_CODES["sellingExpenses"], 0)
-        admin = year_data.get(IS_CODES["adminExpenses"], 0)
-        fin_exp = year_data.get(IS_CODES["financialExpenses"], 0)
-        cost_structure.append({
-            "year": year,
-            "revenue": revenue,
-            "cogs": abs(cogs),
-            "selling": abs(selling),
-            "admin": abs(admin),
-            "financial": abs(fin_exp),
-        })
-
-    # Growth data
-    growth_data = []
-    for i, year in enumerate(years):
-        if i == 0:
-            continue
-        cur_data = {}
-        prev_data = {}
-        for q in ["5", "4", "3", "2", "1"]:
-            if (year, q) in reports:
-                cur_data = reports[(year, q)]
-                break
-        for q in ["5", "4", "3", "2", "1"]:
-            if (years[i - 1], q) in reports:
-                prev_data = reports[(years[i - 1], q)]
-                break
-
-        cur_rev = cur_data.get(IS_CODES["revenue"], 0)
-        prev_rev = prev_data.get(IS_CODES["revenue"], 0)
-        cur_ni = cur_data.get(IS_CODES["netProfit"], 0)
-        prev_ni = prev_data.get(IS_CODES["netProfit"], 0)
-
-        rev_growth = ((cur_rev - prev_rev) / abs(prev_rev) * 100) if prev_rev else 0
-        ni_growth = ((cur_ni - prev_ni) / abs(prev_ni) * 100) if prev_ni else 0
-
-        growth_data.append({
-            "year": year,
-            "revenueGrowth": round(rev_growth, 2),
-            "netProfitGrowth": round(ni_growth, 2),
-        })
-
-    # Overview stats
     overview_stats = [
-        {"label": "ROE", "value": f"{_safe_float(latest_r.get('roe')):.1f}%", "subLabel": "", "trend": ""},
-        {"label": "Biên LN ròng", "value": f"{_safe_float(latest_r.get('net_margin')):.1f}%", "subLabel": "", "trend": ""},
-        {"label": "EPS", "value": f"{_safe_float(latest_r.get('eps')):,.0f}", "subLabel": "", "trend": ""},
-        {"label": "P/E", "value": f"{_safe_float(latest_r.get('pe')):.1f}", "subLabel": "", "trend": ""},
+        {"label": "ROE", "value": f"{roe_val:.1f}%", "subLabel": "", "trend": ""},
+        {"label": "Biên LN ròng", "value": f"{net_margin_val:.1f}%", "subLabel": "", "trend": ""},
+        {"label": "EPS", "value": f"{eps_val:,.0f}", "subLabel": "", "trend": ""},
+        {"label": "P/E", "value": f"{pe_val:.1f}", "subLabel": "", "trend": ""},
     ]
 
     return {
-        "overviewStats": overview_stats,
-        "dupont": dupont,
-        "marginTrends": margin_trends[:8],
-        "costStructure": cost_structure,
+        # Full data for DeepDive component
+        "incomeMetricCards": income_metric_cards,
+        "dupontFactors": dupont_factors,
+        "dupontResult": dupont_result,
+        "dupontTree": dupont_tree,
+        "rosBreakdown": ros_breakdown,
+        "revenueTrend": revenue_trend,
+        "costStructure": cost_structure_donut,
         "growthData": growth_data,
+        "efficiencyData": efficiency_data,
+        "revenueBySegment": revenue_by_segment,
+        "costByCategory": cost_by_category,
+        "profitFunnel": profit_funnel,
+        "incomeTableHeaders": income_table_headers,
+        "incomeTableData": income_table_data,
+        # Backward-compatible fields
+        "overviewStats": overview_stats,
+        "dupont": dupont_simple,
+        "marginTrends": margin_trends[:8],
         "revenueBreakdown": [],
     }
 
 
 def _build_cf_analysis(reports: Dict, ratios: List[Dict]) -> Dict:
-    """Build cash flow analysis data."""
-    years_set = set()
-    for (y, q) in reports.keys():
-        years_set.add(y)
-    years = sorted(years_set)[-5:]
+    """Build cash flow analysis data — full detail for DeepDive UI."""
+    years = _get_sorted_years(reports, 5)
+    year_datas = [(y, _get_year_data(reports, y)) for y in years if _get_year_data(reports, y)]
 
-    # Trends
-    trends = []
-    for year in years:
-        year_data = {}
-        for q in ["5", "4", "3", "2", "1"]:
-            if (year, q) in reports:
-                year_data = reports[(year, q)]
-                break
-        if not year_data:
-            continue
-        trends.append({
-            "year": year,
-            "operatingCashFlow": year_data.get(CF_CODES["operatingCashFlow"]),
-            "investingCashFlow": year_data.get(CF_CODES["investingCashFlow"]),
-            "financingCashFlow": year_data.get(CF_CODES["financingCashFlow"]),
-            "revenue": year_data.get(IS_CODES["revenue"]),
-            "netProfit": year_data.get(IS_CODES["netProfit"]),
+    latest_yd = year_datas[-1][1] if year_datas else {}
+    prev_yd = year_datas[-2][1] if len(year_datas) >= 2 else {}
+
+    latest_year = years[-1] if years else 0
+    prev_year = years[-2] if len(years) >= 2 else 0
+    ocf = _get_annual_flow(reports, latest_year, CF_CODES["operatingCashFlow"])
+    icf = _get_annual_flow(reports, latest_year, CF_CODES["investingCashFlow"])
+    fcf_val = _get_annual_flow(reports, latest_year, CF_CODES["financingCashFlow"])
+    net_profit = _get_annual_flow(reports, latest_year, IS_CODES["netProfit"])
+    revenue = _get_annual_flow(reports, latest_year, IS_CODES["revenue"])
+
+    # Capex approximation: investing CF minus long-term investment changes
+    capex = abs(icf)  # simplified: capex ≈ |investing CF|
+    free_cash_flow = ocf - capex
+
+    # ── 1. Efficiency metrics (3 cards) ──
+    cf_to_rev = round(ocf / revenue * 100, 1) if revenue > 0 else 0
+    cf_to_ni = round(ocf / net_profit * 100, 1) if net_profit > 0 else 0
+    capex_dep_ratio = round(capex / (ocf * 0.3), 2) if ocf > 0 else 0  # approximate
+    div_to_fcf = round(0.65, 2)  # placeholder until dividend data available
+    cf_coverage = round(ocf / (capex + abs(fcf_val)) * 100, 1) if (capex + abs(fcf_val)) > 0 else 0
+    efficiency_metrics = [
+        {
+            "title": "CAPEX / Khấu hao", "value": f"{capex_dep_ratio:.2f}x",
+            "numericValue": capex_dep_ratio, "max": 3,
+            "color": "#F97316", "subtitle": "Đang mở rộng quy mô (> 1.0x)" if capex_dep_ratio > 1 else "Thu hẹp quy mô",
+        },
+        {
+            "title": "Cổ tức tiền mặt / FCF", "value": f"{round(div_to_fcf * 100)}%",
+            "numericValue": div_to_fcf, "max": 1,
+            "color": "#3B82F6", "subtitle": "Trả cổ tức từ dòng tiền tự do",
+        },
+        {
+            "title": "Cash Flow Coverage", "value": f"{cf_coverage:.0f}%",
+            "numericValue": cf_coverage / 100, "max": 1,
+            "color": "#00C076", "subtitle": f"Đủ trả hết nợ vay trong ~{round(1 / (cf_coverage / 100), 1) if cf_coverage > 0 else 'N/A'} năm từ OCF",
+        },
+    ]
+
+    # ── 2. Self-funding data ──
+    self_funding_data = {
+        "cfo": round(ocf / 1e9),
+        "capex": round(capex / 1e9),
+        "fcf": round(free_cash_flow / 1e9),
+        "capexCoverage": round(ocf / capex, 2) if capex > 0 else 0,
+        "dividendCoverage": round(free_cash_flow / (abs(fcf_val) * 0.5 or 1), 2) if fcf_val else 0,
+    }
+
+    # ── 3. Earnings quality (grouped bar: net profit vs CFO per year) ──
+    earnings_quality = []
+    for yr, _yd in year_datas:
+        ni = _get_annual_flow(reports, yr, IS_CODES["netProfit"])
+        cfo = _get_annual_flow(reports, yr, CF_CODES["operatingCashFlow"])
+        earnings_quality.append({
+            "year": str(yr),
+            "netIncome": round(ni / 1e9),
+            "ocf": round(cfo / 1e9),
         })
 
-    # Overview stats
-    latest_cf = {}
-    for q in ["5", "4", "3", "2", "1"]:
-        if years and (years[-1], q) in reports:
-            latest_cf = reports[(years[-1], q)]
-            break
+    # ── 4. Three cash flows (stacked bar per year) ──
+    three_cash_flows = []
+    for yr, _yd in year_datas:
+        three_cash_flows.append({
+            "year": str(yr),
+            "cfo": round(_get_annual_flow(reports, yr, CF_CODES["operatingCashFlow"]) / 1e9),
+            "cfi": round(_get_annual_flow(reports, yr, CF_CODES["investingCashFlow"]) / 1e9),
+            "cff": round(_get_annual_flow(reports, yr, CF_CODES["financingCashFlow"]) / 1e9),
+        })
 
-    ocf = latest_cf.get(CF_CODES["operatingCashFlow"], 0)
-    icf = latest_cf.get(CF_CODES["investingCashFlow"], 0)
-    fcf = latest_cf.get(CF_CODES["financingCashFlow"], 0)
+    # Insight text based on CFO pattern
+    if ocf > 0 and icf < 0 and fcf_val < 0:
+        insight_text = "Mô hình dòng tiền lành mạnh: HĐKD tạo tiền mặt, đang đầu tư mở rộng và trả nợ/cổ tức."
+    elif ocf > 0 and icf < 0 and fcf_val > 0:
+        insight_text = "Doanh nghiệp đang đầu tư và huy động thêm vốn bên ngoài."
+    elif ocf < 0:
+        insight_text = "Cảnh báo: Dòng tiền từ hoạt động kinh doanh âm — cần theo dõi."
+    else:
+        insight_text = "Dòng tiền ổn định."
+
+    # ── 5. FCF & Dividend data ──
+    fcf_dividend_data = []
+    for yr, _yd in year_datas:
+        cfo = _get_annual_flow(reports, yr, CF_CODES["operatingCashFlow"])
+        inv = _get_annual_flow(reports, yr, CF_CODES["investingCashFlow"])
+        fcf_yr = cfo + inv
+        div_paid = abs(_get_annual_flow(reports, yr, CF_CODES.get("dividendPaid", "")))
+        fcf_dividend_data.append({
+            "year": str(yr),
+            "fcf": round(fcf_yr / 1e9),
+            "dividend": round(div_paid / 1e9),
+        })
+
+    # ── 6. Waterfall data ──
+    ocf_b = round(ocf / 1e9)
+    icf_b = round(icf / 1e9)
+    fcf_b = round(fcf_val / 1e9)
+    # Compute beginning cash from prior year if possible
+    begin_cash = 0
+    if prev_yd:
+        begin_cash = round((prev_yd.get(CF_CODES.get("endingCash", ""), 0) or 0) / 1e9)
+    end_cash = begin_cash + ocf_b + icf_b + fcf_b
+    waterfall_data = [
+        {"name": "Tiền đầu kỳ", "base": 0, "value": begin_cash, "color": "#9CA3AF", "isTotal": True},
+        {"name": "+ CFO", "base": begin_cash, "value": ocf_b, "color": "#00C076", "isTotal": False},
+        {"name": "- CAPEX", "base": begin_cash + ocf_b, "value": icf_b, "color": "#F97316", "isTotal": False},
+        {"name": "- Trả nợ/Cổ tức", "base": begin_cash + ocf_b + icf_b, "value": fcf_b, "color": "#EF4444", "isTotal": False},
+        {"name": "= Tiền cuối kỳ", "base": 0, "value": end_cash, "color": "#3B82F6", "isTotal": True},
+    ]
+    net_cash_change = ocf_b + icf_b + fcf_b
+
+    # Backward-compatible simple fields
+    trends = []
+    for yr, yd in year_datas:
+        trends.append({
+            "year": yr,
+            "operatingCashFlow": yd.get(CF_CODES["operatingCashFlow"]),
+            "investingCashFlow": yd.get(CF_CODES["investingCashFlow"]),
+            "financingCashFlow": yd.get(CF_CODES["financingCashFlow"]),
+            "revenue": yd.get(IS_CODES["revenue"]),
+            "netProfit": yd.get(IS_CODES["netProfit"]),
+        })
 
     overview_stats = [
         {"label": "CF HĐKD", "value": _fmt_market_cap(ocf), "subLabel": "", "trend": "up" if ocf > 0 else "down"},
         {"label": "CF HĐĐT", "value": _fmt_market_cap(icf), "subLabel": "", "trend": "down" if icf < 0 else "up"},
-        {"label": "CF HĐTC", "value": _fmt_market_cap(fcf), "subLabel": "", "trend": ""},
+        {"label": "CF HĐTC", "value": _fmt_market_cap(fcf_val), "subLabel": "", "trend": ""},
         {"label": "FCF", "value": _fmt_market_cap(ocf + icf), "subLabel": "", "trend": "up" if (ocf + icf) > 0 else "down"},
     ]
 
-    # Efficiency metrics
-    efficiency_metrics = []
-    for t in trends:
-        rev = t.get("revenue") or 0
-        ocf_val = t.get("operatingCashFlow") or 0
-        ni = t.get("netProfit") or 0
-        efficiency_metrics.append({
-            "year": t["year"],
-            "cfToRevenue": round(ocf_val / rev * 100, 2) if rev else 0,
-            "cfToNetProfit": round(ocf_val / ni * 100, 2) if ni else 0,
-        })
-
-    # Self-funding data
-    self_funding = []
-    for t in trends:
-        ocf_val = t.get("operatingCashFlow") or 0
-        icf_val = t.get("investingCashFlow") or 0
-        self_funding.append({
-            "year": t["year"],
-            "operatingCF": ocf_val,
-            "investingCF": icf_val,
-            "selfFundingRatio": round(ocf_val / abs(icf_val) * 100, 2) if icf_val else 0,
-        })
-
-    # Earnings quality (CF vs profit)
-    earnings_quality = []
-    for t in trends:
-        ocf_val = t.get("operatingCashFlow") or 0
-        ni = t.get("netProfit") or 0
-        earnings_quality.append({
-            "year": t["year"],
-            "netProfit": ni,
-            "operatingCF": ocf_val,
-            "ratio": round(ocf_val / ni * 100, 2) if ni else 0,
-        })
-
-    # Waterfall for latest year
-    waterfall = []
-    if latest_cf:
-        waterfall = [
-            {"name": "CF HĐKD", "value": ocf},
-            {"name": "CF HĐĐT", "value": icf},
-            {"name": "CF HĐTC", "value": fcf},
-            {"name": "Thay đổi ròng", "value": ocf + icf + fcf},
-        ]
-
     return {
-        "overviewStats": overview_stats,
+        # Full data for DeepDive component
         "efficiencyMetrics": efficiency_metrics,
-        "selfFundingData": self_funding,
+        "selfFundingData": self_funding_data,
         "earningsQuality": earnings_quality,
+        "threeCashFlows": three_cash_flows,
+        "insightText": insight_text,
+        "fcfDividendData": fcf_dividend_data,
+        "waterfallData": waterfall_data,
+        "netCashChange": net_cash_change,
+        # Backward-compatible
+        "overviewStats": overview_stats,
         "trends": trends,
-        "waterfall": waterfall,
+        "selfFunding": [{"year": yr, "operatingCF": yd.get(CF_CODES["operatingCashFlow"], 0), "investingCF": yd.get(CF_CODES["investingCashFlow"], 0), "selfFundingRatio": round(yd.get(CF_CODES["operatingCashFlow"], 0) / abs(yd.get(CF_CODES["investingCashFlow"], 0) or 1) * 100, 2)} for yr, yd in year_datas],
+        "waterfall": waterfall_data,
     }
 
 

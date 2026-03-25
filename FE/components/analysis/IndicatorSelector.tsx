@@ -39,6 +39,8 @@ const overlayIndicators: IndicatorConfig[] = [
   { id: "vwap", name: "VWAP", icon: <Activity size={14} />, description: "Giá trung bình theo khối lượng" },
   { id: "bollinger", name: "Bollinger Bands", icon: <ArrowLeftRight size={14} />, description: "Dải Bollinger (20, 2)" },
   { id: "ichimoku", name: "Ichimoku Cloud", icon: <Mountain size={14} />, description: "Mây Ichimoku" },
+  { id: "keltner", name: "Keltner Channels", icon: <Waves size={14} />, description: "Kênh Keltner (20, 2)" },
+  { id: "psar", name: "Parabolic SAR", icon: <Activity size={14} />, description: "Dừng và đảo chiều (0.02, 0.2)" },
 ];
 
 const subIndicators: IndicatorConfig[] = [
@@ -49,6 +51,7 @@ const subIndicators: IndicatorConfig[] = [
   { id: "williams", name: "Williams %R", icon: <BarChart3 size={14} />, description: "Williams %R (14)" },
   { id: "cci", name: "CCI", icon: <Activity size={14} />, description: "Commodity Channel Index (20)" },
   { id: "adx", name: "ADX", icon: <TrendingUp size={14} />, description: "Average Directional Index (14)" },
+  { id: "mfi", name: "Money Flow Index", icon: <Activity size={14} />, description: "Chỉ số dòng tiền (14)" },
 ];
 
 const IndicatorSelector: React.FC<IndicatorSelectorProps> = ({

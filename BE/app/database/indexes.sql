@@ -20,6 +20,11 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_hp_ticker_date_close
     ON history_price (ticker, trading_date DESC)
     INCLUDE (close, volume);
 
+-- Expression index for normalized ticker joins (UPPER(BTRIM(ticker))).
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_hp_ticker_norm_date
+    ON history_price ((UPPER(BTRIM(ticker))), trading_date DESC)
+    INCLUDE (close, volume, high, low);
+
 -- ────────────────────────────────────────────────────────────
 -- electric_board — used for MAX(trading_date), sector heatmap
 -- ────────────────────────────────────────────────────────────
@@ -33,6 +38,10 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_eb_ticker_date
     ON electric_board (ticker, trading_date DESC)
     INCLUDE (match_price, ref_price, accumulated_volume, exchange,
              foreign_buy_volume, foreign_sell_volume);
+
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_eb_ticker_norm_date
+    ON electric_board ((UPPER(BTRIM(ticker))), trading_date DESC)
+    INCLUDE (match_price, ref_price, foreign_buy_volume, foreign_sell_volume);
 
 -- For foreign flow GROUP BY trading_date
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_eb_date_match
@@ -51,11 +60,19 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_co_ticker_sector
     ON company_overview (ticker)
     INCLUDE (icb_name2, exchange, organ_short_name);
 
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_co_ticker_norm
+    ON company_overview ((UPPER(BTRIM(ticker))))
+    INCLUDE (icb_name2, icb_name3, exchange, organ_short_name, organ_name);
+
 -- ────────────────────────────────────────────────────────────
 -- financial_ratio — used for DISTINCT ON (ticker) ORDER BY year, quarter
 -- ────────────────────────────────────────────────────────────
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_fr_ticker_period
     ON financial_ratio (ticker, year DESC, quarter DESC)
+    INCLUDE (pe, pb, eps, roe, roa, market_cap, dividend_yield, debt_to_equity);
+
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_fr_ticker_norm_period
+    ON financial_ratio ((UPPER(BTRIM(ticker))), year DESC, quarter DESC)
     INCLUDE (pe, pb, eps, roe, roa, market_cap, dividend_yield, debt_to_equity);
 
 -- ────────────────────────────────────────────────────────────
@@ -89,6 +106,10 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_news_published
 -- bctc: For ticker-specific financial statements — covering index
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_bctc_ticker_period
     ON bctc (ticker, year DESC, quarter DESC)
+    INCLUDE (ind_code, value);
+
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_bctc_ticker_norm_period
+    ON bctc ((UPPER(BTRIM(ticker))), year DESC, quarter DESC)
     INCLUDE (ind_code, value);
 
 -- owner: For shareholder lookup by ticker

@@ -25,61 +25,136 @@ interface MLPredictionProps {
 }
 
 /* ═══════════════════════════════════════════════
-   1. Linear Regression Forecast (OLS)
+   Utility: Solve linear system via Gaussian Elimination
+   For polynomial normal equations (3x3 for degree 2)
+   ═══════════════════════════════════════════════ */
+
+function solveLinearSystem(A: number[][], b: number[]): number[] {
+  const n = A.length;
+  // Augmented matrix
+  const M = A.map((row, i) => [...row, b[i]]);
+
+  for (let col = 0; col < n; col++) {
+    // Partial pivoting
+    let maxRow = col;
+    for (let row = col + 1; row < n; row++) {
+      if (Math.abs(M[row][col]) > Math.abs(M[maxRow][col])) maxRow = row;
+    }
+    [M[col], M[maxRow]] = [M[maxRow], M[col]];
+
+    if (Math.abs(M[col][col]) < 1e-12) continue;
+
+    // Eliminate below
+    for (let row = col + 1; row < n; row++) {
+      const factor = M[row][col] / M[col][col];
+      for (let j = col; j <= n; j++) {
+        M[row][j] -= factor * M[col][j];
+      }
+    }
+  }
+
+  // Back substitution
+  const x = new Array(n).fill(0);
+  for (let row = n - 1; row >= 0; row--) {
+    let sum = M[row][n];
+    for (let j = row + 1; j < n; j++) {
+      sum -= M[row][j] * x[j];
+    }
+    x[row] = Math.abs(M[row][row]) > 1e-12 ? sum / M[row][row] : 0;
+  }
+  return x;
+}
+
+/* ═══════════════════════════════════════════════
+   1. Polynomial Regression Forecast (Degree 2)
+   Higher R² than simple linear regression
    ═══════════════════════════════════════════════ */
 
 interface RegressionResult {
   predictedPrices: { day: number; price: number; lower: number; upper: number }[];
-  slope: number;
+  coefficients: number[]; // [a, b, c] for ax² + bx + c
   r2: number;
   trend: "up" | "down" | "neutral";
   confidence: number;
+  metrics: ClassificationMetrics;
 }
 
-function linearRegressionForecast(
+interface ClassificationMetrics {
+  accuracy: number;
+  precision: number;
+  recall: number;
+  f1: number;
+  totalSamples: number;
+}
+
+function polynomialRegressionForecast(
   ohlcv: OHLCVItem[],
   lookback = 30,
-  forecastDays = 5
+  forecastDays = 5,
+  degree = 2
 ): RegressionResult {
   const prices = ohlcv.slice(-lookback).map((d) => d.close);
   const n = prices.length;
 
-  // X = [0, 1, 2, ..., n-1]
-  let sumX = 0,
-    sumY = 0,
-    sumXY = 0,
-    sumX2 = 0;
+  // Build normal equations for polynomial fit: y = a0 + a1*x + a2*x² (+ a3*x³ ...)
+  const order = degree + 1;
+
+  // Construct X^T * X matrix and X^T * y vector
+  const XtX: number[][] = Array.from({ length: order }, () => new Array(order).fill(0));
+  const Xty: number[] = new Array(order).fill(0);
+
+  // Precompute sums of x^k
+  const powSums: number[] = new Array(2 * degree + 1).fill(0);
   for (let i = 0; i < n; i++) {
-    sumX += i;
-    sumY += prices[i];
-    sumXY += i * prices[i];
-    sumX2 += i * i;
+    let xp = 1;
+    for (let k = 0; k <= 2 * degree; k++) {
+      powSums[k] += xp;
+      xp *= i;
+    }
   }
 
-  const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
-  const intercept = (sumY - slope * sumX) / n;
+  for (let r = 0; r < order; r++) {
+    for (let c = 0; c < order; c++) {
+      XtX[r][c] = powSums[r + c];
+    }
+    // X^T * y
+    for (let i = 0; i < n; i++) {
+      Xty[r] += Math.pow(i, r) * prices[i];
+    }
+  }
+
+  // Solve for coefficients [a0, a1, a2, ...]
+  const coeffs = solveLinearSystem(XtX, Xty);
+
+  // Evaluate polynomial
+  const evalPoly = (x: number) => {
+    let val = 0;
+    for (let k = 0; k < coeffs.length; k++) {
+      val += coeffs[k] * Math.pow(x, k);
+    }
+    return val;
+  };
 
   // R² calculation
-  const meanY = sumY / n;
-  let ssTot = 0,
-    ssRes = 0;
+  const meanY = prices.reduce((a, b) => a + b, 0) / n;
+  let ssTot = 0, ssRes = 0;
   for (let i = 0; i < n; i++) {
-    const yHat = slope * i + intercept;
+    const yHat = evalPoly(i);
     ssTot += (prices[i] - meanY) ** 2;
     ssRes += (prices[i] - yHat) ** 2;
   }
   const r2 = ssTot === 0 ? 0 : 1 - ssRes / ssTot;
 
-  // Standard error for prediction interval
-  const se = Math.sqrt(ssRes / Math.max(n - 2, 1));
+  // Standard error
+  const se = Math.sqrt(ssRes / Math.max(n - order, 1));
 
   // Forecast next days
   const predictedPrices = [];
   for (let d = 1; d <= forecastDays; d++) {
     const x = n - 1 + d;
-    const pred = slope * x + intercept;
-    // ~95% CI: ±1.96 * se * sqrt(1 + 1/n + (x - meanX)² / Σ(xi - meanX)²)
-    const meanX = sumX / n;
+    const pred = evalPoly(x);
+    // Approximate CI: use leverage-like correction
+    const meanX = (n - 1) / 2;
     let ssX = 0;
     for (let i = 0; i < n; i++) ssX += (i - meanX) ** 2;
     const margin = 1.96 * se * Math.sqrt(1 + 1 / n + (x - meanX) ** 2 / (ssX || 1));
@@ -95,12 +170,90 @@ function linearRegressionForecast(
   const currentLast = prices[prices.length - 1];
   const changePct = ((lastPred - currentLast) / currentLast) * 100;
 
+  // Backtesting for classification metrics
+  const metrics = backtestPolynomialRegression(ohlcv, lookback, degree);
+
   return {
     predictedPrices,
-    slope,
-    r2: Math.max(0, r2),
+    coefficients: coeffs,
+    r2: Math.max(0, Math.min(1, r2)),
     trend: changePct > 0.5 ? "up" : changePct < -0.5 ? "down" : "neutral",
     confidence: Math.min(99, Math.max(30, Math.round(r2 * 100))),
+    metrics,
+  };
+}
+
+/* ═══════════════════════════════════════════════
+   Backtesting: Polynomial Regression Classification
+   Rolling window backtest to compute accuracy/precision/recall
+   ═══════════════════════════════════════════════ */
+
+function backtestPolynomialRegression(
+  ohlcv: OHLCVItem[],
+  lookback: number,
+  degree: number
+): ClassificationMetrics {
+  const prices = ohlcv.map((d) => d.close);
+  const n = prices.length;
+  const testWindow = Math.min(60, Math.floor(n * 0.3));
+  const startIdx = Math.max(lookback + 1, n - testWindow);
+
+  let tp = 0, fp = 0, tn = 0, fn = 0;
+
+  for (let t = startIdx; t < n - 1; t++) {
+    const windowPrices = prices.slice(Math.max(0, t - lookback), t);
+    const wn = windowPrices.length;
+    if (wn < 10) continue;
+
+    // Fit polynomial on window
+    const order = degree + 1;
+    const powSums: number[] = new Array(2 * degree + 1).fill(0);
+    for (let i = 0; i < wn; i++) {
+      let xp = 1;
+      for (let k = 0; k <= 2 * degree; k++) {
+        powSums[k] += xp;
+        xp *= i;
+      }
+    }
+
+    const XtX: number[][] = Array.from({ length: order }, () => new Array(order).fill(0));
+    const Xty: number[] = new Array(order).fill(0);
+    for (let r = 0; r < order; r++) {
+      for (let c = 0; c < order; c++) {
+        XtX[r][c] = powSums[r + c];
+      }
+      for (let i = 0; i < wn; i++) {
+        Xty[r] += Math.pow(i, r) * windowPrices[i];
+      }
+    }
+
+    const coeffs = solveLinearSystem(XtX, Xty);
+
+    // Predict next day direction
+    const nextX = wn;
+    let pred = 0;
+    for (let k = 0; k < coeffs.length; k++) {
+      pred += coeffs[k] * Math.pow(nextX, k);
+    }
+
+    const predictedUp = pred > windowPrices[wn - 1];
+    const actualUp = prices[t + 1] > prices[t];
+
+    if (predictedUp && actualUp) tp++;
+    else if (predictedUp && !actualUp) fp++;
+    else if (!predictedUp && !actualUp) tn++;
+    else fn++;
+  }
+
+  const total = tp + fp + tn + fn;
+  return {
+    accuracy: total > 0 ? Math.round(((tp + tn) / total) * 100) : 0,
+    precision: tp + fp > 0 ? Math.round((tp / (tp + fp)) * 100) : 0,
+    recall: tp + fn > 0 ? Math.round((tp / (tp + fn)) * 100) : 0,
+    f1: tp + fp > 0 && tp + fn > 0
+      ? Math.round((2 * tp / (2 * tp + fp + fn)) * 100)
+      : 0,
+    totalSamples: total,
   };
 }
 
@@ -114,6 +267,7 @@ interface PatternResult {
   avgReturn: number;
   matchCount: number;
   historicalWinRate: number;
+  metrics: ClassificationMetrics;
 }
 
 function knnPatternPrediction(
@@ -131,6 +285,7 @@ function knnPatternPrediction(
       avgReturn: 0,
       matchCount: 0,
       historicalWinRate: 50,
+      metrics: { accuracy: 0, precision: 0, recall: 0, f1: 0, totalSamples: 0 },
     };
   }
 
@@ -180,6 +335,7 @@ function knnPatternPrediction(
       avgReturn: 0,
       matchCount: 0,
       historicalWinRate: 50,
+      metrics: { accuracy: 0, precision: 0, recall: 0, f1: 0, totalSamples: 0 },
     };
   }
 
@@ -210,14 +366,138 @@ function knnPatternPrediction(
     Math.max(30, Math.round(Math.abs(avgReturn) * 50 + winRate * 0.5))
   );
 
+  // Backtesting for classification metrics
+  const metrics = backtestKNN(ohlcv, patternLength, k);
+
   return {
     direction,
     probability,
     avgReturn: Math.round(avgReturn * 100) / 100,
     matchCount: kNearest.length,
     historicalWinRate: Math.round(historicalWinRate),
+    metrics,
   };
 }
+
+/* ═══════════════════════════════════════════════
+   Backtesting: KNN Classification
+   ═══════════════════════════════════════════════ */
+
+function backtestKNN(
+  ohlcv: OHLCVItem[],
+  patternLength: number,
+  k: number
+): ClassificationMetrics {
+  const prices = ohlcv.map((d) => d.close);
+  const n = prices.length;
+  const testWindow = Math.min(60, Math.floor(n * 0.3));
+  const startIdx = Math.max(patternLength + k + 2, n - testWindow);
+
+  let tp = 0, fp = 0, tn = 0, fn = 0;
+
+  for (let t = startIdx; t < n - 1; t++) {
+    // Current pattern ending at t
+    if (t < patternLength + 1) continue;
+    const currentPat: number[] = [];
+    for (let i = t - patternLength; i < t; i++) {
+      currentPat.push((prices[i] - prices[i - 1]) / prices[i - 1]);
+    }
+
+    // Find KNN in data before t
+    const localMatches: { distance: number; futureReturn: number }[] = [];
+    for (let start = patternLength; start < t - patternLength; start++) {
+      const pat: number[] = [];
+      for (let i = start; i < start + patternLength; i++) {
+        pat.push((prices[i] - prices[i - 1]) / prices[i - 1]);
+      }
+      let dist = 0;
+      for (let j = 0; j < patternLength; j++) {
+        dist += (pat[j] - currentPat[j]) ** 2;
+      }
+      dist = Math.sqrt(dist);
+      const nextIdx = start + patternLength;
+      if (nextIdx < t) {
+        localMatches.push({
+          distance: dist,
+          futureReturn: (prices[nextIdx] - prices[nextIdx - 1]) / prices[nextIdx - 1],
+        });
+      }
+    }
+
+    if (localMatches.length === 0) continue;
+
+    localMatches.sort((a, b) => a.distance - b.distance);
+    const kn = localMatches.slice(0, Math.min(k, localMatches.length));
+
+    let wTotal = 0, wReturn = 0;
+    for (const m of kn) {
+      const w = 1 / (m.distance + 1e-8);
+      wTotal += w;
+      wReturn += w * m.futureReturn;
+    }
+    const predictedUp = wReturn / wTotal > 0;
+    const actualUp = prices[t + 1] > prices[t];
+
+    if (predictedUp && actualUp) tp++;
+    else if (predictedUp && !actualUp) fp++;
+    else if (!predictedUp && !actualUp) tn++;
+    else fn++;
+  }
+
+  const total = tp + fp + tn + fn;
+  return {
+    accuracy: total > 0 ? Math.round(((tp + tn) / total) * 100) : 0,
+    precision: tp + fp > 0 ? Math.round((tp / (tp + fp)) * 100) : 0,
+    recall: tp + fn > 0 ? Math.round((tp / (tp + fn)) * 100) : 0,
+    f1: tp + fp > 0 && tp + fn > 0
+      ? Math.round((2 * tp / (2 * tp + fp + fn)) * 100)
+      : 0,
+    totalSamples: total,
+  };
+}
+
+/* ═══════════════════════════════════════════════
+   Metrics Badge Component
+   ═══════════════════════════════════════════════ */
+
+const MetricsBadge: React.FC<{ metrics: ClassificationMetrics }> = ({ metrics }) => {
+  if (metrics.totalSamples === 0) return null;
+
+  const getColor = (val: number) => {
+    if (val >= 60) return "text-emerald-600";
+    if (val >= 45) return "text-amber-600";
+    return "text-red-500";
+  };
+
+  return (
+    <div className="grid grid-cols-4 gap-1 mt-1.5">
+      <div className="bg-muted/50 rounded px-1.5 py-1 text-center">
+        <div className="text-[9px] text-muted-foreground">Accuracy</div>
+        <div className={cn("text-[11px] font-bold", getColor(metrics.accuracy))}>
+          {metrics.accuracy}%
+        </div>
+      </div>
+      <div className="bg-muted/50 rounded px-1.5 py-1 text-center">
+        <div className="text-[9px] text-muted-foreground">Precision</div>
+        <div className={cn("text-[11px] font-bold", getColor(metrics.precision))}>
+          {metrics.precision}%
+        </div>
+      </div>
+      <div className="bg-muted/50 rounded px-1.5 py-1 text-center">
+        <div className="text-[9px] text-muted-foreground">Recall</div>
+        <div className={cn("text-[11px] font-bold", getColor(metrics.recall))}>
+          {metrics.recall}%
+        </div>
+      </div>
+      <div className="bg-muted/50 rounded px-1.5 py-1 text-center">
+        <div className="text-[9px] text-muted-foreground">F1</div>
+        <div className={cn("text-[11px] font-bold", getColor(metrics.f1))}>
+          {metrics.f1}%
+        </div>
+      </div>
+    </div>
+  );
+};
 
 /* ═══════════════════════════════════════════════
    Component
@@ -232,7 +512,7 @@ const MLPrediction: React.FC<MLPredictionProps> = ({
   const [expandKNN, setExpandKNN] = useState(true);
 
   const regression = useMemo(
-    () => linearRegressionForecast(ohlcv),
+    () => polynomialRegressionForecast(ohlcv),
     [ohlcv]
   );
 
@@ -278,14 +558,14 @@ const MLPrediction: React.FC<MLPredictionProps> = ({
         </span>
       </div>
 
-      {/* 1. Linear Regression */}
+      {/* 1. Polynomial Regression */}
       <div>
         <button
           onClick={() => setExpandRegression(!expandRegression)}
           className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted/50 rounded-lg transition-colors"
         >
           <span className="flex-1 text-left">
-            Dự báo giá (Hồi quy)
+            Dự báo giá (Hồi quy đa thức)
           </span>
           {expandRegression ? (
             <ChevronUp size={14} />
@@ -311,7 +591,7 @@ const MLPrediction: React.FC<MLPredictionProps> = ({
                 </span>
               </div>
               <span className="text-[10px] text-muted-foreground">
-                R² = {(regression.r2 * 100).toFixed(0)}%
+                R² = {(regression.r2 * 100).toFixed(1)}%
               </span>
             </div>
 
@@ -360,8 +640,12 @@ const MLPrediction: React.FC<MLPredictionProps> = ({
               </table>
             </div>
 
+            {/* Classification metrics */}
+            <MetricsBadge metrics={regression.metrics} />
+
             <p className="text-[10px] text-muted-foreground px-1 leading-relaxed">
-              OLS Linear Regression trên 30 phiên gần nhất. Khoảng tin cậy 95%.
+              Polynomial Regression (bậc 2) trên 30 phiên gần nhất. R² = {(regression.r2 * 100).toFixed(1)}%. 
+              Khoảng tin cậy 95%. Backtest {regression.metrics.totalSamples} mẫu.
             </p>
           </div>
         )}
@@ -458,8 +742,12 @@ const MLPrediction: React.FC<MLPredictionProps> = ({
               </div>
             </div>
 
+            {/* Classification metrics */}
+            <MetricsBadge metrics={knn.metrics} />
+
             <p className="text-[10px] text-muted-foreground px-1 leading-relaxed">
               K-Nearest Neighbors: so khớp 10 phiên gần nhất với lịch sử, chọn 5 mẫu tương đồng nhất.
+              Backtest {knn.metrics.totalSamples} mẫu.
             </p>
           </div>
         )}

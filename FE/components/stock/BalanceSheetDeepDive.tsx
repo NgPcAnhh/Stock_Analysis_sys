@@ -2,22 +2,10 @@
 
 import React, { useMemo } from "react";
 import ReactECharts from "echarts-for-react";
-import {
-  overviewStats,
-  gaugeData,
-  healthMetrics,
-  assetStructure,
-  capitalStructure,
-  trendData,
-  inventoryData,
-  inventoryFooter,
-  leverageItems,
-  cccData,
-  liquidityItems,
-  tableHeaders,
-  tableData,
-  type TableRow,
-} from "@/lib/balanceSheetDeepDiveData";
+import * as bsDefaults from "@/lib/balanceSheetDeepDiveData";
+import type { TableRow } from "@/lib/balanceSheetDeepDiveData";
+
+const BsCtx = React.createContext(bsDefaults);
 
 // ── Design tokens ──
 const mono = "font-[var(--font-roboto-mono)]";
@@ -29,13 +17,15 @@ const PURPLE = "#8B5CF6";
 
 const fmtN = (n: number | null) => {
   if (n == null) return "—";
-  return n.toLocaleString("vi-VN");
+  return n.toLocaleString("vi-VN", { maximumFractionDigits: 2 });
 };
 
 // ══════════════════════════════════════════════════════════════
 //  ROW 1 – Key Metric Highlight Cards
 // ══════════════════════════════════════════════════════════════
 function KeyMetricCards() {
+  const ctx = React.useContext(BsCtx);
+  const overviewStats = ctx.overviewStats ?? bsDefaults.overviewStats;
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {overviewStats.map((s, i) => (
@@ -69,6 +59,9 @@ function KeyMetricCards() {
 //  ROW 2 – Financial Health & Risk (Gauge + Metrics)
 // ══════════════════════════════════════════════════════════════
 function FinancialHealthSection() {
+  const ctx = React.useContext(BsCtx);
+  const gaugeData = ctx.gaugeData ?? bsDefaults.gaugeData;
+  const healthMetrics = ctx.healthMetrics ?? bsDefaults.healthMetrics;
   const gaugeOption = useMemo(
     () => ({
       series: [
@@ -106,7 +99,7 @@ function FinancialHealthSection() {
         },
       ],
     }),
-    []
+    [gaugeData]
   );
 
   return (
@@ -155,9 +148,32 @@ function FinancialHealthSection() {
 //  ROW 3 – Asset & Capital Structure (Donuts + Stacked Bars)
 // ══════════════════════════════════════════════════════════════
 function AssetCapitalDonutRow() {
+  const ctx = React.useContext(BsCtx);
+  const assetStructure = ctx.assetStructure ?? bsDefaults.assetStructure;
+  const capitalStructure = ctx.capitalStructure ?? bsDefaults.capitalStructure;
   const assetDonut = useMemo(
     () => ({
-      tooltip: { trigger: "item" as const, formatter: "{b}: {d}%" },
+      tooltip: { 
+        trigger: "item" as const, 
+        backgroundColor: "#fff",
+        borderColor: "#e5e7eb",
+        textStyle: { fontSize: 12 },
+        formatter: (params: any) => {
+          const data = params.data;
+          let tip = `<div style="margin-bottom:4px; font-size:13px;"><b>${data.name}</b>: ${params.percent}%</div>`;
+          if (data.details && data.details.length > 0) {
+            tip += `<div style="font-size:12px; margin-top:6px; border-top:1px solid #f3f4f6; padding-top:6px;">`;
+            data.details.forEach((dt: any) => {
+              tip += `<div style="display:flex; justify-content:space-between; margin-bottom:3px;">`;
+              tip += `<span style="color:#6b7280; margin-right:16px;">${dt.name}</span>`;
+              tip += `<span style="font-weight:bold; font-family:monospace; color:#374151;">${dt.value}%</span>`;
+              tip += `</div>`;
+            });
+            tip += `</div>`;
+          }
+          return tip;
+        }
+      },
       legend: { show: false },
       series: [
         {
@@ -169,16 +185,37 @@ function AssetCapitalDonutRow() {
             value: d.value,
             name: d.name,
             itemStyle: { color: d.color },
+            details: d.details
           })),
         },
       ],
     }),
-    []
+    [assetStructure]
   );
 
   const capitalDonut = useMemo(
     () => ({
-      tooltip: { trigger: "item" as const, formatter: "{b}: {d}%" },
+      tooltip: { 
+        trigger: "item" as const, 
+        backgroundColor: "#fff",
+        borderColor: "#e5e7eb",
+        textStyle: { fontSize: 12 },
+        formatter: (params: any) => {
+          const data = params.data;
+          let tip = `<div style="margin-bottom:4px; font-size:13px;"><b>${data.name}</b>: ${params.percent}%</div>`;
+          if (data.details && data.details.length > 0) {
+            tip += `<div style="font-size:12px; margin-top:6px; border-top:1px solid #f3f4f6; padding-top:6px;">`;
+            data.details.forEach((dt: any) => {
+              tip += `<div style="display:flex; justify-content:space-between; margin-bottom:3px;">`;
+              tip += `<span style="color:#6b7280; margin-right:16px;">${dt.name}</span>`;
+              tip += `<span style="font-weight:bold; font-family:monospace; color:#374151;">${dt.value}%</span>`;
+              tip += `</div>`;
+            });
+            tip += `</div>`;
+          }
+          return tip;
+        }
+      },
       legend: { show: false },
       series: [
         {
@@ -190,11 +227,12 @@ function AssetCapitalDonutRow() {
             value: d.value,
             name: d.name,
             itemStyle: { color: d.color },
+            details: d.details
           })),
         },
       ],
     }),
-    []
+    [capitalStructure]
   );
 
   return (
@@ -204,17 +242,20 @@ function AssetCapitalDonutRow() {
         <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5 mb-4">
           <span>🍩</span> Cơ Cấu Tài Sản
         </h3>
-        <div className="flex items-center gap-6">
-          <div className="w-44 h-44 flex-shrink-0">
-            <ReactECharts option={assetDonut} style={{ height: 176, width: 176 }} />
+        <div className="flex flex-col items-center gap-6">
+          <div className="w-52 h-52 flex-shrink-0">
+            <ReactECharts option={assetDonut} style={{ height: 208, width: 208 }} />
           </div>
-          <div className="space-y-3 flex-1">
+          <div className="space-y-4 w-full px-2">
             {assetStructure.map((d) => (
               <div key={d.name}>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="w-3 h-3 rounded-full" style={{ backgroundColor: d.color }} />
-                  <span className="text-sm text-muted-foreground">
-                    {d.name} ({d.value}%)
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: d.color }} />
+                    <span className="text-sm text-muted-foreground">{d.name}</span>
+                  </div>
+                  <span className={`text-sm font-bold ${mono}`} style={{ color: d.color }}>
+                    {d.value}%
                   </span>
                 </div>
                 <div className="w-full h-1.5 bg-gray-200 rounded-full">
@@ -234,14 +275,14 @@ function AssetCapitalDonutRow() {
         <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5 mb-4">
           <span>🍩</span> Cấu Trúc Nguồn Vốn
         </h3>
-        <div className="flex items-center gap-6">
-          <div className="w-44 h-44 flex-shrink-0">
-            <ReactECharts option={capitalDonut} style={{ height: 176, width: 176 }} />
+        <div className="flex flex-col items-center gap-6">
+          <div className="w-52 h-52 flex-shrink-0">
+            <ReactECharts option={capitalDonut} style={{ height: 208, width: 208 }} />
           </div>
-          <div className="space-y-3 flex-1">
+          <div className="space-y-4 w-full px-2">
             {capitalStructure.map((d) => (
               <div key={d.name}>
-                <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-2">
                     <span className="w-3 h-3 rounded-full" style={{ backgroundColor: d.color }} />
                     <span className="text-sm text-muted-foreground">{d.name}</span>
@@ -266,7 +307,9 @@ function AssetCapitalDonutRow() {
 }
 
 function TrendChartsRow() {
-  const years = trendData.map((d) => String(d.year));
+  const ctx = React.useContext(BsCtx);
+  const trendData = ctx.trendData ?? bsDefaults.trendData;
+  const years = trendData.map((d: any) => String(d.year));
 
   const assetCapitalTrend = useMemo(
     () => ({
@@ -380,6 +423,10 @@ function TrendChartsRow() {
 //  ROW 4 – Inventory & Leverage Details
 // ══════════════════════════════════════════════════════════════
 function InventoryAndLeverage() {
+  const ctx = React.useContext(BsCtx);
+  const inventoryData = ctx.inventoryData ?? bsDefaults.inventoryData;
+  const inventoryFooter = ctx.inventoryFooter ?? bsDefaults.inventoryFooter;
+  const leverageItems = ctx.leverageItems ?? bsDefaults.leverageItems;
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       {/* Inventory */}
@@ -456,6 +503,9 @@ function InventoryAndLeverage() {
 //  ROW 5 – CCC & Liquidity
 // ══════════════════════════════════════════════════════════════
 function CCCAndLiquidity() {
+  const ctx = React.useContext(BsCtx);
+  const cccData = ctx.cccData ?? bsDefaults.cccData;
+  const liquidityItems = ctx.liquidityItems ?? bsDefaults.liquidityItems;
   const statusColor = { good: GREEN, warning: "#F59E0B", danger: RED };
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
@@ -596,6 +646,9 @@ function renderRows(rows: TableRow[]): React.ReactNode[] {
 }
 
 function DetailedTable() {
+  const ctx = React.useContext(BsCtx);
+  const tableHeaders = ctx.tableHeaders ?? bsDefaults.tableHeaders;
+  const tableData = ctx.tableData ?? bsDefaults.tableData;
   return (
     <div className="bg-card rounded-xl shadow-sm border border-border/50 border-t-4 border-t-[#F97316] overflow-hidden">
       <div className="px-6 py-4 border-b border-border/50">
@@ -627,23 +680,25 @@ function DetailedTable() {
 // ══════════════════════════════════════════════════════════════
 //  MAIN EXPORT
 // ══════════════════════════════════════════════════════════════
-export default function BalanceSheetDeepDive() {
+export default function BalanceSheetDeepDive({ data }: { data?: Record<string, unknown> }) {
   return (
-    <div className="space-y-5">
-      {/* ROW 1 */}
-      <KeyMetricCards />
-      {/* ROW 2 */}
-      <FinancialHealthSection />
-      {/* ROW 3 - Donuts */}
-      <AssetCapitalDonutRow />
-      {/* ROW 3 - Trends */}
-      <TrendChartsRow />
-      {/* ROW 4 */}
-      <InventoryAndLeverage />
-      {/* ROW 5 */}
-      <CCCAndLiquidity />
-      {/* ROW 6 */}
-      <DetailedTable />
-    </div>
+    <BsCtx.Provider value={data ? { ...bsDefaults, ...data } as typeof bsDefaults : bsDefaults}>
+      <div className="space-y-5">
+        {/* ROW 1 */}
+        <KeyMetricCards />
+        {/* ROW 3 - Donuts */}
+        <AssetCapitalDonutRow />
+        {/* ROW 3 - Trends */}
+        <TrendChartsRow />
+        {/* ROW 4 */}
+        <InventoryAndLeverage />
+        {/* ROW 5 */}
+        <CCCAndLiquidity />
+        {/* ROW 2 - Financial Health moved down */}
+        <FinancialHealthSection />
+        {/* ROW 6 */}
+        <DetailedTable />
+      </div>
+    </BsCtx.Provider>
   );
 }

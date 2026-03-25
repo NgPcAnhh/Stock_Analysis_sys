@@ -36,6 +36,10 @@ export interface IndicatorData {
   ichimokuKijun: (number | null)[];
   ichimokuSenkouA: (number | null)[];
   ichimokuSenkouB: (number | null)[];
+  psar: (number | null)[];
+  keltnerUpper: (number | null)[];
+  keltnerLower: (number | null)[];
+  mfi: (number | null)[];
 }
 
 export interface TechnicalSignal {
@@ -232,6 +236,77 @@ function calculateStochastic(highs: number[], lows: number[], closes: number[], 
   }
 
   return { stochK, stochD };
+}
+
+function calculatePSAR(highs: number[], lows: number[], afStart = 0.02, afMax = 0.2, afStep = 0.02) {
+  const psar: (number | null)[] = [null];
+  if (highs.length < 2) return psar;
+
+  let isLong = highs[1] > highs[0];
+  let ep = isLong ? Math.max(highs[0], highs[1]) : Math.min(lows[0], lows[1]);
+  let sar = isLong ? Math.min(lows[0], lows[1]) : Math.max(highs[0], highs[1]);
+  let af = afStart;
+
+  for (let i = 1; i < highs.length; i++) {
+    psar.push(Math.round(sar * 100) / 100);
+    const prevSar = sar;
+    sar = sar + af * (ep - sar);
+
+    if (isLong) {
+      if (lows[i] < sar) {
+        isLong = false;
+        sar = ep;
+        ep = lows[i];
+        af = afStart;
+      } else {
+        if (highs[i] > ep) {
+          ep = highs[i];
+          af = Math.min(afMax, af + afStep);
+        }
+        sar = Math.min(sar, lows[i - 1], i > 1 ? lows[i - 2] : lows[i - 1]);
+      }
+    } else {
+      if (highs[i] > sar) {
+        isLong = true;
+        sar = ep;
+        ep = highs[i];
+        af = afStart;
+      } else {
+        if (lows[i] < ep) {
+          ep = lows[i];
+          af = Math.min(afMax, af + afStep);
+        }
+        sar = Math.max(sar, highs[i - 1], i > 1 ? highs[i - 2] : highs[i - 1]);
+      }
+    }
+  }
+  return psar;
+}
+
+function calculateMFI(highs: number[], lows: number[], closes: number[], volumes: number[], period = 14) {
+  const mfi: (number | null)[] = [];
+  const typicalPrice = closes.map((c, i) => (highs[i] + lows[i] + c) / 3);
+  const moneyFlow = typicalPrice.map((tp, i) => tp * volumes[i]);
+
+  for (let i = 0; i < closes.length; i++) {
+    if (i < period) {
+      mfi.push(null);
+    } else {
+      let posFlow = 0;
+      let negFlow = 0;
+      for (let j = i - period + 1; j <= i; j++) {
+        if (typicalPrice[j] > typicalPrice[j - 1]) posFlow += moneyFlow[j];
+        else if (typicalPrice[j] < typicalPrice[j - 1]) negFlow += moneyFlow[j];
+      }
+      if (negFlow === 0) {
+        mfi.push(100);
+      } else {
+        const mfr = posFlow / negFlow;
+        mfi.push(Math.round((100 - (100 / (1 + mfr))) * 100) / 100);
+      }
+    }
+  }
+  return mfi;
 }
 
 // ===== Generate OHLCV Data =====
@@ -450,6 +525,21 @@ export function calculateIndicators(ohlcv: OHLCVItem[]): IndicatorData {
   const ichimokuKijun: (number | null)[] = [];
   const ichimokuSenkouA: (number | null)[] = [];
   const ichimokuSenkouB: (number | null)[] = [];
+
+  const psar = calculatePSAR(highs, lows);
+  const mfi = calculateMFI(highs, lows, closes, volumes, 14);
+  const keltnerMiddle = calculateEMA(closes, 20);
+  const keltnerUpper: (number | null)[] = [];
+  const keltnerLower: (number | null)[] = [];
+  for (let i = 0; i < closes.length; i++) {
+    if (keltnerMiddle[i] === null || atr[i] === null) {
+      keltnerUpper.push(null);
+      keltnerLower.push(null);
+    } else {
+      keltnerUpper.push(Math.round((keltnerMiddle[i]! + 2 * atr[i]!) * 100) / 100);
+      keltnerLower.push(Math.round((keltnerMiddle[i]! - 2 * atr[i]!) * 100) / 100);
+    }
+  }
   for (let i = 0; i < ohlcv.length; i++) {
     if (i < 8) {
       ichimokuTenkan.push(null);
@@ -506,6 +596,10 @@ export function calculateIndicators(ohlcv: OHLCVItem[]): IndicatorData {
     ichimokuKijun,
     ichimokuSenkouA,
     ichimokuSenkouB,
+    psar,
+    mfi,
+    keltnerUpper,
+    keltnerLower,
   };
 }
 

@@ -448,12 +448,12 @@ async def get_market_comparison(db: AsyncSession) -> List[Dict[str, Any]]:
                 ELSE 0
             END AS change
         FROM (
-            SELECT DISTINCT asset_type FROM hethong_phantich_chungkhoan.macro_economy
+            SELECT DISTINCT asset_type FROM macro_economy
         ) a
         CROSS JOIN LATERAL (
             SELECT ARRAY(
                 SELECT close
-                FROM hethong_phantich_chungkhoan.macro_economy me
+                FROM macro_economy me
                 WHERE me.asset_type = a.asset_type
                 ORDER BY date DESC
                 LIMIT 2
@@ -1138,7 +1138,7 @@ async def get_macro_yearly(db: AsyncSession) -> Dict[str, Any]:
     }
     Cached 1 hour — yearly data rarely changes.
     """
-    cache_key = "macro_yearly"
+    cache_key = "macro_yearly:v4"
     cached = await cache_get(cache_key)
     if cached is not None:
         return cached
@@ -1164,6 +1164,7 @@ async def get_macro_yearly(db: AsyncSession) -> Dict[str, Any]:
                 values.append(None)
             else:
                 values.append(round(float(v), 2))
+
         indicators.append({
             "key": col,
             "label": _MACRO_YEARLY_LABELS[col],

@@ -57,6 +57,9 @@ export const MarketBreadth = () => {
                 trigger: "item",
                 formatter: (params: { name: string; value: number; percent: number }) =>
                     `<b>${params.name}</b><br/>Số mã: <b>${params.value}</b><br/>Tỷ lệ: <b>${params.percent}%</b>`,
+                textStyle: {
+                    fontFamily: "var(--font-roboto), Roboto, sans-serif",
+                },
             },
             legend: {
                 bottom: 0,

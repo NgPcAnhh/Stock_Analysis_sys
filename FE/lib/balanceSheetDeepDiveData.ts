@@ -31,10 +31,11 @@ export interface DonutItem {
   name: string;
   value: number;
   color: string;
+  details?: { name: string; value: number }[];
 }
 
 export interface TrendYearData {
-  year: number;
+  year: string | number;
   currentAssetsPct: number;
   nonCurrentAssetsPct: number;
   equityPct: number;
@@ -177,13 +178,13 @@ export const healthMetrics: HealthMetric[] = [
 
 // ── 3. Donut Charts (ROW 3 Top) ──
 export const assetStructure: DonutItem[] = [
-  { name: "Tài sản ngắn hạn", value: 45, color: "#F97316" },
-  { name: "Tài sản dài hạn", value: 55, color: "#8B5CF6" },
+  { name: "Tài sản ngắn hạn", value: 45, color: "#F97316", details: [{name: "Tiền", value: 10}, {name: "Phải thu", value: 15}] },
+  { name: "Tài sản dài hạn", value: 55, color: "#8B5CF6", details: [{name: "TSCĐ", value: 40}, {name: "Khác", value: 15}] },
 ];
 
 export const capitalStructure: DonutItem[] = [
-  { name: "Vốn chủ sở hữu", value: 56, color: "#00C076" },
-  { name: "Nợ phải trả", value: 44, color: "#F97316" },
+  { name: "Vốn chủ sở hữu", value: 56, color: "#00C076", details: [{name: "Vốn góp", value: 30}, {name: "LN chưa PP", value: 26}] },
+  { name: "Nợ phải trả", value: 44, color: "#F97316", details: [{name: "Nợ ngắn hạn", value: 24}, {name: "Nợ dài hạn", value: 20}] },
 ];
 
 // ── 4. Trend Data (ROW 3 Bottom) ──

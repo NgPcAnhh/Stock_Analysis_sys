@@ -132,7 +132,15 @@ export default function StocksPage() {
 
     /* ── Filter / sort / page state ── */
     const [search, setSearch] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
     const [sectorFilter, setSectorFilter] = useState("Tất cả");
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(search);
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [search]);
     const [sortKey, setSortKey] = useState<SortKey>("market_cap");
     const [sortDir, setSortDir] = useState<SortDir>("desc");
     const [page, setPage] = useState(1);
@@ -152,7 +160,7 @@ export default function StocksPage() {
                 sort_by: sortKey,
                 sort_dir: sortDir,
             });
-            if (search) params.set("search", search);
+            if (debouncedSearch) params.set("search", debouncedSearch);
             if (sectorFilter !== "Tất cả") params.set("sector", sectorFilter);
 
             const res = await fetch(`${API}/stock-list/overview?${params}`);
@@ -168,7 +176,7 @@ export default function StocksPage() {
             setLoading(false);
             setInitialLoad(false);
         }
-    }, [page, pageSize, sortKey, sortDir, search, sectorFilter]);
+    }, [page, pageSize, sortKey, sortDir, debouncedSearch, sectorFilter]);
 
     /* ── Fetch sectors ── */
     useEffect(() => {
@@ -192,7 +200,7 @@ export default function StocksPage() {
     useEffect(() => { fetchStocks(); }, [fetchStocks]);
 
     /* ── Reset page when search / sector changes ── */
-    useEffect(() => { setPage(1); }, [search, sectorFilter]);
+    useEffect(() => { setPage(1); }, [debouncedSearch, sectorFilter]);
 
     /* ── Search tracking (debounced 1.5s) ── */
     const handleSearch = (value: string) => {

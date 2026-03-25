@@ -203,6 +203,102 @@ async def session_end(
 
 
 # ────────────────────────────────────────────────────────────────────
+# 5b. Page View tracking
+# ────────────────────────────────────────────────────────────────────
+async def track_page_view(
+    db: AsyncSession,
+    page_path: str,
+    page_title: Optional[str] = None,
+    session_id: str = "anonymous",
+    user_id: Optional[int] = None,
+    ip_address: Optional[str] = None,
+    referrer: Optional[str] = None,
+) -> bool:
+    sql = text(f"""
+        INSERT INTO {SYSTEM_SCHEMA}.page_views
+            (page_path, page_title, session_id, user_id, ip_address, referrer)
+        VALUES (:page_path, :page_title, :session_id, :user_id, :ip_address, :referrer)
+    """)
+    try:
+        await db.execute(sql, {
+            "page_path": page_path,
+            "page_title": page_title,
+            "session_id": session_id,
+            "user_id": user_id,
+            "ip_address": ip_address,
+            "referrer": referrer,
+        })
+        return True
+    except Exception as exc:
+        logger.error("track_page_view error: %s", exc)
+        return False
+
+
+# ────────────────────────────────────────────────────────────────────
+# 5c. Analysis View tracking
+# ────────────────────────────────────────────────────────────────────
+async def track_analysis_view(
+    db: AsyncSession,
+    ticker: str,
+    session_id: str = "anonymous",
+    user_id: Optional[int] = None,
+    ip_address: Optional[str] = None,
+) -> bool:
+    sql = text(f"""
+        INSERT INTO {SYSTEM_SCHEMA}.analysis_views
+            (ticker, session_id, user_id, ip_address)
+        VALUES (:ticker, :session_id, :user_id, :ip_address)
+    """)
+    try:
+        await db.execute(sql, {
+            "ticker": ticker.strip().upper(),
+            "session_id": session_id,
+            "user_id": user_id,
+            "ip_address": ip_address,
+        })
+        return True
+    except Exception as exc:
+        logger.error("track_analysis_view error: %s", exc)
+        return False
+
+
+# ────────────────────────────────────────────────────────────────────
+# 5d. Error logging
+# ────────────────────────────────────────────────────────────────────
+async def track_error(
+    db: AsyncSession,
+    error_type: str = "frontend",
+    error_message: str = "",
+    stack_trace: Optional[str] = None,
+    page_url: Optional[str] = None,
+    session_id: str = "anonymous",
+    user_id: Optional[int] = None,
+    ip_address: Optional[str] = None,
+    user_agent: Optional[str] = None,
+) -> bool:
+    sql = text(f"""
+        INSERT INTO {SYSTEM_SCHEMA}.error_logs
+            (error_type, error_message, stack_trace, page_url, session_id, user_id, ip_address, user_agent)
+        VALUES (:error_type, :error_message, :stack_trace, :page_url, :session_id, :user_id, :ip_address, :user_agent)
+    """)
+    try:
+        await db.execute(sql, {
+            "error_type": error_type,
+            "error_message": error_message[:2000],
+            "stack_trace": stack_trace,
+            "page_url": page_url,
+            "session_id": session_id,
+            "user_id": user_id,
+            "ip_address": ip_address,
+            "user_agent": user_agent,
+        })
+        return True
+    except Exception as exc:
+        logger.error("track_error error: %s", exc)
+        return False
+
+
+# ────────────────────────────────────────────────────────────────────
 # 6. Stats (admin dashboard)
 # ────────────────────────────────────────────────────────────────────
 async def get_tracking_stats(
@@ -271,6 +367,26 @@ async def get_tracking_stats(
         ORDER BY 1 DESC
     """)
 
+    # --- Top article clicks ---
+    article_sql = text(f"""
+        SELECT article_id, COUNT(*) AS click_count
+        FROM {SYSTEM_SCHEMA}.article_clicks
+        WHERE clicked_at >= NOW() - make_interval(days => :days)
+        GROUP BY article_id
+        ORDER BY click_count DESC
+        LIMIT :top
+    """)
+
+    # --- Top stock clicks ---
+    stock_click_sql = text(f"""
+        SELECT ticker, COUNT(*) AS click_count
+        FROM {SYSTEM_SCHEMA}.stock_clicks
+        WHERE clicked_at >= NOW() - make_interval(days => :days)
+        GROUP BY ticker
+        ORDER BY click_count DESC
+        LIMIT :top
+    """)
+
     # --- Today's summary ---
     today_sql = text(f"""
         SELECT
@@ -291,6 +407,8 @@ async def get_tracking_stats(
         r_lg = (await db.execute(login_sql, params)).mappings().all()
         r_se = (await db.execute(session_sql, params)).mappings().all()
         r_td = (await db.execute(today_sql)).mappings().first()
+        r_ac = (await db.execute(article_sql, params)).mappings().all()
+        r_sc = (await db.execute(stock_click_sql, params)).mappings().all()
     except Exception as exc:
         logger.error("get_tracking_stats error: %s", exc)
         return {}
@@ -325,6 +443,14 @@ async def get_tracking_stats(
             }
             for r in r_se
         ],
+        "top_article_clicks": [
+            {"article_id": r["article_id"], "click_count": r["click_count"]}
+            for r in r_ac
+        ],
+        "top_stock_clicks": [
+            {"ticker": r["ticker"], "click_count": r["click_count"]}
+            for r in r_sc
+        ],
         "total_logins_today": int(r_td["logins_today"] or 0) if r_td else 0,
         "total_sessions_today": int(r_td["sessions_today"] or 0) if r_td else 0,
         "avg_session_duration_today": float(r_td["avg_duration_today"]) if r_td and r_td["avg_duration_today"] else None,
@@ -332,3 +458,83 @@ async def get_tracking_stats(
 
     await cache_set(cache_key, data, ttl=120)
     return data
+
+
+async def toggle_favorite(
+    db: AsyncSession,
+    ticker: str,
+    user_id: Optional[int] = None,
+    session_id: str = "anonymous",
+) -> bool:
+    """Toggle favorite state for a ticker. Returns True if now favorited."""
+    check_sql = text(
+        f"""
+        SELECT 1
+        FROM {SYSTEM_SCHEMA}.user_favorite_stocks
+        WHERE ticker = :ticker
+          AND (
+            (:user_id IS NOT NULL AND user_id = :user_id)
+            OR (:user_id IS NULL AND user_id IS NULL AND session_id = :session_id)
+          )
+        """
+    )
+
+    exists = (await db.execute(
+        check_sql,
+        {"ticker": ticker.upper(), "user_id": user_id, "session_id": session_id},
+    )).first()
+
+    if exists:
+        delete_sql = text(
+            f"""
+            DELETE FROM {SYSTEM_SCHEMA}.user_favorite_stocks
+            WHERE ticker = :ticker
+              AND (
+                (:user_id IS NOT NULL AND user_id = :user_id)
+                OR (:user_id IS NULL AND user_id IS NULL AND session_id = :session_id)
+              )
+            """
+        )
+        await db.execute(
+            delete_sql,
+            {"ticker": ticker.upper(), "user_id": user_id, "session_id": session_id},
+        )
+        await db.commit()
+        return False
+
+    insert_sql = text(
+        f"""
+        INSERT INTO {SYSTEM_SCHEMA}.user_favorite_stocks (user_id, session_id, ticker)
+        VALUES (:user_id, :session_id, :ticker)
+        """
+    )
+    await db.execute(
+        insert_sql,
+        {
+            "user_id": user_id,
+            "session_id": None if user_id else session_id,
+            "ticker": ticker.upper(),
+        },
+    )
+    await db.commit()
+    return True
+
+
+async def get_favorites(
+    db: AsyncSession,
+    user_id: Optional[int] = None,
+    session_id: str = "anonymous",
+) -> List[str]:
+    sql = text(
+        f"""
+        SELECT ticker
+        FROM {SYSTEM_SCHEMA}.user_favorite_stocks
+        WHERE (
+            (:user_id IS NOT NULL AND user_id = :user_id)
+            OR (:user_id IS NULL AND user_id IS NULL AND session_id = :session_id)
+        )
+        ORDER BY created_at DESC
+        """
+    )
+    rows = (await db.execute(sql, {"user_id": user_id, "session_id": session_id})).fetchall()
+    return [str(row[0]) for row in rows]

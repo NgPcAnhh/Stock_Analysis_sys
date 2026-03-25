@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Footer } from "@/components/layout/Footer";
@@ -15,10 +15,45 @@ import {
   ArrowRight,
   Waves,
   PieChart,
+  Star,
 } from "lucide-react";
+
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
+
+function getOrCreateSessionId(): string {
+  const key = "session_id";
+  const existing = localStorage.getItem(key);
+  if (existing) return existing;
+  const generated = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  localStorage.setItem(key, generated);
+  return generated;
+}
 
 export default function AnalysisLandingPage() {
   const router = useRouter();
+  const [favoriteTickers, setFavoriteTickers] = useState<string[]>([]);
+
+  useEffect(() => {
+    const loadFavorites = async () => {
+      try {
+        const sessionId = getOrCreateSessionId();
+        const res = await fetch(`${API}/tracking/favorite?session_id=${encodeURIComponent(sessionId)}`);
+        if (!res.ok) return;
+        const data = (await res.json()) as string[];
+        setFavoriteTickers(data);
+      } catch {
+        // noop
+      }
+    };
+
+    loadFavorites();
+  }, []);
+
+  // Merge favorites and popular, prioritizing favorites
+  const displayTickers = [
+    ...favoriteTickers.map((t) => ({ ticker: t, name: "Yêu thích", isFavorite: true })),
+    ...popularTickers.filter(pt => !favoriteTickers.includes(pt.ticker)).map(pt => ({ ...pt, isFavorite: false })),
+  ];
 
   const features = [
     {
@@ -92,19 +127,24 @@ export default function AnalysisLandingPage() {
         <div className="mb-10">
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
             <TrendingUp size={14} />
-            Mã phổ biến
+            Mã quan tâm & phổ biến
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
-            {popularTickers.map((stock) => (
+            {displayTickers.map((stock) => (
               <button
                 key={stock.ticker}
                 onClick={() => router.push(`/analysis/${stock.ticker}`)}
-                className="group bg-card rounded-xl border border-border px-4 py-3 text-left hover:border-primary/30 hover:shadow-md transition-all"
+                className={`group bg-card rounded-xl border px-4 py-3 text-left transition-all hover:shadow-md ${
+                  stock.isFavorite ? "border-yellow-400/50 hover:border-yellow-400" : "border-border hover:border-primary/30"
+                }`}
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">
-                      {stock.ticker}
+                    <div className="flex items-center gap-1.5">
+                      {stock.isFavorite && <Star size={12} className="text-yellow-500 fill-yellow-500" />}
+                      <div className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">
+                        {stock.ticker}
+                      </div>
                     </div>
                     <div className="text-xs text-muted-foreground">{stock.name}</div>
                   </div>

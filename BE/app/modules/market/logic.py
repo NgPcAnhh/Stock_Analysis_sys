@@ -503,21 +503,71 @@ async def get_sector_analysis(db: AsyncSession) -> List[Dict[str, Any]]:
 @cached("market:sector_watchlist", ttl=120)
 async def get_sector_watchlist(db: AsyncSession) -> Dict[str, Any]:
     await db.execute(_STMT_TIMEOUT)
-    sql = text(f"""
+    # Query 1: count distinct tickers per sector from canonical company_overview.
+    counts_sql = text(f"""
+        WITH unique_co AS (
+            SELECT DISTINCT ON (UPPER(BTRIM(ticker)))
+                UPPER(BTRIM(ticker)) AS ticker,
+                BTRIM(icb_name2) AS sector
+            FROM {SCHEMA}.company_overview
+            WHERE ticker IS NOT NULL
+              AND BTRIM(ticker) NOT IN ('', 'NaN')
+              AND UPPER(BTRIM(ticker)) NOT LIKE '%INDEX'
+              AND icb_name2 IS NOT NULL
+              AND BTRIM(icb_name2) NOT IN ('', 'NaN')
+            ORDER BY UPPER(BTRIM(ticker)),
+                CASE
+                    WHEN exchange IS NOT NULL
+                        AND BTRIM(exchange) NOT IN ('', 'NaN', 'DELISTED') THEN 0
+                    ELSE 1
+                END,
+                exchange
+        )
+        SELECT sector, COUNT(*)::int AS stock_count
+        FROM unique_co
+        GROUP BY sector
+        ORDER BY sector
+    """)
+    counts_res = await db.execute(counts_sql)
+    count_rows = counts_res.mappings().all()
+
+    if not count_rows:
+        return {"sectors": [], "stocks": {}}
+
+    # Query 2: fetch stock details and price calculations.
+    details_sql = text(f"""
         WITH {_RANKED_DATES_CTE},
         unique_co AS (
-            SELECT DISTINCT ON (ticker) ticker, icb_name2, organ_short_name, exchange
+            SELECT DISTINCT ON (UPPER(BTRIM(ticker)))
+                UPPER(BTRIM(ticker)) AS ticker,
+                BTRIM(icb_name2) AS sector,
+                organ_short_name,
+                CASE
+                    WHEN exchange = 'HSX' THEN 'HOSE'
+                    WHEN exchange IS NOT NULL AND BTRIM(exchange) NOT IN ('', 'NaN') THEN BTRIM(exchange)
+                    ELSE NULL
+                END AS exchange
             FROM {SCHEMA}.company_overview
-            WHERE icb_name2 IS NOT NULL
-            ORDER BY ticker
+            WHERE ticker IS NOT NULL
+              AND BTRIM(ticker) NOT IN ('', 'NaN')
+              AND UPPER(BTRIM(ticker)) NOT LIKE '%INDEX'
+              AND icb_name2 IS NOT NULL
+              AND BTRIM(icb_name2) NOT IN ('', 'NaN')
+            ORDER BY UPPER(BTRIM(ticker)),
+                CASE
+                    WHEN exchange IS NOT NULL
+                        AND BTRIM(exchange) NOT IN ('', 'NaN', 'DELISTED') THEN 0
+                    ELSE 1
+                END,
+                exchange
         )
         SELECT
-            co.icb_name2 AS sector,
+            co.sector,
             co.ticker,
             co.organ_short_name AS company_name,
             co.exchange,
             cur.close AS price,
-            prev.close AS ref_price,
+            COALESCE(prev.close, 0) AS ref_price,
             CASE WHEN prev.close > 0
                  THEN ROUND(((cur.close - prev.close) / prev.close * 100)::numeric, 2)
                  ELSE 0 END AS change,
@@ -528,17 +578,16 @@ async def get_sector_watchlist(db: AsyncSession) -> Dict[str, Any]:
             ROUND((cur.close * cur.volume)::numeric, 0) AS trade_value
         FROM unique_co co
         JOIN {SCHEMA}.history_price cur
-            ON cur.ticker = co.ticker
+            ON UPPER(BTRIM(cur.ticker)) = co.ticker
             AND cur.trading_date = (SELECT td FROM latest_date)
-        JOIN {SCHEMA}.history_price prev
-            ON prev.ticker = co.ticker
+            AND cur.close IS NOT NULL
+        LEFT JOIN {SCHEMA}.history_price prev
+            ON UPPER(BTRIM(prev.ticker)) = co.ticker
             AND prev.trading_date = (SELECT td FROM prev_date)
-        WHERE cur.close IS NOT NULL
-          AND prev.close > 0
-        ORDER BY co.icb_name2, cur.close * cur.volume DESC
+        ORDER BY co.sector, trade_value DESC
     """)
-    res = await db.execute(sql)
-    rows = res.mappings().all()
+    details_res = await db.execute(details_sql)
+    rows = details_res.mappings().all()
 
     def _clean(v: Any) -> str:
         """Return empty string for None, NaN, or 'NaN' values."""
@@ -564,18 +613,18 @@ async def get_sector_watchlist(db: AsyncSession) -> Dict[str, Any]:
             "tradeValue": float(r["trade_value"] or 0),
         })
 
-    # Build sectors list and stocks map
+    # Build sectors list from count query, then attach stocks from details query.
     sectors = []
     stocks_map: Dict[str, List[Dict]] = {}
-    for sector_name, stocks_list in sorted(sector_stocks.items()):
+    for r in count_rows:
+        sector_name = r["sector"]
         slug = _slugify(sector_name)
         sectors.append({
             "id": slug,
             "name": sector_name,
-            "count": len(stocks_list),
+            "count": int(r["stock_count"] or 0),
         })
-        # Limit to top 15 stocks per sector (by trade value, already sorted)
-        stocks_map[slug] = stocks_list[:15]
+        stocks_map[slug] = sector_stocks.get(sector_name, [])
 
     result = {"sectors": sectors, "stocks": stocks_map}
     return result

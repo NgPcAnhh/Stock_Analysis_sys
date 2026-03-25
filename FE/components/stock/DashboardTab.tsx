@@ -2156,15 +2156,19 @@ function PriceSensitivityDensity() {
 // ══════════════════════════════════════════════════════════════════
 export default function DashboardTab() {
     const { ticker, stockInfo } = useStockDetail();
+    // If year selected, we fetch that year's quarters (usually 4). If not, we fetch default 12 periods.
+    // If backend logic handles "year" param correctly, "periods" might be ignored or used as fallback.
     const { data: ratios, loading: ratioLoading } = useFinancialRatios(ticker, 12);
-    const { data: reportData, loading: reportLoading } = useFinancialReports(ticker, 10);
+    const { data: reportData, loading: reportLoading } = useFinancialReports(ticker, 12);
+
     const { data: quantData, loading: quantLoading } = useQuantAnalysis(ticker);
     const { data: valuationData, loading: valuationLoading } = useValuation(ticker);
 
     const latestRatio = (ratios && ratios.length > 0) ? ratios[0] : null;
 
     return (
-        <div className="space-y-6 font-sans pb-12">            {/* ── PHẦN 1: HEADER & KPI ── */}
+        <div className="space-y-6 font-sans pb-12">
+            {/* ── PHẦN 1: HEADER & KPI ── */}
             <div className="py-2 mb-4 border-b">
                 <div className="flex flex-col gap-3">
                     {/* Header info */}
@@ -2178,23 +2182,26 @@ export default function DashboardTab() {
                                 {stockInfo.sector ? ` • ${stockInfo.sector}` : ""}
                             </p>
                         </div>
+                        
                         {/* Evaluation badges */}
-                        <div className="flex flex-wrap gap-1.5">
-                            {stockInfo.evaluation.fundamentalAnalysis && (
-                                <span className="text-[10px] font-semibold px-2 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
-                                    📊 Cơ bản: {stockInfo.evaluation.fundamentalAnalysis}
-                                </span>
-                            )}
-                            {stockInfo.evaluation.technicalAnalysis && (
-                                <span className="text-[10px] font-semibold px-2 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-100">
-                                    📈 Kỹ thuật: {stockInfo.evaluation.technicalAnalysis}
-                                </span>
-                            )}
-                            {stockInfo.evaluation.valuation && (
-                                <span className="text-[10px] font-semibold px-2 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-100">
-                                    💰 Định giá: {stockInfo.evaluation.valuation}
-                                </span>
-                            )}
+                        <div className="flex flex-col items-end gap-2">
+                            <div className="flex flex-wrap gap-1.5 justify-end">
+                                {stockInfo.evaluation.fundamentalAnalysis && (
+                                    <span className="text-[10px] font-semibold px-2 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
+                                        📊 Cơ bản: {stockInfo.evaluation.fundamentalAnalysis}
+                                    </span>
+                                )}
+                                {stockInfo.evaluation.technicalAnalysis && (
+                                    <span className="text-[10px] font-semibold px-2 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-100">
+                                        📈 Kỹ thuật: {stockInfo.evaluation.technicalAnalysis}
+                                    </span>
+                                )}
+                                {stockInfo.evaluation.valuation && (
+                                    <span className="text-[10px] font-semibold px-2 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-100">
+                                        💰 Định giá: {stockInfo.evaluation.valuation}
+                                    </span>
+                                )}
+                            </div>
                         </div>
                     </div>
 

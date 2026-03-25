@@ -90,7 +90,13 @@ class ScreenerItem(BaseModel):
     ticker: str
     companyName: Optional[str] = None
     sector: Optional[str] = None
+    sector2: Optional[str] = None
     exchange: Optional[str] = None
+    tradingDate: Optional[str] = None
+    openPrice: Optional[float] = None
+    highPrice: Optional[float] = None
+    lowPrice: Optional[float] = None
+    closePrice: Optional[float] = None
     currentPrice: Optional[float] = None
     priceChange: Optional[float] = None
     priceChangePercent: Optional[float] = None

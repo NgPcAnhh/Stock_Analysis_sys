@@ -54,7 +54,13 @@ const IndexImpactLiquidity = () => {
     }, [fetchData]);
 
     const impactOption = useMemo(() => ({
-        tooltip: { trigger: "axis" as const, axisPointer: { type: "shadow" as const } },
+        tooltip: {
+            trigger: "axis" as const,
+            axisPointer: { type: "shadow" as const },
+            textStyle: {
+                fontFamily: "var(--font-roboto), Roboto, sans-serif",
+            },
+        },
         grid: { left: "3%", right: "4%", bottom: "3%", containLabel: true },
         xAxis: {
             type: "category" as const,
@@ -75,7 +81,13 @@ const IndexImpactLiquidity = () => {
     }), [impactData]);
 
     const foreignOption = useMemo(() => ({
-        tooltip: { trigger: "axis" as const, axisPointer: { type: "shadow" as const } },
+        tooltip: {
+            trigger: "axis" as const,
+            axisPointer: { type: "shadow" as const },
+            textStyle: {
+                fontFamily: "var(--font-roboto), Roboto, sans-serif",
+            },
+        },
         grid: { left: "3%", right: "4%", bottom: "3%", containLabel: true },
         xAxis: {
             type: "category" as const,

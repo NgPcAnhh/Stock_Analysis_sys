@@ -2,23 +2,10 @@
 
 import React, { useMemo } from "react";
 import ReactECharts from "echarts-for-react";
-import {
-  incomeMetricCards,
-  dupontFactors,
-  dupontResult,
-  dupontTree,
-  rosBreakdown,
-  revenueTrend,
-  costStructure,
-  growthData,
-  efficiencyData,
-  revenueBySegment,
-  costByCategory,
-  profitFunnel,
-  incomeTableHeaders,
-  incomeTableData,
-  type DuPontTreeNode,
-} from "@/lib/incomeStatementDeepDiveData";
+import * as isDefaults from "@/lib/incomeStatementDeepDiveData";
+import type { DuPontTreeNode } from "@/lib/incomeStatementDeepDiveData";
+
+const IsCtx = React.createContext(isDefaults);
 
 // ── Design tokens ──
 const mono = "font-[var(--font-roboto-mono)]";
@@ -30,13 +17,15 @@ const PURPLE = "#8B5CF6";
 
 const fmtN = (n: number | null) => {
   if (n == null) return "—";
-  return n.toLocaleString("vi-VN");
+  return n.toLocaleString("vi-VN", { maximumFractionDigits: 2 });
 };
 
 // ══════════════════════════════════════════════════════════════
 //  ROW 1 – Key Metric Highlight Cards
 // ══════════════════════════════════════════════════════════════
 function KeyMetricCards() {
+  const ctx = React.useContext(IsCtx);
+  const incomeMetricCards = ctx.incomeMetricCards ?? isDefaults.incomeMetricCards;
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {incomeMetricCards.map((c, i) => (
@@ -82,6 +71,9 @@ function KeyMetricCards() {
 
 /* Section A: 5-Factor Formula */
 function DuPontFormula() {
+  const ctx = React.useContext(IsCtx);
+  const dupontFactors = ctx.dupontFactors ?? isDefaults.dupontFactors;
+  const dupontResult = ctx.dupontResult ?? isDefaults.dupontResult;
   return (
     <div className="flex items-center justify-center gap-2 flex-wrap">
       {dupontFactors.map((f, i) => (
@@ -159,6 +151,9 @@ function TreeNode({ node, isRoot = false }: { node: DuPontTreeNode; isRoot?: boo
 
 /* Section B: Tree + ROS Breakdown */
 function DuPontTreeAndROS() {
+  const ctx = React.useContext(IsCtx);
+  const dupontTree = ctx.dupontTree ?? isDefaults.dupontTree;
+  const rosBreakdown = ctx.rosBreakdown ?? isDefaults.rosBreakdown;
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
       {/* Left: DuPont Tree */}
@@ -216,7 +211,10 @@ function DuPontSection() {
 //  ROW 3 – Revenue & Profit Trends
 // ══════════════════════════════════════════════════════════════
 function RevenueProfitTrends() {
-  const years = revenueTrend.map((d) => String(d.year));
+  const ctx = React.useContext(IsCtx);
+  const revenueTrend = ctx.revenueTrend ?? isDefaults.revenueTrend;
+  const costStructure = ctx.costStructure ?? isDefaults.costStructure;
+  const years = revenueTrend.map((d: any) => String(d.year));
 
   const comboChart = useMemo(
     () => ({
@@ -286,7 +284,7 @@ function RevenueProfitTrends() {
         },
       ],
     }),
-    []
+    [costStructure]
   );
 
   return (
@@ -334,7 +332,10 @@ function RevenueProfitTrends() {
 //  ROW 4 – Growth & Efficiency
 // ══════════════════════════════════════════════════════════════
 function GrowthAndEfficiency() {
-  const years = growthData.map((d) => String(d.year));
+  const ctx = React.useContext(IsCtx);
+  const growthData = ctx.growthData ?? isDefaults.growthData;
+  const efficiencyData = ctx.efficiencyData ?? isDefaults.efficiencyData;
+  const years = growthData.map((d: any) => String(d.year));
 
   const growthChart = useMemo(
     () => ({
@@ -386,7 +387,7 @@ function GrowthAndEfficiency() {
         },
       ],
     }),
-    []
+    [efficiencyData]
   );
 
   return (
@@ -421,6 +422,10 @@ function GrowthAndEfficiency() {
 //  ROW 5 – Segment Charts (3 columns)
 // ══════════════════════════════════════════════════════════════
 function SegmentCharts() {
+  const ctx = React.useContext(IsCtx);
+  const revenueBySegment = ctx.revenueBySegment ?? isDefaults.revenueBySegment;
+  const costByCategory = ctx.costByCategory ?? isDefaults.costByCategory;
+  const profitFunnel = ctx.profitFunnel ?? isDefaults.profitFunnel;
   const revPie = useMemo(
     () => ({
       tooltip: { trigger: "item" as const, formatter: "{b}: {d}%" },
@@ -437,7 +442,7 @@ function SegmentCharts() {
         },
       ],
     }),
-    []
+    [revenueBySegment]
   );
 
   const costPie = useMemo(
@@ -456,7 +461,7 @@ function SegmentCharts() {
         },
       ],
     }),
-    []
+    [costByCategory]
   );
 
   const funnelChart = useMemo(
@@ -492,7 +497,7 @@ function SegmentCharts() {
         },
       ],
     }),
-    []
+    [profitFunnel]
   );
 
   return (
@@ -550,6 +555,9 @@ function SegmentCharts() {
 //  ROW 6 – Detailed Income Statement Table
 // ══════════════════════════════════════════════════════════════
 function DetailedTable() {
+  const ctx = React.useContext(IsCtx);
+  const incomeTableHeaders = ctx.incomeTableHeaders ?? isDefaults.incomeTableHeaders;
+  const incomeTableData = ctx.incomeTableData ?? isDefaults.incomeTableData;
   return (
     <div className="bg-card rounded-xl shadow-sm border border-border/50 border-t-4 border-t-[#F97316] overflow-hidden">
       <div className="px-6 py-4 border-b border-border/50">
@@ -626,21 +634,23 @@ function DetailedTable() {
 // ══════════════════════════════════════════════════════════════
 //  MAIN EXPORT
 // ══════════════════════════════════════════════════════════════
-export default function IncomeStatementDeepDive() {
+export default function IncomeStatementDeepDive({ data }: { data?: Record<string, unknown> }) {
   return (
-    <div className="space-y-5">
-      {/* ROW 1 */}
-      <KeyMetricCards />
-      {/* ROW 2 */}
-      <DuPontSection />
-      {/* ROW 3 */}
-      <RevenueProfitTrends />
-      {/* ROW 4 */}
-      <GrowthAndEfficiency />
-      {/* ROW 5 */}
-      <SegmentCharts />
-      {/* ROW 6 */}
-      <DetailedTable />
-    </div>
+    <IsCtx.Provider value={data ? { ...isDefaults, ...data } as typeof isDefaults : isDefaults}>
+      <div className="space-y-5">
+        {/* ROW 1 */}
+        <KeyMetricCards />
+        {/* ROW 2 */}
+        <DuPontSection />
+        {/* ROW 3 */}
+        <RevenueProfitTrends />
+        {/* ROW 4 */}
+        <GrowthAndEfficiency />
+        {/* ROW 5 */}
+        <SegmentCharts />
+        {/* ROW 6 */}
+        <DetailedTable />
+      </div>
+    </IsCtx.Provider>
   );
 }

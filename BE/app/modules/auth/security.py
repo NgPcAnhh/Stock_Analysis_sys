@@ -68,3 +68,15 @@ def get_refresh_token_expiry() -> datetime:
     return datetime.now(timezone.utc) + timedelta(
         days=settings.REFRESH_TOKEN_EXPIRE_DAYS
     )
+
+
+def create_temp_2fa_token(user_id: int) -> str:
+    """Create a short-lived temp token (5 min) for 2FA verification step."""
+    expire = datetime.now(timezone.utc) + timedelta(minutes=5)
+    payload = {
+        "sub": str(user_id),
+        "type": "2fa_temp",
+        "exp": expire,
+    }
+    return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+

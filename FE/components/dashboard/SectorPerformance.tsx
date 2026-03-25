@@ -95,7 +95,7 @@ export const SectorPerformance = () => {
                     type: "slider",
                     xAxisIndex: 0,
                     start: 0,
-                    end: defaultEndPercent,
+                    end: 60,
                     height: 20,
                     bottom: 4,
                     borderColor: "transparent",

@@ -31,10 +31,11 @@ interface DrawingCanvasProps {
   onDrawingsChange: (drawings: DrawingItem[]) => void;
   width: number;
   height: number;
+  chartInst?: any;
 }
 
 const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
-  ({ activeTool, color, lineWidth, drawings, onDrawingsChange, width, height }, ref) => {
+  ({ activeTool, color, lineWidth, drawings, onDrawingsChange, width, height, chartInst }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [currentDrawing, setCurrentDrawing] = useState<DrawingItem | null>(null);
     const [mousePos, setMousePos] = useState<DrawingPoint | null>(null);
@@ -52,6 +53,31 @@ const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
       },
     }));
 
+    const mapToPixel = useCallback((item: DrawingItem): DrawingItem => {
+      if (!chartInst) return item;
+      try {
+        const pts = item.points.map(p => {
+          if (p.dataX !== undefined && p.dataY !== undefined) {
+             const coord = chartInst.convertToPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [p.dataX, p.dataY]);
+             if (coord) return { ...p, x: coord[0], y: coord[1] };
+          }
+          return p;
+        });
+        return { ...item, points: pts };
+      } catch (e) {
+        return item;
+      }
+    }, [chartInst]);
+
+    const mapToData = useCallback((p: DrawingPoint): DrawingPoint => {
+      if (!chartInst) return p;
+      try {
+        const dataCoord = chartInst.convertFromPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [p.x, p.y]);
+        if (dataCoord) return { ...p, dataX: dataCoord[0], dataY: dataCoord[1] };
+      } catch (e) {}
+      return p;
+    }, [chartInst]);
+
     // Draw everything
     const drawAll = useCallback(() => {
       const canvas = canvasRef.current;
@@ -62,17 +88,21 @@ const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
       ctx.clearRect(0, 0, width, height);
 
       // Draw completed drawings
-      drawings.forEach((d) => drawShape(ctx, d, false));
+      drawings.forEach((d) => {
+         const mapped = mapToPixel(d);
+         drawShape(ctx, mapped, false);
+      });
 
       // Draw current in-progress drawing with preview
       if (currentDrawing && mousePos) {
+        const mappedCurrent = mapToPixel(currentDrawing);
         const preview: DrawingItem = {
-          ...currentDrawing,
-          points: [...currentDrawing.points, mousePos],
+          ...mappedCurrent,
+          points: [...mappedCurrent.points, mousePos],
         };
         drawShape(ctx, preview, true);
       }
-    }, [drawings, currentDrawing, mousePos, width, height]);
+    }, [drawings, currentDrawing, mousePos, width, height, mapToPixel]);
 
     useEffect(() => {
       drawAll();
@@ -86,6 +116,20 @@ const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
       canvas.height = height;
       drawAll();
     }, [width, height, drawAll]);
+
+    // Link drawn lines to ECharts zoom/pan
+    useEffect(() => {
+      if (!chartInst) return;
+      const handleChartChange = () => drawAll();
+      chartInst.on('datazoom', handleChartChange);
+      chartInst.on('restore', handleChartChange);
+      return () => {
+        if (!chartInst.isDisposed()) {
+          chartInst.off('datazoom', handleChartChange);
+          chartInst.off('restore', handleChartChange);
+        }
+      };
+    }, [chartInst, drawAll]);
 
     function drawShape(ctx: CanvasRenderingContext2D, item: DrawingItem, isPreview: boolean) {
       ctx.save();
@@ -411,7 +455,8 @@ const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
     const getCanvasPos = (e: React.MouseEvent): DrawingPoint => {
       const canvas = canvasRef.current!;
       const rect = canvas.getBoundingClientRect();
-      return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+      const pos = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+      return mapToData(pos);
     };
 
     const handleMouseDown = (e: React.MouseEvent) => {
@@ -422,14 +467,14 @@ const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
         // Select / deselect drawings
         const updated = drawings.map((d) => ({
           ...d,
-          selected: isNearDrawing(d, pos.x, pos.y),
+          selected: isNearDrawing(mapToPixel(d), pos.x, pos.y),
         }));
         onDrawingsChange(updated);
         return;
       }
 
       if (activeTool === "eraser") {
-        const remaining = drawings.filter((d) => !isNearDrawing(d, pos.x, pos.y));
+        const remaining = drawings.filter((d) => !isNearDrawing(mapToPixel(d), pos.x, pos.y));
         if (remaining.length !== drawings.length) {
           onDrawingsChange(remaining);
         }
@@ -492,7 +537,7 @@ const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
         const pos = getCanvasPos(e);
         const updated = drawings.map((d) => ({
           ...d,
-          selected: isNearDrawing(d, pos.x, pos.y),
+          selected: isNearDrawing(mapToPixel(d), pos.x, pos.y),
         }));
         // Only update if selection changed
         const changed = updated.some((d, i) => d.selected !== drawings[i].selected);
@@ -564,6 +609,7 @@ const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
       <div className="absolute inset-0" style={{ pointerEvents: activeTool === "cursor" && !drawings.some(d => d.selected) ? "none" : "auto" }}>
         <canvas
           ref={canvasRef}
+          data-drawing="true"
           width={width}
           height={height}
           className="absolute inset-0"
@@ -571,6 +617,26 @@ const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onContextMenu={handleRightClick}
+          onWheel={(e) => {
+            // Forward wheel events to ECharts canvas underneath for zoom
+            e.stopPropagation();
+            const echartsCanvas = canvasRef.current?.parentElement?.parentElement?.querySelector('canvas:not([data-drawing])') as HTMLCanvasElement;
+            if (echartsCanvas) {
+              const wheelEvent = new WheelEvent('wheel', {
+                deltaX: e.deltaX,
+                deltaY: e.deltaY,
+                deltaZ: e.deltaZ,
+                deltaMode: e.deltaMode,
+                clientX: e.clientX,
+                clientY: e.clientY,
+                screenX: e.screenX,
+                screenY: e.screenY,
+                bubbles: true,
+                cancelable: true,
+              });
+              echartsCanvas.dispatchEvent(wheelEvent);
+            }
+          }}
         />
 
         {/* Text input overlay */}

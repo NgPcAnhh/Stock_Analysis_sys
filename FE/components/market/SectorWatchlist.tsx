@@ -91,7 +91,7 @@ export function SectorWatchlist() {
             if (id !== fetchRef.current) return;
             setWatchlistData(json);
             if (selectedSectors.length === 0 && json.sectors.length > 0) {
-                setSelectedSectors(json.sectors.slice(0, 6).map((s) => s.id));
+                setSelectedSectors(json.sectors.slice(0, 3).map((s) => s.id));
             }
         } catch (err) {
             console.error("Failed to fetch sector watchlist:", err);
@@ -164,7 +164,7 @@ export function SectorWatchlist() {
 
     return (
         <Card className="shadow-md border-border">
-            {/* ── Header with title + color legend ── */}
+            {/* ── Header ── */}
             <CardHeader className="pb-3 border-b border-border/50">
                 <div className="flex items-center justify-between">
                     <CardTitle className="text-base font-bold text-foreground">
@@ -174,7 +174,6 @@ export function SectorWatchlist() {
                         <RefreshCw className="w-4 h-4" />
                     </button>
                 </div>
-                {/* Color legend */}
                 <div className="flex flex-wrap gap-3 mt-2">
                     {(["floor", "strongDown", "down", "ref", "up", "strongUp", "ceiling"] as PriceLevel[]).map((level) => (
                         <span key={level} className="flex items-center gap-1 text-[10px]">
@@ -185,45 +184,57 @@ export function SectorWatchlist() {
                 </div>
             </CardHeader>
 
-            <CardContent className="pt-4 space-y-4">
-                {/* ── Sector filter badges ── */}
-                <div className="flex flex-wrap gap-2 items-center">
-                    <button
-                        onClick={() => setSelectedSectors(sectors.map((s) => s.id))}
-                        className="text-xs text-orange-600 hover:underline font-medium mr-1"
-                    >
-                        Chọn tất cả
-                    </button>
-                    <button
-                        onClick={() => setSelectedSectors([])}
-                        className="text-xs text-muted-foreground hover:underline font-medium mr-2"
-                    >
-                        Bỏ chọn
-                    </button>
-                    {sectors.map((sector) => {
-                        const isSelected = selectedSectors.includes(sector.id);
-                        return (
-                            <Badge
-                                key={sector.id}
-                                variant={isSelected ? "default" : "outline"}
-                                className={`cursor-pointer transition-all hover:opacity-80 px-3 py-1 text-xs ${
-                                    isSelected
-                                        ? "bg-orange-500 hover:bg-orange-600 text-white border-orange-500"
-                                        : "bg-card text-muted-foreground border-border hover:border-orange-300 hover:text-orange-600"
-                                }`}
-                                onClick={() => toggleSector(sector.id)}
-                            >
-                                {sector.name}
-                                <span className={`ml-1.5 ${isSelected ? "text-white/80" : "text-muted-foreground"}`}>
-                                    {sector.count}
-                                </span>
-                            </Badge>
-                        );
-                    })}
-                </div>
+            <CardContent className="pt-4">
+                <div className="flex flex-col lg:flex-row gap-4">
+                    {/* Left panel: sector filter (15-20% on large screens) */}
+                    <aside className="w-full lg:basis-[18%] lg:min-w-[220px] lg:max-w-[300px] lg:shrink-0 border border-border rounded-lg p-3 bg-muted/20">
+                        <div className="flex items-center justify-between mb-2">
+                            <p className="text-xs font-semibold text-foreground">Bộ lọc ngành</p>
+                            <span className="text-[11px] text-muted-foreground">{selectedSectors.length}/{sectors.length}</span>
+                        </div>
 
-                {/* ── Sector grids — 3 per row ── */}
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                        <div className="flex items-center gap-3 mb-3">
+                            <button
+                                onClick={() => setSelectedSectors(sectors.map((s) => s.id))}
+                                className="text-xs text-orange-600 hover:underline font-medium"
+                            >
+                                Chọn tất cả
+                            </button>
+                            <button
+                                onClick={() => setSelectedSectors([])}
+                                className="text-xs text-muted-foreground hover:underline font-medium"
+                            >
+                                Bỏ chọn
+                            </button>
+                        </div>
+
+                        <div className="space-y-2">
+                            {sectors.map((sector) => {
+                                const isSelected = selectedSectors.includes(sector.id);
+                                return (
+                                    <Badge
+                                        key={sector.id}
+                                        variant={isSelected ? "default" : "outline"}
+                                        className={`w-full justify-between cursor-pointer transition-all hover:opacity-80 px-3 py-1.5 text-xs ${
+                                            isSelected
+                                                ? "bg-orange-500 hover:bg-orange-600 text-white border-orange-500"
+                                                : "bg-card text-muted-foreground border-border hover:border-orange-300 hover:text-orange-600"
+                                        }`}
+                                        onClick={() => toggleSector(sector.id)}
+                                    >
+                                        <span className="truncate">{sector.name}</span>
+                                        <span className={`${isSelected ? "text-white/80" : "text-muted-foreground"}`}>
+                                            {sector.count}
+                                        </span>
+                                    </Badge>
+                                );
+                            })}
+                        </div>
+                    </aside>
+
+                    {/* Right panel: sector tables */}
+                    <section className="w-full lg:basis-[82%]">
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                     {visibleSectors.map((sector) => {
                         const items = stocks[sector.id] || [];
                         if (items.length === 0) return null;
@@ -297,6 +308,8 @@ export function SectorWatchlist() {
                             </div>
                         );
                     })}
+                            </div>
+                    </section>
                 </div>
 
                 {selectedSectors.length === 0 && (

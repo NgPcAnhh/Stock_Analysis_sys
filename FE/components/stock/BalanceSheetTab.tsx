@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useMemo } from "react";
 import ReactECharts from "echarts-for-react";
@@ -7,13 +7,17 @@ import CashFlowDeepDive from "@/components/stock/CashFlowDeepDive";
 import { useStockDetail } from "@/lib/StockDetailContext";
 import {
   useDeepAnalysis,
+  useFinancialReports,
   useFinancialRatios,
+  useAvailablePeriods,
   type DeepAnalysisData,
   type OverviewStat,
   type HealthIndicator,
   type TrendYear,
+  type BalanceSheetItem,
 } from "@/hooks/useStockData";
 import BalanceSheetDeepDive from "@/components/stock/BalanceSheetDeepDive";
+import { transformBalanceSheet, transformIncomeStatement, transformCashFlow } from "@/lib/deepDiveTransformer";
 
 // ==================== HELPER FUNCTIONS ====================
 const formatNumber = (n: number) => n.toLocaleString("vi-VN");
@@ -22,16 +26,27 @@ const monoFont = "font-[var(--font-roboto-mono)]";
 // ==================== ROW 0: PAGE HEADER (SHARED) ====================
 type SubTab = "balance" | "income" | "cashflow";
 
+interface PageHeaderProps {
+  ticker: string;
+  activeSubTab: SubTab;
+  onSubTabChange: (tab: SubTab) => void;
+  periods?: string[];
+  selectedPeriod: string | null;
+  onPeriodChange: (p: string | null) => void;
+  unit: number;
+  onUnitChange: (u: number) => void;
+}
+
 function PageHeader({
   ticker,
   activeSubTab,
   onSubTabChange,
-}: {
-  ticker: string;
-  activeSubTab: SubTab;
-  onSubTabChange: (tab: SubTab) => void;
-}) {
-  const [period, setPeriod] = useState("Năm 2024 (Kiểm toán)");
+  periods,
+  selectedPeriod,
+  onPeriodChange,
+  unit,
+  onUnitChange
+}: PageHeaderProps) {
   const subTabs: { id: SubTab; icon: string; label: string }[] = [
     { id: "balance", icon: "📊", label: "Bảng Cân Đối Kế Toán" },
     { id: "income", icon: "📈", label: "Kết Quả Kinh Doanh" },
@@ -58,14 +73,20 @@ function PageHeader({
           </div>
           <div className="flex flex-col">
             <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Kỳ báo cáo</span>
-            <select value={period} onChange={(e) => setPeriod(e.target.value)}
-              className="text-sm font-semibold text-[#F97316] bg-transparent border-none cursor-pointer focus:outline-none">
-              <option>Năm 2024 (Kiểm toán)</option><option>Năm 2023 (Kiểm toán)</option><option>Q4 2024</option>
+             <select 
+                className="text-sm font-semibold text-[#F97316] bg-transparent border-none cursor-pointer focus:outline-none"
+                value={selectedPeriod || ""}
+                onChange={(e) => onPeriodChange(e.target.value || null)}
+            >
+                {/* <option value="">Gần nhất</option> */}
+                {periods?.map(p => (
+                    <option key={p} value={p}>{p}</option>
+                ))}
             </select>
           </div>
           <div className="flex flex-col">
             <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Đơn vị</span>
-            <span className="text-sm font-semibold text-foreground">Tỷ VND</span>
+            <div className="text-sm font-semibold text-foreground mt-0.5">Tỷ VND</div>
           </div>
         </div>
       </div>
@@ -176,8 +197,8 @@ function AssetCapitalStructure({ trends }: { trends: TrendYear[] }) {
       xAxis: { type: "category" as const, data: trends.map((t) => String(t.year)) },
       yAxis: { type: "value" as const },
       series: [
-        { name: "Vốn CSH", type: "bar", stack: "total", data: trends.map((t) => ((t.equity ?? 0) / 1e9).toFixed(0)), itemStyle: { color: "#F97316" }, barWidth: "40%" },
-        { name: "Nợ phải trả", type: "bar", stack: "total", data: trends.map((t) => ((t.totalLiabilities ?? 0) / 1e9).toFixed(0)), itemStyle: { color: "#9CA3AF" }, barWidth: "40%" },
+        { name: "Vốn CSH", type: "bar", stack: "total", data: trends.map((t) => (t.equity ?? 0).toFixed(0)), itemStyle: { color: "#F97316" }, barWidth: "40%" },
+        { name: "Nợ phải trả", type: "bar", stack: "total", data: trends.map((t) => (t.totalLiabilities ?? 0).toFixed(0)), itemStyle: { color: "#9CA3AF" }, barWidth: "40%" },
       ],
     };
   }, [trends]);
@@ -323,20 +344,87 @@ function CCCAndLiquidity({ liquidityData, ratios }: { liquidityData: Record<stri
 }
 
 // ==================== BALANCE SHEET CONTENT ====================
-function BalanceSheetContent() {
-  return <BalanceSheetDeepDive />;
+function BalanceSheetContent({ data }: { data?: Record<string, unknown> }) {
+  return <BalanceSheetDeepDive data={data} />;
 }
 
 // ==================== MAIN COMPONENT ====================
 export default function BalanceSheetTab() {
   const { stockInfo } = useStockDetail();
+  
+  // Fetch raw financial reports and ratios
+  const { data: financialReports } = useFinancialReports(stockInfo.ticker, 20);
+  const { data: financialRatios } = useFinancialRatios(stockInfo.ticker, 20);
+
+  const [selectedPeriod, setSelectedPeriod] = useState<string | null>(null);
+  const unit = 1_000_000_000; // Fixed Billion
+
+  // Extract available periods from the data
+  const periods = useMemo(() => {
+    if (!financialReports?.balanceSheet) return [];
+    // Use Balance Sheet as reference for periods
+    const pList = financialReports.balanceSheet.map(i => ({ 
+        label: i.period.period, 
+        y: i.period.year, 
+        q: i.period.quarter 
+    }));
+    // Sort Descending (Newest first)
+    pList.sort((a, b) => {
+        if (a.y !== b.y) return b.y - a.y;
+        return b.q - a.q;
+    });
+    return Array.from(new Set(pList.map(p => p.label)));
+  }, [financialReports]);
+
+  // Default to latest period
+  React.useEffect(() => {
+    if (periods.length > 0 && selectedPeriod === null) {
+        setSelectedPeriod(periods[0]);
+    }
+  }, [periods, selectedPeriod]);
+
+  // Transform Data Views on client side
+  const balanceDataView = useMemo(() => {
+    // Market Cap parsing
+    let marketCap = 0;
+    if (stockInfo?.metrics?.marketCap) {
+        // Assume format "15.000" or "1.234,56" (Ty VND)
+        // Remove dots, replace comma with dot
+        const s = String(stockInfo.metrics.marketCap).replace(/\./g, "").replace(",", ".");
+        marketCap = parseFloat(s) * 1_000_000_000;
+    }
+    return transformBalanceSheet(financialReports?.balanceSheet, financialReports?.incomeStatement, financialRatios ?? undefined, marketCap, unit, selectedPeriod);
+  }, [financialReports, financialRatios, unit, selectedPeriod, stockInfo]);
+
+  const incomeDataView = useMemo(() => {
+    return transformIncomeStatement(financialReports?.incomeStatement, financialReports?.balanceSheet, financialRatios ?? undefined, unit, selectedPeriod);
+  }, [financialReports, financialRatios, unit, selectedPeriod]);
+
+  const cashFlowDataView = useMemo(() => {
+    return transformCashFlow(financialReports?.cashFlow, financialReports?.incomeStatement, unit, selectedPeriod);
+  }, [financialReports, unit, selectedPeriod]);
+  
   const [subTab, setSubTab] = useState<SubTab>("balance");
+
   return (
     <div className="space-y-5">
-      <PageHeader ticker={stockInfo.ticker} activeSubTab={subTab} onSubTabChange={setSubTab} />
-      {subTab === "balance" && <BalanceSheetContent />}
-      {subTab === "income" && <IncomeStatementDeepDive />}
-      {subTab === "cashflow" && <CashFlowDeepDive />}
+      <PageHeader 
+        ticker={stockInfo.ticker} 
+        activeSubTab={subTab} 
+        onSubTabChange={setSubTab}
+        periods={periods}
+        selectedPeriod={selectedPeriod}
+        onPeriodChange={setSelectedPeriod}
+        unit={unit}
+        onUnitChange={() => {}}
+      />
+      
+      {/* Pass transformed view data (casted to Record<string, unknown> to satisfy prop type) */}
+      {subTab === "balance" && <BalanceSheetContent data={(balanceDataView as unknown) as Record<string, unknown>} />}
+      
+      {subTab === "income" && <IncomeStatementDeepDive data={(incomeDataView as unknown) as Record<string, unknown>} />}
+      
+      {subTab === "cashflow" && <CashFlowDeepDive data={(cashFlowDataView as unknown) as Record<string, unknown>} />}
     </div>
   );
 }

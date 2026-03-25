@@ -25,6 +25,7 @@ const ChartWithDrawing: React.FC<ChartWithDrawingProps> = ({
   const [history, setHistory] = useState<DrawingItem[][]>([[]]);
   const [historyIndex, setHistoryIndex] = useState(0);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+  const [chartInst, setChartInst] = useState<any>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const drawingCanvasRef = useRef<DrawingCanvasRef>(null);
@@ -215,7 +216,7 @@ const ChartWithDrawing: React.FC<ChartWithDrawingProps> = ({
       {/* Chart + Drawing area */}
       <div className="flex-1 min-w-0 relative" ref={containerRef}>
         {/* ECharts underneath */}
-        <TechnicalChart data={data} overlays={overlays} subIndicator={subIndicator} />
+        <TechnicalChart data={data} overlays={overlays} subIndicator={subIndicator} onChartReady={setChartInst} />
 
         {/* Drawing canvas overlay */}
         {containerSize.width > 0 && containerSize.height > 0 && (
@@ -228,6 +229,7 @@ const ChartWithDrawing: React.FC<ChartWithDrawingProps> = ({
             onDrawingsChange={handleDrawingsChange}
             width={containerSize.width}
             height={containerSize.height}
+            chartInst={chartInst}
           />
         )}
       </div>

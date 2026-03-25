@@ -4,7 +4,13 @@ export interface StockListItem {
   ticker: string;
   companyName: string;
   sector: string;
+  sector2?: string;
   exchange: string;
+  tradingDate?: string;
+  openPrice?: number;
+  highPrice?: number;
+  lowPrice?: number;
+  closePrice?: number;
   currentPrice: number;
   priceChange: number;
   priceChangePercent: number;

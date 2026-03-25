@@ -11,10 +11,14 @@ from app.modules.tracking.schemas import (
     SessionEndRequest,
     SessionHeartbeatRequest,
     SessionStartRequest,
+    ToggleFavoriteRequest,
     TrackResponse,
     TrackSearchRequest,
     TrackSidebarClickRequest,
     TrackStockSearchRequest,
+    TrackPageViewRequest,
+    TrackAnalysisViewRequest,
+    TrackErrorRequest,
     TrackingStatsResponse,
 )
 
@@ -48,6 +52,37 @@ async def track_search(
         ip_address=_client_ip(request),
     )
     return TrackResponse(success=True)
+
+
+# ── 9. Favorite stocks ───────────────────────────────────────────
+
+@router.post("/favorite", response_model=TrackResponse)
+async def toggle_favorite(
+    body: ToggleFavoriteRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """Thêm/xóa mã cổ phiếu khỏi danh sách yêu thích."""
+    user_id = getattr(request.state, "user_id", None)
+    is_favorite = await logic.toggle_favorite(
+        db=db,
+        ticker=body.ticker,
+        user_id=user_id,
+        session_id=body.session_id,
+    )
+    message = "Đã thêm vào yêu thích" if is_favorite else "Đã xóa khỏi yêu thích"
+    return TrackResponse(success=True, message=message)
+
+
+@router.get("/favorite", response_model=list[str])
+async def get_favorites(
+    request: Request,
+    session_id: str = "anonymous",
+    db: AsyncSession = Depends(get_db),
+):
+    """Lấy danh sách mã cổ phiếu yêu thích."""
+    user_id = getattr(request.state, "user_id", None)
+    return await logic.get_favorites(db=db, user_id=user_id, session_id=session_id)
 
 
 # ── 2. Tìm kiếm mã cổ phiếu ──────────────────────────────────────
@@ -152,3 +187,72 @@ async def get_stats(
     """Thống kê tổng quan hành vi người dùng (hot search, sidebar, login, session)."""
     data = await logic.get_tracking_stats(db, days=days, top=top)
     return data
+
+
+# ── 6. Page View tracking ─────────────────────────────────────────
+
+@router.post("/page-view", response_model=TrackResponse)
+async def track_page_view(
+    body: TrackPageViewRequest,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+):
+    """Ghi log mỗi lần user xem một trang."""
+    background_tasks.add_task(
+        logic.track_page_view,
+        db,
+        page_path=body.page_path,
+        page_title=body.page_title,
+        session_id=body.session_id,
+        user_id=body.user_id,
+        ip_address=_client_ip(request),
+        referrer=body.referrer,
+    )
+    return TrackResponse(success=True)
+
+
+# ── 7. Analysis View tracking ─────────────────────────────────────
+
+@router.post("/analysis-view", response_model=TrackResponse)
+async def track_analysis_view(
+    body: TrackAnalysisViewRequest,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+):
+    """Ghi log mỗi lần user vào trang phân tích kỹ thuật CK."""
+    background_tasks.add_task(
+        logic.track_analysis_view,
+        db,
+        ticker=body.ticker,
+        session_id=body.session_id,
+        user_id=body.user_id,
+        ip_address=_client_ip(request),
+    )
+    return TrackResponse(success=True)
+
+
+# ── 8. Error logging ──────────────────────────────────────────────
+
+@router.post("/error", response_model=TrackResponse)
+async def track_error(
+    body: TrackErrorRequest,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+):
+    """Ghi log lỗi frontend (JS errors)."""
+    background_tasks.add_task(
+        logic.track_error,
+        db,
+        error_type=body.error_type,
+        error_message=body.error_message,
+        stack_trace=body.stack_trace,
+        page_url=body.page_url,
+        session_id=body.session_id,
+        user_id=body.user_id,
+        ip_address=_client_ip(request),
+        user_agent=request.headers.get("user-agent"),
+    )
+    return TrackResponse(success=True)

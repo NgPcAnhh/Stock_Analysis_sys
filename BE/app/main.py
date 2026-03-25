@@ -22,6 +22,8 @@ from app.modules.stock.router import router as stock_router
 from app.modules.analysis.router import router as analysis_router
 from app.modules.auth.router import router as auth_router
 from app.modules.tracking.router import router as tracking_router
+from app.modules.admin.router import router as admin_router
+from app.modules.alerts.router import router as alerts_router
 
 settings = get_settings()
 
@@ -77,6 +79,8 @@ app.include_router(stock_router, prefix="/api/v1")
 app.include_router(analysis_router, prefix="/api/v1")
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(tracking_router, prefix="/api/v1")
+app.include_router(admin_router, prefix="/api/v1")
+app.include_router(alerts_router, prefix="/api/v1")
 
 @app.get("/")
 async def read_root():

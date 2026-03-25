@@ -1,0 +1,413 @@
+import { BalanceSheetItem, IncomeStatementItem, CashFlowItem, FinancialRatioItem } from "@/hooks/useStockData";
+import { 
+    OverviewStatCard, GaugeData, HealthMetric, TrendYearData, TableRow, DonutItem, InventoryItem, LeverageItem, CCCData, LiquidityItem 
+} from "@/lib/balanceSheetDeepDiveData";
+import { IncomeMetricCard, DuPontFactor, DuPontTreeNode } from "@/lib/incomeStatementDeepDiveData";
+import { EfficiencyItem, SelfFundingData } from "@/lib/cashFlowDeepDiveData";
+
+export interface DeepDiveDataView {
+    overviewStats: OverviewStatCard[];
+    gaugeData: GaugeData;
+    healthMetrics: HealthMetric[];
+    assetStructure: DonutItem[];
+    capitalStructure: DonutItem[];
+    trendData: TrendYearData[];
+    inventoryData: InventoryItem[];
+    inventoryFooter: { totalInventory: string; inventoryTurnover: string; inventoryDays: string };
+    leverageItems: LeverageItem[];
+    cccData: CCCData;
+    liquidityItems: LiquidityItem[];
+    tableHeaders: string[];
+    tableData: TableRow[];
+}
+
+export interface IncomeStatementView {
+    incomeMetricCards: IncomeMetricCard[];
+    dupontFactors: DuPontFactor[];
+    dupontResult: { label: string; value: number };
+    dupontTree: DuPontTreeNode;
+    rosBreakdown: { label: string; value: number; color: string }[];
+    revenueTrend: any[];
+    costStructure: any[];
+    growthData: any[];
+    efficiencyData: any[];
+    revenueBySegment: any[];
+    costByCategory: any[];
+    profitFunnel: any[];
+    incomeTableHeaders: string[];
+    incomeTableData: any[];
+}
+
+export interface CashFlowView {
+    efficiencyMetrics: EfficiencyItem[];
+    selfFundingData: SelfFundingData & { history: { year: string; cfo: number; capex: number; fcf: number }[] };
+    earningsQuality: any[];
+    threeCashFlows: any[];
+    insightText: string;
+    fcfDividendData: any[];
+    waterfallData: any[];
+    netCashChange: number;
+}
+
+const GREEN = "#00C076";
+const RED = "#EF4444";
+const ORANGE = "#F97316";
+const PURPLE = "#8B5CF6";
+const BLUE = "#3B82F6";
+
+const safeDiv = (n: number, d: number) => d === 0 ? 0 : n / d;
+const fmtPct = (n: number) => Number((n * 100).toFixed(2)) + "%";
+const fmtNum = (n: number) => Number(n.toFixed(2));
+const fmtVal = (n: number, unit: number) => (n / unit).toLocaleString("vi-VN", { maximumFractionDigits: 2 }) + " Tỷ";
+
+function findRatio(ratios: FinancialRatioItem[] | undefined, year: number, quarter: number) {
+    if (!ratios) return null;
+    return ratios.find(r => r.year === year && r.quarter === quarter) || ratios[0] || null;
+}
+
+export function transformBalanceSheet(
+    data: BalanceSheetItem[] | undefined, 
+    incomeData: IncomeStatementItem[] | undefined,
+    ratiosData: FinancialRatioItem[] | undefined,
+    marketCap: number | undefined,
+    unit: number = 1_000_000_000,
+    selectedPeriod: string | null = null
+): DeepDiveDataView | null {
+    if (!data || data.length === 0) return null;
+    const sortedData = [...data].sort((a, b) => {
+        if (a.period.year !== b.period.year) return a.period.year - b.period.year;
+        return a.period.quarter - b.period.quarter;
+    });
+    let viewData = sortedData;
+    if (selectedPeriod) {
+        const idx = sortedData.findIndex(d => d.period.period === selectedPeriod);
+        if (idx !== -1) viewData = sortedData.slice(0, idx + 1);
+    }
+    if (viewData.length === 0) viewData = [sortedData[sortedData.length-1]];
+
+    const latest = viewData[viewData.length - 1];
+    const prev = viewData.length > 1 ? viewData[viewData.length - 2] : null;
+    const ratio = findRatio(ratiosData, latest.period.year, latest.period.quarter);
+
+    const deRatio = ratio?.debtToEquity || safeDiv(latest.totalLiabilities, latest.totalEquity);
+    const currentRatio = ratio?.currentRatio || safeDiv(latest.currentAssets, latest.currentLiabilities);
+    const daRatio = safeDiv(latest.totalLiabilities, latest.totalAssets);
+
+    let zScore = 0; let zoneLabel = "N/A"; let zoneColor = "#ccc";
+    if (incomeData && marketCap) {
+        const inc = incomeData.find(i => i.period.year === latest.period.year && i.period.quarter === latest.period.quarter) || incomeData[0];
+        if (inc) {
+            const A = safeDiv(latest.currentAssets - latest.currentLiabilities, latest.totalAssets);
+            const B = safeDiv(latest.retainedEarnings, latest.totalAssets);
+            const C = safeDiv(inc.operatingProfit, latest.totalAssets); 
+            const D = safeDiv(marketCap, latest.totalLiabilities);
+            const E = safeDiv(inc.revenue, latest.totalAssets);
+            zScore = fmtNum(1.2 * A + 1.4 * B + 3.3 * C + 0.6 * D + 1.0 * E);
+            if (zScore > 2.99) { zoneLabel = "An toàn"; zoneColor = GREEN; }
+            else if (zScore > 1.81) { zoneLabel = "Cảnh báo"; zoneColor = ORANGE; }
+            else { zoneLabel = "Nguy cơ"; zoneColor = RED; }
+        }
+    }
+
+    const inventoryVal = latest.inventory / unit;
+    const inventoryPct = (safeDiv(latest.inventory, latest.currentAssets) * 100);
+    const shortTermRecPct = (safeDiv(latest.shortTermReceivables, latest.currentAssets) * 100);
+    const cashPct = (safeDiv(latest.cash + latest.shortTermInvestments, latest.currentAssets) * 100);
+    const otherScaPct = Math.max(0, 100 - inventoryPct - shortTermRecPct - cashPct);
+
+    const mkRow = (label: string, accessor: (d: BalanceSheetItem) => number, level: "main" | "sub" | "detail" = "detail"): TableRow => {
+        const values = viewData.map(d => accessor(d) / unit);
+        const lastVal = values[values.length - 1];
+        const prevVal = values.length > 1 ? values[values.length - 2] : 0;
+        const change = lastVal - prevVal;
+        const total = viewData[viewData.length - 1] ? (viewData[viewData.length - 1].totalAssets / unit) : 1;
+        return { label, level, values, change, yoyPct: safeDiv(change, Math.abs(prevVal)) * 100, pctTotal: safeDiv(lastVal, total) * 100 };
+    };
+
+    return {
+        overviewStats: [
+            { label: "TỔNG TÀI SẢN", value: fmtVal(latest.totalAssets, unit), rawValue: latest.totalAssets, yoyChange: prev ? ((latest.totalAssets - prev.totalAssets) / prev.totalAssets) * 100 : null, yoyLabel: prev ? "vs kỳ trước" : "", badgeText: "Quy mô", borderColor: "border-t-[#F97316]" },
+            { label: "VỐN CHỦ SỞ HỮU", value: fmtVal(latest.totalEquity, unit), rawValue: latest.totalEquity, yoyChange: prev ? ((latest.totalEquity - prev.totalEquity) / prev.totalEquity) * 100 : null, yoyLabel: prev ? "vs kỳ trước" : "", badgeText: "Bền vững", borderColor: "border-t-[#10B981]" },
+            { label: "NỢ PHẢI TRẢ", value: fmtVal(latest.totalLiabilities, unit), rawValue: latest.totalLiabilities, yoyChange: prev ? ((latest.totalLiabilities - prev.totalLiabilities) / prev.totalLiabilities) * 100 : null, yoyLabel: prev ? "vs kỳ trước" : "", badgeText: "Rủi ro", borderColor: "border-t-[#EF4444]" },
+            { label: "TÀI SẢN NGẮN HẠN", value: fmtVal(latest.currentAssets, unit), rawValue: latest.currentAssets, yoyChange: prev ? ((latest.currentAssets - prev.currentAssets) / prev.currentAssets) * 100 : null, yoyLabel: prev ? "vs kỳ trước" : "", badgeText: "Thanh khoản", borderColor: "border-t-[#3B82F6]" }
+        ],
+        gaugeData: { zScore, zoneLabel, zoneColor },
+        healthMetrics: [
+            { title: "D/E (Nợ/Vốn CSH)", value: fmtNum(deRatio) + "x", rawValue: deRatio, max: 3, barPercent: Math.min((deRatio / 3) * 100, 100), status: deRatio < 1 ? "good" : deRatio < 2 ? "warning" : "danger", subtitle: "An toàn < 1x", color: deRatio < 1 ? GREEN : deRatio < 2 ? ORANGE : RED },
+            { title: "Thanh toán hiện hành", value: fmtNum(currentRatio) + "x", rawValue: currentRatio, max: 3, barPercent: Math.min((currentRatio / 3) * 100, 100), status: currentRatio > 1.5 ? "good" : currentRatio > 1 ? "warning" : "danger", subtitle: "Tốt > 1.5x", color: currentRatio > 1.5 ? GREEN : currentRatio > 1 ? ORANGE : RED },
+            { title: "D/A (Nợ/Tổng TS)", value: fmtPct(daRatio), rawValue: daRatio * 100, max: 100, barPercent: daRatio * 100, status: daRatio < 0.5 ? "good" : "warning", subtitle: "An toàn < 50%", color: daRatio < 0.5 ? GREEN : ORANGE },
+        ],
+        assetStructure: [
+            { 
+                name: "Ngắn hạn", 
+                value: fmtNum(safeDiv(latest.currentAssets, latest.totalAssets) * 100), 
+                color: ORANGE,
+                details: [
+                    { name: "Tiền & tương đương", value: fmtNum(safeDiv(latest.cash, latest.totalAssets) * 100) },
+                    { name: "Đầu tư TCNH", value: fmtNum(safeDiv(latest.shortTermInvestments, latest.totalAssets) * 100) },
+                    { name: "Phải thu ngắn hạn", value: fmtNum(safeDiv(latest.shortTermReceivables, latest.totalAssets) * 100) },
+                    { name: "Hàng tồn kho", value: fmtNum(safeDiv(latest.inventory, latest.totalAssets) * 100) },
+                    { name: "Khác", value: fmtNum(safeDiv(latest.currentAssets - latest.cash - latest.shortTermInvestments - latest.shortTermReceivables - latest.inventory, latest.totalAssets) * 100) }
+                ].filter(d => d.value > 0)
+            },
+            { 
+                name: "Dài hạn", 
+                value: fmtNum(safeDiv(latest.nonCurrentAssets, latest.totalAssets) * 100), 
+                color: PURPLE,
+                details: [
+                    { name: "Tài sản cố định", value: fmtNum(safeDiv(latest.fixedAssets, latest.totalAssets) * 100) },
+                    { name: "Đầu tư dài hạn", value: fmtNum(safeDiv(latest.longTermInvestments, latest.totalAssets) * 100) },
+                    { name: "Khác", value: fmtNum(safeDiv(latest.nonCurrentAssets - (latest.fixedAssets || 0) - (latest.longTermInvestments || 0), latest.totalAssets) * 100) }
+                ].filter(d => d.value > 0)
+            }
+        ],
+        capitalStructure: [
+            { 
+                name: "Vốn CSH", 
+                value: fmtNum(safeDiv(latest.totalEquity, latest.totalAssets) * 100), 
+                color: GREEN,
+                details: [
+                    { name: "Vốn góp (Điều lệ)", value: fmtNum(safeDiv(latest.charterCapital, latest.totalAssets) * 100) },
+                    { name: "Lợi nhuận chưa PP", value: fmtNum(safeDiv(latest.retainedEarnings, latest.totalAssets) * 100) },
+                    { name: "Khác", value: fmtNum(safeDiv(latest.totalEquity - (latest.charterCapital || 0) - (latest.retainedEarnings || 0), latest.totalAssets) * 100) }
+                ].filter(d => d.value > 0)
+            },
+            { 
+                name: "Nợ phải trả", 
+                value: fmtNum(safeDiv(latest.totalLiabilities, latest.totalAssets) * 100), 
+                color: ORANGE,
+                details: [
+                    { name: "Nợ ngắn hạn", value: fmtNum(safeDiv(latest.currentLiabilities, latest.totalAssets) * 100) },
+                    { name: "Nợ dài hạn", value: fmtNum(safeDiv(latest.longTermLiabilities, latest.totalAssets) * 100) }
+                ].filter(d => d.value > 0)
+            }
+        ],
+        trendData: viewData.map(item => ({
+            year: item.period.period as any,
+            currentAssetsPct: (safeDiv(item.currentAssets, item.totalAssets) * 100),
+            nonCurrentAssetsPct: (safeDiv(item.nonCurrentAssets, item.totalAssets) * 100),
+            equityPct: (safeDiv(item.totalEquity, item.totalAssets) * 100),
+            liabilitiesPct: (safeDiv(item.totalLiabilities, item.totalAssets) * 100),
+            shortTermDebt: item.currentLiabilities / unit,
+            longTermDebt: item.longTermLiabilities / unit,
+            equity: item.totalEquity / unit,
+            currentRatio: safeDiv(item.currentAssets, item.currentLiabilities),
+            totalAssets: item.totalAssets / unit,
+            totalLiabilities: item.totalLiabilities / unit,
+            currentAssets: item.currentAssets / unit
+        })) as any,
+        inventoryData: [
+            { name: "Hàng tồn kho", value: inventoryVal, percent: fmtNum(inventoryPct), color: ORANGE },
+            { name: "Tiền mặt & Tương đương", value: (latest.cash + latest.shortTermInvestments) / unit, percent: fmtNum(cashPct), color: GREEN },
+            { name: "Phải thu ngắn hạn", value: latest.shortTermReceivables / unit, percent: fmtNum(shortTermRecPct), color: BLUE },
+            { name: "Khác", value: (latest.currentAssets - latest.inventory - latest.cash - latest.shortTermInvestments - latest.shortTermReceivables) / unit, percent: fmtNum(otherScaPct), color: "#9CA3AF" },
+        ],
+        inventoryFooter: (() => {
+            const daysInPeriod = latest.period.quarter === 0 ? 365 : 90;
+            const inc = incomeData?.find(i => i.period.year === latest.period.year && i.period.quarter === latest.period.quarter) || incomeData?.[0];
+            const cogs = inc ? Math.abs(inc.costOfGoodsSold || 1) : 1;
+            
+            let invDays = ratio?.inventoryDays;
+            let invTurnover = ratio?.inventoryTurnover;
+
+            if (!invDays && inc) invDays = (latest.inventory / cogs) * daysInPeriod;
+            if (!invTurnover && inc) invTurnover = cogs / (latest.inventory || 1);
+
+            return {
+                totalInventory: fmtVal(latest.inventory, unit),
+                inventoryTurnover: invTurnover ? fmtNum(invTurnover) + "x" : "—",
+                inventoryDays: invDays ? Math.round(invDays) + " ngày" : "—"
+            };
+        })(),
+        leverageItems: [ 
+            { title: "D/A (Nợ/TS)", value: fmtPct(daRatio), rawValue: daRatio*100, max: 100, color: "text-[#8B5CF6]", barColor: "bg-[#8B5CF6]" }, 
+            { title: "D/E (Nợ/Vốn CSH)", value: fmtNum(deRatio)+"x", rawValue: deRatio, max: 3, color: "text-[#3B82F6]", barColor: "bg-[#3B82F6]" },
+            { title: "Tỷ lệ Nợ vay/Vốn CSH", value: fmtNum(safeDiv(latest.currentLiabilities + latest.longTermLiabilities, latest.totalEquity))+"x", rawValue: safeDiv(latest.currentLiabilities + latest.longTermLiabilities, latest.totalEquity), max: 3, color: "text-[#F97316]", barColor: "bg-[#F97316]" }
+        ],
+        cccData: (() => {
+            const daysInPeriod = latest.period.quarter === 0 ? 365 : 90;
+            const inc = incomeData?.find(i => i.period.year === latest.period.year && i.period.quarter === latest.period.quarter) || incomeData?.[0];
+            const cogs = inc ? Math.abs(inc.costOfGoodsSold || 1) : 1;
+            const rev = inc?.revenue || 1;
+            
+            let invDays = ratio?.inventoryDays ?? 0;
+            let recDays = ratio?.receivableDays ?? 0;
+            let payDays = ratio?.payableDays ?? 0;
+            let ccc = ratio?.cashConversionCycle ?? 0;
+
+            if (!invDays && inc) invDays = (latest.inventory / cogs) * daysInPeriod;
+            if (!recDays && inc) recDays = (latest.shortTermReceivables / rev) * daysInPeriod;
+            // Using 40% of current liabilities as a rough proxy for Accounts Payable if not provided
+            if (!payDays && inc) payDays = ((latest.currentLiabilities * 0.4) / cogs) * daysInPeriod;
+            if (!ccc) ccc = invDays + recDays - payDays;
+
+            return {
+                inventoryDays: Math.round(invDays),
+                receivableDays: Math.round(recDays),
+                payableDays: Math.round(payDays),
+                cycleDays: Math.round(ccc)
+            };
+        })(),
+        liquidityItems: [
+            { title: "Hệ số thanh toán hiện hành", value: ratio?.currentRatio || currentRatio, max: 3, status: currentRatio > 1.5 ? "good" : currentRatio > 1 ? "warning" : "danger" },
+            { title: "Hệ số thanh toán nhanh", value: ratio?.quickRatio || safeDiv(latest.currentAssets - latest.inventory, latest.currentLiabilities), max: 3, status: ratio?.quickRatio && ratio.quickRatio > 1 ? "good" : "warning" },
+            { title: "Hệ số tỷ lệ tiền mặt", value: ratio?.cashRatio || safeDiv(latest.cash, latest.currentLiabilities), max: 2, status: ratio?.cashRatio && ratio.cashRatio > 0.5 ? "good" : "warning" }
+        ],
+        tableHeaders: ["Chỉ tiêu", ...viewData.map(d => d.period.period), "Thay đổi", "% Kỳ trước", "% Tổng"],
+        tableData: [
+            { ...mkRow("TỔNG TÀI SẢN", d => d.totalAssets, "main"),
+                children: [
+                    { ...mkRow("Tài sản ngắn hạn", d => d.currentAssets, "sub"),
+                        children: [ mkRow("Tiền & tương đương tiền", d => d.cash), mkRow("Đầu tư TCNH", d => d.shortTermInvestments), mkRow("Phải thu ngắn hạn", d => d.shortTermReceivables), mkRow("Hàng tồn kho", d => d.inventory), ]
+                    },
+                    { ...mkRow("Tài sản dài hạn", d => d.nonCurrentAssets, "sub"),
+                        children: [ mkRow("Tài sản cố định", d => d.fixedAssets), mkRow("Đầu tư dài hạn", d => d.longTermInvestments), ]
+                    }
+                ]
+            },
+            { ...mkRow("NỢ PHẢI TRẢ", d => d.totalLiabilities, "main"),
+                children: [ mkRow("Nợ ngắn hạn", d => d.currentLiabilities, "sub"), mkRow("Nợ dài hạn", d => d.longTermLiabilities, "sub") ]
+            },
+            { ...mkRow("VỐN CHỦ SỞ HỮU", d => d.totalEquity, "main"),
+                 children: [ mkRow("Vốn góp (Điều lệ)", d => d.charterCapital), mkRow("Lợi nhuận chưa PP", d => d.retainedEarnings) ]
+            }
+        ]
+    };
+}
+
+export function transformIncomeStatement(
+    data: IncomeStatementItem[] | undefined, balanceData: BalanceSheetItem[] | undefined, ratiosData: FinancialRatioItem[] | undefined, unit: number = 1_000_000_000, selectedPeriod: string | null = null
+): IncomeStatementView | null {
+    if (!data || data.length === 0) return null;
+    const sortedData = [...data].sort((a, b) => a.period.year !== b.period.year ? a.period.year - b.period.year : a.period.quarter - b.period.quarter);
+    let viewData = sortedData;
+    if (selectedPeriod) {
+        const idx = sortedData.findIndex(d => d.period.period === selectedPeriod);
+        if (idx !== -1) viewData = sortedData.slice(0, idx + 1);
+    }
+    if (viewData.length === 0) viewData = [sortedData[sortedData.length-1]];
+
+    const latest = viewData[viewData.length - 1]; const prev = viewData.length > 1 ? viewData[viewData.length - 2] : null;
+    const ratio = findRatio(ratiosData, latest.period.year, latest.period.quarter);
+    const bsLatest = balanceData?.find(b => b.period.year === latest.period.year && b.period.quarter === b.period.quarter);
+
+    const revChg = prev ? ((latest.revenue - prev.revenue) / prev.revenue) * 100 : 0;
+    const netChg = prev ? ((latest.netProfit - prev.netProfit) / Math.abs(prev.netProfit)) * 100 : 0;
+    const grossMargin = safeDiv(latest.grossProfit, latest.revenue) * 100;
+    const netMargin = safeDiv(latest.netProfit, latest.revenue) * 100;
+
+    const roeStr = ratio?.roe ? fmtNum(ratio.roe * 100) + "%" : "—";
+    const roaStr = ratio?.roa ? fmtNum(ratio.roa * 100) + "%" : "—";
+    const dupontVal = ratio?.roe ? fmtNum(ratio.roe * 100) : 0;
+
+    const mkRow = (label: string, accessor: (d: IncomeStatementItem) => number, indent = 0, isBold = false): any => {
+        const values = viewData.map(d => accessor(d) / unit);
+        return { label, indent, isBold, values, growth24: safeDiv(values[values.length - 1] - (values.length > 1 ? values[values.length - 2] : 0), Math.abs(values.length > 1 ? values[values.length - 2] : 1)) * 100 };
+    };
+
+    const tax = Math.abs(latest.incomeTax || 0);
+    const otherCosts = latest.revenue - latest.costOfGoodsSold - latest.sellingExpenses - latest.adminExpenses - tax - latest.netProfit;
+
+    return {
+        incomeMetricCards: [
+            { label: "Doanh thu thuần", value: fmtVal(latest.revenue, unit), borderColor: "border-l-[#3B82F6]", badges: [{ text: (revChg >= 0 ? "+" : "") + fmtNum(revChg) + "% YoY", color: revChg >= 0 ? GREEN : RED }] },
+            { label: "Lợi nhuận gộp", value: fmtVal(latest.grossProfit, unit), borderColor: "border-l-[#F97316]", badges: [{ text: "Biên gộp: " + fmtNum(grossMargin) + "%", color: ORANGE }] },
+            { label: "Lợi nhuận ròng", value: fmtVal(latest.netProfit, unit), borderColor: "border-l-[#F97316]", badges: [ { text: (netChg >= 0 ? "+" : "") + fmtNum(netChg) + "% YoY", color: netChg >= 0 ? GREEN : RED }, { text: "ROS: " + fmtNum(netMargin) + "%", color: PURPLE } ] },
+            { label: "Hiệu quả sinh lời", value: "", borderColor: "border-l-[#8B5CF6]", badges: [], listItems: [ { label: "ROS", value: fmtNum(netMargin) + "%" }, { label: "ROA", value: roaStr }, { label: "ROE", value: roeStr } ] },
+        ],
+        dupontFactors: [
+            { label: "Gánh nặng thuế", value: safeDiv(latest.netProfit, latest.profitBeforeTax), sub: "Net Income / EBT" },
+            { label: "Gánh nặng lãi vay", value: safeDiv(latest.profitBeforeTax, latest.operatingProfit), sub: "EBT / EBIT" },
+            { label: "Biên EBIT", value: safeDiv(latest.operatingProfit, latest.revenue), sub: "EBIT / Revenue" },
+            { label: "Vòng quay tài sản", value: ratio?.assetTurnover || safeDiv(latest.revenue, bsLatest?.totalAssets || 1), sub: "Revenue / Avg Assets" },
+            { label: "Đòn bẩy tài chính", value: safeDiv(bsLatest?.totalAssets || 1, bsLatest?.totalEquity || 1), sub: "Avg Assets / Equity" }
+        ],
+        dupontResult: { label: "ROE", value: dupontVal },
+        dupontTree: {
+            label: "ROE", value: roeStr, color: ORANGE,
+            children: [
+                { label: "ROA", value: roaStr, color: BLUE, children: [ { label: "ROS (Biên ròng)", value: fmtNum(netMargin) + "%", color: GREEN }, { label: "Vòng quay TS", value: fmtNum(ratio?.assetTurnover || safeDiv(latest.revenue, bsLatest?.totalAssets || 1)) + "x", color: PURPLE } ] },
+                { label: "Đòn bẩy TC", value: fmtNum(safeDiv(bsLatest?.totalAssets || 1, bsLatest?.totalEquity || 1)) + "x", color: RED }
+            ],
+        },
+        rosBreakdown: [
+            { label: "Gross Margin (Biên gộp)", value: fmtNum(grossMargin), color: BLUE },
+            { label: "Operating Margin (Biên HĐKD)", value: fmtNum((safeDiv(latest.operatingProfit, latest.revenue) * 100)), color: ORANGE },
+            { label: "ROS (Biên ròng)", value: fmtNum(netMargin), color: GREEN },
+        ],
+        revenueTrend: viewData.map(d => ({ year: d.period.period as any, revenue: d.revenue / unit, cogs: d.costOfGoodsSold / unit, grossProfit: d.grossProfit / unit })),
+        costStructure: [
+            { name: "Giá vốn", value: fmtNum(safeDiv(latest.costOfGoodsSold, latest.revenue) * 100), color: ORANGE },
+            { name: "Chi phí BH & QL", value: fmtNum(safeDiv(latest.sellingExpenses + latest.adminExpenses, latest.revenue) * 100), color: PURPLE },
+            { name: "Chi phí thuế", value: fmtNum(safeDiv(tax, latest.revenue) * 100), color: BLUE },
+            { name: "Lợi nhuận ròng", value: fmtNum(safeDiv(latest.netProfit, latest.revenue) * 100), color: GREEN },
+            { name: "Khác", value: fmtNum(safeDiv(otherCosts, latest.revenue) * 100), color: "#9CA3AF" },
+        ].filter(x => x.value > 0),
+        growthData: viewData.map((d, i) => {
+            const pv = i > 0 ? viewData[i - 1] : null;
+            return { year: d.period.period as any, revenueGrowth: pv ? safeDiv(d.revenue - pv.revenue, pv.revenue) * 100 : 0, netProfitGrowth: pv ? safeDiv(d.netProfit - pv.netProfit, Math.abs(pv.netProfit)) * 100 : 0 };
+        }),
+        efficiencyData: viewData.map(d => ({ year: d.period.period as any, costToRevenue: safeDiv(d.costOfGoodsSold + d.sellingExpenses + d.adminExpenses, d.revenue) * 100 })),
+        revenueBySegment: [{ name: "Kinh doanh chính", value: 100, color: ORANGE }],
+        costByCategory: [
+            { name: "Giá vốn", value: fmtNum(safeDiv(latest.costOfGoodsSold, latest.revenue) * 100), color: ORANGE },
+            { name: "Chi phí hoạt động", value: fmtNum(safeDiv(latest.sellingExpenses + latest.adminExpenses, latest.revenue) * 100), color: PURPLE }
+        ],
+        profitFunnel: [
+            { name: "Doanh Thu", value: latest.revenue / unit, color: ORANGE },
+            { name: "Lợi Nhuận Gộp", value: latest.grossProfit / unit, color: BLUE },
+            { name: "Lợi Nhuận HĐ", value: latest.operatingProfit / unit, color: PURPLE },
+            { name: "Lợi Nhuận Ròng", value: latest.netProfit / unit, color: GREEN },
+        ],
+        incomeTableHeaders: ["Chỉ tiêu", ...viewData.map(d => d.period.period), "Thay đổi"],
+        incomeTableData: [
+            mkRow("Doanh thu thuần", d => d.revenue, 0, false), mkRow("Giá vốn hàng bán", d => d.costOfGoodsSold, 1, false), mkRow("Lợi nhuận gộp", d => d.grossProfit, 0, true),
+            mkRow("Chi phí bán hàng", d => d.sellingExpenses, 1, false), mkRow("Chi phí QLDN", d => d.adminExpenses, 1, false), mkRow("Lợi nhuận hoạt động", d => d.operatingProfit, 0, true),
+            mkRow("Lợi nhuận trước thuế", d => d.profitBeforeTax, 0, true), mkRow("Lợi nhuận sau thuế", d => d.netProfit, 0, true)
+        ]
+    };
+}
+
+export function transformCashFlow(
+    data: CashFlowItem[] | undefined, incomeData: IncomeStatementItem[] | undefined, unit: number = 1_000_000_000, selectedPeriod: string | null = null
+): CashFlowView | null {
+    if (!data || data.length === 0) return null;
+    const sortedData = [...data].sort((a, b) => a.period.year !== b.period.year ? a.period.year - b.period.year : a.period.quarter - b.period.quarter);
+    let viewData = sortedData;
+    if (selectedPeriod) {
+        const idx = sortedData.findIndex(d => d.period.period === selectedPeriod);
+        if (idx !== -1) viewData = sortedData.slice(0, idx + 1);
+    }
+    if (viewData.length === 0) viewData = [sortedData[sortedData.length-1]];
+
+    const latest = viewData[viewData.length - 1];
+    const capex = Math.abs(latest.purchaseOfFixedAssets || 0);
+    const cfo = latest.operatingCashFlow;
+    const fcf = cfo - capex;
+    const incLatest = incomeData?.find(i => i.period.year === latest.period.year && i.period.quarter === latest.period.quarter);
+    
+    return {
+        efficiencyMetrics: [
+            { title: "Tỷ lệ tái đầu tư (Capex/CFO)", value: fmtNum(safeDiv(capex, cfo) * 100) + "%", numericValue: safeDiv(capex, cfo), max: 1.5, color: safeDiv(capex, cfo) > 1 ? ORANGE : GREEN, subtitle: "Mức tái đầu tư từ dòng tiền KD" },
+            { title: "FCF Margin (FCF/Revenue)", value: incLatest ? fmtNum(safeDiv(fcf, incLatest.revenue) * 100) + "%" : "N/A", numericValue: incLatest ? safeDiv(fcf, incLatest.revenue) : 0, max: 1, color: BLUE, subtitle: "Dòng tiền tự do trên DT" }
+        ],
+        selfFundingData: {
+            cfo: cfo / unit, capex: capex / unit, fcf: fcf / unit, capexCoverage: fmtNum(safeDiv(cfo, capex || 1)), dividendCoverage: fmtNum(safeDiv(fcf, Math.abs(latest.dividendsPaid || 0) || 1)),
+            history: viewData.map(d => ({ year: d.period.period as string, cfo: d.operatingCashFlow / unit, capex: Math.abs(d.purchaseOfFixedAssets || 0) / unit, fcf: (d.operatingCashFlow - Math.abs(d.purchaseOfFixedAssets || 0)) / unit }))
+        },
+        earningsQuality: viewData.map(d => {
+            const inc = incomeData?.find(i => i.period.year === d.period.year && i.period.quarter === d.period.quarter);
+            return { year: d.period.period, netIncome: (inc?.netProfit || 0) / unit, ocf: d.operatingCashFlow / unit };
+        }),
+        threeCashFlows: viewData.map(d => ({ year: d.period.period, cfo: d.operatingCashFlow / unit, cfi: d.investingCashFlow / unit, cff: d.financingCashFlow / unit })),
+        insightText: cfo > capex ? "Dòng tiền kinh doanh dồi dào, đủ bù đắp chi phí đầu tư (CAPEX)." : "Dòng tiền kinh doanh chưa đủ bù đắp chi tiêu đầu tư.",
+        fcfDividendData: viewData.map(d => ({ year: d.period.period, fcf: (d.operatingCashFlow - Math.abs(d.purchaseOfFixedAssets || 0)) / unit, dividend: Math.abs(d.dividendsPaid || 0) / unit })),
+        waterfallData: [
+            { name: "CFO", value: latest.operatingCashFlow / unit, color: ORANGE, base: 0, isTotal: false },
+            { name: "CFI", value: latest.investingCashFlow / unit, color: "#4B5563", base: latest.operatingCashFlow / unit, isTotal: false },
+            { name: "CFF", value: latest.financingCashFlow / unit, color: "#9CA3AF", base: (latest.operatingCashFlow + latest.investingCashFlow) / unit, isTotal: false },
+            { name: "Tiền ròng tăng/giảm", value: latest.netCashChange / unit, color: latest.netCashChange >= 0 ? GREEN : RED, base: 0, isTotal: true },
+        ],
+        netCashChange: latest.netCashChange / unit
+    };
+}

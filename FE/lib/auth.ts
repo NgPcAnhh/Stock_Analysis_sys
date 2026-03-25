@@ -11,6 +11,7 @@ export interface User {
     role: string;
     auth_provider: string;
     is_verified: boolean;
+    is_totp_enabled?: boolean;
     created_at: string;
 }
 

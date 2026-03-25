@@ -2,22 +2,18 @@
 
 import React, { useMemo } from "react";
 import ReactECharts from "echarts-for-react";
-import {
-  efficiencyMetrics,
-  selfFundingData,
-  earningsQuality,
-  threeCashFlows,
-  insightText,
-  fcfDividendData,
-  waterfallData,
-  netCashChange,
-} from "@/lib/cashFlowDeepDiveData";
+import * as cfDefaults from "@/lib/cashFlowDeepDiveData";
+
+const CfCtx = React.createContext(cfDefaults);
 
 const monoFont = "font-[var(--font-roboto-mono)]";
-const fmt = (n: number) => n.toLocaleString("vi-VN");
+const fmt = (n: number) => n.toLocaleString("vi-VN", { maximumFractionDigits: 2 });
 
 // ==================== ROW 1: EFFICIENCY & SELF-FUNDING ====================
 function EfficiencyAndSelfFunding() {
+  const ctx = React.useContext(CfCtx);
+  const efficiencyMetrics = ctx.efficiencyMetrics ?? cfDefaults.efficiencyMetrics;
+  const selfFundingData = ctx.selfFundingData ?? cfDefaults.selfFundingData;
   const { cfo, capex, fcf, capexCoverage, dividendCoverage } = selfFundingData;
 
   return (
@@ -101,6 +97,8 @@ function EfficiencyAndSelfFunding() {
 
 // ==================== ROW 2: EARNINGS QUALITY ====================
 function EarningsQualityChart() {
+  const ctx = React.useContext(CfCtx);
+  const earningsQuality = ctx.earningsQuality ?? cfDefaults.earningsQuality;
   const option = useMemo(
     () => ({
       tooltip: {
@@ -157,7 +155,7 @@ function EarningsQualityChart() {
         },
       ],
     }),
-    []
+    [earningsQuality]
   );
 
   return (
@@ -173,6 +171,10 @@ function EarningsQualityChart() {
 
 // ==================== ROW 3: CASH FLOW BREAKDOWN ====================
 function CashFlowBreakdown() {
+  const ctx = React.useContext(CfCtx);
+  const threeCashFlows = ctx.threeCashFlows ?? cfDefaults.threeCashFlows;
+  const insightText = ctx.insightText ?? cfDefaults.insightText;
+  const fcfDividendData = ctx.fcfDividendData ?? cfDefaults.fcfDividendData;
   const threeFlowOption = useMemo(
     () => ({
       tooltip: {
@@ -222,7 +224,7 @@ function CashFlowBreakdown() {
         },
       ],
     }),
-    []
+    [threeCashFlows]
   );
 
   const fcfDividendOption = useMemo(
@@ -269,7 +271,7 @@ function CashFlowBreakdown() {
         },
       ],
     }),
-    []
+    [fcfDividendData]
   );
 
   return (
@@ -301,6 +303,9 @@ function CashFlowBreakdown() {
 
 // ==================== ROW 4: WATERFALL CHART ====================
 function WaterfallChart() {
+  const ctx = React.useContext(CfCtx);
+  const waterfallData = ctx.waterfallData ?? cfDefaults.waterfallData;
+  const netCashChange = ctx.netCashChange ?? cfDefaults.netCashChange;
   const option = useMemo(() => {
     const categories = waterfallData.map((d) => d.name);
     // Transparent base series (lifts the visible bars)
@@ -371,7 +376,7 @@ function WaterfallChart() {
         },
       ],
     };
-  }, []);
+  }, [waterfallData]);
 
   return (
     <div className="bg-card rounded-xl shadow-sm border border-border/50 p-6">
@@ -390,17 +395,19 @@ function WaterfallChart() {
 }
 
 // ==================== MAIN COMPONENT ====================
-export default function CashFlowDeepDive() {
+export default function CashFlowDeepDive({ data }: { data?: Record<string, unknown> }) {
   return (
-    <div className="space-y-5">
-      {/* ROW 1 */}
-      <EfficiencyAndSelfFunding />
-      {/* ROW 2 */}
-      <EarningsQualityChart />
-      {/* ROW 3 */}
-      <CashFlowBreakdown />
-      {/* ROW 4 */}
-      <WaterfallChart />
-    </div>
+    <CfCtx.Provider value={data ? { ...cfDefaults, ...data } as typeof cfDefaults : cfDefaults}>
+      <div className="space-y-5">
+        {/* ROW 1 */}
+        <EfficiencyAndSelfFunding />
+        {/* ROW 2 */}
+        <EarningsQualityChart />
+        {/* ROW 3 */}
+        <CashFlowBreakdown />
+        {/* ROW 4 */}
+        <WaterfallChart />
+      </div>
+    </CfCtx.Provider>
   );
 }

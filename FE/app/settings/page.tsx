@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     useSettings,
     SIDEBAR_ICON_MAP,
     DEFAULT_SIDEBAR_ITEMS,
 } from "@/lib/SettingsContext";
 import { useAuth } from "@/lib/AuthContext";
+import { fetchWithAuth } from "@/lib/auth";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,8 +28,18 @@ import {
     GripVertical,
     RefreshCcw,
     Pin,
+    Lock,
+    Eye,
+    EyeOff,
+    X,
+    Smartphone,
+    ShieldCheck,
+    Copy,
+    Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+const API = "http://localhost:8000/api/v1/auth";
 
 // ─── Plan data ───────────────────────────────────────────────────────────────
 const PLANS = [
@@ -123,6 +134,416 @@ function DarkModeSwitch({ value, onChange }: { value: boolean; onChange: (v: boo
     );
 }
 
+
+// ─── Change Password Dialog ───────────────────────────────────────────────────
+function ChangePasswordDialog({ onClose }: { onClose: () => void }) {
+    const { logout } = useAuth();
+    const [oldPassword, setOldPassword] = useState("");
+    const [newPassword, setNewPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+    const [showOld, setShowOld] = useState(false);
+    const [showNew, setShowNew] = useState(false);
+    const [error, setError] = useState("");
+    const [success, setSuccess] = useState("");
+    const [loading, setLoading] = useState(false);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError("");
+        setSuccess("");
+
+        if (newPassword.length < 8) {
+            setError("Mật khẩu mới phải từ 8 ký tự trở lên");
+            return;
+        }
+        if (newPassword !== confirmPassword) {
+            setError("Mật khẩu xác nhận không khớp");
+            return;
+        }
+        if (oldPassword === newPassword) {
+            setError("Mật khẩu mới phải khác mật khẩu cũ");
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const res = await fetchWithAuth(`${API}/change-password`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ old_password: oldPassword, new_password: newPassword }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || "Đổi mật khẩu thất bại");
+            setSuccess(data.message || "Đã đổi mật khẩu thành công!");
+            setTimeout(() => {
+                logout();
+                onClose();
+            }, 2000);
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
+                <div className="relative border-b border-slate-100 dark:border-slate-800 p-6 pb-4">
+                    <button onClick={onClose} className="absolute right-4 top-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+                        <X size={18} />
+                    </button>
+                    <div className="flex items-center gap-2">
+                        <Lock className="size-5 text-primary" />
+                        <h2 className="text-xl font-bold text-foreground">Đổi mật khẩu</h2>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">Sau khi đổi mật khẩu, bạn sẽ cần đăng nhập lại</p>
+                </div>
+
+                <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                    {error && (
+                        <div className="rounded-lg bg-red-50 dark:bg-red-500/10 p-3 text-sm text-red-600 dark:text-red-400 border border-red-100 dark:border-red-500/20">
+                            {error}
+                        </div>
+                    )}
+                    {success && (
+                        <div className="rounded-lg bg-emerald-50 dark:bg-emerald-500/10 p-3 text-sm text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/20">
+                            {success}
+                        </div>
+                    )}
+
+                    <div className="space-y-1">
+                        <label className="text-sm font-medium text-foreground">Mật khẩu hiện tại</label>
+                        <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground">
+                                <Lock size={16} />
+                            </div>
+                            <input
+                                type={showOld ? "text" : "password"}
+                                required
+                                value={oldPassword}
+                                onChange={(e) => setOldPassword(e.target.value)}
+                                className="w-full rounded-lg border border-border bg-background pl-10 pr-10 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                                placeholder="Nhập mật khẩu hiện tại"
+                            />
+                            <button type="button" onClick={() => setShowOld(!showOld)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground">
+                                {showOld ? <EyeOff size={16} /> : <Eye size={16} />}
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="space-y-1">
+                        <label className="text-sm font-medium text-foreground">Mật khẩu mới</label>
+                        <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground">
+                                <Lock size={16} />
+                            </div>
+                            <input
+                                type={showNew ? "text" : "password"}
+                                required
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                                className="w-full rounded-lg border border-border bg-background pl-10 pr-10 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                                placeholder="Ít nhất 8 ký tự"
+                            />
+                            <button type="button" onClick={() => setShowNew(!showNew)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground">
+                                {showNew ? <EyeOff size={16} /> : <Eye size={16} />}
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="space-y-1">
+                        <label className="text-sm font-medium text-foreground">Xác nhận mật khẩu mới</label>
+                        <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground">
+                                <Lock size={16} />
+                            </div>
+                            <input
+                                type={showNew ? "text" : "password"}
+                                required
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                className="w-full rounded-lg border border-border bg-background pl-10 pr-10 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                                placeholder="Nhập lại mật khẩu mới"
+                            />
+                        </div>
+                    </div>
+
+                    <Button type="submit" className="w-full" disabled={loading}>
+                        {loading ? (
+                            <>
+                                <Loader2 className="size-4 mr-2 animate-spin" />
+                                Đang xử lý...
+                            </>
+                        ) : (
+                            "Đổi mật khẩu"
+                        )}
+                    </Button>
+                </form>
+            </div>
+        </div>
+    );
+}
+
+
+// ─── 2FA Setup Dialog ─────────────────────────────────────────────────────────
+function TwoFASetupDialog({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+    const [step, setStep] = useState<"loading" | "scan" | "verify">("loading");
+    const [qrCode, setQrCode] = useState("");
+    const [secret, setSecret] = useState("");
+    const [otp, setOtp] = useState("");
+    const [error, setError] = useState("");
+    const [success, setSuccess] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [copied, setCopied] = useState(false);
+
+    // Fetch setup data on mount (runs once)
+    useEffect(() => {
+        (async () => {
+            try {
+                const res = await fetchWithAuth(`${API}/2fa/setup`, {
+                    method: "POST",
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.detail || "Lỗi thiết lập 2FA");
+                setQrCode(data.qr_code_base64);
+                setSecret(data.secret);
+                setStep("scan");
+            } catch (err: any) {
+                setError(err.message);
+                setStep("scan");
+            }
+        })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const handleCopySecret = () => {
+        navigator.clipboard.writeText(secret);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    const handleVerify = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError("");
+        setLoading(true);
+        try {
+            const res = await fetchWithAuth(`${API}/2fa/enable`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ otp }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || "Xác thực OTP thất bại");
+            setSuccess("Đã bật xác thực 2 bước thành công! 🎉");
+            setTimeout(() => {
+                onSuccess();
+                onClose();
+            }, 1500);
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
+                <div className="relative border-b border-slate-100 dark:border-slate-800 p-6 pb-4">
+                    <button onClick={onClose} className="absolute right-4 top-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+                        <X size={18} />
+                    </button>
+                    <div className="flex items-center gap-2">
+                        <ShieldCheck className="size-5 text-emerald-500" />
+                        <h2 className="text-xl font-bold text-foreground">Thiết lập xác thực 2 bước</h2>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">Sử dụng Google Authenticator hoặc ứng dụng TOTP tương tự</p>
+                </div>
+
+                <div className="p-6 space-y-5">
+                    {error && (
+                        <div className="rounded-lg bg-red-50 dark:bg-red-500/10 p-3 text-sm text-red-600 dark:text-red-400 border border-red-100 dark:border-red-500/20">
+                            {error}
+                        </div>
+                    )}
+                    {success && (
+                        <div className="rounded-lg bg-emerald-50 dark:bg-emerald-500/10 p-3 text-sm text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/20">
+                            {success}
+                        </div>
+                    )}
+
+                    {step === "loading" && (
+                        <div className="flex justify-center py-8">
+                            <Loader2 className="size-8 animate-spin text-primary" />
+                        </div>
+                    )}
+
+                    {step === "scan" && !success && (
+                        <>
+                            {/* Step 1: Instructions */}
+                            <div className="space-y-3">
+                                <div className="flex items-start gap-3 text-sm">
+                                    <span className="flex-shrink-0 size-6 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center text-xs">1</span>
+                                    <span className="text-foreground">Tải và mở ứng dụng <strong>Google Authenticator</strong> trên điện thoại</span>
+                                </div>
+                                <div className="flex items-start gap-3 text-sm">
+                                    <span className="flex-shrink-0 size-6 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center text-xs">2</span>
+                                    <span className="text-foreground">Quét mã QR dưới đây hoặc nhập mã thủ công</span>
+                                </div>
+                                <div className="flex items-start gap-3 text-sm">
+                                    <span className="flex-shrink-0 size-6 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center text-xs">3</span>
+                                    <span className="text-foreground">Nhập mã 6 chữ số từ ứng dụng để xác nhận</span>
+                                </div>
+                            </div>
+
+                            {/* QR Code */}
+                            {qrCode && (
+                                <div className="flex flex-col items-center gap-3">
+                                    <div className="p-4 bg-white rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img src={qrCode} alt="QR Code 2FA" className="size-48" />
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Manual Secret */}
+                            {secret && (
+                                <div className="space-y-2">
+                                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Hoặc nhập mã thủ công:</p>
+                                    <div className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-2.5 border border-border">
+                                        <code className="flex-1 text-sm font-mono tracking-widest text-foreground break-all">{secret}</code>
+                                        <button
+                                            onClick={handleCopySecret}
+                                            className="shrink-0 p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                                            title="Sao chép"
+                                        >
+                                            {copied ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* OTP Input */}
+                            <form onSubmit={handleVerify} className="space-y-3">
+                                <div className="space-y-1">
+                                    <label className="text-sm font-medium text-foreground">Mã xác thực (6 chữ số)</label>
+                                    <input
+                                        type="text"
+                                        inputMode="numeric"
+                                        maxLength={6}
+                                        required
+                                        value={otp}
+                                        onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                                        className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-center text-2xl font-mono tracking-[0.5em] focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                                        placeholder="000000"
+                                        autoFocus
+                                    />
+                                </div>
+                                <Button type="submit" className="w-full" disabled={loading || otp.length !== 6}>
+                                    {loading ? (
+                                        <>
+                                            <Loader2 className="size-4 mr-2 animate-spin" />
+                                            Đang xác thực...
+                                        </>
+                                    ) : (
+                                        "Xác nhận và bật 2FA"
+                                    )}
+                                </Button>
+                            </form>
+                        </>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+
+// ─── 2FA Disable Dialog ───────────────────────────────────────────────────────
+function TwoFADisableDialog({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+    const [otp, setOtp] = useState("");
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
+
+    const handleDisable = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError("");
+        setLoading(true);
+        try {
+            const res = await fetchWithAuth(`${API}/2fa/disable`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ otp }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || "Tắt 2FA thất bại");
+            onSuccess();
+            onClose();
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
+                <div className="relative border-b border-slate-100 dark:border-slate-800 p-6 pb-4">
+                    <button onClick={onClose} className="absolute right-4 top-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+                        <X size={18} />
+                    </button>
+                    <div className="flex items-center gap-2">
+                        <Shield className="size-5 text-amber-500" />
+                        <h2 className="text-xl font-bold text-foreground">Tắt xác thực 2 bước</h2>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">Nhập mã OTP từ ứng dụng xác thực để xác nhận tắt 2FA</p>
+                </div>
+
+                <form onSubmit={handleDisable} className="p-6 space-y-4">
+                    {error && (
+                        <div className="rounded-lg bg-red-50 dark:bg-red-500/10 p-3 text-sm text-red-600 dark:text-red-400 border border-red-100 dark:border-red-500/20">
+                            {error}
+                        </div>
+                    )}
+
+                    <div className="rounded-lg bg-amber-50 dark:bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-400 border border-amber-100 dark:border-amber-500/20">
+                        ⚠️ Tắt 2FA sẽ giảm mức bảo mật tài khoản của bạn.
+                    </div>
+
+                    <div className="space-y-1">
+                        <label className="text-sm font-medium text-foreground">Mã xác thực (6 chữ số)</label>
+                        <input
+                            type="text"
+                            inputMode="numeric"
+                            maxLength={6}
+                            required
+                            value={otp}
+                            onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                            className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-center text-2xl font-mono tracking-[0.5em] focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                            placeholder="000000"
+                            autoFocus
+                        />
+                    </div>
+
+                    <Button type="submit" variant="destructive" className="w-full" disabled={loading || otp.length !== 6}>
+                        {loading ? (
+                            <>
+                                <Loader2 className="size-4 mr-2 animate-spin" />
+                                Đang xử lý...
+                            </>
+                        ) : (
+                            "Xác nhận tắt 2FA"
+                        )}
+                    </Button>
+                </form>
+            </div>
+        </div>
+    );
+}
+
+
 // ─── Settings Page ─────────────────────────────────────────────────────────────
 export default function SettingsPage() {
     const {
@@ -132,6 +553,12 @@ export default function SettingsPage() {
     const { user, isAuthenticated } = useAuth();
     const [currentPlan] = useState("free");
     const [upgradeSuccess, setUpgradeSuccess] = useState<string | null>(null);
+
+    // Dialog states
+    const [showChangePassword, setShowChangePassword] = useState(false);
+    const [showSetup2FA, setShowSetup2FA] = useState(false);
+    const [showDisable2FA, setShowDisable2FA] = useState(false);
+    const [is2FAEnabled, setIs2FAEnabled] = useState(user?.is_totp_enabled ?? false);
 
     const handleUpgrade = (planId: string) => {
         setUpgradeSuccess(planId);
@@ -145,6 +572,8 @@ export default function SettingsPage() {
     const joinedDate = user?.created_at
         ? new Date(user.created_at).toLocaleDateString("vi-VN", { year: "numeric", month: "long", day: "numeric" })
         : null;
+
+    const isGoogleAccount = user?.auth_provider === "google";
 
     return (
         <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
@@ -248,19 +677,67 @@ export default function SettingsPage() {
                         <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Bảo mật</h3>
                         <Separator />
                         <div className="space-y-3">
+                            {/* Change Password */}
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="font-medium text-sm text-foreground">Mật khẩu</p>
-                                    <p className="text-xs text-muted-foreground">Thay đổi mật khẩu đăng nhập</p>
+                                    <p className="text-xs text-muted-foreground">
+                                        {isGoogleAccount
+                                            ? "Tài khoản Google — không cần mật khẩu"
+                                            : "Thay đổi mật khẩu đăng nhập"}
+                                    </p>
                                 </div>
-                                <Button variant="outline" size="sm" disabled>Đổi mật khẩu</Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={isGoogleAccount || !isAuthenticated}
+                                    onClick={() => setShowChangePassword(true)}
+                                >
+                                    Đổi mật khẩu
+                                </Button>
                             </div>
+
+                            {/* 2FA */}
                             <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="font-medium text-sm text-foreground">Xác thực 2 bước</p>
-                                    <p className="text-xs text-muted-foreground">Tăng cường bảo mật tài khoản</p>
+                                <div className="flex items-center gap-3">
+                                    <div>
+                                        <div className="flex items-center gap-2">
+                                            <p className="font-medium text-sm text-foreground">Xác thực 2 bước</p>
+                                            {is2FAEnabled && (
+                                                <Badge variant="outline" className="text-xs text-emerald-500 border-emerald-500/50">
+                                                    <ShieldCheck className="size-3 mr-1" /> Đang bật
+                                                </Badge>
+                                            )}
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">
+                                            {is2FAEnabled
+                                                ? "Tài khoản được bảo vệ bởi Google Authenticator"
+                                                : "Tăng cường bảo mật bằng Google Authenticator"}
+                                        </p>
+                                    </div>
                                 </div>
-                                <Badge variant="outline" className="text-xs text-muted-foreground">Sắp ra mắt</Badge>
+                                {is2FAEnabled ? (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="text-red-500 border-red-300 hover:bg-red-50 dark:hover:bg-red-500/10"
+                                        onClick={() => setShowDisable2FA(true)}
+                                        disabled={!isAuthenticated}
+                                    >
+                                        Tắt 2FA
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="text-emerald-600 border-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-500/10"
+                                        onClick={() => setShowSetup2FA(true)}
+                                        disabled={!isAuthenticated}
+                                    >
+                                        <Smartphone className="size-3.5 mr-1.5" />
+                                        Bật 2FA
+                                    </Button>
+                                )}
                             </div>
                         </div>
                     </Card>
@@ -466,6 +943,23 @@ export default function SettingsPage() {
                     </Card>
                 </TabsContent>
             </Tabs>
+
+            {/* Dialogs */}
+            {showChangePassword && (
+                <ChangePasswordDialog onClose={() => setShowChangePassword(false)} />
+            )}
+            {showSetup2FA && (
+                <TwoFASetupDialog
+                    onClose={() => setShowSetup2FA(false)}
+                    onSuccess={() => setIs2FAEnabled(true)}
+                />
+            )}
+            {showDisable2FA && (
+                <TwoFADisableDialog
+                    onClose={() => setShowDisable2FA(false)}
+                    onSuccess={() => setIs2FAEnabled(false)}
+                />
+            )}
         </div>
     );
 }
