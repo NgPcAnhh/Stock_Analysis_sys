@@ -1,13 +1,12 @@
 "use client";
 
-import React, { useState, useMemo, useRef, useCallback, useEffect } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import ChartWithDrawing from "@/components/analysis/ChartWithDrawing";
 import AnalysisSummary from "@/components/analysis/AnalysisSummary";
 import SignalTable from "@/components/analysis/SignalTable";
 import IndicatorSelector from "@/components/analysis/IndicatorSelector";
-import MLPrediction from "@/components/analysis/MLPrediction";
 import AnalysisHeader from "@/components/analysis/AnalysisHeader";
 import StockSearchBar from "@/components/analysis/StockSearchBar";
 import { useAnalysisData } from "@/hooks/useAnalysisData";
@@ -33,8 +32,8 @@ export default function AnalysisPage({ params }: AnalysisPageProps) {
   const { ticker } = use(params);
   const { data, loading, error } = useAnalysisData(ticker);
 
-  const [selectedOverlays, setSelectedOverlays] = useState<string[]>(["sma20"]);
-  const [selectedSubIndicator, setSelectedSubIndicator] = useState("rsi");
+  const [selectedOverlays, setSelectedOverlays] = useState<string[]>([]);
+  const [selectedSubIndicator, setSelectedSubIndicator] = useState("none");
   const [activeTab, setActiveTab] = useState("chart");
   const [showIndicatorPanel, setShowIndicatorPanel] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -189,24 +188,10 @@ export default function AnalysisPage({ params }: AnalysisPageProps) {
               )}
             </div>
 
-            {/* Summary below chart */}
-            <div className="mt-3 grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch">
-              <div className="lg:col-span-1 flex flex-col gap-3">
-                <AnalysisSummary summary={data.summary} currentPrice={data.currentPrice} className="flex-1" />
-                {/* ML Predictions - below pivot table, same column */}
-                <Card className="shadow-sm border-border overflow-hidden">
-                  <CardContent className="p-0">
-                    <MLPrediction
-                      ohlcv={data.ohlcv}
-                      ticker={data.ticker}
-                      currentPrice={data.currentPrice}
-                    />
-                  </CardContent>
-                </Card>
-              </div>
-              <div className="lg:col-span-2">
-                <SignalTable signals={data.signals} />
-              </div>
+            {/* Summary + signal tables below chart */}
+            <div className="mt-3 space-y-3">
+              <AnalysisSummary summary={data.summary} currentPrice={data.currentPrice} mode="columns" />
+              <SignalTable signals={data.signals} />
             </div>
           </TabsContent>
 
@@ -217,11 +202,9 @@ export default function AnalysisPage({ params }: AnalysisPageProps) {
 
           {/* Summary Tab */}
           <TabsContent value="summary" className="mt-3">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <AnalysisSummary summary={data.summary} currentPrice={data.currentPrice} />
-              <div>
-                <SignalTable signals={data.signals} />
-              </div>
+            <div className="space-y-3">
+              <AnalysisSummary summary={data.summary} currentPrice={data.currentPrice} mode="columns" />
+              <SignalTable signals={data.signals} />
             </div>
           </TabsContent>
         </Tabs>

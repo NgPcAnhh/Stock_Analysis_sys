@@ -94,14 +94,15 @@ export function transformBalanceSheet(
     const daRatio = safeDiv(latest.totalLiabilities, latest.totalAssets);
 
     let zScore = 0; let zoneLabel = "N/A"; let zoneColor = "#ccc";
+    let A = 0, B = 0, C = 0, D = 0, E = 0;
     if (incomeData && marketCap) {
         const inc = incomeData.find(i => i.period.year === latest.period.year && i.period.quarter === latest.period.quarter) || incomeData[0];
         if (inc) {
-            const A = safeDiv(latest.currentAssets - latest.currentLiabilities, latest.totalAssets);
-            const B = safeDiv(latest.retainedEarnings, latest.totalAssets);
-            const C = safeDiv(inc.operatingProfit, latest.totalAssets); 
-            const D = safeDiv(marketCap, latest.totalLiabilities);
-            const E = safeDiv(inc.revenue, latest.totalAssets);
+            A = safeDiv(latest.currentAssets - latest.currentLiabilities, latest.totalAssets);
+            B = safeDiv(latest.retainedEarnings, latest.totalAssets);
+            C = safeDiv(inc.operatingProfit, latest.totalAssets); 
+            D = safeDiv(marketCap, latest.totalLiabilities);
+            E = safeDiv(inc.revenue, latest.totalAssets);
             zScore = fmtNum(1.2 * A + 1.4 * B + 3.3 * C + 0.6 * D + 1.0 * E);
             if (zScore > 2.99) { zoneLabel = "An toàn"; zoneColor = GREEN; }
             else if (zScore > 1.81) { zoneLabel = "Cảnh báo"; zoneColor = ORANGE; }
@@ -133,14 +134,17 @@ export function transformBalanceSheet(
         ],
         gaugeData: { zScore, zoneLabel, zoneColor },
         healthMetrics: [
-            { title: "D/E (Nợ/Vốn CSH)", value: fmtNum(deRatio) + "x", rawValue: deRatio, max: 3, barPercent: Math.min((deRatio / 3) * 100, 100), status: deRatio < 1 ? "good" : deRatio < 2 ? "warning" : "danger", subtitle: "An toàn < 1x", color: deRatio < 1 ? GREEN : deRatio < 2 ? ORANGE : RED },
-            { title: "Thanh toán hiện hành", value: fmtNum(currentRatio) + "x", rawValue: currentRatio, max: 3, barPercent: Math.min((currentRatio / 3) * 100, 100), status: currentRatio > 1.5 ? "good" : currentRatio > 1 ? "warning" : "danger", subtitle: "Tốt > 1.5x", color: currentRatio > 1.5 ? GREEN : currentRatio > 1 ? ORANGE : RED },
-            { title: "D/A (Nợ/Tổng TS)", value: fmtPct(daRatio), rawValue: daRatio * 100, max: 100, barPercent: daRatio * 100, status: daRatio < 0.5 ? "good" : "warning", subtitle: "An toàn < 50%", color: daRatio < 0.5 ? GREEN : ORANGE },
+            { title: "X1: Vốn lưu động / Tổng TS", value: fmtPct(A), rawValue: A * 100, max: 100, barPercent: Math.abs(A * 100), status: A > 0.1 ? "good" : A > 0 ? "warning" : "danger", subtitle: "Thanh khoản tài sản", color: A > 0.1 ? GREEN : A > 0 ? ORANGE : RED },
+            { title: "X2: LN giữ lại / Tổng TS", value: fmtPct(B), rawValue: B * 100, max: 100, barPercent: Math.abs(B * 100), status: B > 0.1 ? "good" : B > 0 ? "warning" : "danger", subtitle: "Khả năng tái đầu tư", color: B > 0.1 ? GREEN : B > 0 ? ORANGE : RED },
+            { title: "X3: EBIT / Tổng TS", value: fmtPct(C), rawValue: C * 100, max: 100, barPercent: Math.abs(C * 100), status: C > 0.05 ? "good" : C > 0 ? "warning" : "danger", subtitle: "Hiệu quả cốt lõi", color: C > 0.05 ? GREEN : C > 0 ? ORANGE : RED },
+            { title: "X4: Vốn hóa / Tổng nợ", value: fmtNum(D) + "x", rawValue: D, max: 3, barPercent: Math.min((D / 3) * 100, 100), status: D > 1.5 ? "good" : D > 1 ? "warning" : "danger", subtitle: "Đệm tự vốn", color: D > 1.5 ? GREEN : D > 1 ? ORANGE : RED },
+            { title: "X5: Doanh thu / Tổng TS", value: fmtNum(E) + "x", rawValue: E, max: 2, barPercent: Math.min((E / 2) * 100, 100), status: E > 1 ? "good" : E > 0.5 ? "warning" : "danger", subtitle: "Vòng quay tài sản", color: E > 1 ? GREEN : E > 0.5 ? ORANGE : RED },
         ],
         assetStructure: [
             { 
                 name: "Ngắn hạn", 
                 value: fmtNum(safeDiv(latest.currentAssets, latest.totalAssets) * 100), 
+                rawValue: latest.currentAssets / unit,
                 color: ORANGE,
                 details: [
                     { name: "Tiền & tương đương", value: fmtNum(safeDiv(latest.cash, latest.totalAssets) * 100) },
@@ -153,6 +157,7 @@ export function transformBalanceSheet(
             { 
                 name: "Dài hạn", 
                 value: fmtNum(safeDiv(latest.nonCurrentAssets, latest.totalAssets) * 100), 
+                rawValue: latest.nonCurrentAssets / unit,
                 color: PURPLE,
                 details: [
                     { name: "Tài sản cố định", value: fmtNum(safeDiv(latest.fixedAssets, latest.totalAssets) * 100) },
@@ -165,6 +170,7 @@ export function transformBalanceSheet(
             { 
                 name: "Vốn CSH", 
                 value: fmtNum(safeDiv(latest.totalEquity, latest.totalAssets) * 100), 
+                rawValue: latest.totalEquity / unit,
                 color: GREEN,
                 details: [
                     { name: "Vốn góp (Điều lệ)", value: fmtNum(safeDiv(latest.charterCapital, latest.totalAssets) * 100) },
@@ -175,6 +181,7 @@ export function transformBalanceSheet(
             { 
                 name: "Nợ phải trả", 
                 value: fmtNum(safeDiv(latest.totalLiabilities, latest.totalAssets) * 100), 
+                rawValue: latest.totalLiabilities / unit,
                 color: ORANGE,
                 details: [
                     { name: "Nợ ngắn hạn", value: fmtNum(safeDiv(latest.currentLiabilities, latest.totalAssets) * 100) },

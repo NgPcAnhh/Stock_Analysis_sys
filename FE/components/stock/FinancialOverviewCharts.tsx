@@ -67,7 +67,7 @@ function baseOpt() {
 }
 
 // ---- 1. Revenue & Growth -----
-function RevenueGrowthChart({ data }: { data: IncomeStatementItem[] }) {
+function RevenueGrowthChart({ data, registerChart }: { data: IncomeStatementItem[]; registerChart?: (key: string) => (instance: any) => void }) {
     const rows = useMemo(() => annualData(data), [data]);
     const option = useMemo(() => {
         const labels = rows.map((d) => d.period.period);
@@ -96,14 +96,14 @@ function RevenueGrowthChart({ data }: { data: IncomeStatementItem[] }) {
                 </CardTitle>
             </CardHeader>
             <CardContent className="px-2 pb-3">
-                <ReactECharts option={option} style={{ height: 280 }} opts={{ devicePixelRatio: 2 }} />
+                <ReactECharts option={option} style={{ height: 280 }} opts={{ devicePixelRatio: 2 }} onChartReady={registerChart?.("RevenueGrowthChart")} />
             </CardContent>
         </Card>
     );
 }
 
 // ---- 2. Net Profit & Growth (last 8) ----
-function ProfitGrowthChart({ data }: { data: IncomeStatementItem[] }) {
+function ProfitGrowthChart({ data, registerChart }: { data: IncomeStatementItem[]; registerChart?: (key: string) => (instance: any) => void }) {
     const rows = useMemo(() => annualData(data).slice(-8), [data]);
     const option = useMemo(() => {
         const labels = rows.map((d) => d.period.period);
@@ -132,14 +132,14 @@ function ProfitGrowthChart({ data }: { data: IncomeStatementItem[] }) {
                 </CardTitle>
             </CardHeader>
             <CardContent className="px-2 pb-3">
-                <ReactECharts option={option} style={{ height: 280 }} opts={{ devicePixelRatio: 2 }} />
+                <ReactECharts option={option} style={{ height: 280 }} opts={{ devicePixelRatio: 2 }} onChartReady={registerChart?.("ProfitGrowthChart")} />
             </CardContent>
         </Card>
     );
 }
 
 // ---- 3a. Revenue Structure ----
-function RevenueStructureChart({ data }: { data: IncomeStatementItem[] }) {
+function RevenueStructureChart({ data, registerChart }: { data: IncomeStatementItem[]; registerChart?: (key: string) => (instance: any) => void }) {
     const rows = useMemo(() => annualData(data), [data]);
     const option = useMemo(() => {
         const labels  = rows.map((d) => d.period.period);
@@ -167,14 +167,14 @@ function RevenueStructureChart({ data }: { data: IncomeStatementItem[] }) {
                 </CardTitle>
             </CardHeader>
             <CardContent className="px-2 pb-3">
-                <ReactECharts option={option} style={{ height: 280 }} opts={{ devicePixelRatio: 2 }} />
+                <ReactECharts option={option} style={{ height: 280 }} opts={{ devicePixelRatio: 2 }} onChartReady={registerChart?.("RevenueStructureChart")} />
             </CardContent>
         </Card>
     );
 }
 
 // ---- 3. Cost Structure ----
-function CostStructureChart({ data }: { data: IncomeStatementItem[] }) {
+function CostStructureChart({ data, registerChart }: { data: IncomeStatementItem[]; registerChart?: (key: string) => (instance: any) => void }) {
     const rows = useMemo(() => annualData(data), [data]);
     const option = useMemo(() => {
         const labels  = rows.map((d) => d.period.period);
@@ -204,14 +204,14 @@ function CostStructureChart({ data }: { data: IncomeStatementItem[] }) {
                 </CardTitle>
             </CardHeader>
             <CardContent className="px-2 pb-3">
-                <ReactECharts option={option} style={{ height: 280 }} opts={{ devicePixelRatio: 2 }} />
+                <ReactECharts option={option} style={{ height: 280 }} opts={{ devicePixelRatio: 2 }} onChartReady={registerChart?.("CostStructureChart")} />
             </CardContent>
         </Card>
     );
 }
 
 // ---- 4. Financial Indices ----
-function FinancialIndicesChart({ data, ratios }: { data: IncomeStatementItem[]; ratios?: FinancialRatioItem[] }) {
+function FinancialIndicesChart({ data, ratios, registerChart }: { data: IncomeStatementItem[]; ratios?: FinancialRatioItem[]; registerChart?: (key: string) => (instance: any) => void }) {
     const rows = useMemo(() => annualData(data), [data]);
     const epsMap = useMemo(() => {
         const m = new Map<string, number>();
@@ -260,14 +260,14 @@ function FinancialIndicesChart({ data, ratios }: { data: IncomeStatementItem[]; 
                 </CardTitle>
             </CardHeader>
             <CardContent className="px-2 pb-3">
-                <ReactECharts option={option} style={{ height: 280 }} opts={{ devicePixelRatio: 2 }} />
+                <ReactECharts option={option} style={{ height: 280 }} opts={{ devicePixelRatio: 2 }} onChartReady={registerChart?.("FinancialIndicesChart")} />
             </CardContent>
         </Card>
     );
 }
 
 // ---- 5. Profit Before Tax ----
-function ProfitBeforeTaxChart({ data }: { data: IncomeStatementItem[] }) {
+function ProfitBeforeTaxChart({ data, registerChart }: { data: IncomeStatementItem[]; registerChart?: (key: string) => (instance: any) => void }) {
     const rows = useMemo(() => annualData(data), [data]);
     const option = useMemo(() => {
         const labels       = rows.map((d) => d.period.period);
@@ -380,7 +380,7 @@ function ProfitBeforeTaxChart({ data }: { data: IncomeStatementItem[] }) {
                 </CardTitle>
             </CardHeader>
             <CardContent className="px-2 pb-3">
-                <ReactECharts option={option} style={{ height: 320 }} opts={{ devicePixelRatio: 2 }} />
+                <ReactECharts option={option} style={{ height: 320 }} opts={{ devicePixelRatio: 2 }} onChartReady={registerChart?.("ProfitBeforeTaxChart")} />
             </CardContent>
         </Card>
     );
@@ -747,11 +747,13 @@ interface FinancialOverviewChartsProps {
     cashFlow: CashFlowItem[];
     financialRatios?: FinancialRatioItem[];
     isBank?: boolean;
+    registerChart?: (key: string) => (instance: any) => void;
 }
 
 export default function FinancialOverviewCharts({
     incomeStatement,
     financialRatios,
+    registerChart,
 }: FinancialOverviewChartsProps) {
     if (!incomeStatement.length) {
         return <div className="text-center py-8 text-muted-foreground">Không có dữ liệu để hiển thị biểu đồ.</div>;
@@ -763,17 +765,17 @@ export default function FinancialOverviewCharts({
 
             {/* Biểu đồ */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <RevenueGrowthChart data={incomeStatement} />
-                <ProfitGrowthChart data={incomeStatement} />
+                <RevenueGrowthChart data={incomeStatement} registerChart={registerChart} />
+                <ProfitGrowthChart data={incomeStatement} registerChart={registerChart} />
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <RevenueStructureChart data={incomeStatement} />
-                <CostStructureChart data={incomeStatement} />
+                <RevenueStructureChart data={incomeStatement} registerChart={registerChart} />
+                <CostStructureChart data={incomeStatement} registerChart={registerChart} />
             </div>
             <div className="grid grid-cols-1 gap-4">
-                <FinancialIndicesChart data={incomeStatement} ratios={financialRatios} />
+                <FinancialIndicesChart data={incomeStatement} ratios={financialRatios} registerChart={registerChart} />
             </div>
-            <ProfitBeforeTaxChart data={incomeStatement} />
+            <ProfitBeforeTaxChart data={incomeStatement} registerChart={registerChart} />
 
             {/* Bảng tổng hợp chỉ số — phía dưới */}
             <FinancialSummaryTable data={incomeStatement} />

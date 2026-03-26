@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useCallback, Component, type ReactNode, type ErrorInfo } from "react";
+import React, { useState, useCallback, useRef, Component, type ReactNode, type ErrorInfo } from "react";
+import ExcelJS from "exceljs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFinancialReports, useFinancialRatios, type IncomeStatementItem, type BalanceSheetItem, type CashFlowItem } from "@/hooks/useStockData";
 import { useStockDetail } from "@/lib/StockDetailContext";
@@ -505,6 +506,13 @@ export default function FinancialReportsTab() {
     const { data: ratiosData } = useFinancialRatios(ticker, 20);
     const [activeReport, setActiveReport] = useState<ReportType>("overview");
 
+    const chartInstances = useRef<{ [key: string]: any }>({});
+    const registerChart = useCallback((key: string) => (instance: any) => {
+        if (instance) {
+            chartInstances.current[key] = instance;
+        }
+    }, []);
+
     const isBank = reportData?.isBank ?? false;
 
     const data = reportData
@@ -535,24 +543,254 @@ export default function FinancialReportsTab() {
         }
     }, [activeReport, data, stockInfo.ticker]);
 
-    const handleExportAll = useCallback(() => {
+    const handleExportAll = useCallback(async () => {
         if (!data) return;
         const t = stockInfo.ticker;
-        const income = buildIncomeCSV(data.incomeStatements);
-        const balance = buildBalanceCSV(data.balanceSheets);
-        const cashflow = buildCashFlowCSV(data.cashFlows);
-        const combined = [
-            "=== KẾT QUẢ KINH DOANH ===",
-            income,
-            "",
-            "=== CÂN ĐỐI KẾ TOÁN ===",
-            balance,
-            "",
-            "=== LƯU CHUYỂN TIỀN TỆ ===",
-            cashflow,
-        ].join("\n");
-        downloadCSV(`${t}_bao_cao_tai_chinh.csv`, combined);
-    }, [data, stockInfo.ticker]);
+
+        try {
+            const workbook = new ExcelJS.Workbook();
+            const sheet = workbook.addWorksheet("Dữ liệu & Dashboard", {
+                views: [{ showGridLines: false }]
+            });
+
+            const income = data.incomeStatements;
+            const balance = data.balanceSheets;
+            const cashflow = data.cashFlows;
+            const periods = income.map(s => s.period.period);
+            const leftColCount = periods.length + 1;
+
+            sheet.getColumn(1).width = 42;
+            for (let i = 0; i < periods.length; i++) {
+                sheet.getColumn(i + 2).width = 15;
+            }
+
+            // Row 1: Copyright / Logo text
+            sheet.mergeCells(1, 1, 1, leftColCount);
+            const copyrightCell = sheet.getCell(1, 1);
+            copyrightCell.value = `© StockPro - Nền tảng phân tích đầu tư chứng khoán chuyên sâu`;
+            copyrightCell.font = { name: 'Arial', size: 11, bold: true, italic: true, color: { argb: 'FFea580c' } }; // Orange tint
+            copyrightCell.alignment = { vertical: 'middle', horizontal: 'left' };
+            sheet.getRow(1).height = 25;
+
+            // Row 3: Title
+            sheet.mergeCells(3, 1, 3, leftColCount);
+            const titleCell = sheet.getCell(3, 1);
+            titleCell.value = `BÁO CÁO TÀI CHÍNH VÀ PHÂN TÍCH SỐ LIỆU - ${t}`;
+            titleCell.font = { name: 'Arial', size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
+            titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F4E78' } };
+            titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
+            sheet.getRow(3).height = 30;
+
+            const headerRow = sheet.getRow(5);
+            headerRow.getCell(1).value = "Chỉ tiêu (Tỷ VNĐ)";
+            periods.forEach((p, idx) => {
+                headerRow.getCell(idx + 2).value = p;
+            });
+            headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+            for(let i=1; i<=leftColCount; i++) {
+                const cell = headerRow.getCell(i);
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4472C4' } };
+                cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                cell.border = { top: {style:'thin', color: {argb:'FFB4C6E7'}}, left: {style:'thin', color: {argb:'FFB4C6E7'}}, bottom: {style:'thin', color: {argb:'FFB4C6E7'}}, right: {style:'thin', color: {argb:'FFB4C6E7'}} };
+            }
+            headerRow.height = 25;
+
+            let currentRowIdx = 6;
+
+            const addSectionHeader = (title: string) => {
+                sheet.mergeCells(currentRowIdx, 1, currentRowIdx, leftColCount);
+                const cell = sheet.getCell(currentRowIdx, 1);
+                cell.value = title;
+                cell.font = { bold: true, size: 11, color: {argb: 'FF1F4E78'} };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9E1F2' } };
+                cell.alignment = { vertical: 'middle' };
+                cell.border = { top: {style:'thin', color: {argb:'FF8EA9DB'}}, bottom: {style:'thin', color: {argb:'FF8EA9DB'}} };
+                sheet.getRow(currentRowIdx).height = 25;
+                currentRowIdx++;
+            };
+
+            const addDataRow = (metricName: string, dataArray: any[], keyName: string, isBold = false) => {
+                const row = sheet.getRow(currentRowIdx);
+                const leftCell = row.getCell(1);
+                leftCell.value = metricName;
+                leftCell.border = { left: {style:'thin', color: {argb:'FF8EA9DB'}}, right: {style:'thin', color: {argb:'FF8EA9DB'}} };
+                if (isBold) leftCell.font = { bold: true };
+                
+                dataArray.forEach((item, index) => {
+                    const cell = row.getCell(index + 2);
+                    let val = item[keyName] || 0;
+                    if (typeof val === "number") {
+                        if (keyName === "eps") {
+                            cell.value = val;
+                            cell.numFmt = '#,##0';
+                        } else {
+                            cell.value = +(val / 1_000_000_000).toFixed(2);
+                            cell.numFmt = '#,##0.00';
+                        }
+                    } else {
+                        cell.value = val;
+                    }
+                    cell.border = { right: {style:'thin', color: {argb:'FF8EA9DB'}} };
+                    if (isBold) cell.font = { bold: true };
+                });
+                
+                for(let i=1; i<=leftColCount; i++) {
+                    const c = row.getCell(i);
+                    c.border = { ...c.border, bottom: {style:'hair', color: {argb:'FFD9E1F2'}} };
+                }
+                currentRowIdx++;
+            };
+
+            if (isBank) {
+                addSectionHeader("KẾT QUẢ KINH DOANH NGÂN HÀNG");
+                addDataRow("Thu nhập lãi thuần", income, "netInterestIncome", true);
+                addDataRow("Thu nhập lãi và các khoản tương đương", income, "interestIncome");
+                addDataRow("Chi phí lãi và các khoản tương đương", income, "interestExpenseBank");
+                addDataRow("Tổng thu nhập ngoài lãi", income, "totalOperatingIncome", true);
+                addDataRow("Lãi/lỗ thuần dịch vụ & phí", income, "netServiceFeeIncome");
+                addDataRow("Lãi/lỗ ngoại tệ", income, "tradingFxIncome");
+                addDataRow("Lãi/lỗ mua bán chứng khoán kinh doanh", income, "tradingSecuritiesIncome");
+                addDataRow("Lãi/lỗ từ chứng khoán đầu tư", income, "investmentSecuritiesIncome");
+                addDataRow("Thu nhập từ hoạt động khác", income, "otherOperatingIncome");
+                addDataRow("Chi phí hoạt động", income, "operatingExpenses", true);
+                addDataRow("Lợi nhuận trước dự phòng (PPOP)", income, "prePpopProfit", true);
+                addDataRow("Chi phí dự phòng rủi ro tín dụng", income, "provisionExpenses", true);
+                addDataRow("Lợi nhuận trước thuế", income, "profitBeforeTax", true);
+                addDataRow("Thuế TNDN", income, "incomeTax");
+                addDataRow("Lợi nhuận sau thuế (LNST)", income, "netProfit", true);
+                addDataRow("LNST của CĐ công ty mẹ", income, "netProfitParent");
+                addDataRow("EPS (VND)", income, "eps");
+                
+                addSectionHeader("CÂN ĐỐI KẾ TOÁN NGÂN HÀNG");
+                addDataRow("TÀI SẢN", balance, "totalAssets", true);
+                addDataRow("Tiền và tương đương tiền", balance, "cash");
+                addDataRow("Tiền gửi tại NHNN", balance, "sbvDeposits");
+                addDataRow("Tiền gửi tại TCTD khác (tài sản)", balance, "interBankDeposits");
+                addDataRow("Chứng khoán kinh doanh", balance, "tradingSecurities");
+                addDataRow("Chứng khoán đầu tư", balance, "investmentSecurities");
+                addDataRow("Cho vay khách hàng (gộp)", balance, "loansToCustomersGross");
+                addDataRow("Dự phòng rủi ro cho vay", balance, "loanLossReserves");
+                addDataRow("Cho vay khách hàng (thuần)", balance, "loansToCustomers", true);
+                addDataRow("Tài sản cố định", balance, "fixedAssets");
+                addDataRow("Đầu tư TC dài hạn", balance, "longTermInvestments");
+
+                addDataRow("NGUỒN VỐN", balance, "totalLiabilitiesAndEquity", true);
+                addDataRow("Tổng nợ phải trả", balance, "totalLiabilities", true);
+                addDataRow("Tiền gửi của NHNN và TCTD", balance, "sbvDeposits");
+                addDataRow("Tiền gửi khách hàng", balance, "customerDeposits", true);
+                addDataRow("Phát hành giấy tờ có giá", balance, "debtSecuritiesIssued");
+                
+                addDataRow("Vốn chủ sở hữu", balance, "totalEquity", true);
+                addDataRow("Vốn điều lệ", balance, "charterCapital");
+                addDataRow("LN chưa phân phối", balance, "retainedEarnings");
+                addDataRow("Tổng nguồn vốn", balance, "totalLiabilitiesAndEquity", true);
+            } else {
+                addSectionHeader("KẾT QUẢ KINH DOANH");
+                addDataRow("Doanh thu thuần", income, "revenue", true);
+                addDataRow("Giá vốn hàng bán", income, "costOfGoodsSold");
+                addDataRow("Lợi nhuận gộp", income, "grossProfit", true);
+                addDataRow("Chi phí bán hàng", income, "sellingExpenses");
+                addDataRow("Chi phí quản lý DN", income, "adminExpenses");
+                addDataRow("Lợi nhuận từ HĐKD", income, "operatingProfit", true);
+                addDataRow("Doanh thu tài chính", income, "financialIncome");
+                addDataRow("Chi phí tài chính", income, "financialExpenses");
+                addDataRow("Trong đó: Chi phí lãi vay", income, "interestExpenses");
+                addDataRow("Lợi nhuận trước thuế", income, "profitBeforeTax", true);
+                addDataRow("Thuế TNDN", income, "incomeTax");
+                addDataRow("Lợi nhuận sau thuế", income, "netProfit", true);
+                addDataRow("LNST của CĐ công ty mẹ", income, "netProfitParent", true);
+                addDataRow("EPS (VND)", income, "eps");
+
+                addSectionHeader("CÂN ĐỐI KẾ TOÁN");
+                addDataRow("Tổng tài sản", balance, "totalAssets", true);
+                addDataRow("Tài sản ngắn hạn", balance, "currentAssets", true);
+                addDataRow("Tiền & tương đương tiền", balance, "cash");
+                addDataRow("Đầu tư TC ngắn hạn", balance, "shortTermInvestments");
+                addDataRow("Phải thu ngắn hạn", balance, "shortTermReceivables");
+                addDataRow("Hàng tồn kho", balance, "inventory");
+                addDataRow("Tài sản dài hạn", balance, "nonCurrentAssets", true);
+                addDataRow("Tài sản cố định", balance, "fixedAssets");
+                addDataRow("Đầu tư TC dài hạn", balance, "longTermInvestments");
+
+                addDataRow("Tổng nợ phải trả", balance, "totalLiabilities", true);
+                addDataRow("Nợ ngắn hạn", balance, "currentLiabilities");
+                addDataRow("Nợ dài hạn", balance, "longTermLiabilities");
+
+                addDataRow("Vốn chủ sở hữu", balance, "totalEquity", true);
+                addDataRow("Vốn điều lệ", balance, "charterCapital");
+                addDataRow("LN chưa phân phối", balance, "retainedEarnings");
+                addDataRow("Tổng nguồn vốn", balance, "totalLiabilitiesAndEquity", true);
+            }
+
+            addSectionHeader("LƯU CHUYỂN TIỀN TỆ");
+            addDataRow("Lưu chuyển tiền thuần từ HĐKD", cashflow, "operatingCashFlow", true);
+            addDataRow("Lợi nhuận trước thuế", cashflow, "profitBeforeTax");
+            addDataRow("Khấu hao TSCĐ", cashflow, "depreciationAmortization");
+            addDataRow("Dự phòng", cashflow, "provisionsAndReserves");
+            addDataRow("Thay đổi vốn lưu động", cashflow, "workingCapitalChanges");
+            addDataRow("Tiền lãi đã trả", cashflow, "interestPaid");
+            addDataRow("Thuế TNDN đã nộp", cashflow, "incomeTaxPaid");
+
+            addDataRow("Lưu chuyển tiền thuần từ HĐĐT", cashflow, "investingCashFlow", true);
+            addDataRow("Mua sắm TSCĐ", cashflow, "purchaseOfFixedAssets");
+            addDataRow("Thu thanh lý tài sản", cashflow, "proceedsFromDisposal");
+            addDataRow("Đầu tư vào công ty con", cashflow, "investmentInSubsidiaries");
+
+            addDataRow("Lưu chuyển tiền thuần từ HĐTC", cashflow, "financingCashFlow", true);
+            addDataRow("Tiền thu từ đi vay", cashflow, "proceedsFromBorrowing");
+            addDataRow("Tiền trả nợ vay", cashflow, "repaymentOfBorrowing");
+            addDataRow("Cổ tức đã trả", cashflow, "dividendsPaid");
+            addDataRow("Thu phát hành cổ phiếu", cashflow, "proceedsFromEquity");
+
+            addDataRow("Tăng/giảm tiền thuần", cashflow, "netCashChange", true);
+            addDataRow("Tiền đầu kỳ", cashflow, "beginningCash");
+            addDataRow("Tiền cuối kỳ", cashflow, "endingCash", true);
+
+            const lastRow = sheet.getRow(currentRowIdx - 1);
+            for(let i=1; i<=leftColCount; i++) {
+                const c = lastRow.getCell(i);
+                c.border = { ...c.border, bottom: {style:'thin', color: {argb:'FF8EA9DB'}} };
+            }
+
+            const chartColIndex = leftColCount + 1;
+            const chartKeys = ["RevenueGrowthChart", "ProfitGrowthChart", "RevenueStructureChart", "CostStructureChart", "FinancialIndicesChart", "ProfitBeforeTaxChart"];
+
+            let chartRowIdx = 4;
+            for (let i = 0; i < chartKeys.length; i++) {
+                const key = chartKeys[i];
+                const instance = chartInstances.current[key];
+                if (instance) {
+                    const dataUrl = instance.getDataURL({ type: "png", pixelRatio: 2, backgroundColor: "#fff" });
+                    const base64 = dataUrl.split("base64,")[1];
+                    const imageId = workbook.addImage({ base64, extension: "png" });
+
+                    const isEven = i % 2 === 0;
+                    const colAdjustment = isEven ? chartColIndex : chartColIndex + 8;
+
+                    sheet.addImage(imageId, {
+                        tl: { col: colAdjustment, row: chartRowIdx },
+                        ext: { width: 500, height: 300 }
+                    });
+
+                    if (!isEven) {
+                        chartRowIdx += 17;
+                    }
+                }
+            }
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `${t}_BaoCaoTaiChinh.xlsx`;
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error("Lỗi xuất Excel:", err);
+            alert("Có lỗi xảy ra khi xuất Excel. Xin thử lại.");
+        }
+    }, [data, stockInfo.ticker, isBank]);
 
     if (loading && !reportData) return <div className="text-center py-12 text-muted-foreground animate-pulse font-sans">Đang tải báo cáo tài chính…</div>;
     if (error && !reportData) return <div className="text-center py-12 text-red-500 font-sans">Lỗi: {error}</div>;
@@ -614,15 +852,18 @@ export default function FinancialReportsTab() {
 
             {/* Report content */}
             <FinancialErrorBoundary>
-            {activeReport === "overview" && data && (
-                <FinancialOverviewCharts
-                    incomeStatement={data.incomeStatements}
-                    balanceSheet={data.balanceSheets}
-                    cashFlow={data.cashFlows}
-                    financialRatios={ratiosData ?? undefined}
-                    isBank={isBank}
-                />
-            )}
+            <div className={activeReport === "overview" ? "block" : "hidden"}>
+                {data && (
+                    <FinancialOverviewCharts
+                        incomeStatement={data.incomeStatements}
+                        balanceSheet={data.balanceSheets}
+                        cashFlow={data.cashFlows}
+                        financialRatios={ratiosData ?? undefined}
+                        isBank={isBank}
+                        registerChart={registerChart}
+                    />
+                )}
+            </div>
             {activeReport === "income" && data && (
                 isBank
                     ? <BankIncomeStatementTable data={data.incomeStatements} />

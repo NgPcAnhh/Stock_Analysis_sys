@@ -2,8 +2,10 @@
 
 export interface MarketIndex {
     name: string;
+    asset_type?: string;
     flag: string; // emoji flag
     sparkline: number[]; // 30-day mini chart data
+    history?: { date: string; close: number }[];
     value: number;
     change: number;
     changePercent: number;

@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 # Schema
 SCHEMA = "hethong_phantich_chungkhoan"
 SYSTEM_SCHEMA = "system"
+SCREENER_MV = f"{SCHEMA}.mv_stock_screener_base"
 
 # Allowed sort fields → actual SQL expression
 SORT_MAP = {
@@ -33,6 +34,21 @@ SORT_MAP = {
     "roa": "fr.roa",
     "dividend_yield": "fr.dividend_yield",
     "debt_to_equity": "fr.debt_to_equity",
+}
+
+MV_SORT_MAP = {
+    "ticker": "mv.ticker",
+    "current_price": "mv.current_price",
+    "price_change_percent": "mv.price_change_percent",
+    "volume": "mv.volume",
+    "market_cap": "mv.market_cap",
+    "pe": "mv.pe",
+    "pb": "mv.pb",
+    "eps": "mv.eps",
+    "roe": "mv.roe",
+    "roa": "mv.roa",
+    "dividend_yield": "mv.dividend_yield",
+    "debt_to_equity": "mv.debt_to_equity",
 }
 
 
@@ -56,6 +72,21 @@ async def get_stock_overview(
     cached = await cache_get(cache_key)
     if cached is not None:
         return cached
+
+    # Fast path: read precomputed metrics from materialized view.
+    mv_result = await _get_stock_overview_from_mv(
+        db=db,
+        page=page,
+        page_size=page_size,
+        search=search,
+        sector=sector,
+        exchange=exchange,
+        sort_by=sort_by,
+        sort_dir=sort_dir,
+    )
+    if mv_result is not None:
+        await cache_set(cache_key, mv_result, ttl=180)
+        return mv_result
 
     # Validate sort
     sort_col = SORT_MAP.get(sort_by, "computed_market_cap")
@@ -151,8 +182,9 @@ async def get_stock_overview(
     count_res = await db.execute(count_sql, count_params)
     total = count_res.scalar() or 0
 
+    # If MV is empty (not refreshed yet), fallback to legacy query path.
     if total == 0:
-        return _empty_response(page, page_size)
+        return None
 
     total_pages = math.ceil(total / page_size)
     offset = (page - 1) * page_size
@@ -397,6 +429,11 @@ async def get_sectors(db: AsyncSession) -> List[Dict[str, Any]]:
     if cached is not None:
         return cached
 
+    mv_data = await _get_sectors_from_mv(db)
+    if mv_data is not None:
+        await cache_set(cache_key, mv_data, ttl=3600)
+        return mv_data
+
     sql = text(f"""
         WITH co_dedup AS (
             SELECT DISTINCT ON (UPPER(BTRIM(ticker)))
@@ -425,6 +462,8 @@ async def get_sectors(db: AsyncSession) -> List[Dict[str, Any]]:
     """)
     res = await db.execute(sql)
     rows = res.mappings().all()
+    if not rows:
+        return None
     data = [{"name": r["name"], "count": r["count"]} for r in rows]
     await cache_set(cache_key, data, ttl=3600)
     return data
@@ -559,6 +598,229 @@ async def track_stock_search(
 # ════════════════════════════════════════════════════════════════════
 # Private helpers
 # ════════════════════════════════════════════════════════════════════
+
+async def _get_stock_overview_from_mv(
+    db: AsyncSession,
+    page: int,
+    page_size: int,
+    search: Optional[str],
+    sector: Optional[str],
+    exchange: Optional[str],
+    sort_by: str,
+    sort_dir: str,
+) -> Optional[Dict[str, Any]]:
+    """Return stock overview from materialized view, or None if unavailable."""
+    sort_col = MV_SORT_MAP.get(sort_by, "mv.market_cap")
+    sort_direction = "ASC" if sort_dir.lower() == "asc" else "DESC"
+
+    conditions: List[str] = []
+    params: Dict[str, Any] = {}
+
+    if search:
+        conditions.append(
+            "(mv.ticker ILIKE :search OR COALESCE(mv.company_name, '') ILIKE :search)"
+        )
+        params["search"] = f"%{search}%"
+    if sector:
+        conditions.append("mv.sector = :sector")
+        params["sector"] = sector
+    if exchange:
+        conditions.append("mv.exchange = :exchange")
+        params["exchange"] = exchange.upper().strip()
+
+    where_clause = " AND ".join(conditions) if conditions else "1=1"
+
+    count_sql = text(f"""
+        SELECT COUNT(*)
+        FROM {SCREENER_MV} mv
+        WHERE {where_clause}
+    """)
+
+    try:
+        count_res = await db.execute(count_sql, params)
+        total = count_res.scalar() or 0
+    except Exception as exc:
+        logger.info("stock overview MV unavailable, fallback to legacy query: %s", exc)
+        await db.rollback()
+        return None
+
+    if total == 0:
+        return None
+
+    total_pages = math.ceil(total / page_size)
+    offset = (page - 1) * page_size
+
+    data_sql = text(f"""
+        SELECT
+            mv.ticker,
+            mv.company_name,
+            mv.sector,
+            mv.exchange,
+            mv.current_price,
+            mv.price_change,
+            mv.price_change_percent,
+            mv.volume,
+            mv.avg_volume_10d,
+            mv.market_cap,
+            mv.pe,
+            mv.pb,
+            mv.eps,
+            mv.roe,
+            mv.roa,
+            mv.debt_to_equity,
+            mv.dividend_yield,
+            mv.high_52w,
+            mv.low_52w,
+            mv.week_change_52,
+            mv.sparkline
+        FROM {SCREENER_MV} mv
+        WHERE {where_clause}
+        ORDER BY {sort_col} {sort_direction} NULLS LAST
+        LIMIT :limit OFFSET :offset
+    """)
+
+    summary_sql = text(f"""
+        SELECT
+            COUNT(*) AS total_stocks,
+            COUNT(*) FILTER (WHERE mv.price_change > 0) AS total_up,
+            COUNT(*) FILTER (WHERE mv.price_change < 0) AS total_down,
+            COUNT(*) FILTER (WHERE mv.price_change = 0) AS total_unchanged,
+            COALESCE(SUM(mv.volume), 0) AS total_volume,
+            AVG(mv.pe) FILTER (WHERE mv.pe > 0 AND mv.pe < 200) AS avg_pe
+        FROM {SCREENER_MV} mv
+    """)
+
+    query_params = {"limit": page_size, "offset": offset, **params}
+    try:
+        res = await db.execute(data_sql, query_params)
+        rows = res.mappings().all()
+    except Exception as exc:
+        logger.info("stock overview MV data query failed, fallback to legacy query: %s", exc)
+        await db.rollback()
+        return None
+
+    if not rows:
+        return None
+
+    try:
+        summary_res = await db.execute(summary_sql)
+        summary_row = summary_res.mappings().first()
+    except Exception as exc:
+        logger.info("stock overview MV summary query failed, fallback to legacy query: %s", exc)
+        await db.rollback()
+        return None
+
+    data = []
+    for r in rows:
+        sparkline_raw = r["sparkline"] or []
+        sparkline = [float(x) for x in sparkline_raw if x is not None]
+        data.append({
+            "ticker": r["ticker"],
+            "company_name": r["company_name"],
+            "sector": r["sector"],
+            "exchange": r["exchange"],
+            "current_price": float(r["current_price"]) if r["current_price"] is not None else None,
+            "price_change": float(r["price_change"]) if r["price_change"] is not None else None,
+            "price_change_percent": float(r["price_change_percent"]) if r["price_change_percent"] is not None else None,
+            "volume": int(r["volume"]) if r["volume"] is not None else None,
+            "avg_volume_10d": int(r["avg_volume_10d"]) if r["avg_volume_10d"] is not None else None,
+            "market_cap": float(r["market_cap"]) if r["market_cap"] is not None else None,
+            "pe": float(r["pe"]) if r["pe"] is not None else None,
+            "pb": float(r["pb"]) if r["pb"] is not None else None,
+            "eps": float(r["eps"]) if r["eps"] is not None else None,
+            "roe": float(r["roe"]) if r["roe"] is not None else None,
+            "roa": float(r["roa"]) if r["roa"] is not None else None,
+            "debt_to_equity": float(r["debt_to_equity"]) if r["debt_to_equity"] is not None else None,
+            "dividend_yield": float(r["dividend_yield"]) if r["dividend_yield"] is not None else None,
+            "high_52w": float(r["high_52w"]) if r["high_52w"] is not None else None,
+            "low_52w": float(r["low_52w"]) if r["low_52w"] is not None else None,
+            "week_change_52": float(r["week_change_52"]) if r["week_change_52"] is not None else None,
+            "sparkline": sparkline,
+        })
+
+    return {
+        "data": data,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": total_pages,
+        "summary": {
+            "total_stocks": int(summary_row["total_stocks"] or 0) if summary_row else 0,
+            "total_up": int(summary_row["total_up"] or 0) if summary_row else 0,
+            "total_down": int(summary_row["total_down"] or 0) if summary_row else 0,
+            "total_unchanged": int(summary_row["total_unchanged"] or 0) if summary_row else 0,
+            "total_volume": int(summary_row["total_volume"] or 0) if summary_row else 0,
+            "avg_pe": round(float(summary_row["avg_pe"]), 1) if summary_row and summary_row["avg_pe"] is not None else None,
+        },
+    }
+
+
+async def _get_sectors_from_mv(db: AsyncSession) -> Optional[List[Dict[str, Any]]]:
+    """Return sector list from materialized view, or None if unavailable."""
+    sql = text(f"""
+        SELECT mv.sector AS name, COUNT(*) AS count
+        FROM {SCREENER_MV} mv
+        GROUP BY mv.sector
+        ORDER BY count DESC
+    """)
+
+    try:
+        res = await db.execute(sql)
+    except Exception as exc:
+        logger.info("sector MV unavailable, fallback to legacy query: %s", exc)
+        await db.rollback()
+        return None
+
+    rows = res.mappings().all()
+    if not rows:
+        return None
+    return [{"name": r["name"], "count": r["count"]} for r in rows]
+
+
+async def _get_screener_base_from_mv(db: AsyncSession) -> Optional[List[Dict[str, Any]]]:
+    """Return screener base rows from materialized view with legacy-compatible keys."""
+    sql = text(f"""
+        SELECT
+            mv.ticker,
+            mv.company_name,
+            mv.sector,
+            mv.sector2,
+            mv.exchange,
+            (mv.current_price / 1000.0) AS close_raw,
+            ((mv.current_price - mv.price_change) / 1000.0) AS prev_close_raw,
+            mv.volume,
+            mv.shares,
+            mv.equity,
+            mv.ttm_ni,
+            mv.prev_ni,
+            mv.ttm_rev,
+            mv.prev_rev,
+            (mv.roe / 100.0) AS roe,
+            (mv.roa / 100.0) AS roa,
+            mv.debt_to_equity,
+            (mv.dividend_yield / 100.0) AS dividend_yield,
+            mv.total_liabilities,
+            mv.ttm_div,
+            mv.foreign_buy,
+            mv.foreign_sell,
+            mv.eb_price,
+            (mv.high_52w / 1000.0) AS high_52w,
+            (mv.low_52w / 1000.0) AS low_52w,
+            mv.sparkline
+        FROM {SCREENER_MV} mv
+        ORDER BY mv.market_cap DESC NULLS LAST
+    """)
+
+    try:
+        res = await db.execute(sql)
+    except Exception as exc:
+        logger.info("screener MV unavailable, fallback to legacy query: %s", exc)
+        await db.rollback()
+        return None
+    rows = res.mappings().all()
+    if not rows:
+        return None
+    return rows
 
 async def _get_sparklines(
     db: AsyncSession, tickers: List[str], latest_date: str
@@ -823,6 +1085,8 @@ async def get_screener_data(db: AsyncSession) -> Dict[str, Any]:
     if cached is not None:
         return cached
 
+    mv_base_rows = await _get_screener_base_from_mv(db)
+
     # ── Latest & previous trading dates ──
     latest_date_sql = text(f"""
         SELECT MAX(trading_date) FROM {SCHEMA}.history_price
@@ -1054,51 +1318,64 @@ async def get_screener_data(db: AsyncSession) -> Dict[str, Any]:
             CASE WHEN sh.shares > 0 AND hp.close IS NOT NULL THEN hp.close * sh.shares ELSE 0 END DESC NULLS LAST
     """)
 
-    try:
-        res = await db.execute(main_sql, {
-            "latest_date": latest_date,
-            "prev_date": prev_date,
-            "date_1y_ago": date_1y_ago,
-        })
-        base_rows = res.mappings().all()
-    except Exception as exc:
-        logger.error("screener main query error: %s", exc)
-        return {"data": [], "total": 0}
+    if mv_base_rows is not None:
+        base_rows = mv_base_rows
+    else:
+        try:
+            res = await db.execute(main_sql, {
+                "latest_date": latest_date,
+                "prev_date": prev_date,
+                "date_1y_ago": date_1y_ago,
+            })
+            base_rows = res.mappings().all()
+        except Exception as exc:
+            logger.error("screener main query error: %s", exc)
+            return {"data": [], "total": 0}
 
     if not base_rows:
         return {"data": [], "total": 0}
 
-    # ── Price history (last ~60 trading days) for technical indicators ──
-    ticker_list = [r["ticker"] for r in base_rows if r.get("ticker")]
-
-    history_rows = []
-    if ticker_list:
-        history_sql = text(f"""
-            SELECT UPPER(BTRIM(ticker)) AS ticker, trading_date, close, volume
-            FROM {SCHEMA}.history_price
-            WHERE trading_date >= :date_90d_ago AND trading_date <= :latest_date
-              AND UPPER(BTRIM(ticker)) = ANY(:tickers)
-            ORDER BY UPPER(BTRIM(ticker)), trading_date ASC
-        """)
-        try:
-            res = await db.execute(history_sql, {
-                "date_90d_ago": date_90d_ago,
-                "latest_date": latest_date,
-                "tickers": ticker_list,
-            })
-            history_rows = res.fetchall()
-        except Exception as exc:
-            logger.warning("screener history query error: %s", exc)
-
-    # Build per-ticker price & volume series
+    # ── Price history for technical indicators ──
     price_series: Dict[str, List[float]] = defaultdict(list)
     vol_series: Dict[str, List[int]] = defaultdict(list)
-    for row in history_rows:
-        ticker = row[0]
-        close_val = float(row[2]) if row[2] else 0
-        vol_val = int(row[3]) if row[3] else 0
-        price_series[ticker].append(close_val)
-        vol_series[ticker].append(vol_val)
+
+    if mv_base_rows is not None:
+        # MV already stores last 20 closes in thousand-VND units.
+        for row in base_rows:
+            ticker = row.get("ticker")
+            if not ticker:
+                continue
+            sparkline = row.get("sparkline") or []
+            price_series[ticker] = [float(x) / 1000.0 for x in sparkline if x is not None]
+            if row.get("volume") is not None:
+                vol_series[ticker] = [int(row["volume"])]
+    else:
+        ticker_list = [r["ticker"] for r in base_rows if r.get("ticker")]
+        history_rows = []
+        if ticker_list:
+            history_sql = text(f"""
+                SELECT UPPER(BTRIM(ticker)) AS ticker, trading_date, close, volume
+                FROM {SCHEMA}.history_price
+                WHERE trading_date >= :date_90d_ago AND trading_date <= :latest_date
+                  AND UPPER(BTRIM(ticker)) = ANY(:tickers)
+                ORDER BY UPPER(BTRIM(ticker)), trading_date ASC
+            """)
+            try:
+                res = await db.execute(history_sql, {
+                    "date_90d_ago": date_90d_ago,
+                    "latest_date": latest_date,
+                    "tickers": ticker_list,
+                })
+                history_rows = res.fetchall()
+            except Exception as exc:
+                logger.warning("screener history query error: %s", exc)
+
+        for row in history_rows:
+            ticker = row[0]
+            close_val = float(row[2]) if row[2] else 0
+            vol_val = int(row[3]) if row[3] else 0
+            price_series[ticker].append(close_val)
+            vol_series[ticker].append(vol_val)
 
     # ── Compute technical indicators per ticker ──
     tech_map: Dict[str, Dict[str, Any]] = {}

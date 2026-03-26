@@ -182,6 +182,10 @@ async def get_market_indices(db: AsyncSession) -> List[Dict[str, Any]]:
         # Sparkline — last 30 data points in ASC order
         sparkline_rows = data_rows[:30]
         sparkline = [r["close"] for r in reversed(sparkline_rows)]
+        history = [
+            {"date": r["date"], "close": r["close"]}
+            for r in reversed(data_rows)
+        ]
 
         # Multi-period changes — find the close value nearest to each cutoff
         period_changes: Dict[str, float] = {}
@@ -199,6 +203,7 @@ async def get_market_indices(db: AsyncSession) -> List[Dict[str, Any]]:
             "asset_type": asset,
             "flag": meta["flag"],
             "sparkline": sparkline,
+            "history": history,
             "value": cur_close,
             "change": change,
             "changePercent": change_pct,

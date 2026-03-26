@@ -67,7 +67,7 @@ const FinancialMatrix = () => {
                 </div>
 
                 {/* Details Link */}
-                <button className="flex items-center gap-0.5 text-xs text-blue-600 hover:underline self-end mt-auto">
+                <button className="flex items-center gap-0.5 text-xs text-orange-600 hover:text-orange-700 hover:underline self-end mt-auto transition-colors">
                     Chi tiết
                     <ChevronRight className="w-3 h-3" />
                 </button>

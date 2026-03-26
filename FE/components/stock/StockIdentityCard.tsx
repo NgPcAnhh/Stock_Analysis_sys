@@ -48,7 +48,7 @@ const StockIdentityCard = () => {
                     {stock.tags.map((tag, index) => (
                         <span
                             key={index}
-                            className="px-2 py-0.5 bg-blue-50 text-blue-600 font-medium rounded"
+                            className="px-2 py-0.5 bg-orange-50 text-orange-600 font-medium rounded border border-orange-100/50"
                         >
                             {tag}
                         </span>
@@ -61,7 +61,7 @@ const StockIdentityCard = () => {
                         {stock.overview || stock.companyNameFull}
                     </p>
                     <button
-                        className="text-blue-600 hover:underline mt-0.5 inline-block"
+                        className="text-orange-600 hover:text-orange-700 font-medium hover:underline mt-0.5 inline-block transition-colors"
                         onClick={() => onTabChange?.("profile")}
                     >
                         Xem thêm
@@ -79,19 +79,19 @@ const StockIdentityCard = () => {
 
             {/* Right Section - AI Box */}
             <div className="w-64 flex-shrink-0">
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <div className="bg-gradient-to-br from-orange-50 to-orange-100/30 border border-orange-200 rounded-lg p-3 shadow-sm shadow-orange-500/5 hover:shadow-md transition-shadow">
                     <div className="flex items-start gap-2">
-                        <MessageCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                        <MessageCircle className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
                         <div>
-                            <p className="text-sm font-medium text-blue-800">
+                            <p className="text-sm font-medium text-orange-800">
                                 Bạn cần phân tích kỹ thuật?
                             </p>
-                            <p className="text-xs text-blue-600 mt-1">
+                            <p className="text-xs text-orange-600 mt-1">
                                 Sử dụng Biểu đồ kỹ thuật của Simplize để được cập nhật dữ liệu từng ngày thông qua AI!
                             </p>
                             <Link
                                 href={`/analysis/${stock.ticker}`}
-                                className="text-xs text-blue-700 font-medium mt-2 hover:underline inline-flex items-center gap-1"
+                                className="text-xs text-orange-600 font-semibold mt-2 hover:text-orange-700 hover:underline inline-flex items-center gap-1 transition-colors group"
                             >
                                 Xem Biểu đồ kỹ thuật của {stock.ticker} →
                             </Link>

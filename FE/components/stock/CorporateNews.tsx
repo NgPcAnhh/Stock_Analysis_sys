@@ -60,7 +60,7 @@ function NewsCard({ ev, idx }: { ev: { id?: string; title: string; time: string;
                     )}
                 </div>
                 {/* Title */}
-                <h3 className="text-sm font-semibold text-foreground group-hover:text-blue-600 transition-colors leading-relaxed line-clamp-3 mb-2">
+                <h3 className="text-sm font-semibold text-foreground group-hover:text-orange-600 transition-colors leading-relaxed line-clamp-3 mb-2">
                     {ev.source ? (
                         <a href={ev.source} target="_blank" rel="noopener noreferrer" className="hover:underline">
                             {ev.title}
@@ -81,7 +81,7 @@ function NewsCard({ ev, idx }: { ev: { id?: string; title: string; time: string;
                         href={ev.source}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[10px] text-blue-500 hover:text-blue-600 flex items-center gap-0.5"
+                        className="text-[10px] text-orange-500 hover:text-orange-600 flex items-center gap-0.5"
                     >
                         <ExternalLink className="w-2.5 h-2.5" />
                         Nguồn
@@ -124,7 +124,7 @@ const CorporateNews = ({ mode = "overview" }: CorporateNewsProps) => {
                     <div className="flex justify-center">
                         <button
                             onClick={() => onTabChange?.("news")}
-                            className="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors flex items-center gap-1 px-4 py-2 rounded-lg hover:bg-blue-50"
+                            className="text-sm text-orange-600 hover:text-orange-700 font-medium transition-colors flex items-center gap-1 px-4 py-2 rounded-lg hover:bg-orange-50"
                         >
                             Xem thêm tin tức
                             <ChevronRight className="w-4 h-4" />
@@ -150,7 +150,7 @@ const CorporateNews = ({ mode = "overview" }: CorporateNewsProps) => {
                 <div className="flex justify-center">
                     <button
                         onClick={() => setVisibleCount((prev) => prev + FULL_PAGE_SIZE)}
-                        className="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors flex items-center gap-1 px-4 py-2 rounded-lg hover:bg-blue-50"
+                        className="text-sm text-orange-600 hover:text-orange-700 font-medium transition-colors flex items-center gap-1 px-4 py-2 rounded-lg hover:bg-orange-50"
                     >
                         <ChevronDown className="w-4 h-4" />
                         Xem thêm ({Math.min(FULL_PAGE_SIZE, events.length - visibleCount)} tin)

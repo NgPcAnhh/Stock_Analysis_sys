@@ -726,7 +726,7 @@ const TechnicalChart: React.FC<TechnicalChartProps> = ({ data, overlays, subIndi
           }}
           option={getOption()}
           style={{ height: "100%", width: "100%" }}
-          notMerge={false}
+          notMerge={true}
           lazyUpdate={true}
           opts={{ renderer: "canvas" }}
         />

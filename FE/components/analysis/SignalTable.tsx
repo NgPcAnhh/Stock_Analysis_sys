@@ -80,7 +80,7 @@ const RenderTable: React.FC<{
 }> = ({ items, title, icon }) => {
   if (items.length === 0) return null;
   return (
-    <Card className="shadow-sm border-border">
+    <Card className="shadow-sm border-border h-full">
       <CardHeader className="pb-2 pt-3 px-4">
         <CardTitle className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
           {icon}
@@ -130,17 +130,21 @@ const SignalTable: React.FC<SignalTableProps> = ({ signals }) => {
   const { maSignals, techSignals } = categorizeSignals(signals);
 
   return (
-    <div className="space-y-4">
-      <RenderTable
-        items={maSignals}
-        title="Đường trung bình động"
-        icon={<BarChart2 size={16} className="text-blue-500" />}
-      />
-      <RenderTable
-        items={techSignals}
-        title="Chỉ báo kỹ thuật"
-        icon={<Activity size={16} className="text-purple-500" />}
-      />
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-stretch">
+      <div className="h-full">
+        <RenderTable
+          items={maSignals}
+          title="Đường trung bình động"
+          icon={<BarChart2 size={16} className="text-blue-500" />}
+        />
+      </div>
+      <div className="h-full">
+        <RenderTable
+          items={techSignals}
+          title="Chỉ báo kỹ thuật"
+          icon={<Activity size={16} className="text-purple-500" />}
+        />
+      </div>
     </div>
   );
 };

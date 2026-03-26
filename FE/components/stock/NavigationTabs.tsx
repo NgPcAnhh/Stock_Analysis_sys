@@ -29,8 +29,8 @@ const NavigationTabs = ({ activeTab, onTabChange, ticker }: NavigationTabsProps)
                         className={`
                             px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-colors
                             ${activeTab === tab.id
-                                ? "bg-[#2563EB] text-white shadow-sm"
-                                : "text-muted-foreground hover:text-[#2563EB] hover:bg-blue-50"
+                                ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md shadow-orange-500/20"
+                                : "text-muted-foreground hover:text-orange-600 hover:bg-orange-50"
                             }
                         `}
                     >

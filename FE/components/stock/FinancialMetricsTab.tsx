@@ -1,7 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { useRef } from "react";
 import ReactECharts from "echarts-for-react";
+import ExcelJS from "exceljs";
+import { Download } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFinancialReports } from "@/hooks/useStockData";
 import { useStockDetail } from "@/lib/StockDetailContext";
@@ -23,6 +25,184 @@ function SectionHeading({ icon, color, title }: { icon: string; color: string; t
 
 export default function FinancialMetricsTab() {
     const { stockInfo, ticker } = useStockDetail();
+    const chartInstances = useRef<{ [key: string]: any }>({});
+    
+    const registerChart = (key: string) => (instance: any) => {
+        if (instance) {
+            chartInstances.current[key] = instance;
+        }
+    };
+
+    const handleExportExcel = async () => {
+        try {
+            const workbook = new ExcelJS.Workbook();
+            const sheet = workbook.addWorksheet("Dữ liệu & Dashboard", {
+                views: [{ showGridLines: false }]
+            });
+            
+            const sorted = [...(reportData?.incomeStatement || [])].reverse();
+            const sortedBS = [...(reportData?.balanceSheet || [])].reverse();
+            const sortedCF = [...(reportData?.cashFlow || [])].reverse();
+            const periods = sorted.map(s => s.period.period);
+
+            const leftColCount = periods.length + 1;
+            
+            // Format column widths for Data Table
+            sheet.getColumn(1).width = 35; 
+            for (let i = 0; i < periods.length; i++) {
+                sheet.getColumn(i + 2).width = 18; 
+            }
+
+            // Decorate Main Title
+            sheet.mergeCells(1, 1, 1, leftColCount);
+            const titleCell = sheet.getCell(1, 1);
+            titleCell.value = `BÁO CÁO TÀI CHÍNH - ${ticker}`;
+            titleCell.font = { name: 'Arial', size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
+            titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F4E78' } };
+            titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
+            sheet.getRow(1).height = 30;
+
+            // Header Row
+            const headerRow = sheet.getRow(2);
+            headerRow.getCell(1).value = "Chỉ tiêu (Tỷ VNĐ)";
+            periods.forEach((p, idx) => {
+                headerRow.getCell(idx + 2).value = p;
+            });
+            headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+            for(let i=1; i<=leftColCount; i++) {
+                const cell = headerRow.getCell(i);
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4472C4' } };
+                cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                cell.border = {
+                    top: {style:'thin', color: {argb:'FFB4C6E7'}}, 
+                    left: {style:'thin', color: {argb:'FFB4C6E7'}}, 
+                    bottom: {style:'thin', color: {argb:'FFB4C6E7'}}, 
+                    right: {style:'thin', color: {argb:'FFB4C6E7'}}
+                };
+            }
+            headerRow.height = 25;
+
+            let currentRowIdx = 3;
+
+            const addSectionHeader = (title: string) => {
+                sheet.mergeCells(currentRowIdx, 1, currentRowIdx, leftColCount);
+                const cell = sheet.getCell(currentRowIdx, 1);
+                cell.value = title;
+                cell.font = { bold: true, size: 11, color: {argb: 'FF1F4E78'} };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9E1F2' } };
+                cell.alignment = { vertical: 'middle' };
+                cell.border = { top: {style:'thin', color: {argb:'FF8EA9DB'}}, bottom: {style:'thin', color: {argb:'FF8EA9DB'}} };
+                sheet.getRow(currentRowIdx).height = 25;
+                currentRowIdx++;
+            };
+
+            const addDataRow = (metricName: string, dataArray: any[], keyName: string, isBold = false) => {
+                const row = sheet.getRow(currentRowIdx);
+                const leftCell = row.getCell(1);
+                leftCell.value = metricName;
+                leftCell.border = { left: {style:'thin', color: {argb:'FF8EA9DB'}}, right: {style:'thin', color: {argb:'FF8EA9DB'}} };
+                if (isBold) leftCell.font = { bold: true };
+                
+                dataArray.forEach((item, index) => {
+                    const cell = row.getCell(index + 2);
+                    cell.value = item[keyName] || 0;
+                    if (typeof cell.value === "number") {
+                        cell.numFmt = '#,##0';
+                    }
+                    cell.border = { right: {style:'thin', color: {argb:'FF8EA9DB'}} };
+                    if (isBold) cell.font = { bold: true };
+                });
+                
+                // Add bottom border for rows
+                for(let i=1; i<=leftColCount; i++) {
+                    const c = row.getCell(i);
+                    c.border = { ...c.border, bottom: {style:'hair', color: {argb:'FFD9E1F2'}} };
+                }
+                currentRowIdx++;
+            };
+
+            // Section 1: KQKD
+            addSectionHeader("KẾT QUẢ KINH DOANH");
+            addDataRow("Doanh thu thuần", sorted, "revenue", true);
+            addDataRow("Lợi nhuận gộp", sorted, "grossProfit");
+            addDataRow("Lợi nhuận từ HĐKD", sorted, "operatingProfit");
+            addDataRow("Lợi nhuận sau thuế", sorted, "netProfit", true);
+            addDataRow("LNST cổ đông công ty mẹ", sorted, "netProfitParent");
+            addDataRow("EPS (VND)", sorted, "eps");
+
+            // Section 2: CDKT
+            addSectionHeader("CÂN ĐỐI KẾ TOÁN");
+            addDataRow("Tổng tài sản", sortedBS, "totalAssets", true);
+            addDataRow("Tiền và tương đương tiền", sortedBS, "cash");
+            addDataRow("Đầu tư tài chính ngắn hạn", sortedBS, "shortTermInvestments");
+            addDataRow("Phải thu ngắn hạn", sortedBS, "shortTermReceivables");
+            addDataRow("Hàng tồn kho", sortedBS, "inventory");
+            addDataRow("Tài sản dài hạn", sortedBS, "nonCurrentAssets");
+            addDataRow("Tổng nợ", sortedBS, "totalLiabilities", true);
+            addDataRow("Nợ ngắn hạn", sortedBS, "currentLiabilities");
+            addDataRow("Vốn chủ sở hữu", sortedBS, "totalEquity", true);
+
+            // Section 3: LCTT
+            addSectionHeader("LƯU CHUYỂN TIỀN TỆ");
+            addDataRow("Lưu chuyển tiền từ HĐKD", sortedCF, "operatingCashFlow");
+            addDataRow("Lưu chuyển tiền từ HĐĐT", sortedCF, "investingCashFlow");
+            addDataRow("Lưu chuyển tiền từ HĐTC", sortedCF, "financingCashFlow");
+            addDataRow("Lưu chuyển tiền thuần trong kỳ", sortedCF, "netCashChange", true);
+
+            // Close final border
+            const lastRow = sheet.getRow(currentRowIdx - 1);
+            for(let i=1; i<=leftColCount; i++) {
+                const c = lastRow.getCell(i);
+                c.border = { ...c.border, bottom: {style:'thin', color: {argb:'FF8EA9DB'}} };
+            }
+
+            // --- CHARTS ON THE RIGHT ---
+            const chartColIndex = leftColCount + 1; // 0-based offset for charts (leaves 1 empty column gap)
+            
+            const chartKeys = [
+                "revenueNetProfit", "growth",
+                "margin", "eps",
+                "assetsLiab", "assetBreakdown",
+                "roeRoa", "debtRatio",
+                "expenseBreakdown", "cashFlow"
+            ];
+            
+            let chartRowIdx = 1; // Row offset
+            for (let i = 0; i < chartKeys.length; i++) {
+                const key = chartKeys[i];
+                const instance = chartInstances.current[key];
+                if (instance) {
+                    const dataUrl = instance.getDataURL({ type: "png", pixelRatio: 2, backgroundColor: "#fff" });
+                    const base64 = dataUrl.split("base64,")[1];
+                    const imageId = workbook.addImage({ base64, extension: "png" });
+                    
+                    const isEven = i % 2 === 0;
+                    const colAdjustment = isEven ? chartColIndex : chartColIndex + 8;
+                    
+                    sheet.addImage(imageId, {
+                        tl: { col: colAdjustment, row: chartRowIdx },
+                        ext: { width: 500, height: 300 }
+                    });
+                    
+                    if (!isEven) {
+                        chartRowIdx += 17; // Advance ~340 pixels for the next row of charts
+                    }
+                }
+            }
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `${ticker}_BaoCaoTaiChinh.xlsx`;
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error("Lỗi xuất Excel:", err);
+            alert("Có lỗi xảy ra khi xuất Excel!");
+        }
+    };
     const { data: reportData, loading, error } = useFinancialReports(ticker);
 
     if (loading && !reportData) return <div className="text-center py-12 text-muted-foreground animate-pulse">Đang tải chỉ số tài chính…</div>;
@@ -308,10 +488,19 @@ export default function FinancialMetricsTab() {
 
     return (
         <div className="space-y-6">
-            {/* Title */}
-            <h2 className="text-lg font-bold text-foreground">
-                Số liệu tài chính - {stockInfo.ticker}
-            </h2>
+            {/* Title & Actions */}
+            <div className="flex items-center justify-between">
+                <h2 className="text-lg font-bold text-foreground">
+                    Số liệu tài chính - {stockInfo.ticker}
+                </h2>
+                <button
+                    onClick={handleExportExcel}
+                    className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md transition-colors shadow-sm"
+                >
+                    <Download className="w-4 h-4" />
+                    Tải Excel
+                </button>
+            </div>
 
             {/* ══════ KPI CARDS ══════ */}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-3">
@@ -345,12 +534,12 @@ export default function FinancialMetricsTab() {
             <section className="space-y-4">
                 <SectionHeading icon="📊" color="bg-blue-500" title="Kết quả kinh doanh" />
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <ChartCard title="Doanh thu & Lợi nhuận" option={revenueNetProfitOption} />
-                    <ChartCard title="Tăng trưởng Doanh thu & LNST (QoQ)" option={growthOption} />
+                    <ChartCard title="Doanh thu & Lợi nhuận" option={revenueNetProfitOption} onChartReady={registerChart("revenueNetProfit")} />
+                    <ChartCard title="Tăng trưởng Doanh thu & LNST (QoQ)" option={growthOption} onChartReady={registerChart("growth")} />
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <ChartCard title="Biên lợi nhuận" option={marginOption} />
-                    <ChartCard title="EPS & LNST cổ đông công ty mẹ" option={epsOption} />
+                    <ChartCard title="Biên lợi nhuận" option={marginOption} onChartReady={registerChart("margin")} />
+                    <ChartCard title="EPS & LNST cổ đông công ty mẹ" option={epsOption} onChartReady={registerChart("eps")} />
                 </div>
             </section>
 
@@ -358,8 +547,8 @@ export default function FinancialMetricsTab() {
             <section className="space-y-4">
                 <SectionHeading icon="🏦" color="bg-green-500" title="Cân đối kế toán" />
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <ChartCard title="Cơ cấu tài sản & Nguồn vốn" option={assetsLiabOption} />
-                    <ChartCard title="Chi tiết cơ cấu tài sản" option={assetBreakdownOption} />
+                    <ChartCard title="Cơ cấu tài sản & Nguồn vốn" option={assetsLiabOption} onChartReady={registerChart("assetsLiab")} />
+                    <ChartCard title="Chi tiết cơ cấu tài sản" option={assetBreakdownOption} onChartReady={registerChart("assetBreakdown")} />
                 </div>
             </section>
 
@@ -367,8 +556,8 @@ export default function FinancialMetricsTab() {
             <section className="space-y-4">
                 <SectionHeading icon="💰" color="bg-amber-500" title="Hiệu suất & An toàn tài chính" />
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <ChartCard title="Hiệu suất sinh lời (ROE & ROA)" option={roeRoaOption} />
-                    <ChartCard title="Hệ số nợ & Thanh khoản" option={debtRatioOption} />
+                    <ChartCard title="Hiệu suất sinh lời (ROE & ROA)" option={roeRoaOption} onChartReady={registerChart("roeRoa")} />
+                    <ChartCard title="Hệ số nợ & Thanh khoản" option={debtRatioOption} onChartReady={registerChart("debtRatio")} />
                 </div>
             </section>
 
@@ -376,8 +565,8 @@ export default function FinancialMetricsTab() {
             <section className="space-y-4">
                 <SectionHeading icon="📋" color="bg-purple-500" title="Chi phí & Dòng tiền" />
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <ChartCard title="Cơ cấu chi phí" option={expenseBreakdownOption} />
-                    <ChartCard title="Dòng tiền (HĐKD / HĐĐT / HĐTC)" option={cashFlowOption} />
+                    <ChartCard title="Cơ cấu chi phí" option={expenseBreakdownOption} onChartReady={registerChart("expenseBreakdown")} />
+                    <ChartCard title="Dòng tiền (HĐKD / HĐĐT / HĐTC)" option={cashFlowOption} onChartReady={registerChart("cashFlow")} />
                 </div>
             </section>
         </div>
@@ -385,14 +574,14 @@ export default function FinancialMetricsTab() {
 }
 
 // ============ REUSABLE CHART CARD ============
-function ChartCard({ title, option }: { title: string; option: any }) {
+function ChartCard({ title, option, onChartReady }: { title: string; option: any; onChartReady?: (instance: any) => void }) {
     return (
         <Card className="shadow-sm border-border">
             <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-semibold text-muted-foreground">{title}</CardTitle>
             </CardHeader>
             <CardContent className="h-[320px]">
-                <ReactECharts option={option} style={{ height: "100%", width: "100%" }} />
+                <ReactECharts option={option} style={{ height: "100%", width: "100%" }} onChartReady={onChartReady} />
             </CardContent>
         </Card>
     );

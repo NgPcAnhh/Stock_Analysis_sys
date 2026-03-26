@@ -122,26 +122,33 @@ function TreeNode({ node, isRoot = false }: { node: DuPontTreeNode; isRoot?: boo
 
       {node.children && node.children.length > 0 && (
         <>
-          {/* Vertical connector */}
-          <div className="w-px h-4 bg-border" />
-          {/* Horizontal bar */}
-          <div className="relative flex items-start">
-            <div
-              className="absolute top-0 bg-border"
-              style={{
-                height: "1px",
-                left: "25%",
-                right: "25%",
-              }}
-            />
-            <div className="flex gap-6">
-              {node.children.map((child, i) => (
-                <div key={i} className="flex flex-col items-center">
-                  <div className="w-px h-4 bg-border" />
+          {/* Vertical connector down from parent */}
+          <div className="w-px h-5 bg-border/80" />
+          
+          <div className="flex justify-center">
+            {node.children.map((child, i) => {
+              const isFirst = i === 0;
+              const isLast = i === node.children!.length - 1;
+              const hasMultiple = node.children!.length > 1;
+
+              return (
+                <div key={child.label} className="flex flex-col items-center relative px-2 sm:px-4">
+                  {/* Horizontal line extending from center to edges */}
+                  {hasMultiple && (
+                    <div 
+                      className="absolute top-0 h-px bg-border/80"
+                      style={{
+                        left: isFirst ? "50%" : 0,
+                        right: isLast ? "50%" : 0,
+                      }}
+                    />
+                  )}
+                  {/* Vertical line down to the child box */}
+                  <div className="w-px h-5 bg-border/80" />
                   <TreeNode node={child} />
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
         </>
       )}
@@ -315,14 +322,6 @@ function RevenueProfitTrends() {
             </div>
           ))}
         </div>
-        {/* Insights */}
-        <div className="mt-3 border-l-4 border-[#F97316] pl-3 bg-orange-50 rounded-r-lg py-2 px-2">
-          <p className="text-[11px] text-muted-foreground">
-            <span className="font-semibold text-foreground">Nhận định:</span> Giá vốn chiếm 57.5%
-            doanh thu, giảm nhẹ so với năm trước. Biên lợi nhuận ròng cải thiện nhờ kiểm soát chi
-            phí tốt hơn.
-          </p>
-        </div>
       </div>
     </div>
   );
@@ -339,7 +338,10 @@ function GrowthAndEfficiency() {
 
   const growthChart = useMemo(
     () => ({
-      tooltip: { trigger: "axis" as const },
+      tooltip: { 
+        trigger: "axis" as const,
+        valueFormatter: (value: number) => (value != null ? Number(value).toFixed(3) + "%" : "—"),
+      },
       legend: {
         top: 4,
         textStyle: { fontSize: 11 },
@@ -374,10 +376,13 @@ function GrowthAndEfficiency() {
 
   const efficiencyChart = useMemo(
     () => ({
-      tooltip: { trigger: "axis" as const, formatter: "{b}: {c}%" },
+      tooltip: { 
+        trigger: "axis" as const,
+        valueFormatter: (value: number) => (value != null ? Number(value).toFixed(3) + "%" : "—"),
+      },
       grid: { top: 24, left: 50, right: 20, bottom: 28 },
       xAxis: { type: "category" as const, data: efficiencyData.map((d) => String(d.year)) },
-      yAxis: { type: "value" as const, min: 75, max: 85, axisLabel: { formatter: "{value}%" } },
+      yAxis: { type: "value" as const, axisLabel: { formatter: "{value}%" } },
       series: [
         {
           type: "bar",

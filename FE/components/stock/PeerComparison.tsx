@@ -80,7 +80,7 @@ const PeerComparison = () => {
                                 className="grid grid-cols-4 gap-2 px-4 py-2.5 items-center hover:bg-muted/50 transition-colors cursor-pointer"
                             >
                                 {/* Ticker */}
-                                <span className="text-base font-bold text-blue-600 hover:underline">
+                                <span className="text-base font-bold text-orange-600 hover:text-orange-700 hover:underline">
                                     {stock.ticker}
                                 </span>
 

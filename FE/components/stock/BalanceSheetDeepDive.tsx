@@ -44,10 +44,9 @@ function KeyMetricCards() {
               <span
                 className={`text-sm font-semibold ${mono} ${s.yoyChange >= 0 ? "text-[#00C076]" : "text-[#EF4444]"}`}
               >
-                {s.yoyChange >= 0 ? "↗" : "↘"} {s.yoyLabel}
+                {s.yoyChange >= 0 ? "↗" : "↘"} {s.yoyChange > 0 ? "+" : ""}{s.yoyChange.toFixed(2)}% {s.yoyLabel === "vs kỳ trước" ? s.yoyLabel : "vs kỳ trước"}
               </span>
             )}
-            <span className="text-xs text-muted-foreground">{s.badgeText}</span>
           </div>
         </div>
       ))}
@@ -121,10 +120,15 @@ function FinancialHealthSection() {
           </p>
         </div>
 
-        {/* Right: 2×2 Metrics */}
+        {/* Right: Metrics */}
         <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
           {healthMetrics.map((m, i) => (
-            <div key={i} className="bg-muted/40 rounded-xl p-4 border border-border/30">
+            <div 
+              key={i} 
+              className={`bg-muted/40 rounded-xl p-4 border border-border/30 ${
+                i === 4 ? "sm:col-span-2 w-full sm:w-[calc(50%-0.5rem)] sm:mx-auto" : ""
+              }`}
+            >
               <p className="text-xs font-semibold text-muted-foreground mb-1">{m.title}</p>
               <p className={`text-2xl font-extrabold ${mono}`} style={{ color: m.color }}>
                 {m.value}
@@ -178,12 +182,31 @@ function AssetCapitalDonutRow() {
       series: [
         {
           type: "pie",
-          radius: ["50%", "78%"],
+          radius: ["40%", "65%"],
           center: ["50%", "50%"],
-          label: { show: false },
+          label: { 
+            show: true,
+            position: "outside",
+            formatter: (params: any) => {
+              const val = new Intl.NumberFormat('vi-VN').format(params.data.rawValue || 0);
+              return `{name|${params.name}}\n{val|${val} Tỷ} ({pct|${params.percent}%})`;
+            },
+            rich: {
+              name: { fontFamily: "Roboto, sans-serif", fontSize: 11, color: "#6b7280", padding: [0, 0, 4, 0] },
+              val: { fontFamily: "Roboto, monospace", fontWeight: "bold", fontSize: 12, color: "#111827" },
+              pct: { fontFamily: "Roboto, sans-serif", fontSize: 11, color: "#4b5563" }
+            }
+          },
+          labelLine: {
+            show: true,
+            length: 10,
+            length2: 15,
+            smooth: true
+          },
           data: assetStructure.map((d) => ({
             value: d.value,
             name: d.name,
+            rawValue: d.rawValue,
             itemStyle: { color: d.color },
             details: d.details
           })),
@@ -220,12 +243,31 @@ function AssetCapitalDonutRow() {
       series: [
         {
           type: "pie",
-          radius: ["50%", "78%"],
+          radius: ["40%", "65%"],
           center: ["50%", "50%"],
-          label: { show: false },
+          label: { 
+            show: true,
+            position: "outside",
+            formatter: (params: any) => {
+              const val = new Intl.NumberFormat('vi-VN').format(params.data.rawValue || 0);
+              return `{name|${params.name}}\n{val|${val} Tỷ} ({pct|${params.percent}%})`;
+            },
+            rich: {
+              name: { fontFamily: "Roboto, sans-serif", fontSize: 11, color: "#6b7280", padding: [0, 0, 4, 0] },
+              val: { fontFamily: "Roboto, monospace", fontWeight: "bold", fontSize: 12, color: "#111827" },
+              pct: { fontFamily: "Roboto, sans-serif", fontSize: 11, color: "#4b5563" }
+            }
+          },
+          labelLine: {
+            show: true,
+            length: 10,
+            length2: 15,
+            smooth: true
+          },
           data: capitalStructure.map((d) => ({
             value: d.value,
             name: d.name,
+            rawValue: d.rawValue,
             itemStyle: { color: d.color },
             details: d.details
           })),
@@ -243,8 +285,8 @@ function AssetCapitalDonutRow() {
           <span>🍩</span> Cơ Cấu Tài Sản
         </h3>
         <div className="flex flex-col items-center gap-6">
-          <div className="w-52 h-52 flex-shrink-0">
-            <ReactECharts option={assetDonut} style={{ height: 208, width: 208 }} />
+          <div className="w-full h-[260px] flex-shrink-0">
+            <ReactECharts option={assetDonut} style={{ height: "100%", width: "100%" }} />
           </div>
           <div className="space-y-4 w-full px-2">
             {assetStructure.map((d) => (
@@ -276,8 +318,8 @@ function AssetCapitalDonutRow() {
           <span>🍩</span> Cấu Trúc Nguồn Vốn
         </h3>
         <div className="flex flex-col items-center gap-6">
-          <div className="w-52 h-52 flex-shrink-0">
-            <ReactECharts option={capitalDonut} style={{ height: 208, width: 208 }} />
+          <div className="w-full h-[260px] flex-shrink-0">
+            <ReactECharts option={capitalDonut} style={{ height: "100%", width: "100%" }} />
           </div>
           <div className="space-y-4 w-full px-2">
             {capitalStructure.map((d) => (
@@ -317,12 +359,16 @@ function TrendChartsRow() {
         trigger: "axis" as const,
         axisPointer: { type: "shadow" as const },
         formatter: (params: Array<{ seriesName: string; value: number; marker: string }>) =>
-          params.map((p) => `${p.marker} ${p.seriesName}: ${p.value}%`).join("<br/>"),
+          params.map((p) => {
+            const val = new Intl.NumberFormat('vi-VN', { minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(p.value || 0);
+            return `${p.marker} ${p.seriesName}: <b>${val}%</b>`;
+          }).join("<br/>"),
+        textStyle: { fontFamily: "Roboto, sans-serif" }
       },
-      legend: { top: 4, textStyle: { fontSize: 11 } },
+      legend: { top: 4, textStyle: { fontSize: 11, fontFamily: "Roboto, sans-serif" } },
       grid: { top: 40, left: 50, right: 20, bottom: 28 },
-      xAxis: { type: "category" as const, data: years },
-      yAxis: { type: "value" as const, max: 100, axisLabel: { formatter: "{value}%" } },
+      xAxis: { type: "category" as const, data: years, axisLabel: { fontFamily: "Roboto, sans-serif" } },
+      yAxis: { type: "value" as const, max: 100, axisLabel: { formatter: "{value}%", fontFamily: "Roboto, sans-serif" } },
       series: [
         {
           name: "TS Ngắn hạn",
@@ -347,11 +393,26 @@ function TrendChartsRow() {
 
   const debtTrend = useMemo(
     () => ({
-      tooltip: { trigger: "axis" as const, axisPointer: { type: "shadow" as const } },
-      legend: { top: 4, textStyle: { fontSize: 11 } },
+      tooltip: { 
+        trigger: "axis" as const, 
+        axisPointer: { type: "shadow" as const },
+        formatter: (params: Array<{ seriesName: string; value: number; marker: string }>) =>
+          params.map((p) => {
+            const val = new Intl.NumberFormat('vi-VN', { minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(p.value || 0);
+            return `${p.marker} ${p.seriesName}: <b>${val}</b>`;
+          }).join("<br/>"),
+        textStyle: { fontFamily: "Roboto, sans-serif" }
+      },
+      legend: { top: 4, textStyle: { fontSize: 11, fontFamily: "Roboto, sans-serif" } },
       grid: { top: 40, left: 60, right: 20, bottom: 28 },
-      xAxis: { type: "category" as const, data: years },
-      yAxis: { type: "value" as const },
+      xAxis: { type: "category" as const, data: years, axisLabel: { fontFamily: "Roboto, sans-serif" } },
+      yAxis: { 
+        type: "value" as const, 
+        axisLabel: { 
+          fontFamily: "Roboto, sans-serif",
+          formatter: (value: number) => new Intl.NumberFormat('vi-VN').format(value)
+        } 
+      },
       series: [
         {
           name: "Nợ ngắn hạn",
@@ -390,14 +451,6 @@ function TrendChartsRow() {
           <span className="w-1 h-4 bg-[#F97316] rounded-full" />
           Cấu trúc Tài sản & Nguồn vốn (5 năm)
         </h3>
-        <ReactECharts option={assetCapitalTrend} style={{ height: 260 }} />
-        <div className="mt-3 border-l-4 border-[#F97316] pl-3 bg-orange-50 rounded-r-lg py-2 px-3">
-          <p className="text-xs text-muted-foreground">
-            <span className="font-semibold text-foreground">Nhận định:</span> Tỷ lệ Vốn chủ sở hữu
-            tăng dần qua các năm, thể hiện xu hướng tài chính lành mạnh. Tỷ trọng tài sản dài hạn
-            ổn định cho thấy chiến lược đầu tư bền vững.
-          </p>
-        </div>
       </div>
 
       {/* Absolute stacked bar */}
@@ -406,14 +459,6 @@ function TrendChartsRow() {
           <span className="w-1 h-4 bg-[#3B82F6] rounded-full" />
           Phân tích Nợ & Khả năng thanh toán
         </h3>
-        <ReactECharts option={debtTrend} style={{ height: 260 }} />
-        <div className="mt-3 border-l-4 border-[#F97316] pl-3 bg-orange-50 rounded-r-lg py-2 px-3">
-          <p className="text-xs text-muted-foreground">
-            <span className="font-semibold text-foreground">Nhận định:</span> Nợ ngắn hạn tăng nhẹ
-            nhưng vẫn trong tầm kiểm soát. Nợ dài hạn giảm dần cho thấy doanh nghiệp đang giảm phụ
-            thuộc vào vốn vay dài hạn.
-          </p>
-        </div>
       </div>
     </div>
   );
@@ -544,6 +589,20 @@ function CCCAndLiquidity() {
               {cccData.cycleDays}
             </span>
             <span className="text-xs text-purple-500 font-semibold">Ngày</span>
+          </div>
+        </div>
+        <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-2 border-t border-border/50 pt-4">
+          <div className="text-center p-2 rounded-lg bg-blue-50/50 border border-blue-100/50 text-xs">
+            <p className="font-semibold text-blue-800 mb-1">Số ngày Tồn kho</p>
+            <p className="text-muted-foreground">(Hàng tồn kho / Giá vốn) × 365</p>
+          </div>
+          <div className="text-center p-2 rounded-lg bg-orange-50/50 border border-orange-100/50 text-xs">
+            <p className="font-semibold text-orange-800 mb-1">Số ngày Phải thu</p>
+            <p className="text-muted-foreground">(Phải thu / Doanh thu) × 365</p>
+          </div>
+          <div className="text-center p-2 rounded-lg bg-green-50/50 border border-green-100/50 text-xs">
+            <p className="font-semibold text-green-800 mb-1">Số ngày Phải trả</p>
+            <p className="text-muted-foreground">(Phải trả / Giá vốn) × 365</p>
           </div>
         </div>
       </div>

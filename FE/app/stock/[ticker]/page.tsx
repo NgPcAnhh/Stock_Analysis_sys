@@ -82,7 +82,7 @@ export default function StockDetailPage({ params }: StockDetailPageProps) {
                         {/* ── Biểu đồ & Khớp lệnh ── */}
                         <section className="space-y-4">
                             <h2 className="text-base font-semibold text-muted-foreground flex items-center gap-2">
-                                <span className="w-1 h-5 bg-blue-500 rounded-full" />
+                                <span className="w-1 h-5 bg-gradient-to-b from-orange-400 to-orange-600 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.4)]" />
                                 Biểu đồ & Khớp lệnh
                             </h2>
                             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
@@ -98,7 +98,7 @@ export default function StockDetailPage({ params }: StockDetailPageProps) {
                         {/* ── Dữ liệu giao dịch ── */}
                         <section className="space-y-4">
                             <h2 className="text-base font-semibold text-muted-foreground flex items-center gap-2">
-                                <span className="w-1 h-5 bg-green-500 rounded-full" />
+                                <span className="w-1 h-5 bg-gradient-to-b from-orange-400 to-orange-600 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.4)]" />
                                 Dữ liệu giao dịch & So sánh
                             </h2>
                             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
@@ -114,7 +114,7 @@ export default function StockDetailPage({ params }: StockDetailPageProps) {
                         {/* ── Cơ cấu cổ đông ── */}
                         <section className="space-y-4">
                             <h2 className="text-base font-semibold text-muted-foreground flex items-center gap-2">
-                                <span className="w-1 h-5 bg-amber-500 rounded-full" />
+                                <span className="w-1 h-5 bg-gradient-to-b from-orange-400 to-orange-600 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.4)]" />
                                 Cơ cấu cổ đông
                             </h2>
                             <Card className="shadow-sm border-border">
@@ -134,7 +134,7 @@ export default function StockDetailPage({ params }: StockDetailPageProps) {
                         {/* ── Tin tức doanh nghiệp ── */}
                         <section className="space-y-4">
                             <h2 className="text-base font-semibold text-muted-foreground flex items-center gap-2">
-                                <span className="w-1 h-5 bg-purple-500 rounded-full" />
+                                <span className="w-1 h-5 bg-gradient-to-b from-orange-400 to-orange-600 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.4)]" />
                                 Tin tức doanh nghiệp
                             </h2>
                             <CorporateNews mode="overview" />
@@ -143,7 +143,7 @@ export default function StockDetailPage({ params }: StockDetailPageProps) {
                         {/* ── Khuyến nghị ── */}
                         <section className="space-y-4">
                             <h2 className="text-base font-semibold text-muted-foreground flex items-center gap-2">
-                                <span className="w-1 h-5 bg-red-500 rounded-full" />
+                                <span className="w-1 h-5 bg-gradient-to-b from-orange-400 to-orange-600 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.4)]" />
                                 Có thể bạn sẽ quan tâm
                             </h2>
                             <RecommendationsSection />
@@ -154,7 +154,7 @@ export default function StockDetailPage({ params }: StockDetailPageProps) {
                 {activeTab === "news" && (
                     <div className="py-4 space-y-3">
                         <h2 className="text-base font-semibold text-muted-foreground flex items-center gap-2">
-                            <span className="w-1 h-5 bg-purple-500 rounded-full" />
+                            <span className="w-1 h-5 bg-gradient-to-b from-orange-400 to-orange-600 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.4)]" />
                             Tin tức doanh nghiệp
                         </h2>
                         <CorporateNews mode="full" />

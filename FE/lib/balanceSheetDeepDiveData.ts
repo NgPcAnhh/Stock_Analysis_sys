@@ -30,8 +30,9 @@ export interface HealthMetric {
 export interface DonutItem {
   name: string;
   value: number;
+  rawValue?: number;
   color: string;
-  details?: { name: string; value: number }[];
+  details?: { name: string; value: number; rawValue?: number }[];
 }
 
 export interface TrendYearData {

@@ -6,6 +6,11 @@ from pydantic import BaseModel, Field
 
 
 # ── 1. Macro Economy (Market Indices) ──────────────────────────────
+class MarketIndexHistoryPoint(BaseModel):
+    date: str = Field(..., description="Trading date in YYYY-MM-DD")
+    close: float = Field(..., description="Close price on date")
+
+
 class MarketIndexItem(BaseModel):
     """One row in the market-indices table (macro_economy)."""
 
@@ -15,6 +20,10 @@ class MarketIndexItem(BaseModel):
     sparkline: List[float] = Field(
         default_factory=list,
         description="Last 30 close prices (ASC) for mini chart",
+    )
+    history: List[MarketIndexHistoryPoint] = Field(
+        default_factory=list,
+        description="Full close-price history (ASC) for expanded chart",
     )
     value: float = Field(..., description="Latest close price")
     change: float = Field(..., description="Absolute change vs previous day")
