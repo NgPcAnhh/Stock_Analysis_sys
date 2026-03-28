@@ -183,18 +183,6 @@ export function AdminOverviewPanel({ stats }: AdminOverviewPanelProps) {
         <div className="space-y-6">
 
             {/* ═══════════════════════════════════════════════════ */}
-            {/* ROW 1 — Key Metrics                               */}
-            {/* ═══════════════════════════════════════════════════ */}
-            <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
-                <KPI icon={Users}       label="Tổng người dùng"       value={stats?.total_users}            color={C.blue}    sub={`${stats?.active_users ?? 0} active`} />
-                <KPI icon={UserPlus}    label="User mới (7 ngày)"     value={stats?.new_users_7d}           color={C.green}   sub={`${stats?.new_users_30d ?? 0} trong 30 ngày`} />
-                <KPI icon={LogIn}       label="Đăng nhập hôm nay"     value={stats?.logins_today}           color={C.amber}   sub={`Tỷ lệ TC: ${logins?.success_rate_30d ?? "—"}%`} />
-                <KPI icon={Wifi}        label="Phiên đang online"     value={stats?.active_sessions_count}  color={C.emerald} sub="real-time" />
-                <KPI icon={Search}      label="Tìm kiếm (7 ngày)"    value={stats?.total_search_events_7d} color={C.sky}     sub="tin tức + mã CK" />
-                <KPI icon={AlertTriangle} label="Lỗi (30 ngày)"      value={totalErrors}                   color={C.red}     sub={`${recentErrors.length > 0 ? recentErrors[0]?.error_type : "—"}`} />
-            </div>
-
-            {/* ═══════════════════════════════════════════════════ */}
             {/* ROW 2 — Login Trend (full-width)                   */}
             {/* ═══════════════════════════════════════════════════ */}
             <Card className="border-border/50">

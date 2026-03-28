@@ -388,7 +388,7 @@ function TrendChartsRow() {
         },
       ],
     }),
-    [years]
+    [trendData, years]
   );
 
   const debtTrend = useMemo(
@@ -440,7 +440,7 @@ function TrendChartsRow() {
         },
       ],
     }),
-    [years]
+    [trendData, years]
   );
 
   return (
@@ -451,6 +451,7 @@ function TrendChartsRow() {
           <span className="w-1 h-4 bg-[#F97316] rounded-full" />
           Cấu trúc Tài sản & Nguồn vốn (5 năm)
         </h3>
+        <ReactECharts option={assetCapitalTrend} style={{ height: 260 }} />
       </div>
 
       {/* Absolute stacked bar */}
@@ -459,6 +460,7 @@ function TrendChartsRow() {
           <span className="w-1 h-4 bg-[#3B82F6] rounded-full" />
           Phân tích Nợ & Khả năng thanh toán
         </h3>
+        <ReactECharts option={debtTrend} style={{ height: 260 }} />
       </div>
     </div>
   );

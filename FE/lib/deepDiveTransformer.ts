@@ -29,10 +29,12 @@ export interface IncomeStatementView {
     rosBreakdown: { label: string; value: number; color: string }[];
     revenueTrend: any[];
     costStructure: any[];
+    costStructureModelLabel?: string;
     growthData: any[];
     efficiencyData: any[];
     revenueBySegment: any[];
     costByCategory: any[];
+    profitDrivers: any[];
     profitFunnel: any[];
     incomeTableHeaders: string[];
     incomeTableData: any[];
@@ -59,6 +61,225 @@ const safeDiv = (n: number, d: number) => d === 0 ? 0 : n / d;
 const fmtPct = (n: number) => Number((n * 100).toFixed(2)) + "%";
 const fmtNum = (n: number) => Number(n.toFixed(2));
 const fmtVal = (n: number, unit: number) => (n / unit).toLocaleString("vi-VN", { maximumFractionDigits: 2 }) + " Tỷ";
+
+type CostModelType = "manufacturing" | "trading" | "service" | "banking";
+
+function classifyCostModel(latest: IncomeStatementItem): { key: CostModelType; label: string } {
+    const isBankLike =
+        (latest.totalOperatingIncome ?? 0) > 0 ||
+        (latest.provisionExpenses ?? 0) > 0 ||
+        (latest.interestIncome ?? 0) > 0;
+    if (isBankLike) return { key: "banking", label: "Ngân hàng / Tài chính" };
+
+    const revenueBase = latest.revenue > 0 ? latest.revenue : 1;
+    const cogsRatio = safeDiv(Math.abs(latest.costOfGoodsSold || 0), revenueBase);
+    const sellingRatio = safeDiv(Math.abs(latest.sellingExpenses || 0), revenueBase);
+    const adminRatio = safeDiv(Math.abs(latest.adminExpenses || 0), revenueBase);
+    const sgaRatio = sellingRatio + adminRatio;
+
+    if (cogsRatio >= 0.72 && sellingRatio >= adminRatio * 0.7) {
+        return { key: "trading", label: "Thương mại / Phân phối" };
+    }
+    if (cogsRatio >= 0.55) {
+        return { key: "manufacturing", label: "Sản xuất" };
+    }
+    if (sgaRatio >= 0.18 || cogsRatio < 0.45) {
+        return { key: "service", label: "Dịch vụ / Công nghệ" };
+    }
+    return { key: "manufacturing", label: "Sản xuất" };
+}
+
+function makePctItem(name: string, amount: number, revenueBase: number, color: string) {
+    return { name, value: fmtNum(safeDiv(Math.abs(amount), revenueBase) * 100), color };
+}
+
+function toPctByBase(items: Array<{ name: string; amount: number; color: string }>, base: number) {
+    const safeBase = base > 0 ? base : 1;
+    return items
+        .map((it) => ({ name: it.name, value: fmtNum(safeDiv(it.amount, safeBase) * 100), color: it.color }))
+        .filter((it) => it.value > 0);
+}
+
+function safeRatioNullable(numerator: number | null | undefined, denominator: number | null | undefined): number | null {
+    if (numerator == null || denominator == null || denominator === 0) return null;
+    return numerator / denominator;
+}
+
+function getOperatingProfitForAltman(inc: IncomeStatementItem): number {
+    if (inc.operatingProfit != null) return inc.operatingProfit;
+    return (inc.grossProfit ?? 0) - (inc.sellingExpenses ?? 0) - (inc.adminExpenses ?? 0);
+}
+
+function getRevenueBaseForAltman(inc: IncomeStatementItem, isBankLike: boolean): number | null {
+    if (inc.revenue && inc.revenue !== 0) return inc.revenue;
+    if (isBankLike) return inc.interestIncome ?? inc.netInterestIncome ?? inc.financialIncome ?? null;
+    return inc.financialIncome ?? null;
+}
+
+function buildRevenueBySegment(latest: IncomeStatementItem) {
+    const model = classifyCostModel(latest);
+
+    if (model.key === "banking") {
+        const incomeParts = [
+            { name: "Thu nhập lãi thuần", amount: Math.max(latest.netInterestIncome || 0, 0), color: ORANGE },
+            { name: "Thu nhập phí dịch vụ", amount: Math.max(latest.netServiceFeeIncome || 0, 0), color: BLUE },
+            { name: "Kinh doanh ngoại hối", amount: Math.max(latest.tradingFxIncome || 0, 0), color: PURPLE },
+            { name: "CK kinh doanh", amount: Math.max(latest.tradingSecuritiesIncome || 0, 0), color: "#14B8A6" },
+            { name: "CK đầu tư", amount: Math.max(latest.investmentSecuritiesIncome || 0, 0), color: "#6366F1" },
+            { name: "Thu nhập hoạt động khác", amount: Math.max(latest.otherOperatingIncome || 0, 0), color: "#9CA3AF" },
+        ];
+        const base = incomeParts.reduce((s, p) => s + p.amount, 0) || Math.max(latest.totalOperatingIncome || 0, latest.revenue || 0, 1);
+        return toPctByBase(incomeParts, base);
+    }
+
+    const otherNetIncome = latest.profitBeforeTax - latest.operatingProfit - latest.financialIncome + latest.financialExpenses;
+    const otherIncome = Math.max(otherNetIncome, 0);
+    const coreRevenue = Math.max(latest.revenue || 0, 0);
+    const financialIncome = Math.max(latest.financialIncome || 0, 0);
+
+    const incomeParts = [
+        { name: "Doanh thu cốt lõi", amount: coreRevenue, color: ORANGE },
+        { name: "Thu nhập tài chính", amount: financialIncome, color: BLUE },
+        { name: "Thu nhập khác", amount: otherIncome, color: PURPLE },
+    ];
+
+    const base = incomeParts.reduce((s, p) => s + p.amount, 0) || Math.max(coreRevenue, 1);
+    return toPctByBase(incomeParts, base);
+}
+
+function buildCostByCategory(latest: IncomeStatementItem) {
+    const model = classifyCostModel(latest);
+
+    if (model.key === "banking") {
+        const costOfFund = Math.abs((latest.interestExpenseBank ?? latest.interestExpenses) || 0);
+        const operating = Math.abs((latest.operatingExpenses ?? (latest.sellingExpenses + latest.adminExpenses)) || 0);
+        const provision = Math.abs(latest.provisionExpenses || 0);
+        const financialOther = Math.max(Math.abs(latest.financialExpenses || 0) - Math.abs(latest.interestExpenses || 0), 0);
+        const tax = Math.abs(latest.incomeTax || 0);
+
+        const costParts = [
+            { name: "Chi phí vốn", amount: costOfFund, color: ORANGE },
+            { name: "Chi phí hoạt động", amount: operating, color: PURPLE },
+            { name: "Dự phòng RRTD", amount: provision, color: RED },
+            { name: "Chi phí tài chính khác", amount: financialOther, color: "#A855F7" },
+            { name: "Chi phí thuế", amount: tax, color: BLUE },
+        ];
+        const base = costParts.reduce((s, p) => s + p.amount, 0);
+        return toPctByBase(costParts, base);
+    }
+
+    const cogs = Math.abs(latest.costOfGoodsSold || 0);
+    const selling = Math.abs(latest.sellingExpenses || 0);
+    const admin = Math.abs(latest.adminExpenses || 0);
+    const interest = Math.abs(latest.interestExpenses || 0);
+    const financialOther = Math.max(Math.abs(latest.financialExpenses || 0) - interest, 0);
+    const tax = Math.abs(latest.incomeTax || 0);
+    const otherNetIncome = latest.profitBeforeTax - latest.operatingProfit - latest.financialIncome + latest.financialExpenses;
+    const otherExpense = Math.max(-otherNetIncome, 0);
+
+    const labels = classifyCostModel(latest).key === "trading"
+        ? {
+            cogs: "Giá mua hàng hóa",
+            selling: "Logistics & phân phối",
+            admin: "Quản trị hệ thống",
+        }
+        : classifyCostModel(latest).key === "service"
+            ? {
+                cogs: "Chi phí trực tiếp dịch vụ",
+                selling: "Marketing & bán hàng",
+                admin: "Nhân sự & vận hành",
+            }
+            : {
+                cogs: "Giá vốn & NVL",
+                selling: "Chi phí bán hàng",
+                admin: "Chi phí quản lý",
+            };
+
+    const costParts = [
+        { name: labels.cogs, amount: cogs, color: ORANGE },
+        { name: labels.selling, amount: selling, color: PURPLE },
+        { name: labels.admin, amount: admin, color: BLUE },
+        { name: "Chi phí lãi vay", amount: interest, color: RED },
+        { name: "Chi phí tài chính khác", amount: financialOther, color: "#A855F7" },
+        { name: "Chi phí thuế", amount: tax, color: "#06B6D4" },
+        { name: "Chi phí khác", amount: otherExpense, color: "#9CA3AF" },
+    ];
+
+    const base = costParts.reduce((s, p) => s + p.amount, 0);
+    return toPctByBase(costParts, base);
+}
+
+function buildCostStructureByModel(latest: IncomeStatementItem) {
+    const model = classifyCostModel(latest);
+
+    if (model.key === "banking") {
+        const revenueBase = (latest.totalOperatingIncome && latest.totalOperatingIncome > 0)
+            ? latest.totalOperatingIncome
+            : (latest.revenue > 0 ? latest.revenue : 1);
+
+        const costOfFund = Math.abs((latest.interestExpenseBank ?? latest.interestExpenses) || 0);
+        const operating = Math.abs((latest.operatingExpenses ?? (latest.sellingExpenses + latest.adminExpenses)) || 0);
+        const provision = Math.abs(latest.provisionExpenses || 0);
+        const financialOther = Math.max(Math.abs(latest.financialExpenses || 0) - Math.abs(latest.interestExpenses || 0), 0);
+        const tax = Math.abs(latest.incomeTax || 0);
+        const netProfit = Math.max(latest.netProfit, 0);
+        const otherExpense = Math.max(revenueBase - (netProfit + costOfFund + operating + provision + financialOther + tax), 0);
+
+        return {
+            modelLabel: model.label,
+            items: [
+                makePctItem("Chi phí vốn (lãi phải trả)", costOfFund, revenueBase, ORANGE),
+                makePctItem("Chi phí hoạt động", operating, revenueBase, PURPLE),
+                makePctItem("Chi phí dự phòng RRTD", provision, revenueBase, RED),
+                makePctItem("Chi phí tài chính khác", financialOther, revenueBase, "#A855F7"),
+                makePctItem("Chi phí thuế", tax, revenueBase, BLUE),
+                makePctItem("Chi phí khác", otherExpense, revenueBase, "#9CA3AF"),
+            ].filter((x) => x.value > 0),
+        };
+    }
+
+    const revenueBase = latest.revenue > 0 ? latest.revenue : 1;
+    const cogs = Math.abs(latest.costOfGoodsSold || 0);
+    const selling = Math.abs(latest.sellingExpenses || 0);
+    const admin = Math.abs(latest.adminExpenses || 0);
+    const interest = Math.abs(latest.interestExpenses || 0);
+    const financialOther = Math.max(Math.abs(latest.financialExpenses || 0) - interest, 0);
+    const tax = Math.abs(latest.incomeTax || 0);
+    const netProfit = Math.max(latest.netProfit, 0);
+    const otherExpense = Math.max(revenueBase - (netProfit + cogs + selling + admin + interest + financialOther + tax), 0);
+
+    const labelMap: Record<Exclude<CostModelType, "banking">, { cogs: string; selling: string; admin: string }> = {
+        manufacturing: {
+            cogs: "Giá vốn & nguyên vật liệu",
+            selling: "Chi phí bán hàng & phân phối",
+            admin: "Chi phí quản lý & vận hành",
+        },
+        trading: {
+            cogs: "Giá mua hàng hóa",
+            selling: "Logistics & phân phối",
+            admin: "Chi phí quản trị hệ thống",
+        },
+        service: {
+            cogs: "Chi phí trực tiếp dịch vụ",
+            selling: "Marketing & bán hàng",
+            admin: "Nhân sự & vận hành",
+        },
+    };
+
+    const labels = labelMap[model.key as Exclude<CostModelType, "banking">];
+    return {
+        modelLabel: model.label,
+        items: [
+            makePctItem(labels.cogs, cogs, revenueBase, ORANGE),
+            makePctItem(labels.selling, selling, revenueBase, PURPLE),
+            makePctItem(labels.admin, admin, revenueBase, BLUE),
+            makePctItem("Chi phí lãi vay", interest, revenueBase, RED),
+            makePctItem("Chi phí tài chính khác", financialOther, revenueBase, "#A855F7"),
+            makePctItem("Chi phí thuế", tax, revenueBase, "#06B6D4"),
+            makePctItem("Chi phí khác", otherExpense, revenueBase, "#9CA3AF"),
+        ].filter((x) => x.value > 0),
+    };
+}
 
 function findRatio(ratios: FinancialRatioItem[] | undefined, year: number, quarter: number) {
     if (!ratios) return null;
@@ -89,24 +310,37 @@ export function transformBalanceSheet(
     const prev = viewData.length > 1 ? viewData[viewData.length - 2] : null;
     const ratio = findRatio(ratiosData, latest.period.year, latest.period.quarter);
 
-    const deRatio = ratio?.debtToEquity || safeDiv(latest.totalLiabilities, latest.totalEquity);
-    const currentRatio = ratio?.currentRatio || safeDiv(latest.currentAssets, latest.currentLiabilities);
+    const deRatio = ratio?.debtToEquity ?? safeDiv(latest.totalLiabilities, latest.totalEquity);
+    const currentRatio = ratio?.currentRatio ?? safeDiv(latest.currentAssets, latest.currentLiabilities);
     const daRatio = safeDiv(latest.totalLiabilities, latest.totalAssets);
 
-    let zScore = 0; let zoneLabel = "N/A"; let zoneColor = "#ccc";
+    let zScore = 0; let zoneLabel = "N/A"; let zoneColor = "#94a3b8";
     let A = 0, B = 0, C = 0, D = 0, E = 0;
-    if (incomeData && marketCap) {
+    if (incomeData) {
         const inc = incomeData.find(i => i.period.year === latest.period.year && i.period.quarter === latest.period.quarter) || incomeData[0];
         if (inc) {
-            A = safeDiv(latest.currentAssets - latest.currentLiabilities, latest.totalAssets);
-            B = safeDiv(latest.retainedEarnings, latest.totalAssets);
-            C = safeDiv(inc.operatingProfit, latest.totalAssets); 
-            D = safeDiv(marketCap, latest.totalLiabilities);
-            E = safeDiv(inc.revenue, latest.totalAssets);
-            zScore = fmtNum(1.2 * A + 1.4 * B + 3.3 * C + 0.6 * D + 1.0 * E);
-            if (zScore > 2.99) { zoneLabel = "An toàn"; zoneColor = GREEN; }
-            else if (zScore > 1.81) { zoneLabel = "Cảnh báo"; zoneColor = ORANGE; }
-            else { zoneLabel = "Nguy cơ"; zoneColor = RED; }
+            const ratioMarketCap = ratio?.marketCap ?? null;
+            const periodMarketCap = (ratioMarketCap != null && ratioMarketCap > 0)
+                ? ratioMarketCap
+                : (marketCap && marketCap > 0 ? marketCap : null);
+
+            const isBankLike = (inc.interestIncome ?? 0) > 0 || (inc.provisionExpenses ?? 0) > 0 || (inc.totalOperatingIncome ?? 0) > 0;
+            const operatingProfit = getOperatingProfitForAltman(inc);
+            const revenueBase = getRevenueBaseForAltman(inc, isBankLike);
+
+            const x1 = safeRatioNullable(latest.currentAssets - latest.currentLiabilities, latest.totalAssets);
+            const x2 = safeRatioNullable(latest.retainedEarnings, latest.totalAssets);
+            const x3 = safeRatioNullable(operatingProfit, latest.totalAssets);
+            const x4 = safeRatioNullable(periodMarketCap, latest.totalLiabilities);
+            const x5 = safeRatioNullable(revenueBase, latest.totalAssets);
+
+            if (x1 != null && x2 != null && x3 != null && x4 != null && x5 != null) {
+                A = x1; B = x2; C = x3; D = x4; E = x5;
+                zScore = fmtNum(1.2 * A + 1.4 * B + 3.3 * C + 0.6 * D + 1.0 * E);
+                if (zScore > 2.99) { zoneLabel = "An toàn"; zoneColor = GREEN; }
+                else if (zScore > 1.81) { zoneLabel = "Cảnh báo"; zoneColor = ORANGE; }
+                else { zoneLabel = "Nguy cơ"; zoneColor = RED; }
+            }
         }
     }
 
@@ -256,7 +490,7 @@ export function transformBalanceSheet(
             };
         })(),
         liquidityItems: [
-            { title: "Hệ số thanh toán hiện hành", value: ratio?.currentRatio || currentRatio, max: 3, status: currentRatio > 1.5 ? "good" : currentRatio > 1 ? "warning" : "danger" },
+            { title: "Hệ số thanh toán hiện hành", value: ratio?.currentRatio ?? currentRatio, max: 3, status: (ratio?.currentRatio ?? currentRatio) > 1.5 ? "good" : (ratio?.currentRatio ?? currentRatio) > 1 ? "warning" : "danger" },
             { title: "Hệ số thanh toán nhanh", value: ratio?.quickRatio || safeDiv(latest.currentAssets - latest.inventory, latest.currentLiabilities), max: 3, status: ratio?.quickRatio && ratio.quickRatio > 1 ? "good" : "warning" },
             { title: "Hệ số tỷ lệ tiền mặt", value: ratio?.cashRatio || safeDiv(latest.cash, latest.currentLiabilities), max: 2, status: ratio?.cashRatio && ratio.cashRatio > 0.5 ? "good" : "warning" }
         ],
@@ -302,6 +536,8 @@ export function transformIncomeStatement(
     const netChg = prev ? ((latest.netProfit - prev.netProfit) / Math.abs(prev.netProfit)) * 100 : 0;
     const grossMargin = safeDiv(latest.grossProfit, latest.revenue) * 100;
     const netMargin = safeDiv(latest.netProfit, latest.revenue) * 100;
+    const netFinancialProfit = (latest.financialIncome || 0) - (latest.financialExpenses || 0);
+    const otherProfit = latest.profitBeforeTax - latest.operatingProfit - netFinancialProfit;
 
     const roeStr = ratio?.roe ? fmtNum(ratio.roe * 100) + "%" : "—";
     const roaStr = ratio?.roa ? fmtNum(ratio.roa * 100) + "%" : "—";
@@ -312,8 +548,7 @@ export function transformIncomeStatement(
         return { label, indent, isBold, values, growth24: safeDiv(values[values.length - 1] - (values.length > 1 ? values[values.length - 2] : 0), Math.abs(values.length > 1 ? values[values.length - 2] : 1)) * 100 };
     };
 
-    const tax = Math.abs(latest.incomeTax || 0);
-    const otherCosts = latest.revenue - latest.costOfGoodsSold - latest.sellingExpenses - latest.adminExpenses - tax - latest.netProfit;
+    const { items: costStructureItems, modelLabel: costStructureModelLabel } = buildCostStructureByModel(latest);
 
     return {
         incomeMetricCards: [
@@ -343,22 +578,20 @@ export function transformIncomeStatement(
             { label: "ROS (Biên ròng)", value: fmtNum(netMargin), color: GREEN },
         ],
         revenueTrend: viewData.map(d => ({ year: d.period.period as any, revenue: d.revenue / unit, cogs: d.costOfGoodsSold / unit, grossProfit: d.grossProfit / unit })),
-        costStructure: [
-            { name: "Giá vốn", value: fmtNum(safeDiv(latest.costOfGoodsSold, latest.revenue) * 100), color: ORANGE },
-            { name: "Chi phí BH & QL", value: fmtNum(safeDiv(latest.sellingExpenses + latest.adminExpenses, latest.revenue) * 100), color: PURPLE },
-            { name: "Chi phí thuế", value: fmtNum(safeDiv(tax, latest.revenue) * 100), color: BLUE },
-            { name: "Lợi nhuận ròng", value: fmtNum(safeDiv(latest.netProfit, latest.revenue) * 100), color: GREEN },
-            { name: "Khác", value: fmtNum(safeDiv(otherCosts, latest.revenue) * 100), color: "#9CA3AF" },
-        ].filter(x => x.value > 0),
+        costStructure: costStructureItems,
+        costStructureModelLabel,
         growthData: viewData.map((d, i) => {
             const pv = i > 0 ? viewData[i - 1] : null;
             return { year: d.period.period as any, revenueGrowth: pv ? safeDiv(d.revenue - pv.revenue, pv.revenue) * 100 : 0, netProfitGrowth: pv ? safeDiv(d.netProfit - pv.netProfit, Math.abs(pv.netProfit)) * 100 : 0 };
         }),
         efficiencyData: viewData.map(d => ({ year: d.period.period as any, costToRevenue: safeDiv(d.costOfGoodsSold + d.sellingExpenses + d.adminExpenses, d.revenue) * 100 })),
-        revenueBySegment: [{ name: "Kinh doanh chính", value: 100, color: ORANGE }],
-        costByCategory: [
-            { name: "Giá vốn", value: fmtNum(safeDiv(latest.costOfGoodsSold, latest.revenue) * 100), color: ORANGE },
-            { name: "Chi phí hoạt động", value: fmtNum(safeDiv(latest.sellingExpenses + latest.adminExpenses, latest.revenue) * 100), color: PURPLE }
+        revenueBySegment: buildRevenueBySegment(latest),
+        costByCategory: buildCostByCategory(latest),
+        profitDrivers: [
+            { name: "HĐKD cốt lõi", value: latest.operatingProfit / unit, color: ORANGE },
+            { name: "Tài chính thuần", value: netFinancialProfit / unit, color: BLUE },
+            { name: "Hoạt động khác", value: otherProfit / unit, color: PURPLE },
+            { name: "LNTT", value: latest.profitBeforeTax / unit, color: GREEN, isTotal: true },
         ],
         profitFunnel: [
             { name: "Doanh Thu", value: latest.revenue / unit, color: ORANGE },

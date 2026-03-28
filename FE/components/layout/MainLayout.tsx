@@ -7,7 +7,7 @@ import { Header } from "./Header";
 import { StockTicker } from "./StockTicker";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/AuthContext";
-import { useSessionTracking } from "@/hooks/useTracking";
+import { useSessionTracking, usePageViewTracking, useErrorTracking } from "@/hooks/useTracking";
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -19,6 +19,10 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
     // Theo dõi thời gian phiên làm việc
     useSessionTracking(user?.id);
+    // Tự động track page view khi route thay đổi
+    usePageViewTracking(user?.id);
+    // Tự động bắt lỗi JS runtime & promise rejections
+    useErrorTracking(user?.id);
 
     // Route Protection Guard
     useEffect(() => {

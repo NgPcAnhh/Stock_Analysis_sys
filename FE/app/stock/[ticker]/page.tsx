@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, use, useMemo } from "react";
+import React, { useState, use, useMemo, useEffect } from "react";
 import StockDetailHeader from "@/components/stock/StockDetailHeader";
 import NavigationTabs from "@/components/stock/NavigationTabs";
 import PriceHistoryChart from "@/components/stock/PriceHistoryChart";
@@ -21,6 +21,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Footer } from "@/components/layout/Footer";
 import { useStockOverview } from "@/hooks/useStockData";
 import { StockDetailProvider, type StockDetailData } from "@/lib/StockDetailContext";
+import { useTracking } from "@/hooks/useTracking";
+import { useAuth } from "@/lib/AuthContext";
 
 interface StockDetailPageProps {
     params: Promise<{ ticker: string }>;
@@ -52,6 +54,14 @@ export default function StockDetailPage({ params }: StockDetailPageProps) {
     const upperTicker = ticker.toUpperCase();
     const { data: apiData, loading, error } = useStockOverview(upperTicker);
     const [activeTab, setActiveTab] = useState("overview");
+    const { user } = useAuth();
+    const { trackAnalysisView } = useTracking(user?.id);
+
+    // Track lượt xem mã CK khi page mount
+    useEffect(() => {
+        if (upperTicker) trackAnalysisView(upperTicker);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [upperTicker]);
 
     const contextValue: StockDetailData = useMemo(() => {
         if (!apiData) return { ...EMPTY_OVERVIEW, ticker: upperTicker, loading, error, onTabChange: setActiveTab };

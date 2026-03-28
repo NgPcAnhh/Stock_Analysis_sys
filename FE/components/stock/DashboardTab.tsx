@@ -48,6 +48,60 @@ function trendIcon(current: number | null | undefined, previous: number | null |
 // Lấy period label: Q1/2025 → chỉ giữ "Q1/25"
 const shortPeriod = (p: string) => p.replace("/20", "/");
 
+type ReportData = ReturnType<typeof useFinancialReports>["data"];
+
+const parseMetricNumber = (raw: string | null | undefined): number | null => {
+    if (!raw) return null;
+    const cleaned = raw.replace(/[^0-9+\-.,]/g, "").replace(/,/g, "").trim();
+    if (!cleaned) return null;
+    const parsed = Number(cleaned);
+    return Number.isFinite(parsed) ? parsed : null;
+};
+
+const normalizeRoeRoaPercent = (value: number | null | undefined): number | null => {
+    if (value == null || !Number.isFinite(value)) return null;
+    // API may return decimal (0.12) or percentage point (12)
+    return Math.abs(value) <= 1 ? value * 100 : value;
+};
+
+const safeRatio = (numerator: number | null | undefined, denominator: number | null | undefined): number | null => {
+    if (numerator == null || denominator == null || denominator === 0) return null;
+    return numerator / denominator;
+};
+
+const getOperatingProfit = (
+    income: NonNullable<ReportData>["incomeStatement"][number] | null | undefined,
+): number | null => {
+    if (!income) return null;
+    if (income.operatingProfit != null) return income.operatingProfit;
+    if (income.grossProfit == null || income.sellingExpenses == null || income.adminExpenses == null) return null;
+    return income.grossProfit - income.sellingExpenses - income.adminExpenses;
+};
+
+const getRevenueBase = (
+    income: NonNullable<ReportData>["incomeStatement"][number] | null | undefined,
+    isBank: boolean,
+): number | null => {
+    if (!income) return null;
+    if (income.revenue && income.revenue !== 0) return income.revenue;
+    if (isBank) return income.interestIncome ?? income.netInterestIncome ?? income.financialIncome ?? null;
+    return income.financialIncome ?? null;
+};
+
+const getInterestExpense = (
+    income: NonNullable<ReportData>["incomeStatement"][number] | null | undefined,
+    isBank: boolean,
+): number | null => {
+    if (!income) return null;
+    if (isBank) return income.interestExpenseBank ?? income.interestExpenses ?? null;
+    return income.interestExpenses ?? income.interestExpenseBank ?? null;
+};
+
+const findReportIncome = (reportData: ReportData, year: number, quarter: number) => {
+    if (!reportData) return null;
+    return reportData.incomeStatement.find((x) => x.period.year === year && x.period.quarter === quarter) ?? null;
+};
+
 // ── Section Heading ───────────────────────────────────────────────
 function SectionHead({ icon, title, sub }: { icon: string; title: string; sub?: string }) {
     return (
@@ -116,10 +170,9 @@ function KpiCard({ label, value, sub, color = "text-foreground", trend, badge }:
     );
 }
 
-function KpiStrip({ ratios, reportData }: { ratios: FinancialRatioItem[] | null; reportData: ReturnType<typeof useFinancialReports>["data"] }) {
+function KpiStrip({ ratios, reportData }: { ratios: FinancialRatioItem[] | null; reportData: ReportData }) {
     const { stockInfo } = useStockDetail();
     const m = stockInfo.metrics;
-    const ev = stockInfo.evaluation;
 
     // Latest ratio period
     const latest = ratios?.[0] ?? null;
@@ -132,16 +185,22 @@ function KpiStrip({ ratios, reportData }: { ratios: FinancialRatioItem[] | null;
 
     if (reportData && reportData.incomeStatement.length > 0) {
         const is0 = reportData.incomeStatement[0];
-        if (is0.revenue > 0) {
-            fallbackNetMargin = is0.netProfit / is0.revenue;
-            fallbackGrossMargin = is0.grossProfit / is0.revenue;
+        const revenueBase = getRevenueBase(is0, reportData.isBank);
+        if (revenueBase && revenueBase > 0) {
+            const net = safeRatio(is0.netProfit, revenueBase);
+            const gross = safeRatio(is0.grossProfit, revenueBase);
+            fallbackNetMargin = net != null ? net * 100 : null;
+            fallbackGrossMargin = gross != null ? gross * 100 : null;
         }
     }
     if (reportData && reportData.incomeStatement.length > 1) {
         const is1 = reportData.incomeStatement[1];
-        if (is1.revenue > 0) {
-            fallbackPrevNetMargin = is1.netProfit / is1.revenue;
-            fallbackPrevGrossMargin = is1.grossProfit / is1.revenue;
+        const revenueBase = getRevenueBase(is1, reportData.isBank);
+        if (revenueBase && revenueBase > 0) {
+            const net = safeRatio(is1.netProfit, revenueBase);
+            const gross = safeRatio(is1.grossProfit, revenueBase);
+            fallbackPrevNetMargin = net != null ? net * 100 : null;
+            fallbackPrevGrossMargin = gross != null ? gross * 100 : null;
         }
     }
 
@@ -150,14 +209,9 @@ function KpiStrip({ ratios, reportData }: { ratios: FinancialRatioItem[] | null;
     const nmPrev = prev?.netMargin ?? fallbackPrevNetMargin;
     const gmPrev = prev?.grossMargin ?? fallbackPrevGrossMargin;
 
-    // Evaluation badge color
-    const valBadge = (txt: string) => {
-        if (!txt) return "";
-        const t = txt.toLowerCase();
-        if (t.includes("tốt") || t.includes("cao") || t.includes("mạnh")) return "bg-green-100 text-green-700";
-        if (t.includes("thấp") || t.includes("kém") || t.includes("yếu")) return "bg-red-100 text-red-700";
-        return "bg-muted text-muted-foreground";
-    };
+    const latestRoe = normalizeRoeRoaPercent(latest?.roe);
+    const prevRoe = normalizeRoeRoaPercent(prev?.roe);
+    const overviewRoe = parseMetricNumber(m.roe);
 
     const cards: KpiCardProps[] = [
         {
@@ -183,25 +237,25 @@ function KpiStrip({ ratios, reportData }: { ratios: FinancialRatioItem[] | null;
         },
         {
             label: "ROE",
-            value: m.roe ? `${m.roe}` : latest?.roe != null ? fmtPctNosign(latest.roe * 100) : "—",
+            value: latestRoe != null ? fmtPctNosign(latestRoe) : overviewRoe != null ? fmtPctNosign(overviewRoe) : m.roe || "—",
             color:
-                (latest?.roe ?? 0) * 100 > 15
+                (latestRoe ?? 0) > 15
                     ? "text-green-600"
-                    : (latest?.roe ?? 0) * 100 > 8
+                    : (latestRoe ?? 0) > 8
                         ? "text-amber-600"
                         : "text-red-500",
-            trend: trendIcon(latest?.roe, prev?.roe),
+            trend: trendIcon(latestRoe, prevRoe),
         },
         {
             label: "Biên LN ròng",
-            value: nmLatest != null ? fmtPctNosign(nmLatest * 100) : "—",
-            color: (nmLatest ?? 0) * 100 > 10 ? "text-green-600" : "text-muted-foreground",
+            value: nmLatest != null ? fmtPctNosign(nmLatest) : "—",
+            color: (nmLatest ?? 0) > 10 ? "text-green-600" : "text-muted-foreground",
             trend: trendIcon(nmLatest, nmPrev),
         },
         {
             label: "Biên gộp",
-            value: gmLatest != null ? fmtPctNosign(gmLatest * 100) : "—",
-            color: (gmLatest ?? 0) * 100 > 30 ? "text-green-600" : "text-muted-foreground",
+            value: gmLatest != null ? fmtPctNosign(gmLatest) : "—",
+            color: (gmLatest ?? 0) > 30 ? "text-green-600" : "text-muted-foreground",
             trend: trendIcon(gmLatest, gmPrev),
         },
     ];
@@ -308,25 +362,35 @@ function RevenueProfitChart({ reportData }: { reportData: ReturnType<typeof useF
 // ══════════════════════════════════════════════════════════════════
 //  3. RATIO TRENDS  (ROE / Net Margin / Gross Margin over time)
 // ══════════════════════════════════════════════════════════════════
-function RatioTrendChart({ ratios, reportData }: { ratios: FinancialRatioItem[] | null; reportData: ReturnType<typeof useFinancialReports>["data"] }) {
+function RatioTrendChart({ ratios, reportData }: { ratios: FinancialRatioItem[] | null; reportData: ReportData }) {
     const option = useMemo(() => {
         if (!ratios || ratios.length < 2) return null;
         const sorted = [...ratios].reverse().slice(-8);
         const periods = sorted.map((d) => shortPeriod(`Q${d.quarter}/${d.year}`));
-        const roe = sorted.map((d) => d.roe != null ? +(d.roe * 100).toFixed(1) : null);
-        const roa = sorted.map((d) => d.roa != null ? +(d.roa * 100).toFixed(1) : null);
+        const roe = sorted.map((d) => {
+            const value = normalizeRoeRoaPercent(d.roe);
+            return value != null ? +value.toFixed(1) : null;
+        });
+        const roa = sorted.map((d) => {
+            const value = normalizeRoeRoaPercent(d.roa);
+            return value != null ? +value.toFixed(1) : null;
+        });
 
         const netMargin = sorted.map((d) => {
-            if (d.netMargin != null) return +(d.netMargin * 100).toFixed(1);
-            const rep = reportData?.incomeStatement.find(x => x.period.year === d.year && x.period.quarter === d.quarter);
-            if (rep && rep.revenue > 0) return +((rep.netProfit / rep.revenue) * 100).toFixed(1);
+            if (d.netMargin != null) return +d.netMargin.toFixed(1);
+            const rep = findReportIncome(reportData, d.year, d.quarter);
+            const revenueBase = getRevenueBase(rep, !!reportData?.isBank);
+            const fallback = safeRatio(rep?.netProfit ?? null, revenueBase);
+            if (fallback != null) return +(fallback * 100).toFixed(1);
             return null;
         });
 
         const grossMargin = sorted.map((d) => {
-            if (d.grossMargin != null) return +(d.grossMargin * 100).toFixed(1);
-            const rep = reportData?.incomeStatement.find(x => x.period.year === d.year && x.period.quarter === d.quarter);
-            if (rep && rep.revenue > 0) return +((rep.grossProfit / rep.revenue) * 100).toFixed(1);
+            if (d.grossMargin != null) return +d.grossMargin.toFixed(1);
+            const rep = findReportIncome(reportData, d.year, d.quarter);
+            const revenueBase = getRevenueBase(rep, !!reportData?.isBank);
+            const fallback = safeRatio(rep?.grossProfit ?? null, revenueBase);
+            if (fallback != null) return +(fallback * 100).toFixed(1);
             return null;
         });
 
@@ -384,7 +448,7 @@ function RatioTrendChart({ ratios, reportData }: { ratios: FinancialRatioItem[] 
                 makeSeries("Biên gộp", grossMargin, "#8b5cf6"),
             ],
         };
-    }, [ratios]);
+    }, [ratios, reportData]);
 
     if (!option)
         return (
@@ -400,12 +464,24 @@ function RatioTrendChart({ ratios, reportData }: { ratios: FinancialRatioItem[] 
 //  4. QUANT RISK SNAPSHOT
 // ══════════════════════════════════════════════════════════════════
 function QuantSnapshot({ quantData }: { quantData: ReturnType<typeof useQuantAnalysis>["data"] }) {
-    if (!quantData) return <div className="py-6 text-center text-xs text-muted-foreground animate-pulse">Đang tải phân tích định lượng…</div>;
+    const kpis = quantData?.kpis ?? [];
+    const wealthIndex = quantData?.wealthIndex ?? [];
+    const varData = quantData?.varData ?? { var95: 0, var99: 0, cvar95: 0, distribution: [] };
 
-    const { kpis, wealthIndex, varData } = quantData;
-
-    const kpiOrder = ["Sharpe Ratio", "Sortino Ratio", "Max Drawdown", "Ann. Return", "Ann. Volatility", "Beta"];
-    const displayKpis = kpiOrder.map((k) => kpis.find((x) => x.label === k)).filter(Boolean) as typeof kpis;
+    const kpiOrder = [
+        { label: "Sharpe Ratio", aliases: ["Sharpe Ratio"] },
+        { label: "Sortino Ratio", aliases: ["Sortino Ratio"] },
+        { label: "Max Drawdown", aliases: ["Max Drawdown"] },
+        { label: "Ann. Return", aliases: ["Ann. Return", "LN hàng năm"] },
+        { label: "Ann. Volatility", aliases: ["Ann. Volatility", "Biến động (σ)"] },
+        { label: "Total Return", aliases: ["Total Return", "Tổng lợi nhuận"] },
+    ];
+    const displayKpis = kpiOrder
+        .map((item) => {
+            const found = kpis.find((x) => item.aliases.includes(x.label));
+            return found ? { ...found, label: item.label } : null;
+        })
+        .filter(Boolean) as Array<{ label: string; value: number; suffix: string }>;
 
     const kpiColor = (label: string, value: number) => {
         if (label === "Sharpe Ratio" || label === "Sortino Ratio")
@@ -440,6 +516,8 @@ function QuantSnapshot({ quantData }: { quantData: ReturnType<typeof useQuantAna
 
     const lastWealth = wealthIndex?.[wealthIndex.length - 1]?.value ?? 1;
     const totalReturn = (lastWealth - 1) * 100;
+
+    if (!quantData) return <div className="py-6 text-center text-xs text-muted-foreground animate-pulse">Đang tải phân tích định lượng…</div>;
 
     return (
         <div className="space-y-3">
@@ -1194,13 +1272,14 @@ function ValuationDashboardSection({ valuationData }: {
 // ══════════════════════════════════════════════════════════════════
 function HealthScorecard({ ratios, reportData }: {
     ratios: FinancialRatioItem[] | null;
-    reportData: ReturnType<typeof useFinancialReports>["data"];
+    reportData: ReportData;
 }) {
     if (!ratios || ratios.length === 0) return null;
     const r = ratios[0];
     const bs  = reportData?.balanceSheet[0];
     const is0 = reportData?.incomeStatement[0];
     const cf  = reportData?.cashFlow;
+    const isBank = !!reportData?.isBank;
 
     // Compute missing ratios from raw financial statements
     const debtToEquity = r.debtToEquity
@@ -1215,20 +1294,19 @@ function HealthScorecard({ ratios, reportData }: {
     const interestCoverageRatio = (() => {
         if (r.interestCoverageRatio != null) return r.interestCoverageRatio;
         if (!is0) return null;
-        let ebit = is0.operatingProfit ?? 0;
-        if (!ebit) ebit = (is0.grossProfit ?? 0) - (is0.sellingExpenses ?? 0) - (is0.adminExpenses ?? 0);
-        const intExp = is0.interestExpenses ?? 0;
-        return intExp ? ebit / intExp : null;
+        const ebit = getOperatingProfit(is0);
+        const intExp = getInterestExpense(is0, isBank);
+        return safeRatio(ebit, intExp);
     })();
 
     const assetTurnover = r.assetTurnover
-        ?? (bs?.totalAssets && is0?.revenue ? is0.revenue / bs.totalAssets : null);
+        ?? safeRatio(getRevenueBase(is0, isBank), bs?.totalAssets ?? null);
 
     const dividendYield = (() => {
         if (r.dividendYield != null) return r.dividendYield;
         if (!cf || cf.length === 0 || !r.marketCap) return null;
         const ttmDiv = cf.slice(0, 4).reduce((s, q) => s + Math.abs(q.dividendsPaid ?? 0), 0);
-        return ttmDiv ? ttmDiv / r.marketCap : null;
+        return ttmDiv ? (ttmDiv / r.marketCap) * 100 : null;
     })();
 
     type Metric = { label: string; value: number | null; good: (v: number) => boolean; fmt: (v: number) => string };
@@ -1321,13 +1399,13 @@ function DrawdownChart({ drawdownData }: { drawdownData: { date: string; value: 
     const option = useMemo(() => {
         if (!drawdownData || drawdownData.length < 5) return null;
         const dates = drawdownData.map((d) => d.date.slice(5)); // MM-DD
-        const values = drawdownData.map((d) => +(d.value * 100).toFixed(2));
+        const values = drawdownData.map((d) => +d.value.toFixed(2));
 
         return {
             tooltip: {
                 trigger: "axis" as const, backgroundColor: "#1e293b", borderColor: "#334155",
                 textStyle: { color: "#f1f5f9", fontSize: 11, fontFamily: "Inter,sans-serif" },
-                formatter: (params: any) => `${params[0]?.axisValue}<br/>Drawdown: <b>${params[0]?.value}%</b>`,
+                formatter: (params: Array<{ axisValue: string; value: number }>) => `${params[0]?.axisValue}<br/>Drawdown: <b>${params[0]?.value}%</b>`,
             },
             grid: { top: 20, bottom: 28, left: 40, right: 20 },
             xAxis: {
@@ -1357,7 +1435,7 @@ function DrawdownChart({ drawdownData }: { drawdownData: { date: string; value: 
             <div className="flex items-center justify-between mb-2">
                 <span className="text-[10px] text-muted-foreground font-medium">Mức sụt giảm lớn nhất</span>
                 <span className="text-sm font-bold font-mono text-red-500">
-                    {latestDt ? (latestDt.value * 100).toFixed(2) + "%" : "—"}
+                    {latestDt ? latestDt.value.toFixed(2) + "%" : "—"}
                 </span>
             </div>
             <ReactECharts option={option} style={{ height: 180 }} />
@@ -1413,17 +1491,16 @@ function PeerWidget() {
 // ══════════════════════════════════════════════════════════════════
 //  10. DUPONT ROE DECOMPOSITION (5-Factor)
 // ══════════════════════════════════════════════════════════════════
-function DuPontDecomposition({ reportData }: { reportData: ReturnType<typeof useFinancialReports>["data"] }) {
+function DuPontDecomposition({ reportData }: { reportData: ReportData }) {
     const result = useMemo(() => {
         if (!reportData) return null;
         const { incomeStatement: isList, balanceSheet: bsList } = reportData;
+        const isBank = reportData.isBank;
         if (isList.length < 1 || bsList.length < 1) return null;
         const ni = isList[0].netProfit ?? 0;
         const pbt = isList[0].profitBeforeTax ?? 0;
-        // operatingProfit may be 0 from BE; fallback to grossProfit - opex
-        let ebit = isList[0].operatingProfit ?? 0;
-        if (!ebit) ebit = (isList[0].grossProfit ?? 0) - (isList[0].sellingExpenses ?? 0) - (isList[0].adminExpenses ?? 0);
-        const rev = isList[0].revenue ?? 0;
+        const ebit = getOperatingProfit(isList[0]);
+        const rev = getRevenueBase(isList[0], isBank);
         const ta = bsList[0].totalAssets ?? 0;
         const te = bsList[0].totalEquity ?? 0;
         if (!rev || !ta || !te || !pbt || !ebit) return null;
@@ -1479,11 +1556,12 @@ function DuPontDecomposition({ reportData }: { reportData: ReturnType<typeof use
 //  11. ALTMAN Z-SCORE GAUGE
 // ══════════════════════════════════════════════════════════════════
 function AltmanZScoreGauge({ reportData, ratios }: {
-    reportData: ReturnType<typeof useFinancialReports>["data"];
+    reportData: ReportData;
     ratios: FinancialRatioItem[] | null;
 }) {
     const result = useMemo(() => {
         if (!reportData || !ratios || ratios.length === 0) return null;
+        const isBank = reportData.isBank;
         const bs = reportData.balanceSheet[0];
         const is0 = reportData.incomeStatement[0];
         if (!bs || !is0) return null;
@@ -1491,11 +1569,9 @@ function AltmanZScoreGauge({ reportData, ratios }: {
         if (!ta) return null;
         const wc = (bs.currentAssets ?? 0) - (bs.currentLiabilities ?? 0);
         const re = bs.retainedEarnings ?? 0;
-        // operatingProfit may be 0 from BE; fallback to grossProfit - opex
-        let ebit = is0.operatingProfit ?? 0;
-        if (!ebit) ebit = (is0.grossProfit ?? 0) - (is0.sellingExpenses ?? 0) - (is0.adminExpenses ?? 0);
+        const ebit = getOperatingProfit(is0) ?? 0;
         const tl = bs.totalLiabilities ?? 0;
-        const rev = is0.revenue ?? 0;
+        const rev = getRevenueBase(is0, isBank) ?? 0;
         const mve = ratios[0]?.marketCap ?? null;
         if (mve == null || !tl) return null;
 
@@ -1508,8 +1584,7 @@ function AltmanZScoreGauge({ reportData, ratios }: {
         return { z: +z.toFixed(2), x1, x2, x3, x4, x5 };
     }, [reportData, ratios]);
 
-    if (!result) return <div className="py-6 text-center text-xs text-muted-foreground">Không đủ dữ liệu Z-Score</div>;
-    const { z } = result;
+    const z = result?.z ?? 0;
     const zone = z >= 2.99 ? "safe" : z >= 1.81 ? "grey" : "distress";
     const zoneLabel = zone === "safe" ? "An toàn" : zone === "grey" ? "Cảnh báo" : "Nguy hiểm";
     const zoneColor = zone === "safe" ? "text-green-600" : zone === "grey" ? "text-amber-600" : "text-red-500";
@@ -1547,6 +1622,8 @@ function AltmanZScoreGauge({ reportData, ratios }: {
             data: [{ value: z }],
         }],
     }), [z, zone]);
+
+    if (!result) return <div className="py-6 text-center text-xs text-muted-foreground">Không đủ dữ liệu Z-Score</div>;
 
     return (
         <div className="flex items-center gap-3 w-full">
@@ -1723,7 +1800,7 @@ function DividendAnalysis({ ratios }: { ratios: FinancialRatioItem[] | null }) {
         const annual = [...ratios].reverse().filter((d) => d.dividendYield != null);
         if (annual.length < 2) return null;
         const periods = annual.map((d) => shortPeriod(`Q${d.quarter}/${d.year}`)).slice(-8);
-        const yields = annual.map((d) => d.dividendYield != null ? +(d.dividendYield * 100).toFixed(2) : null).slice(-8);
+        const yields = annual.map((d) => d.dividendYield != null ? +d.dividendYield.toFixed(2) : null).slice(-8);
         const eps = annual.map((d) => d.eps).slice(-8);
 
         return {
@@ -2078,7 +2155,7 @@ function PriceSensitivityDensity() {
                 textStyle: { color: "#f1f5f9", fontSize: 11 },
                 formatter: (params: { seriesName: string; value: number; name: string }[]) => {
                     const lines = params.map((p) =>
-                        `${p.seriesName}: <b>${(p.value * 100).toFixed(2)}%</b>`
+                        `${p.seriesName}: <b>${p.value.toFixed(2)}%</b>`
                     );
                     return `Return: <b>${params[0]?.name}%</b><br/>${lines.join("<br/>")}`;
                 },

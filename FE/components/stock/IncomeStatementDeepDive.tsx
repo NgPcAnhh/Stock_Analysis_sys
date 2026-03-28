@@ -221,6 +221,11 @@ function RevenueProfitTrends() {
   const ctx = React.useContext(IsCtx);
   const revenueTrend = ctx.revenueTrend ?? isDefaults.revenueTrend;
   const costStructure = ctx.costStructure ?? isDefaults.costStructure;
+  const costStructureModelLabel = (ctx as typeof isDefaults & { costStructureModelLabel?: string }).costStructureModelLabel;
+  const totalCostPct = useMemo(
+    () => Number(costStructure.reduce((sum, item) => sum + Number(item.value || 0), 0).toFixed(1)),
+    [costStructure]
+  );
   const years = revenueTrend.map((d: any) => String(d.year));
 
   const comboChart = useMemo(
@@ -271,7 +276,7 @@ function RevenueProfitTrends() {
         left: "center",
         top: "center",
         style: {
-          text: "Total\n100%",
+          text: `Tổng CP\n${totalCostPct}% DT`,
           textAlign: "center" as const,
           fill: "#6b7280",
           fontSize: 13,
@@ -291,27 +296,36 @@ function RevenueProfitTrends() {
         },
       ],
     }),
-    [costStructure]
+    [costStructure, totalCostPct]
   );
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-10 gap-4">
+    <div className="grid grid-cols-1 lg:grid-cols-10 gap-4 items-stretch">
       {/* Left: Combo Chart 70% */}
-      <div className="lg:col-span-7 bg-card rounded-xl shadow-sm border border-border/50 p-5">
+      <div className="lg:col-span-7 bg-card rounded-xl shadow-sm border border-border/50 p-5 h-full flex flex-col">
         <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5 mb-3">
           <span>📊</span> Diễn biến Doanh thu & Chi phí
         </h3>
-        <ReactECharts option={comboChart} style={{ height: 300 }} />
+        <div className="flex-1 min-h-[300px]">
+          <ReactECharts option={comboChart} style={{ height: "100%" }} />
+        </div>
       </div>
 
       {/* Right: Donut 30% */}
-      <div className="lg:col-span-3 bg-card rounded-xl shadow-sm border border-border/50 p-5">
-        <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5 mb-3">
-          <span>🍩</span> Cơ cấu Chi phí (Common Size)
-        </h3>
-        <ReactECharts option={donutChart} style={{ height: 200 }} />
+      <div className="lg:col-span-3 bg-card rounded-xl shadow-sm border border-border/50 p-5 h-full">
+        <div className="flex items-start justify-between gap-2 mb-3">
+          <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+            <span>🍩</span> Cơ cấu Chi phí (Common Size)
+          </h3>
+          {costStructureModelLabel && (
+            <span className="text-[10px] font-semibold text-[#3B82F6] bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200 whitespace-nowrap">
+              {costStructureModelLabel}
+            </span>
+          )}
+        </div>
+        <ReactECharts option={donutChart} style={{ height: 230 }} />
         {/* Legend */}
-        <div className="space-y-1.5 mt-2">
+        <div className="space-y-1.5 mt-2 max-h-[200px] overflow-y-auto pr-1">
           {costStructure.map((d) => (
             <div key={d.name} className="flex items-center justify-between">
               <div className="flex items-center gap-1.5">
@@ -429,7 +443,12 @@ function GrowthAndEfficiency() {
 function SegmentCharts() {
   const ctx = React.useContext(IsCtx);
   const revenueBySegment = ctx.revenueBySegment ?? isDefaults.revenueBySegment;
-  const costByCategory = ctx.costByCategory ?? isDefaults.costByCategory;
+  const viewCtx = ctx as typeof isDefaults & {
+    costStructureModelLabel?: string;
+    profitDrivers?: Array<{ name: string; value: number; color: string; isTotal?: boolean }>;
+  };
+  const costStructureModelLabel = viewCtx.costStructureModelLabel;
+  const profitDrivers = viewCtx.profitDrivers ?? [];
   const profitFunnel = ctx.profitFunnel ?? isDefaults.profitFunnel;
   const revPie = useMemo(
     () => ({
@@ -450,24 +469,51 @@ function SegmentCharts() {
     [revenueBySegment]
   );
 
-  const costPie = useMemo(
-    () => ({
-      tooltip: { trigger: "item" as const, formatter: "{b}: {d}%" },
+  const profitDriverChart = useMemo(() => {
+    const parts = profitDrivers.filter((d) => !d.isTotal);
+    if (parts.length === 0) return null;
+    return {
+      tooltip: {
+        trigger: "axis" as const,
+        axisPointer: { type: "shadow" as const },
+        valueFormatter: (value: number) => (value != null ? `${fmtN(value)} Tỷ` : "—"),
+      },
+      grid: { top: 18, left: 90, right: 20, bottom: 20 },
+      xAxis: { type: "value" as const },
+      yAxis: {
+        type: "category" as const,
+        data: parts.map((d) => d.name),
+        axisLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: { fontSize: 11, color: "#6b7280" },
+      },
       series: [
         {
-          type: "pie",
-          radius: ["40%", "72%"],
-          label: { show: false },
-          data: costByCategory.map((d) => ({
+          type: "bar",
+          data: parts.map((d) => ({
             value: d.value,
-            name: d.name,
-            itemStyle: { color: d.color },
+            itemStyle: { color: d.value >= 0 ? d.color : "#EF4444", borderRadius: [0, 4, 4, 0] },
           })),
+          barWidth: "45%",
+          label: {
+            show: true,
+            position: "right" as const,
+            formatter: (p: { value: number }) => fmtN(p.value),
+            fontSize: 10,
+            fontFamily: "Roboto Mono, monospace",
+            color: "#374151",
+          },
+          markLine: { data: [{ xAxis: 0 }], lineStyle: { color: "#D1D5DB", type: "dashed" as const } },
         },
       ],
-    }),
-    [costByCategory]
-  );
+    };
+  }, [profitDrivers]);
+
+  const pbtTotal = useMemo(() => {
+    const total = profitDrivers.find((d) => d.isTotal)?.value;
+    if (total != null) return total;
+    return profitDrivers.filter((d) => !d.isTotal).reduce((sum, d) => sum + d.value, 0);
+  }, [profitDrivers]);
 
   const funnelChart = useMemo(
     () => ({
@@ -510,10 +556,13 @@ function SegmentCharts() {
       {/* Revenue by Segment */}
       <div className="bg-card rounded-xl shadow-sm border border-border/50 p-5">
         <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5 mb-3">
-          <span>📊</span> Cơ cấu DT theo phân khúc
+          <span>📊</span> Cơ cấu Nguồn Thu (% tổng thu nhập)
         </h3>
+        {costStructureModelLabel && (
+          <p className="text-[10px] text-muted-foreground mb-2">Mô hình: {costStructureModelLabel}</p>
+        )}
         <ReactECharts option={revPie} style={{ height: 180 }} />
-        <div className="space-y-1.5 mt-2">
+        <div className="space-y-1.5 mt-2 max-h-[170px] overflow-y-auto pr-1">
           {revenueBySegment.map((d) => (
             <div key={d.name} className="flex items-center justify-between">
               <div className="flex items-center gap-1.5">
@@ -526,31 +575,41 @@ function SegmentCharts() {
         </div>
       </div>
 
-      {/* Cost Structure */}
+      {/* Profit Drivers */}
       <div className="bg-card rounded-xl shadow-sm border border-border/50 p-5">
         <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5 mb-3">
-          <span>🏗️</span> Cấu trúc Chi Phí
+          <span>🧭</span> Động lực Lợi nhuận Trước Thuế
         </h3>
-        <ReactECharts option={costPie} style={{ height: 180 }} />
-        <div className="space-y-1.5 mt-2">
-          {costByCategory.map((d) => (
-            <div key={d.name} className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: d.color }} />
-                <span className="text-xs text-muted-foreground">{d.name}</span>
+        <p className="text-[10px] text-muted-foreground mb-2">Phân rã LNTT thành các nguồn đóng góp, đơn vị: Tỷ VND.</p>
+        {profitDriverChart ? (
+          <ReactECharts option={profitDriverChart} style={{ height: 180 }} />
+        ) : (
+          <div className="h-[180px] flex items-center justify-center text-xs text-muted-foreground">Không đủ dữ liệu</div>
+        )}
+        <div className="space-y-1.5 mt-2 max-h-[170px] overflow-y-auto pr-1">
+          {profitDrivers.map((d) => {
+            const pct = pbtTotal !== 0 ? (d.value / pbtTotal) * 100 : 0;
+            return (
+              <div key={d.name} className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: d.value >= 0 ? d.color : "#EF4444" }} />
+                  <span className="text-xs text-muted-foreground">{d.name}</span>
+                </div>
+                <span className={`text-xs font-bold ${mono}`}>{fmtN(d.value)} ({pct >= 0 ? "+" : ""}{pct.toFixed(1)}%)</span>
               </div>
-              <span className={`text-xs font-bold ${mono}`}>{d.value}%</span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
       {/* Profit Funnel */}
-      <div className="bg-card rounded-xl shadow-sm border border-border/50 p-5">
+      <div className="bg-card rounded-xl shadow-sm border border-border/50 p-5 h-full flex flex-col">
         <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5 mb-3">
           <span>📉</span> Phễu Hiệu Quả (Profit Funnel)
         </h3>
-        <ReactECharts option={funnelChart} style={{ height: 220 }} />
+        <div className="flex-1 min-h-[220px]">
+          <ReactECharts option={funnelChart} style={{ height: "100%" }} />
+        </div>
       </div>
     </div>
   );

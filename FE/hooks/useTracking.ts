@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef } from 'react';
+import { usePathname } from 'next/navigation';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000/api/v1';
 
@@ -65,7 +66,49 @@ export function useTracking(userId?: number | null) {
         [sessionId, userId],
     );
 
-    return { trackSearch, trackStockSearch, trackSidebarClick };
+    // ── Page view ─────────────────────────────────────────────────
+    const trackPageView = useCallback(
+        (pagePath: string, pageTitle?: string, referrer?: string) => {
+            firePost('/tracking/page-view', {
+                page_path: pagePath,
+                page_title: pageTitle ?? null,
+                session_id: sessionId,
+                user_id: userId ?? null,
+                referrer: referrer ?? null,
+            });
+        },
+        [sessionId, userId],
+    );
+
+    // ── Error logging ─────────────────────────────────────────────
+    const trackError = useCallback(
+        (errorMessage: string, opts?: { errorType?: string; stackTrace?: string; pageUrl?: string }) => {
+            firePost('/tracking/error', {
+                error_type: opts?.errorType ?? 'frontend',
+                error_message: errorMessage,
+                stack_trace: opts?.stackTrace ?? null,
+                page_url: opts?.pageUrl ?? (typeof window !== 'undefined' ? window.location.href : null),
+                session_id: sessionId,
+                user_id: userId ?? null,
+            });
+        },
+        [sessionId, userId],
+    );
+
+    // ── Analysis view ─────────────────────────────────────────────
+    const trackAnalysisView = useCallback(
+        (ticker: string) => {
+            if (!ticker.trim()) return;
+            firePost('/tracking/analysis-view', {
+                ticker: ticker.trim().toUpperCase(),
+                session_id: sessionId,
+                user_id: userId ?? null,
+            });
+        },
+        [sessionId, userId],
+    );
+
+    return { trackSearch, trackStockSearch, trackSidebarClick, trackPageView, trackError, trackAnalysisView };
 }
 
 // ────────────────────────────────────────────────────────────────────
@@ -151,3 +194,76 @@ export function useSessionTracking(userId?: number | null) {
         }).catch(() => {});
     }, [userId, sessionId]);
 }
+
+// ────────────────────────────────────────────────────────────────────
+// Hook tự động theo dõi page view khi route thay đổi
+// Dùng một lần duy nhất tại MainLayout
+// ────────────────────────────────────────────────────────────────────
+export function usePageViewTracking(userId?: number | null) {
+    const pathname = usePathname();
+    const { trackPageView } = useTracking(userId);
+    const lastPathRef = useRef<string>('');
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        // Tránh track trùng lặp cùng path
+        if (pathname === lastPathRef.current) return;
+        lastPathRef.current = pathname;
+
+        trackPageView(
+            pathname,
+            document.title || undefined,
+            document.referrer || undefined,
+        );
+    }, [pathname, trackPageView]);
+}
+
+// ────────────────────────────────────────────────────────────────────
+// Hook tự động bắt lỗi JS runtime + Promise rejections
+// Dùng một lần duy nhất tại MainLayout
+// ────────────────────────────────────────────────────────────────────
+export function useErrorTracking(userId?: number | null) {
+    const { trackError } = useTracking(userId);
+    const setupRef = useRef(false);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        if (setupRef.current) return;
+        setupRef.current = true;
+
+        // Bắt JS runtime errors
+        const handleError = (event: ErrorEvent) => {
+            trackError(event.message, {
+                errorType: 'frontend',
+                stackTrace: event.error?.stack ?? `${event.filename}:${event.lineno}:${event.colno}`,
+                pageUrl: window.location.href,
+            });
+        };
+
+        // Bắt unhandled promise rejections
+        const handleRejection = (event: PromiseRejectionEvent) => {
+            const message = event.reason instanceof Error
+                ? event.reason.message
+                : String(event.reason ?? 'Unhandled Promise Rejection');
+            const stack = event.reason instanceof Error
+                ? event.reason.stack
+                : undefined;
+
+            trackError(message, {
+                errorType: 'frontend_promise',
+                stackTrace: stack,
+                pageUrl: window.location.href,
+            });
+        };
+
+        window.addEventListener('error', handleError);
+        window.addEventListener('unhandledrejection', handleRejection);
+
+        return () => {
+            window.removeEventListener('error', handleError);
+            window.removeEventListener('unhandledrejection', handleRejection);
+            setupRef.current = false;
+        };
+    }, [trackError]);
+}
+
