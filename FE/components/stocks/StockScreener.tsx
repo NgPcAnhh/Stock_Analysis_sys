@@ -167,6 +167,7 @@ function countActiveFilters(f: ScreenerFilters): number {
 // ─── main component ──────────────────────────────────
 export default function StockScreener() {
   const [allStocks, setAllStocks] = useState<StockListItem[]>([]);
+  const [favoriteTickers, setFavoriteTickers] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [filters, setFilters] = useState<ScreenerFilters>({ ...DEFAULT_FILTERS });
@@ -196,6 +197,27 @@ export default function StockScreener() {
   }, [search]);
   const [watchlist, setWatchlist] = useState<Set<string>>(new Set());
 
+  const getOrCreateSessionId = useCallback(() => {
+    const key = "session_id";
+    const existing = localStorage.getItem(key);
+    if (existing) return existing;
+    const generated = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    localStorage.setItem(key, generated);
+    return generated;
+  }, []);
+
+  const loadFavorites = useCallback(async () => {
+    try {
+      const sessionId = getOrCreateSessionId();
+      const res = await fetch(`${API}/tracking/favorite?session_id=${encodeURIComponent(sessionId)}`);
+      if (!res.ok) return;
+      const data = (await res.json()) as string[];
+      setFavoriteTickers(data.map((t) => t.toUpperCase()));
+    } catch {
+      // noop
+    }
+  }, [getOrCreateSessionId]);
+
   // ─── Fetch screener data from API ──────────────────
   useEffect(() => {
     let cancelled = false;
@@ -223,6 +245,20 @@ export default function StockScreener() {
     fetchData();
     return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => {
+    loadFavorites();
+  }, [loadFavorites]);
+
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        loadFavorites();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [loadFavorites]);
 
   // ─── Dynamic sector & exchange lists from data ─────
   const dynamicSectors = useMemo(() => {
@@ -319,6 +355,9 @@ export default function StockScreener() {
   // ─── FILTER LOGIC ──────────────────────────────────
   const filtered = useMemo(() => {
     let list = [...allStocks];
+    const favoriteOrderMap = new Map(
+      favoriteTickers.map((ticker, index) => [ticker.toUpperCase(), index]),
+    );
 
     // Search
     if (search) {
@@ -373,6 +412,19 @@ export default function StockScreener() {
 
     // Sort
     list.sort((a, b) => {
+      const favA = favoriteOrderMap.get(a.ticker.toUpperCase());
+      const favB = favoriteOrderMap.get(b.ticker.toUpperCase());
+      const isFavA = favA !== undefined;
+      const isFavB = favB !== undefined;
+
+      // Favorites always first.
+      if (isFavA !== isFavB) return isFavA ? -1 : 1;
+
+      // Newer favorite first (index 0 is newest from API ORDER BY created_at DESC).
+      if (isFavA && isFavB && favA !== favB) {
+        return (favA as number) - (favB as number);
+      }
+
       const av = a[sortKey] ?? 0;
       const bv = b[sortKey] ?? 0;
       if (typeof av === "number" && typeof bv === "number")
@@ -383,7 +435,7 @@ export default function StockScreener() {
     });
 
     return list;
-  }, [search, filters, sortKey, sortDir]);
+  }, [allStocks, search, filters, sortKey, sortDir, favoriteTickers]);
 
   // — pagination
   const totalPages = Math.ceil(filtered.length / rowsPerPage);

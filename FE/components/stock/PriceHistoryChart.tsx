@@ -5,6 +5,7 @@ import React, { useState, useMemo, useCallback, useEffect, useRef } from "react"
 import ReactECharts from "echarts-for-react";
 import { useStockDetail } from "@/lib/StockDetailContext";
 import { usePriceHistory, type PriceHistoryPeriod, type PriceHistoryItem } from "@/hooks/useStockData";
+import { useAlerts, type StockAlert } from "@/hooks/useAlerts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     Star,
@@ -65,12 +66,13 @@ function computeInterval(count: number): number {
 }
 
 const PriceHistoryChart = () => {
-    const { ticker, priceHistory: contextHistory } = useStockDetail();
+    const { ticker, priceHistory: contextHistory, onTabChange } = useStockDetail();
+    const { listAlerts } = useAlerts();
     const [period, setPeriod] = useState<PriceHistoryPeriod>("1Y");
     const [chartType, setChartType] = useState<"line" | "candle">("line");
     const [isFavorite, setIsFavorite] = useState(false);
-        const [showAlert, setShowAlert] = useState(false);
-    const [priceAlert, setPriceAlert] = useState<number | null>(null);
+    const [showAlert, setShowAlert] = useState(false);
+    const [activeAlert, setActiveAlert] = useState<StockAlert | null>(null);
     const [showCompareMa20, setShowCompareMa20] = useState(false);
     const [analysisNote, setAnalysisNote] = useState("");
     const [showGridLines, setShowGridLines] = useState(true);
@@ -101,6 +103,15 @@ const PriceHistoryChart = () => {
     const axisInterval = useMemo(() => computeInterval(dates.length), [dates.length]);
     const latestClosePrice = closePrices.length > 0 ? closePrices[closePrices.length - 1] : null;
 
+    const isAlertTriggered = useMemo(() => {
+        if (!activeAlert || latestClosePrice === null) return false;
+        const target = Number(activeAlert.target_price);
+        if (activeAlert.condition_type === "LESS_THAN") {
+            return latestClosePrice <= target;
+        }
+        return latestClosePrice >= target;
+    }, [activeAlert, latestClosePrice]);
+
     const ma20Data = useMemo(() => {
         if (closePrices.length < 20) return closePrices.map(() => null);
         return closePrices.map((_, index, arr) => {
@@ -126,7 +137,7 @@ const PriceHistoryChart = () => {
 
                 const [favRes, alertRes] = await Promise.all([
                     fetch(`${API}/tracking/favorite?session_id=${encodeURIComponent(sessionId)}`),
-                    fetch(`${API}/alerts?session_id=${encodeURIComponent(sessionId)}`),
+                    listAlerts(),
                 ]);
 
                 if (favRes.ok) {
@@ -136,20 +147,16 @@ const PriceHistoryChart = () => {
                     setIsFavorite(false);
                 }
 
-                if (alertRes.ok) {
-                    const alerts = (await alertRes.json()) as Array<{
-                        ticker: string;
-                        target_price: number;
-                        status: string;
-                    }>;
-                    const active = alerts.find((a) => a.ticker === ticker && a.status === "ACTIVE");
-                    setPriceAlert(active ? Number(active.target_price) : null);
-                } else {
-                    setPriceAlert(null);
-                }
+                const alerts = alertRes as StockAlert[];
+                const tickerAlerts = alerts.filter((a) => a.ticker.toUpperCase() === ticker.toUpperCase());
+                const active =
+                    tickerAlerts.find((a) => a.status === "ACTIVE") ||
+                    tickerAlerts.find((a) => a.status === "TRIGGERED") ||
+                    null;
+                setActiveAlert(active);
             } catch {
                 setIsFavorite(false);
-                setPriceAlert(null);
+                setActiveAlert(null);
             }
         };
 
@@ -162,7 +169,7 @@ const PriceHistoryChart = () => {
         } catch {
             setAnalysisNote("");
         }
-    }, [ticker]);
+    }, [ticker, listAlerts]);
 
     const toggleFavorite = useCallback(() => {
         const run = async () => {
@@ -396,9 +403,9 @@ const PriceHistoryChart = () => {
                         <CardTitle className="text-lg font-bold text-foreground">
                             Biểu đồ giá
                         </CardTitle>
-                        {priceAlert !== null && (
+                        {activeAlert !== null && (
                             <span className="text-xs px-2 py-1 rounded-md bg-amber-50 text-amber-700 border border-amber-200">
-                                Cảnh báo: {priceAlert.toLocaleString()}
+                                Cảnh báo: {activeAlert.condition_type === "LESS_THAN" ? "<=" : ">="} {Number(activeAlert.target_price).toLocaleString()} ({isAlertTriggered ? "Đã chạm" : "Đang theo dõi"})
                             </span>
                         )}
                         {analysisNote && (
@@ -437,6 +444,16 @@ const PriceHistoryChart = () => {
                                 </button>
                             ))}
                         </div>
+                        <button
+                            type="button"
+                            onClick={() => setShowCompareMa20((prev) => !prev)}
+                            className={`px-2 py-1 text-xs font-medium rounded-md border transition-colors ${showCompareMa20
+                                ? "bg-blue-50 text-blue-700 border-blue-200"
+                                : "bg-background text-muted-foreground border-border hover:text-foreground"
+                                }`}
+                        >
+                            MA20
+                        </button>
                         <div className="flex items-center gap-0.5 border-l border-border/50 pl-2">
                             <ToolbarButton
                                 icon={<Star className="w-3.5 h-3.5" fill={isFavorite ? "currentColor" : "none"} />}
@@ -447,15 +464,21 @@ const PriceHistoryChart = () => {
                             />
                             <ToolbarButton
                                 icon={<Bell className="w-3.5 h-3.5" />}
-                                title="Thiết lập cảnh báo giá"
-                                active={priceAlert !== null && latestClosePrice !== null && latestClosePrice >= priceAlert}
+                                title={activeAlert ? "Quản lý cảnh báo giá" : "Thiết lập cảnh báo giá"}
+                                active={activeAlert !== null || isAlertTriggered}
+                                activeClassName="text-amber-600 bg-amber-50 dark:bg-amber-500/10"
                                 onClick={setupPriceAlert}
                             />
                             <ToolbarButton
                                 icon={<GitCompare className="w-3.5 h-3.5" />}
-                                title="Bật/tắt MA20"
-                                active={showCompareMa20}
-                                onClick={() => setShowCompareMa20((prev) => !prev)}
+                                title="Mở tab so sánh cổ phiếu"
+                                onClick={() => {
+                                    if (onTabChange) {
+                                        onTabChange("compare");
+                                        return;
+                                    }
+                                    setShowCompareMa20((prev) => !prev);
+                                }}
                             />
                             <ToolbarButton
                                 icon={<Pencil className="w-3.5 h-3.5" />}
@@ -505,8 +528,9 @@ const PriceHistoryChart = () => {
             {showAlert && (
                 <AlertPopup
                     ticker={ticker}
+                    existingAlert={activeAlert}
                     onClose={() => setShowAlert(false)}
-                    onSaved={(targetPrice) => setPriceAlert(targetPrice)}
+                    onSaved={(alert) => setActiveAlert(alert)}
                 />
             )}
     </Card>

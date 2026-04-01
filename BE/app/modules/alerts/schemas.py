@@ -19,3 +19,14 @@ class AlertResponse(BaseModel):
     
     class Config:
         from_attributes = True
+
+
+class AlertUpdateRequest(BaseModel):
+    condition_type: Optional[str] = Field(default=None, max_length=20)
+    target_price: Optional[float] = None
+    status: Optional[str] = Field(default=None, max_length=20)
+
+
+class AlertActionResponse(BaseModel):
+    success: bool
+    message: str

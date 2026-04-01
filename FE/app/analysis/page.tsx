@@ -33,26 +33,39 @@ export default function AnalysisLandingPage() {
   const router = useRouter();
   const [favoriteTickers, setFavoriteTickers] = useState<string[]>([]);
 
+  const loadFavorites = async () => {
+    try {
+      const sessionId = getOrCreateSessionId();
+      const res = await fetch(`${API}/tracking/favorite?session_id=${encodeURIComponent(sessionId)}`);
+      if (!res.ok) return;
+      const data = (await res.json()) as string[];
+      // API already returns ORDER BY created_at DESC, keep this order for priority.
+      setFavoriteTickers(data.map((t) => t.toUpperCase()));
+    } catch {
+      // noop
+    }
+  };
+
   useEffect(() => {
-    const loadFavorites = async () => {
-      try {
-        const sessionId = getOrCreateSessionId();
-        const res = await fetch(`${API}/tracking/favorite?session_id=${encodeURIComponent(sessionId)}`);
-        if (!res.ok) return;
-        const data = (await res.json()) as string[];
-        setFavoriteTickers(data);
-      } catch {
-        // noop
+    loadFavorites();
+  }, []);
+
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        loadFavorites();
       }
     };
-
-    loadFavorites();
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
   }, []);
 
   // Merge favorites and popular, prioritizing favorites
   const displayTickers = [
     ...favoriteTickers.map((t) => ({ ticker: t, name: "Yêu thích", isFavorite: true })),
-    ...popularTickers.filter(pt => !favoriteTickers.includes(pt.ticker)).map(pt => ({ ...pt, isFavorite: false })),
+    ...popularTickers
+      .filter((pt) => !favoriteTickers.includes(pt.ticker.toUpperCase()))
+      .map((pt) => ({ ...pt, isFavorite: false })),
   ];
 
   const features = [
