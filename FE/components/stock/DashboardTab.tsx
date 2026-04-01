@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useCallback } from "react";
 import ReactECharts from "echarts-for-react";
 import { useStockDetail } from "@/lib/StockDetailContext";
 import {
@@ -2107,6 +2107,562 @@ function ReturnHistogram() {
 }
 
 // ══════════════════════════════════════════════════════════════════
+//  18-A. MONTE CARLO SIMULATION (Client-side)
+// ══════════════════════════════════════════════════════════════════
+function boxMullerRandom(mu: number, sigma: number): number {
+    const u1 = Math.random();
+    const u2 = Math.random();
+    const z = Math.sqrt(-2 * Math.log(u1 + 1e-10)) * Math.cos(2 * Math.PI * u2);
+    return mu + sigma * z;
+}
+
+interface MCParams {
+    sessions: number;       // số phiên mô phỏng (days)
+    simulations: number;    // số kịch bản
+    distribution: "normal" | "lognormal"; // loại phân phối
+    capital: number;        // vốn đầu tư (triệu VND)
+}
+
+interface MCResult {
+    p5: number[];
+    p25: number[];
+    p50: number[];
+    p75: number[];
+    p95: number[];
+    finalValues: number[];  // phân phối cuối kỳ
+    meanReturn: number;     // % mean return hàng ngày
+    stdReturn: number;      // % std return hàng ngày
+    probUp: number;         // % xác suất lãi
+    expectedFinal: number;  // vốn kỳ vọng cuối kỳ
+}
+
+function runMonteCarlo(closes: number[], params: MCParams): MCResult | null {
+    if (closes.length < 30) return null;
+    const { sessions, simulations, distribution, capital } = params;
+
+    // Tính lịch sử returns
+    const returns: number[] = [];
+    for (let i = 1; i < closes.length; i++) {
+        returns.push((closes[i] - closes[i - 1]) / closes[i - 1]);
+    }
+
+    const n = returns.length;
+    const meanR = returns.reduce((a, b) => a + b, 0) / n;
+    const varR = returns.reduce((a, b) => a + (b - meanR) ** 2, 0) / n;
+    const stdR = Math.sqrt(varR);
+
+    // Lognormal tham số
+    const mu_ln = Math.log(1 + meanR) - 0.5 * Math.log(1 + varR / ((1 + meanR) ** 2));
+    const sigma_ln = Math.sqrt(Math.log(1 + varR / ((1 + meanR) ** 2)));
+
+    // Chạy mô phỏng — lưu percentile tại mỗi bước
+    const NUM_STEPS = Math.min(sessions, 250);
+    const allPaths: Float32Array[] = [];
+
+    for (let s = 0; s < simulations; s++) {
+        const path = new Float32Array(NUM_STEPS + 1);
+        path[0] = capital;
+        for (let t = 1; t <= NUM_STEPS; t++) {
+            const prevVal = path[t - 1];
+            let ret: number;
+            if (distribution === "lognormal") {
+                ret = Math.exp(boxMullerRandom(mu_ln, sigma_ln)) - 1;
+            } else {
+                ret = boxMullerRandom(meanR, stdR);
+            }
+            path[t] = prevVal * (1 + ret);
+        }
+        allPaths.push(path);
+    }
+
+    // Tính percentile theo từng bước (lấy mẫu 51 điểm để vẽ đẹp)
+    const SAMPLE_STEPS = 51;
+    const stepIndices = Array.from({ length: SAMPLE_STEPS }, (_, i) =>
+        Math.round((i / (SAMPLE_STEPS - 1)) * NUM_STEPS)
+    );
+
+    const p5: number[] = [];
+    const p25: number[] = [];
+    const p50: number[] = [];
+    const p75: number[] = [];
+    const p95: number[] = [];
+
+    for (const step of stepIndices) {
+        const slice = allPaths.map((path) => path[step]).sort((a, b) => a - b);
+        const len = slice.length;
+        p5.push(+(slice[Math.floor(len * 0.05)] ?? 0).toFixed(2));
+        p25.push(+(slice[Math.floor(len * 0.25)] ?? 0).toFixed(2));
+        p50.push(+(slice[Math.floor(len * 0.50)] ?? 0).toFixed(2));
+        p75.push(+(slice[Math.floor(len * 0.75)] ?? 0).toFixed(2));
+        p95.push(+(slice[Math.floor(len * 0.95)] ?? 0).toFixed(2));
+    }
+
+    // Giá trị cuối kỳ
+    const finalValues = allPaths.map((path) => path[NUM_STEPS]);
+    const probUp = (finalValues.filter((v) => v > capital).length / simulations) * 100;
+    const expectedFinal = finalValues.reduce((a, b) => a + b, 0) / simulations;
+
+    return {
+        p5, p25, p50, p75, p95,
+        finalValues,
+        meanReturn: meanR * 100,
+        stdReturn: stdR * 100,
+        probUp: +probUp.toFixed(1),
+        expectedFinal: +expectedFinal.toFixed(2),
+    };
+}
+
+function MonteCarloSimulation() {
+    const { priceHistory, stockInfo } = useStockDetail();
+
+    const [params, setParams] = useState<MCParams>({
+        sessions: 250,
+        simulations: 1000,
+        distribution: "lognormal",
+        capital: 100,
+    });
+    const [draftParams, setDraftParams] = useState<MCParams>(params);
+    const [running, setRunning] = useState(false);
+    const [result, setResult] = useState<MCResult | null>(null);
+    const [hasRun, setHasRun] = useState(false);
+
+    const closes = useMemo(() => {
+        if (!priceHistory || priceHistory.length < 30) return [];
+        return priceHistory.map((p) => p.close).filter(Boolean);
+    }, [priceHistory]);
+
+    // Tự động chạy lần đầu
+    const runSimulation = useCallback(() => {
+        setRunning(true);
+        setParams(draftParams);
+        setTimeout(() => {
+            const res = runMonteCarlo(closes, draftParams);
+            setResult(res);
+            setHasRun(true);
+            setRunning(false);
+        }, 50);
+    }, [closes, draftParams]);
+
+    // Chart 1: Fan chart
+    const fanOption = useMemo(() => {
+        if (!result) return null;
+        const { p5, p25, p50, p75, p95 } = result;
+        const xLabels = p50.map((_, i) =>
+            i === 0 ? "T0" : `P${Math.round((i / (p50.length - 1)) * params.sessions)}`
+        );
+
+        return {
+            animation: false,
+            tooltip: {
+                trigger: "axis" as const,
+                backgroundColor: "#1e293b",
+                borderColor: "#334155",
+                textStyle: { color: "#f1f5f9", fontSize: 11, fontFamily: "Roboto Mono,monospace" },
+                formatter: (pArr: { seriesName: string; value: number; axisValue: string }[]) => {
+                    const day = pArr[0]?.axisValue ?? "";
+                    const fmtM = (v: number) => v.toFixed(1);
+                    const lines = pArr
+                        .filter((p) => !p.seriesName.startsWith("_"))
+                        .map((p) => `${p.seriesName}: <b>${fmtM(p.value)}M</b>`);
+                    return `<b>${day}</b><br/>${lines.join("<br/>")}`;
+                },
+            },
+            legend: {
+                top: 4, right: 8,
+                data: ["P50 (Trung vị)", "P95 (Tích cực)", "P5 (Tiêu cực)"],
+                textStyle: { fontSize: 10, color: "#64748b" },
+                icon: "roundRect", itemWidth: 12, itemHeight: 5,
+            },
+            grid: { top: 44, bottom: 28, left: 58, right: 14 },
+            xAxis: {
+                type: "category" as const,
+                data: xLabels,
+                axisLabel: {
+                    fontSize: 9, color: "#94a3b8",
+                    interval: Math.max(Math.floor(xLabels.length / 6), 1),
+                },
+                axisLine: { lineStyle: { color: "#e2e8f0" } },
+                axisTick: { show: false },
+            },
+            yAxis: {
+                type: "value" as const,
+                axisLabel: {
+                    fontSize: 9, color: "#94a3b8", fontFamily: "Roboto Mono,monospace",
+                    formatter: (v: number) => v.toFixed(0) + "M",
+                },
+                splitLine: { lineStyle: { color: "#f1f5f9" } },
+            },
+            series: [
+                // Band P5-P95 (outer)
+                {
+                    name: "_band_outer_base",
+                    type: "line",
+                    data: p5,
+                    symbol: "none",
+                    lineStyle: { width: 0, opacity: 0 },
+                    stack: "outer",
+                    z: 1,
+                },
+                {
+                    name: "_band_outer",
+                    type: "line",
+                    data: p95.map((v, i) => Math.max(0, v - (p5[i] ?? 0))),
+                    symbol: "none",
+                    lineStyle: { width: 0 },
+                    areaStyle: { color: "rgba(249,115,22,0.07)" },
+                    stack: "outer",
+                    z: 1,
+                },
+                // Band P25-P75 (inner)
+                {
+                    name: "_band_inner_base",
+                    type: "line",
+                    data: p25,
+                    symbol: "none",
+                    lineStyle: { width: 0, opacity: 0 },
+                    stack: "inner",
+                    z: 2,
+                },
+                {
+                    name: "_band_inner",
+                    type: "line",
+                    data: p75.map((v, i) => Math.max(0, v - (p25[i] ?? 0))),
+                    symbol: "none",
+                    lineStyle: { width: 0 },
+                    areaStyle: { color: "rgba(249,115,22,0.14)" },
+                    stack: "inner",
+                    z: 2,
+                },
+                // Lines
+                {
+                    name: "P50 (Trung vị)",
+                    type: "line",
+                    data: p50,
+                    symbol: "none",
+                    lineStyle: { width: 3, color: "#F97316" },
+                    z: 10,
+                },
+                {
+                    name: "P95 (Tích cực)",
+                    type: "line",
+                    data: p95,
+                    symbol: "none",
+                    lineStyle: { width: 1.5, color: "#00C076", type: "dashed" as const },
+                    z: 6,
+                },
+                {
+                    name: "P5 (Tiêu cực)",
+                    type: "line",
+                    data: p5,
+                    symbol: "none",
+                    lineStyle: { width: 1.5, color: "#EF4444", type: "dashed" as const },
+                    z: 6,
+                },
+                // Vốn ban đầu reference line
+                {
+                    name: "_capital",
+                    type: "line",
+                    data: [],
+                    silent: true,
+                    markLine: {
+                        silent: true,
+                        symbol: "none",
+                        lineStyle: { color: "#94a3b8", width: 1.5, type: "dotted" as const },
+                        data: [{ yAxis: params.capital }],
+                        label: {
+                            formatter: `Vốn ban đầu: ${params.capital}M`,
+                            fontSize: 9, color: "#64748b",
+                            position: "end" as const,
+                        },
+                    },
+                },
+            ],
+        };
+    }, [result, params.sessions, params.capital]);
+
+    // Chart 2: Histogram phân phối cuối kỳ
+    const histOption = useMemo(() => {
+        if (!result || result.finalValues.length < 10) return null;
+        const vals = result.finalValues;
+        const minV = Math.min(...vals);
+        const maxV = Math.max(...vals);
+        const binCount = 30;
+        const bw = (maxV - minV) / binCount;
+        const bins: { center: number; count: number; isProfit: boolean }[] = [];
+        for (let i = 0; i < binCount; i++) {
+            const lo = minV + i * bw;
+            const hi = lo + bw;
+            const center = lo + bw / 2;
+            const count = vals.filter((v) => v >= lo && (i === binCount - 1 ? v <= hi : v < hi)).length;
+            bins.push({ center: +center.toFixed(2), count, isProfit: center > params.capital });
+        }
+        const medianFinal = result.p50[result.p50.length - 1] ?? params.capital;
+
+        return {
+            animation: false,
+            tooltip: {
+                trigger: "axis" as const,
+                backgroundColor: "#1e293b", borderColor: "#334155",
+                textStyle: { color: "#f1f5f9", fontSize: 11 },
+                formatter: (pArr: { name: string; value: number }[]) =>
+                    `Giá trị: <b>${Number(pArr[0]?.name).toFixed(1)}M VND</b><br/>Kịch bản: <b>${pArr[0]?.value}</b>`,
+            },
+            grid: { top: 36, bottom: 28, left: 52, right: 12 },
+            xAxis: {
+                type: "category" as const,
+                data: bins.map((b) => b.center.toFixed(0)),
+                axisLabel: { fontSize: 8, color: "#94a3b8", fontFamily: "Roboto Mono,monospace", interval: 4, rotate: 30 },
+                axisLine: { lineStyle: { color: "#e2e8f0" } }, axisTick: { show: false },
+                name: "Triệu VND", nameTextStyle: { fontSize: 9, color: "#94a3b8" },
+            },
+            yAxis: {
+                type: "value" as const,
+                name: "Kịch bản",
+                nameTextStyle: { fontSize: 9, color: "#94a3b8" },
+                axisLabel: { fontSize: 9, color: "#94a3b8" },
+                splitLine: { lineStyle: { color: "#f1f5f9" } },
+            },
+            series: [{
+                type: "bar" as const,
+                data: bins.map((b) => ({
+                    value: b.count,
+                    itemStyle: {
+                        color: b.isProfit ? "#00C076" : "#EF4444",
+                        borderRadius: [3, 3, 0, 0],
+                        opacity: 0.85,
+                    },
+                })),
+                barCategoryGap: "8%",
+                markLine: {
+                    silent: true,
+                    symbol: "none",
+                    data: [
+                        {
+                            xAxis: bins.findIndex((b) => b.center >= medianFinal).toString(),
+                            lineStyle: { color: "#F97316", width: 2, type: "dashed" as const },
+                            label: { formatter: "P50", color: "#F97316", fontSize: 9, position: "start" as const },
+                        },
+                        {
+                            xAxis: bins.findIndex((b) => b.center >= params.capital).toString(),
+                            lineStyle: { color: "#64748b", width: 1.5, type: "dotted" as const },
+                            label: { formatter: "Vốn", color: "#64748b", fontSize: 9, position: "end" as const },
+                        },
+                    ],
+                },
+            }],
+        };
+    }, [result, params.capital]);
+
+    const fmtM = (v: number) => v.toFixed(1);
+
+    if (!closes.length) {
+        return <div className="py-6 text-center text-xs text-muted-foreground">Không đủ dữ liệu giá để mô phỏng</div>;
+    }
+
+    return (
+        <div className="flex flex-col lg:flex-row gap-0 min-h-[480px]">
+            {/* ── LEFT: BỘ LỌC TINH CHỈNH (20%) ── */}
+            <aside className="w-full lg:w-[20%] flex-shrink-0 border-r border-border/50 bg-muted/20 rounded-l-xl p-4 flex flex-col gap-4">
+                <div>
+                    <h4 className="text-[11px] font-bold text-foreground uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                        <span className="text-base">⚙️</span> Tham số mô phỏng
+                    </h4>
+
+                    {/* Số phiên */}
+                    <div className="mb-3">
+                        <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+                            Số phiên <span className="font-mono text-primary ml-1">{draftParams.sessions}</span>
+                        </label>
+                        <input
+                            type="range" min={20} max={500} step={10}
+                            value={draftParams.sessions}
+                            onChange={(e) => setDraftParams((p) => ({ ...p, sessions: +e.target.value }))}
+                            className="w-full h-1.5 accent-primary cursor-pointer"
+                        />
+                        <div className="flex justify-between text-[9px] text-muted-foreground font-mono mt-0.5">
+                            <span>20</span><span>500</span>
+                        </div>
+                    </div>
+
+                    {/* Số kịch bản */}
+                    <div className="mb-3">
+                        <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+                            Kịch bản <span className="font-mono text-primary ml-1">{draftParams.simulations.toLocaleString()}</span>
+                        </label>
+                        <input
+                            type="range" min={100} max={10000} step={100}
+                            value={draftParams.simulations}
+                            onChange={(e) => setDraftParams((p) => ({ ...p, simulations: +e.target.value }))}
+                            className="w-full h-1.5 accent-primary cursor-pointer"
+                        />
+                        <div className="flex justify-between text-[9px] text-muted-foreground font-mono mt-0.5">
+                            <span>100</span><span>10,000</span>
+                        </div>
+                    </div>
+
+                    {/* Vốn đầu tư */}
+                    <div className="mb-3">
+                        <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+                            Vốn (triệu VND) <span className="font-mono text-primary ml-1">{draftParams.capital}M</span>
+                        </label>
+                        <input
+                            type="range" min={10} max={1000} step={10}
+                            value={draftParams.capital}
+                            onChange={(e) => setDraftParams((p) => ({ ...p, capital: +e.target.value }))}
+                            className="w-full h-1.5 accent-primary cursor-pointer"
+                        />
+                        <div className="flex justify-between text-[9px] text-muted-foreground font-mono mt-0.5">
+                            <span>10M</span><span>1,000M</span>
+                        </div>
+                    </div>
+
+                    {/* Phân phối */}
+                    <div className="mb-4">
+                        <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                            Phân phối
+                        </label>
+                        <div className="flex gap-2">
+                            {(["lognormal", "normal"] as const).map((d) => (
+                                <button
+                                    key={d}
+                                    onClick={() => setDraftParams((p) => ({ ...p, distribution: d }))}
+                                    className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold border transition-all ${
+                                        draftParams.distribution === d
+                                            ? "bg-primary text-primary-foreground border-primary"
+                                            : "bg-background text-muted-foreground border-border hover:border-primary/50"
+                                    }`}
+                                >
+                                    {d === "lognormal" ? "Log-Normal" : "Normal"}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Chạy */}
+                    <button
+                        onClick={runSimulation}
+                        disabled={running}
+                        className="w-full py-2.5 rounded-xl text-[11px] font-bold bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                        {running ? "Đang mô phỏng…" : "▶ Chạy mô phỏng"}
+                    </button>
+                </div>
+
+                {/* Thông số lịch sử */}
+                {result && (
+                    <div className="mt-auto space-y-2 pt-3 border-t border-border/50">
+                        <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Tham số lịch sử</p>
+                        <div className="grid grid-cols-2 gap-1.5">
+                            <div className="bg-background rounded-lg border border-border/50 p-2 text-center">
+                                <div className="text-[8px] text-muted-foreground font-medium">μ/ngày</div>
+                                <div className={`text-xs font-bold font-mono ${result.meanReturn >= 0 ? "text-green-600" : "text-red-500"}`}>
+                                    {result.meanReturn >= 0 ? "+" : ""}{result.meanReturn.toFixed(3)}%
+                                </div>
+                            </div>
+                            <div className="bg-background rounded-lg border border-border/50 p-2 text-center">
+                                <div className="text-[8px] text-muted-foreground font-medium">σ/ngày</div>
+                                <div className="text-xs font-bold font-mono text-blue-600">{result.stdReturn.toFixed(3)}%</div>
+                            </div>
+                        </div>
+                        <div className="bg-background rounded-lg border border-border/50 p-2">
+                            <div className="text-[8px] text-muted-foreground font-medium mb-1">Xác suất sinh lời</div>
+                            <div className={`text-sm font-extrabold font-mono ${result.probUp >= 50 ? "text-green-600" : "text-red-500"}`}>
+                                {result.probUp}%
+                            </div>
+                            <div className="mt-1.5 h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                                <div
+                                    className="h-full rounded-full bg-green-500 transition-all"
+                                    style={{ width: `${result.probUp}%` }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </aside>
+
+            {/* ── RIGHT: BIỂU ĐỒ (80%) ── */}
+            <div className="flex-1 min-w-0 p-4 flex flex-col gap-4">
+                {!hasRun ? (
+                    <div className="flex-1 flex flex-col items-center justify-center gap-4 py-12">
+                        <div className="text-5xl">🎲</div>
+                        <p className="text-sm text-muted-foreground text-center max-w-xs">
+                            Điều chỉnh tham số và nhấn <b className="text-foreground">▶ Chạy mô phỏng</b> để xem kết quả Monte Carlo
+                        </p>
+                        <button
+                            onClick={runSimulation}
+                            className="px-6 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 transition-all shadow-sm"
+                        >
+                            {running ? "Đang chạy…" : "▶ Chạy ngay"}
+                        </button>
+                    </div>
+                ) : running ? (
+                    <div className="flex-1 flex items-center justify-center">
+                        <div className="flex flex-col items-center gap-3">
+                            <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+                            <p className="text-sm text-muted-foreground">Đang mô phỏng {params.simulations.toLocaleString()} kịch bản…</p>
+                        </div>
+                    </div>
+                ) : result ? (
+                    <>
+                        {/* Stat chips */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            {[
+                                { label: "Kỳ vọng (TB)", value: `${fmtM(result.expectedFinal)}M`, color: "text-[#F97316]" },
+                                { label: "P95 (Tích cực)", value: `${fmtM(result.p95[result.p95.length - 1] ?? 0)}M`, color: "text-[#00C076]" },
+                                { label: "P5 (Tiêu cực)", value: `${fmtM(result.p5[result.p5.length - 1] ?? 0)}M`, color: "text-[#EF4444]" },
+                                { label: "Sinh lời", value: `${result.probUp}%`, color: result.probUp >= 50 ? "text-green-600" : "text-red-500" },
+                            ].map((it) => (
+                                <div key={it.label} className="bg-muted/40 rounded-lg border border-border/50 p-2.5 text-center">
+                                    <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wide">{it.label}</div>
+                                    <div className={`text-base font-extrabold font-mono mt-0.5 ${it.color}`}>{it.value}</div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Fan chart */}
+                        <div className="flex-1 min-h-0">
+                            <p className="text-[10px] font-semibold text-muted-foreground mb-1">
+                                Đường đi giá trị danh mục — {params.simulations.toLocaleString()} kịch bản · {params.sessions} phiên
+                            </p>
+                            {fanOption && <ReactECharts option={fanOption} style={{ height: 260 }} />}
+                        </div>
+
+                        {/* Histogram phân phối cuối kỳ */}
+                        <div>
+                            <p className="text-[10px] font-semibold text-muted-foreground mb-1">
+                                Phân phối giá trị danh mục cuối kỳ (triệu VND) — <span className="text-green-600">Lãi</span> / <span className="text-red-500">Lỗ</span>
+                            </p>
+                            {histOption && <ReactECharts option={histOption} style={{ height: 180 }} />}
+                        </div>
+
+                        {/* Insight */}
+                        <div className={`border-l-4 rounded-r-lg px-4 py-2.5 text-xs text-muted-foreground ${
+                            result.probUp >= 65
+                                ? "border-green-500 bg-green-50"
+                                : result.probUp >= 50
+                                    ? "border-blue-400 bg-blue-50"
+                                    : "border-red-400 bg-red-50"
+                        }`}>
+                            <span className="mr-1">{result.probUp >= 65 ? "✅" : result.probUp >= 50 ? "ℹ️" : "⚠️"}</span>
+                            <b>Nhận định:</b> Dựa trên {params.simulations.toLocaleString()} kịch bản mô phỏng{" "}
+                            <b>{params.distribution === "lognormal" ? "Log-Normal" : "Normal"}</b> với{" "}
+                            μ={result.meanReturn.toFixed(3)}%, σ={result.stdReturn.toFixed(3)}%/ngày, sau{" "}
+                            <b>{params.sessions} phiên</b>, vốn <b>{params.capital}M VND</b> có{" "}
+                            <b className={result.probUp >= 50 ? "text-green-600" : "text-red-500"}>{result.probUp}%</b> xác suất sinh lời.
+                            {result.probUp >= 65
+                                ? " Phân bổ nghiêng tích cực — kỳ vọng danh mục tốt."
+                                : result.probUp >= 50
+                                    ? " Phân bổ cân bằng, cần quản lý rủi ro tích cực."
+                                    : " Xác suất thua lỗ cao — cân nhắc tái cơ cấu danh mục."}
+                        </div>
+                    </>
+                ) : null}
+            </div>
+        </div>
+    );
+}
+
+// ══════════════════════════════════════════════════════════════════
 //  18. PRICE SENSITIVITY DENSITY (KDE + VaR markers)
 // ══════════════════════════════════════════════════════════════════
 function PriceSensitivityDensity() {
@@ -2434,6 +2990,18 @@ export default function DashboardTab() {
                         <ReturnHistogram />
                     </Card>
                 </div>
+
+                {/* Hàng Monte Carlo */}
+                <Card noPad>
+                    <div className="px-4 pt-4 pb-1">
+                        <SectionHead
+                            icon="🎲"
+                            title="Mô phỏng Monte Carlo"
+                            sub={`10,000 kịch bản · phân phối Normal/Log-Normal · stress test danh mục — ${stockInfo.ticker}`}
+                        />
+                    </div>
+                    <MonteCarloSimulation />
+                </Card>
             </div>
 
         </div>

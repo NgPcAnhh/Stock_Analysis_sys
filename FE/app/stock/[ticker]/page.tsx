@@ -5,7 +5,6 @@ import StockDetailHeader from "@/components/stock/StockDetailHeader";
 import NavigationTabs from "@/components/stock/NavigationTabs";
 import PriceHistoryChart from "@/components/stock/PriceHistoryChart";
 import OrderBook from "@/components/stock/OrderBook";
-import PeerComparison from "@/components/stock/PeerComparison";
 import HistoricalDataTable from "@/components/stock/HistoricalDataTable";
 import ShareholderList from "@/components/stock/ShareholderList";
 import ShareholderDonutChart from "@/components/stock/ShareholderDonutChart";
@@ -13,13 +12,13 @@ import CorporateNews from "@/components/stock/CorporateNews";
 import RecommendationsSection from "@/components/stock/RecommendationsSection";
 import CompanyProfileTab from "@/components/stock/CompanyProfileTab";
 import StockComparisonTab from "@/components/stock/StockComparisonTab";
-import QuantAnalysisTab from "@/components/stock/QuantAnalysisTab";
 import DashboardTab from "@/components/stock/DashboardTab";
 import BalanceSheetTab from "@/components/stock/BalanceSheetTab";
 import FinancialReportsTab from "@/components/stock/FinancialReportsTab";
+import FinancialOverviewCharts from "@/components/stock/FinancialOverviewCharts";
 import { Card, CardContent } from "@/components/ui/card";
 import { Footer } from "@/components/layout/Footer";
-import { useStockOverview } from "@/hooks/useStockData";
+import { useStockOverview, useFinancialReports, useFinancialRatios } from "@/hooks/useStockData";
 import { StockDetailProvider, type StockDetailData } from "@/lib/StockDetailContext";
 import { useTracking } from "@/hooks/useTracking";
 import { useAuth } from "@/lib/AuthContext";
@@ -53,6 +52,8 @@ export default function StockDetailPage({ params }: StockDetailPageProps) {
     const { ticker } = use(params);
     const upperTicker = ticker.toUpperCase();
     const { data: apiData, loading, error } = useStockOverview(upperTicker);
+    const { data: financialReportData } = useFinancialReports(upperTicker, 20);
+    const { data: financialRatiosData } = useFinancialRatios(upperTicker, 20);
     const [activeTab, setActiveTab] = useState("overview");
     const { user } = useAuth();
     const { trackAnalysisView } = useTracking(user?.id);
@@ -89,17 +90,35 @@ export default function StockDetailPage({ params }: StockDetailPageProps) {
 
                 {activeTab === "overview" && (
                     <div className="space-y-8">
+                        {/* ── KPI báo cáo tài chính ── */}
+                        {financialReportData?.incomeStatement?.length ? (
+                            <section className="space-y-4">
+                                <h2 className="text-base font-semibold text-muted-foreground flex items-center gap-2">
+                                    <span className="w-1 h-5 bg-gradient-to-b from-orange-400 to-orange-600 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.4)]" />
+                                    KPI báo cáo tài chính
+                                </h2>
+                                <FinancialOverviewCharts
+                                    incomeStatement={financialReportData.incomeStatement}
+                                    balanceSheet={financialReportData.balanceSheet}
+                                    cashFlow={financialReportData.cashFlow}
+                                    financialRatios={financialRatiosData ?? undefined}
+                                    isBank={financialReportData.isBank}
+                                    mode="kpi-only"
+                                />
+                            </section>
+                        ) : null}
+
                         {/* ── Biểu đồ & Khớp lệnh ── */}
                         <section className="space-y-4">
                             <h2 className="text-base font-semibold text-muted-foreground flex items-center gap-2">
                                 <span className="w-1 h-5 bg-gradient-to-b from-orange-400 to-orange-600 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.4)]" />
                                 Biểu đồ & Khớp lệnh
                             </h2>
-                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-                                <div className="lg:col-span-8">
+                            <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,72%)_minmax(0,28%)] gap-4">
+                                <div>
                                     <PriceHistoryChart />
                                 </div>
-                                <div className="lg:col-span-4">
+                                <div>
                                     <OrderBook />
                                 </div>
                             </div>
@@ -109,17 +128,28 @@ export default function StockDetailPage({ params }: StockDetailPageProps) {
                         <section className="space-y-4">
                             <h2 className="text-base font-semibold text-muted-foreground flex items-center gap-2">
                                 <span className="w-1 h-5 bg-gradient-to-b from-orange-400 to-orange-600 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.4)]" />
-                                Dữ liệu giao dịch & So sánh
+                                Dữ liệu giao dịch lịch sử
                             </h2>
-                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-                                <div className="lg:col-span-8">
-                                    <HistoricalDataTable />
-                                </div>
-                                <div className="lg:col-span-4">
-                                    <PeerComparison />
-                                </div>
-                            </div>
+                            <HistoricalDataTable />
                         </section>
+
+                        {/* ── Dashboard số liệu tài chính ── */}
+                        {financialReportData?.incomeStatement?.length ? (
+                            <section className="space-y-4">
+                                <h2 className="text-base font-semibold text-muted-foreground flex items-center gap-2">
+                                    <span className="w-1 h-5 bg-gradient-to-b from-orange-400 to-orange-600 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.4)]" />
+                                    Dashboard số liệu tài chính
+                                </h2>
+                                <FinancialOverviewCharts
+                                    incomeStatement={financialReportData.incomeStatement}
+                                    balanceSheet={financialReportData.balanceSheet}
+                                    cashFlow={financialReportData.cashFlow}
+                                    financialRatios={financialRatiosData ?? undefined}
+                                    isBank={financialReportData.isBank}
+                                    mode="dashboard-only"
+                                />
+                            </section>
+                        ) : null}
 
                         {/* ── Cơ cấu cổ đông ── */}
                         <section className="space-y-4">

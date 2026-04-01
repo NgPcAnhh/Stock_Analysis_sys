@@ -4,7 +4,15 @@ import React, { useMemo } from "react";
 import ReactECharts from "echarts-for-react";
 import { useStockDetail } from "@/lib/StockDetailContext";
 
-const COLORS = ["#2563EB", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899", "#06B6D4", "#84CC16"];
+const COLORS = ["#f97316", "#fb923c", "#f59e0b", "#fbbf24", "#fcd34d", "#ea580c", "#fdba74", "#9a3412"];
+
+type ShareholderMember = { name: string; percent: number };
+
+type DonutTooltipData = {
+    name: string;
+    value: number;
+    members?: ShareholderMember[];
+};
 
 const ShareholderDonutChart = () => {
     const { shareholderStructure } = useStockDetail();
@@ -26,21 +34,21 @@ const ShareholderDonutChart = () => {
     const option = {
         tooltip: {
             trigger: "item",
-            position: function (_point: number[], _params: any, _dom: any, _rect: any, size: { viewSize: number[] }) {
+            position: function (point: number[]) {
                 // Hiển thị tooltip ở dưới bên phải con trỏ chuột
-                return [_point[0] + 10, _point[1] + 10];
+                return [point[0] + 10, point[1] + 10];
             },
-            backgroundColor: "rgba(255, 255, 255, 0.97)",
-            borderColor: "#e5e7eb",
+            backgroundColor: "rgba(255, 251, 245, 0.98)",
+            borderColor: "#fdba74",
             borderWidth: 1,
             textStyle: { color: "#374151", fontSize: 11 },
-            formatter: (params: any) => {
-                const data = params.data;
+            formatter: (params: unknown) => {
+                const data = (params as { data: DonutTooltipData }).data;
                 const members = data.members || [];
-                let html = `<div style="font-weight:600;margin-bottom:4px">${data.name}: ${data.value}%</div>`;
+                let html = `<div style="font-weight:700;margin-bottom:4px;color:#c2410c">${data.name}: ${data.value}%</div>`;
                 if (members.length > 0) {
-                    html += '<div style="font-size:11px;color:#6b7280">';
-                    members.forEach((m: any) => {
+                    html += '<div style="font-size:11px;color:#9a3412">';
+                    members.forEach((m) => {
                         html += `<div style="display:flex;justify-content:space-between;gap:12px"><span>${m.name}</span><span style="font-weight:500">${m.percent}%</span></div>`;
                     });
                     html += "</div>";
@@ -56,6 +64,10 @@ const ShareholderDonutChart = () => {
                 radius: ["45%", "78%"],
                 center: ["50%", "50%"],
                 avoidLabelOverlap: false,
+                itemStyle: {
+                    borderColor: "#fff7ed",
+                    borderWidth: 2,
+                },
                 label: {
                     show: true,
                     position: "center",
@@ -64,7 +76,7 @@ const ShareholderDonutChart = () => {
                         a: {
                             fontSize: 20,
                             fontWeight: "bold",
-                            color: "#1f2937",
+                            color: "#c2410c",
                             fontFamily: "Roboto Mono, monospace",
                         },
                     },

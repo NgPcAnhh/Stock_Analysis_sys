@@ -56,9 +56,9 @@ const ShareholderList = () => {
     const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
     const pageData = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-    const SortIcon = ({ col }: { col: SortKey }) => {
+    const renderSortIcon = (col: SortKey) => {
         if (sortKey !== col || !sortDir) return <ArrowUpDown className="w-3 h-3 text-muted-foreground" />;
-        return sortDir === "asc" ? <ArrowUp className="w-3 h-3 text-blue-500" /> : <ArrowDown className="w-3 h-3 text-blue-500" />;
+        return sortDir === "asc" ? <ArrowUp className="w-3 h-3 text-orange-500" /> : <ArrowDown className="w-3 h-3 text-orange-500" />;
     };
 
     return (
@@ -72,7 +72,7 @@ const ShareholderList = () => {
                         placeholder="Tìm theo tên hoặc chức vụ…"
                         value={search}
                         onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                        className="pl-8 pr-3 py-1.5 text-xs border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 w-full bg-background"
+                        className="pl-8 pr-3 py-1.5 text-xs border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-orange-300 focus:border-orange-400 w-full bg-background"
                     />
                 </div>
             </div>
@@ -81,13 +81,13 @@ const ShareholderList = () => {
             <div className="grid grid-cols-12 gap-1 px-4 py-2.5 text-[11px] font-semibold text-muted-foreground bg-muted border-b border-border uppercase tracking-wide">
                 <span className="col-span-1 text-center">#</span>
                 <button className="col-span-4 flex items-center gap-1 hover:text-foreground" onClick={() => toggleSort("name")}>
-                    Họ và tên <SortIcon col="name" />
+                    Họ và tên {renderSortIcon("name")}
                 </button>
                 <button className="col-span-4 flex items-center gap-1 hover:text-foreground" onClick={() => toggleSort("role")}>
-                    Chức vụ <SortIcon col="role" />
+                    Chức vụ {renderSortIcon("role")}
                 </button>
                 <button className="col-span-3 flex items-center gap-1 justify-end hover:text-foreground" onClick={() => toggleSort("percentage")}>
-                    Tỷ lệ (%) <SortIcon col="percentage" />
+                    Tỷ lệ (%) {renderSortIcon("percentage")}
                 </button>
             </div>
 
@@ -99,7 +99,7 @@ const ShareholderList = () => {
                     pageData.map((holder, index) => (
                         <div
                             key={index}
-                            className={`grid grid-cols-12 gap-1 px-4 py-2.5 text-xs hover:bg-blue-50/40 transition-colors ${index % 2 === 0 ? "bg-card" : "bg-muted/20"}`}
+                            className={`grid grid-cols-12 gap-1 px-4 py-2.5 text-xs hover:bg-orange-50/50 transition-colors ${index % 2 === 0 ? "bg-card" : "bg-muted/20"}`}
                         >
                             <span className="col-span-1 text-center text-muted-foreground font-mono">
                                 {(page - 1) * PAGE_SIZE + index + 1}
@@ -139,7 +139,7 @@ const ShareholderList = () => {
                                         onClick={() => setPage(p)}
                                         className={`min-w-[22px] h-5.5 rounded text-[10px] font-medium transition-colors ${
                                             p === page
-                                                ? "bg-blue-500 text-white"
+                                                ? "bg-orange-500 text-white"
                                                 : "text-muted-foreground hover:bg-muted"
                                         }`}
                                     >

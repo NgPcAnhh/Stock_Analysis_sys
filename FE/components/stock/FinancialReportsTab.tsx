@@ -1,12 +1,11 @@
 "use client";
 
-import React, { useState, useCallback, useRef, Component, type ReactNode, type ErrorInfo } from "react";
+import React, { useState, useCallback, Component, type ReactNode, type ErrorInfo } from "react";
 import ExcelJS from "exceljs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useFinancialReports, useFinancialRatios, type IncomeStatementItem, type BalanceSheetItem, type CashFlowItem } from "@/hooks/useStockData";
+import { useFinancialReports, type IncomeStatementItem, type BalanceSheetItem, type CashFlowItem } from "@/hooks/useStockData";
 import { useStockDetail } from "@/lib/StockDetailContext";
-import { Download, FileSpreadsheet, BarChart3, Building2 } from "lucide-react";
-import FinancialOverviewCharts from "@/components/stock/FinancialOverviewCharts";
+import { Download, FileSpreadsheet, Building2 } from "lucide-react";
 
 // Temporary error boundary to capture runtime errors
 class FinancialErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
@@ -31,7 +30,7 @@ class FinancialErrorBoundary extends Component<{ children: ReactNode }, { error:
     }
 }
 
-type ReportType = "overview" | "income" | "balance" | "cashflow";
+type ReportType = "income" | "balance" | "cashflow";
 
 const formatNumber = (val: number): string => {
     if (val === 0) return "0";
@@ -503,15 +502,7 @@ function buildCashFlowCSV(data: CashFlowItem[]): string {
 export default function FinancialReportsTab() {
     const { stockInfo, ticker } = useStockDetail();
     const { data: reportData, loading, error } = useFinancialReports(ticker, 20);
-    const { data: ratiosData } = useFinancialRatios(ticker, 20);
-    const [activeReport, setActiveReport] = useState<ReportType>("overview");
-
-    const chartInstances = useRef<{ [key: string]: any }>({});
-    const registerChart = useCallback((key: string) => (instance: any) => {
-        if (instance) {
-            chartInstances.current[key] = instance;
-        }
-    }, []);
+    const [activeReport, setActiveReport] = useState<ReportType>("income");
 
     const isBank = reportData?.isBank ?? false;
 
@@ -524,7 +515,6 @@ export default function FinancialReportsTab() {
         : null;
 
     const reportTabs: { id: ReportType; label: string; icon: string }[] = [
-        { id: "overview", label: "Tổng quan biểu đồ", icon: "📊" },
         { id: "income", label: isBank ? "KQKD Ngân hàng" : "Kết quả kinh doanh", icon: isBank ? "🏦" : "📋" },
         { id: "balance", label: isBank ? "CĐKT Ngân hàng" : "Cân đối kế toán", icon: isBank ? "🏦" : "🏛️" },
         { id: "cashflow", label: "Lưu chuyển tiền tệ", icon: "💵" },
@@ -752,32 +742,6 @@ export default function FinancialReportsTab() {
                 c.border = { ...c.border, bottom: {style:'thin', color: {argb:'FF8EA9DB'}} };
             }
 
-            const chartColIndex = leftColCount + 1;
-            const chartKeys = ["RevenueGrowthChart", "ProfitGrowthChart", "RevenueStructureChart", "CostStructureChart", "FinancialIndicesChart", "ProfitBeforeTaxChart"];
-
-            let chartRowIdx = 4;
-            for (let i = 0; i < chartKeys.length; i++) {
-                const key = chartKeys[i];
-                const instance = chartInstances.current[key];
-                if (instance) {
-                    const dataUrl = instance.getDataURL({ type: "png", pixelRatio: 2, backgroundColor: "#fff" });
-                    const base64 = dataUrl.split("base64,")[1];
-                    const imageId = workbook.addImage({ base64, extension: "png" });
-
-                    const isEven = i % 2 === 0;
-                    const colAdjustment = isEven ? chartColIndex : chartColIndex + 8;
-
-                    sheet.addImage(imageId, {
-                        tl: { col: colAdjustment, row: chartRowIdx },
-                        ext: { width: 500, height: 300 }
-                    });
-
-                    if (!isEven) {
-                        chartRowIdx += 17;
-                    }
-                }
-            }
-
             const buffer = await workbook.xlsx.writeBuffer();
             const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
             const url = URL.createObjectURL(blob);
@@ -839,31 +803,17 @@ export default function FinancialReportsTab() {
                         </button>
                     ))}
                 </div>
-                {activeReport !== "overview" && (
-                    <button
-                        onClick={handleExportCurrent}
-                        className="flex items-center gap-1.5 px-3 py-1.5 mb-1 text-xs font-medium text-green-700 bg-green-50 hover:bg-green-100 border border-green-200 rounded-md transition-colors"
-                    >
-                        <Download className="w-3.5 h-3.5" />
-                        Tải báo cáo này
-                    </button>
-                )}
+                <button
+                    onClick={handleExportCurrent}
+                    className="flex items-center gap-1.5 px-3 py-1.5 mb-1 text-xs font-medium text-green-700 bg-green-50 hover:bg-green-100 border border-green-200 rounded-md transition-colors"
+                >
+                    <Download className="w-3.5 h-3.5" />
+                    Tải báo cáo này
+                </button>
             </div>
 
             {/* Report content */}
             <FinancialErrorBoundary>
-            <div className={activeReport === "overview" ? "block" : "hidden"}>
-                {data && (
-                    <FinancialOverviewCharts
-                        incomeStatement={data.incomeStatements}
-                        balanceSheet={data.balanceSheets}
-                        cashFlow={data.cashFlows}
-                        financialRatios={ratiosData ?? undefined}
-                        isBank={isBank}
-                        registerChart={registerChart}
-                    />
-                )}
-            </div>
             {activeReport === "income" && data && (
                 isBank
                     ? <BankIncomeStatementTable data={data.incomeStatements} />

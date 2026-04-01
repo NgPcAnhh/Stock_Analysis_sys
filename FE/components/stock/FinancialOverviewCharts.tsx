@@ -748,37 +748,43 @@ interface FinancialOverviewChartsProps {
     financialRatios?: FinancialRatioItem[];
     isBank?: boolean;
     registerChart?: (key: string) => (instance: any) => void;
+    mode?: "full" | "kpi-only" | "dashboard-only";
 }
 
 export default function FinancialOverviewCharts({
     incomeStatement,
     financialRatios,
     registerChart,
+    mode = "full",
 }: FinancialOverviewChartsProps) {
     if (!incomeStatement.length) {
         return <div className="text-center py-8 text-muted-foreground">Không có dữ liệu để hiển thị biểu đồ.</div>;
     }
+    const showKpi = mode !== "dashboard-only";
+    const showDashboard = mode !== "kpi-only";
+
     return (
         <div className="space-y-4 font-sans">
-            {/* KPI nổi bật — luôn ở đầu */}
-            <KPISummaryCards data={incomeStatement} ratios={financialRatios} />
+            {showKpi && <KPISummaryCards data={incomeStatement} ratios={financialRatios} />}
 
-            {/* Biểu đồ */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <RevenueGrowthChart data={incomeStatement} registerChart={registerChart} />
-                <ProfitGrowthChart data={incomeStatement} registerChart={registerChart} />
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <RevenueStructureChart data={incomeStatement} registerChart={registerChart} />
-                <CostStructureChart data={incomeStatement} registerChart={registerChart} />
-            </div>
-            <div className="grid grid-cols-1 gap-4">
-                <FinancialIndicesChart data={incomeStatement} ratios={financialRatios} registerChart={registerChart} />
-            </div>
-            <ProfitBeforeTaxChart data={incomeStatement} registerChart={registerChart} />
+            {showDashboard && (
+                <>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <RevenueGrowthChart data={incomeStatement} registerChart={registerChart} />
+                        <ProfitGrowthChart data={incomeStatement} registerChart={registerChart} />
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <RevenueStructureChart data={incomeStatement} registerChart={registerChart} />
+                        <CostStructureChart data={incomeStatement} registerChart={registerChart} />
+                    </div>
+                    <div className="grid grid-cols-1 gap-4">
+                        <FinancialIndicesChart data={incomeStatement} ratios={financialRatios} registerChart={registerChart} />
+                    </div>
+                    <ProfitBeforeTaxChart data={incomeStatement} registerChart={registerChart} />
 
-            {/* Bảng tổng hợp chỉ số — phía dưới */}
-            <FinancialSummaryTable data={incomeStatement} />
+                    <FinancialSummaryTable data={incomeStatement} />
+                </>
+            )}
         </div>
     );
 }
