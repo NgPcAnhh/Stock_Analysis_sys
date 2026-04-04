@@ -129,27 +129,7 @@ async def get_stock_overview(
 
     # ── Count total ──
     count_sql = text(f"""
-        WITH ticker_universe AS (
-            SELECT ticker FROM {SCHEMA}.company_overview
-            UNION
-            SELECT ticker FROM {SCHEMA}.history_price
-            WHERE trading_date = :latest_date
-            UNION
-            SELECT ticker FROM {SCHEMA}.financial_ratio
-            UNION
-            SELECT ticker FROM {SCHEMA}.bctc
-            UNION
-            SELECT ticker FROM {SCHEMA}.electric_board
-            WHERE trading_date = (SELECT MAX(trading_date) FROM {SCHEMA}.electric_board)
-        ),
-        base_stocks AS (
-            SELECT DISTINCT UPPER(BTRIM(ticker)) AS ticker
-            FROM ticker_universe
-            WHERE ticker IS NOT NULL
-              AND BTRIM(ticker) NOT IN ('', 'NaN')
-              AND UPPER(BTRIM(ticker)) NOT LIKE '%INDEX'
-        ),
-        co_dedup AS (
+        WITH co_dedup AS (
             SELECT DISTINCT ON (UPPER(BTRIM(ticker)))
                 UPPER(BTRIM(ticker)) AS ticker,
                 CASE
@@ -168,13 +148,14 @@ async def get_stock_overview(
                     ELSE NULL
                 END AS exchange_norm
             FROM {SCHEMA}.company_overview
-            WHERE exchange IS NULL OR (BTRIM(exchange) != 'NaN' AND BTRIM(exchange) != 'DELISTED')
+            WHERE exchange IS NOT NULL AND BTRIM(exchange) NOT IN ('NaN', 'DELISTED')
+              AND UPPER(BTRIM(ticker)) NOT LIKE '%INDEX'
             ORDER BY UPPER(BTRIM(ticker)),
-                CASE WHEN organ_short_name IS NOT NULL AND organ_short_name != 'NaN' THEN 0 ELSE 1 END,
+                CASE WHEN organ_short_name IS NOT NULL AND BTRIM(organ_short_name) != 'NaN' THEN 0 ELSE 1 END,
                 exchange
         )
         SELECT COUNT(DISTINCT bs.ticker)
-        FROM base_stocks bs
+        FROM co_dedup bs
         LEFT JOIN co_dedup co ON co.ticker = bs.ticker
         WHERE {where_clause}
     """)
@@ -192,78 +173,7 @@ async def get_stock_overview(
     # ── Main query ──
     # Join latest financial_ratio + BCTC to compute P/E, P/B, EPS
     main_sql = text(f"""
-        WITH ticker_universe AS (
-            SELECT ticker FROM {SCHEMA}.company_overview
-            UNION
-            SELECT ticker FROM {SCHEMA}.history_price
-            WHERE trading_date = :latest_date
-            UNION
-            SELECT ticker FROM {SCHEMA}.financial_ratio
-            UNION
-            SELECT ticker FROM {SCHEMA}.bctc
-            UNION
-            SELECT ticker FROM {SCHEMA}.electric_board
-            WHERE trading_date = (SELECT MAX(trading_date) FROM {SCHEMA}.electric_board)
-        ),
-        base_stocks AS (
-            SELECT DISTINCT UPPER(BTRIM(ticker)) AS ticker
-            FROM ticker_universe
-            WHERE ticker IS NOT NULL
-              AND BTRIM(ticker) NOT IN ('', 'NaN')
-              AND UPPER(BTRIM(ticker)) NOT LIKE '%INDEX'
-        ),
-        bctc_data AS (
-            SELECT UPPER(BTRIM(ticker)) AS ticker, year, quarter, ind_code, value
-            FROM {SCHEMA}.bctc
-            WHERE ind_code IN (
-                'C_PHI_U_PH_TH_NG_NG',
-                'V_N_CH_S_H_U_NG',
-                'L_I_NHU_N_SAU_THU_C_A_C_NG_C_NG_TY_M_NG'
-            ) AND value IS NOT NULL AND value != 0
-        ),
-        shares AS (
-            SELECT DISTINCT ON (ticker)
-                ticker, value / 10000.0 AS shares
-            FROM bctc_data
-            WHERE ind_code = 'C_PHI_U_PH_TH_NG_NG' AND value > 0
-            ORDER BY ticker, year DESC, quarter DESC
-        ),
-        equity AS (
-            SELECT DISTINCT ON (ticker)
-                ticker, value AS equity
-            FROM bctc_data
-            WHERE ind_code = 'V_N_CH_S_H_U_NG' AND value > 0
-            ORDER BY ticker, year DESC, quarter DESC
-        ),
-        ranked_ni AS (
-            SELECT ticker, value,
-                ROW_NUMBER() OVER (PARTITION BY ticker ORDER BY year DESC, quarter DESC) AS rn
-            FROM bctc_data
-            WHERE ind_code = 'L_I_NHU_N_SAU_THU_C_A_C_NG_C_NG_TY_M_NG'
-        ),
-        ttm_ni AS (
-            SELECT ticker, SUM(value) AS ttm_ni
-            FROM ranked_ni WHERE rn <= 4
-            GROUP BY ticker HAVING COUNT(*) >= 2
-        ),
-        latest_fr AS (
-            SELECT DISTINCT ON (UPPER(BTRIM(ticker)))
-                UPPER(BTRIM(ticker)) AS ticker, roe, roa, market_cap,
-                dividend_yield, debt_to_equity, outstanding_shares
-            FROM {SCHEMA}.financial_ratio
-            ORDER BY UPPER(BTRIM(ticker)), year DESC, quarter DESC
-        ),
-        hp_latest AS (
-            SELECT UPPER(BTRIM(ticker)) AS ticker, close, volume
-            FROM {SCHEMA}.history_price
-            WHERE trading_date = :latest_date
-        ),
-        hp_prev AS (
-            SELECT UPPER(BTRIM(ticker)) AS ticker, close
-            FROM {SCHEMA}.history_price
-            WHERE trading_date = :prev_date
-        ),
-        co_dedup AS (
+        WITH co_dedup AS (
             SELECT DISTINCT ON (UPPER(BTRIM(ticker)))
                 UPPER(BTRIM(ticker)) AS ticker,
                 CASE
@@ -282,10 +192,50 @@ async def get_stock_overview(
                     ELSE NULL
                 END AS exchange_norm
             FROM {SCHEMA}.company_overview
-            WHERE exchange IS NULL OR (BTRIM(exchange) != 'NaN' AND BTRIM(exchange) != 'DELISTED')
+            WHERE exchange IS NOT NULL AND BTRIM(exchange) NOT IN ('NaN', 'DELISTED')
+              AND UPPER(BTRIM(ticker)) NOT LIKE '%INDEX'
             ORDER BY UPPER(BTRIM(ticker)),
-                CASE WHEN organ_short_name IS NOT NULL AND organ_short_name != 'NaN' THEN 0 ELSE 1 END,
+                CASE WHEN organ_short_name IS NOT NULL AND BTRIM(organ_short_name) != 'NaN' THEN 0 ELSE 1 END,
                 exchange
+        ),
+        latest_fr AS (
+            SELECT DISTINCT ON (UPPER(BTRIM(ticker)))
+                UPPER(BTRIM(ticker)) AS ticker, roe, roa, market_cap, pe, pb,
+                dividend_yield, debt_to_equity, eps
+            FROM {SCHEMA}.financial_ratio
+            ORDER BY UPPER(BTRIM(ticker)), year DESC, quarter DESC
+        ),
+        hp_latest AS (
+            SELECT UPPER(BTRIM(ticker)) AS ticker, close, volume
+            FROM {SCHEMA}.history_price
+            WHERE trading_date = :latest_date
+        ),
+        hp_prev AS (
+            SELECT UPPER(BTRIM(ticker)) AS ticker, close
+            FROM {SCHEMA}.history_price
+            WHERE trading_date = :prev_date
+        ),
+        bctc_metrics AS (
+            SELECT bs.ticker, s.shares, e.equity, n.ttm_ni
+            FROM co_dedup bs
+            LEFT JOIN LATERAL (
+                SELECT value / 10000.0 AS shares FROM {SCHEMA}.bctc
+                WHERE ticker = bs.ticker AND ind_code = 'C_PHI_U_PH_TH_NG_NG' AND value > 0
+                ORDER BY year DESC, quarter DESC LIMIT 1
+            ) s ON true
+            LEFT JOIN LATERAL (
+                SELECT value AS equity FROM {SCHEMA}.bctc
+                WHERE ticker = bs.ticker AND ind_code = 'V_N_CH_S_H_U_NG' AND value > 0
+                ORDER BY year DESC, quarter DESC LIMIT 1
+            ) e ON true
+            LEFT JOIN LATERAL (
+                SELECT SUM(value) as ttm_ni 
+                FROM (
+                    SELECT value FROM {SCHEMA}.bctc
+                    WHERE ticker = bs.ticker AND ind_code = 'L_I_NHU_N_SAU_THU_C_A_C_NG_C_NG_TY_M_NG'
+                    ORDER BY year DESC, quarter DESC LIMIT 4
+                ) sub
+            ) n ON true
         )
         SELECT
             bs.ticker,
@@ -303,41 +253,39 @@ async def get_stock_overview(
             END AS price_change_percent,
             hp.volume,
             -- Market cap from BCTC shares
-            CASE WHEN sh.shares > 0 AND hp.close > 0
-                THEN ROUND((hp.close * 1000 * sh.shares / 1e9)::numeric, 1)
+            CASE WHEN bm.shares > 0 AND hp.close > 0
+                THEN ROUND((hp.close * 1000 * bm.shares / 1e9)::numeric, 1)
                 ELSE fr.market_cap
             END AS computed_market_cap,
-            -- EPS from BCTC (TTM net income / shares)
-            CASE WHEN sh.shares > 0 AND ni.ttm_ni IS NOT NULL
-                THEN ROUND((ni.ttm_ni / sh.shares)::numeric, 0)
-                ELSE NULL
+            -- EPS from BCTC
+            CASE WHEN bm.shares > 0 AND bm.ttm_ni IS NOT NULL
+                THEN ROUND((bm.ttm_ni / bm.shares)::numeric, 0)
+                ELSE fr.eps
             END AS computed_eps,
-            -- P/E from price and EPS
-            CASE WHEN sh.shares > 0 AND ni.ttm_ni IS NOT NULL AND ni.ttm_ni > 0
-                    AND hp.close * 1000 * sh.shares / ni.ttm_ni > 0
-                    AND hp.close * 1000 * sh.shares / ni.ttm_ni < 500
-                THEN ROUND((hp.close * 1000 / (ni.ttm_ni / sh.shares))::numeric, 2)
-                ELSE NULL
+            -- P/E from price and computed EPS
+            CASE WHEN bm.shares > 0 AND bm.ttm_ni IS NOT NULL AND bm.ttm_ni > 0
+                    AND hp.close * 1000 * bm.shares / bm.ttm_ni > 0
+                    AND hp.close * 1000 * bm.shares / bm.ttm_ni < 500
+                THEN ROUND((hp.close * 1000 / (bm.ttm_ni / bm.shares))::numeric, 2)
+                ELSE fr.pe
             END AS computed_pe,
             -- P/B from price, shares, equity
-            CASE WHEN sh.shares > 0 AND eq.equity > 0 AND hp.close > 0
-                    AND hp.close * 1000 * sh.shares / eq.equity > 0
-                    AND hp.close * 1000 * sh.shares / eq.equity < 100
-                THEN ROUND((hp.close * 1000 * sh.shares / eq.equity)::numeric, 2)
-                ELSE NULL
+            CASE WHEN bm.shares > 0 AND bm.equity > 0 AND hp.close > 0
+                    AND hp.close * 1000 * bm.shares / bm.equity > 0
+                    AND hp.close * 1000 * bm.shares / bm.equity < 100
+                THEN ROUND((hp.close * 1000 * bm.shares / bm.equity)::numeric, 2)
+                ELSE fr.pb
             END AS computed_pb,
             fr.roe,
             fr.roa,
             fr.debt_to_equity,
             fr.dividend_yield
-        FROM base_stocks bs
+        FROM co_dedup bs
         LEFT JOIN co_dedup co ON co.ticker = bs.ticker
         LEFT JOIN hp_latest hp ON hp.ticker = bs.ticker
         LEFT JOIN hp_prev ON hp_prev.ticker = bs.ticker
         LEFT JOIN latest_fr fr ON fr.ticker = bs.ticker
-        LEFT JOIN shares sh ON sh.ticker = bs.ticker
-        LEFT JOIN equity eq ON eq.ticker = bs.ticker
-        LEFT JOIN ttm_ni ni ON ni.ticker = bs.ticker
+        LEFT JOIN bctc_metrics bm ON bm.ticker = bs.ticker
         WHERE {where_clause}
         ORDER BY {sort_col} {sort_direction} NULLS LAST
         LIMIT :limit OFFSET :offset

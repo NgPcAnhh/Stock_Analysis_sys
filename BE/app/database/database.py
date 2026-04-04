@@ -6,6 +6,7 @@ Chuyển từ sync psycopg2 sang async asyncpg để:
   - Hỗ trợ hàng ngàn request đồng thời mà không nghẽn threadpool
 """
 from typing import AsyncGenerator
+from urllib.parse import urlparse
 
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
@@ -26,6 +27,17 @@ elif "postgresql://" in _db_url and "+asyncpg" not in _db_url:
     _db_url = _db_url.replace("postgresql://", "postgresql+asyncpg://")
 
 # ── Async engine ──
+# Local Postgres often runs without SSL; forcing SSL handshake can fail on dev machines.
+_db_host = (urlparse(_db_url).hostname or "").lower()
+_is_local_db = _db_host in {"localhost", "127.0.0.1"}
+
+_connect_args = {
+    "statement_cache_size": 100,  # cache 100 prepared statements / conn
+    "command_timeout": 20,  # abort query sau 20s
+}
+if _is_local_db:
+    _connect_args["ssl"] = False
+
 engine = create_async_engine(
     _db_url,
     echo=settings.DEBUG,
@@ -35,10 +47,7 @@ engine = create_async_engine(
     pool_recycle=1800,     # tái tạo connection sau 30 phút (tránh timeout)
     pool_timeout=10,       # timeout chờ connection từ pool (giây)
     # asyncpg performance: cache prepared statements per connection
-    connect_args={
-        "statement_cache_size": 100,    # cache 100 prepared statements / conn
-        "command_timeout": 20,          # abort query sau 20s
-    },
+    connect_args=_connect_args,
 )
 
 # ── Async session factory ──

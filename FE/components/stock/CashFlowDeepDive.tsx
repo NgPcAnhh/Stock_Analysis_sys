@@ -169,6 +169,57 @@ function EarningsQualityChart() {
   );
 }
 
+function EarningsQualityMetricsSection() {
+  const ctx = React.useContext(CfCtx);
+  const metrics =
+    (ctx as typeof cfDefaults & {
+      earningsQualityMetrics?: Array<{
+        key: string;
+        label: string;
+        value: string;
+        status: "good" | "warning" | "danger";
+        hint: string;
+      }>;
+    }).earningsQualityMetrics ?? cfDefaults.earningsQualityMetrics;
+
+  const statusStyle: Record<"good" | "warning" | "danger", string> = {
+    good: "text-green-700 bg-green-50 border-green-200",
+    warning: "text-amber-700 bg-amber-50 border-amber-200",
+    danger: "text-red-700 bg-red-50 border-red-200",
+  };
+
+  const statusLabel: Record<"good" | "warning" | "danger", string> = {
+    good: "Tốt",
+    warning: "Cảnh báo",
+    danger: "Rủi ro",
+  };
+
+  return (
+    <div className="bg-card rounded-xl shadow-sm border border-border/50 p-5">
+      <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
+        <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+          <span>🧪</span> Quality of Revenue / Earnings
+        </h3>
+        <span className="text-[10px] text-muted-foreground">Đánh giá chất lượng lợi nhuận từ dòng tiền và cấu phần BCTC</span>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        {metrics.map((m) => (
+          <div key={m.key} className="rounded-xl border border-border/50 p-4 bg-muted/20">
+            <div className="flex items-start justify-between gap-2 mb-2">
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide leading-snug">{m.label}</p>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full border font-semibold whitespace-nowrap ${statusStyle[m.status]}`}>
+                {statusLabel[m.status]}
+              </span>
+            </div>
+            <p className={`text-2xl font-extrabold text-foreground ${monoFont}`}>{m.value}</p>
+            <p className="text-[10px] text-muted-foreground mt-1.5 leading-relaxed">{m.hint}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ==================== ROW 3: CASH FLOW BREAKDOWN ====================
 function CashFlowBreakdown() {
   const ctx = React.useContext(CfCtx);
@@ -400,12 +451,14 @@ export default function CashFlowDeepDive({ data }: { data?: Record<string, unkno
     <CfCtx.Provider value={data ? { ...cfDefaults, ...data } as typeof cfDefaults : cfDefaults}>
       <div className="space-y-5">
         {/* ROW 1 */}
-        <EfficiencyAndSelfFunding />
+        <EarningsQualityMetricsSection />
         {/* ROW 2 */}
-        <EarningsQualityChart />
+        <EfficiencyAndSelfFunding />
         {/* ROW 3 */}
-        <CashFlowBreakdown />
+        <EarningsQualityChart />
         {/* ROW 4 */}
+        <CashFlowBreakdown />
+        {/* ROW 5 */}
         <WaterfallChart />
       </div>
     </CfCtx.Provider>

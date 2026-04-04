@@ -350,7 +350,7 @@ function AssetCapitalDonutRow() {
 
 function TrendChartsRow() {
   const ctx = React.useContext(BsCtx);
-  const trendData = ctx.trendData ?? bsDefaults.trendData;
+  const trendData = (ctx.trendData ?? bsDefaults.trendData).slice(-8);
   const years = trendData.map((d: any) => String(d.year));
 
   const assetCapitalTrend = useMemo(
@@ -525,17 +525,35 @@ function InventoryAndLeverage() {
         <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5 mb-5">
           <span>⚖️</span> Các Chỉ Số Đòn Bẩy Tài Chính
         </h3>
-        <div className="space-y-5">
+        <div className="space-y-1.5">
           {leverageItems.map((item) => (
-            <div key={item.title}>
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-sm text-muted-foreground font-medium">{item.title}</span>
-                <span className={`text-lg font-extrabold ${mono} ${item.color}`}>{item.value}</span>
+            <div key={item.title} className="rounded-md border border-border/40 bg-muted/20 p-1.5">
+              <div className="flex items-start justify-between gap-1.5 mb-0.5">
+                <div className="min-w-0">
+                  <div className="text-xs text-muted-foreground font-medium leading-snug">{item.title}</div>
+                  <div className="text-[10px] mt-0" style={{ color: item.colorHex }}>
+                    {item.status === "warning" ? "⚠ Trung bình" : item.status === "danger" ? "🔴 Rủi ro" : "Tốt"}
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className={`text-sm font-extrabold ${mono}`}
+                    style={{ color: item.colorHex }}
+                    title={`Giá trị: ${item.value}\nĐánh giá: ${item.statusLabel}`}
+                  >
+                    {item.value}
+                  </span>
+                </div>
               </div>
-              <div className="w-full h-2 bg-gray-200 rounded-full">
+              <div className="relative w-full h-1.5 rounded-full overflow-hidden">
+                <div className="absolute inset-0 flex">
+                  {item.segments.map((seg, idx) => (
+                    <div key={idx} style={{ width: `${seg.width}%`, backgroundColor: seg.color }} />
+                  ))}
+                </div>
                 <div
-                  className={`h-2 rounded-full ${item.barColor}`}
-                  style={{ width: `${Math.min((item.rawValue / item.max) * 100, 100)}%` }}
+                  className="absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full border border-white shadow"
+                  style={{ left: `calc(${item.markerPercent}% - 5px)`, backgroundColor: item.colorHex }}
                 />
               </div>
             </div>

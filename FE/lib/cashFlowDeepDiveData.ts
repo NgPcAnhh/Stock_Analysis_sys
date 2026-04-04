@@ -60,12 +60,64 @@ export interface EarningsQualityYear {
   ocf: number;
 }
 
+export interface EarningsQualityMetric {
+  key: string;
+  label: string;
+  value: string;
+  rawValue: number | null;
+  status: "good" | "warning" | "danger";
+  hint: string;
+}
+
 export const earningsQuality: EarningsQualityYear[] = [
   { year: "2020", netIncome: 8500, ocf: 9200 },
   { year: "2021", netIncome: 7800, ocf: 8800 },
   { year: "2022", netIncome: 7200, ocf: 9500 },
   { year: "2023", netIncome: 8100, ocf: 10200 },
   { year: "2024", netIncome: 8900, ocf: 11500 },
+];
+
+export const earningsQualityMetrics: EarningsQualityMetric[] = [
+  {
+    key: "cfoNetIncome",
+    label: "CFO / Net Income",
+    value: "1.10x",
+    rawValue: 1.1,
+    status: "good",
+    hint: "Dòng tiền hỗ trợ lợi nhuận kế toán tốt",
+  },
+  {
+    key: "accrualRatio",
+    label: "Accrual ratio",
+    value: "2.3%",
+    rawValue: 2.3,
+    status: "warning",
+    hint: "Khoản dồn tích ở mức trung bình",
+  },
+  {
+    key: "receivablesRevenue",
+    label: "Receivables / Revenue",
+    value: "18.0%",
+    rawValue: 18,
+    status: "good",
+    hint: "Phải thu đang ở vùng kiểm soát",
+  },
+  {
+    key: "inventoryCogs",
+    label: "Inventory / COGS",
+    value: "20.5%",
+    rawValue: 20.5,
+    status: "warning",
+    hint: "Cần theo dõi vòng quay tồn kho",
+  },
+  {
+    key: "otherIncomePbt",
+    label: "Other income / PBT",
+    value: "6.2%",
+    rawValue: 6.2,
+    status: "good",
+    hint: "Lợi nhuận chủ yếu đến từ hoạt động cốt lõi",
+  },
 ];
 
 // --- ROW 3: Three Cash Flows & FCF/Dividend ---

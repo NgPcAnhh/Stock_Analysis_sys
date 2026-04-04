@@ -44,6 +44,14 @@ export interface CashFlowView {
     efficiencyMetrics: EfficiencyItem[];
     selfFundingData: SelfFundingData & { history: { year: string; cfo: number; capex: number; fcf: number }[] };
     earningsQuality: any[];
+    earningsQualityMetrics: {
+        key: string;
+        label: string;
+        value: string;
+        rawValue: number | null;
+        status: "good" | "warning" | "danger";
+        hint: string;
+    }[];
     threeCashFlows: any[];
     insightText: string;
     fcfDividendData: any[];
@@ -349,13 +357,199 @@ export function transformBalanceSheet(
     const shortTermRecPct = (safeDiv(latest.shortTermReceivables, latest.currentAssets) * 100);
     const cashPct = (safeDiv(latest.cash + latest.shortTermInvestments, latest.currentAssets) * 100);
     const otherScaPct = Math.max(0, 100 - inventoryPct - shortTermRecPct - cashPct);
+    const tablePeriods = viewData.slice(-10);
+
+    const colorByStatus = {
+        good: "#22c55e",
+        warning: "#f59e0b",
+        danger: "#ef4444",
+    } as const;
+
+    const periodIncomeMap = new Map<string, IncomeStatementItem>();
+    for (const inc of incomeData ?? []) {
+        periodIncomeMap.set(`${inc.period.year}_${inc.period.quarter}`, inc);
+    }
+
+    const getIncomeOfPeriod = (item: BalanceSheetItem): IncomeStatementItem | null => {
+        const k = `${item.period.year}_${item.period.quarter}`;
+        return periodIncomeMap.get(k) ?? null;
+    };
+
+    const computeEbit = (inc: IncomeStatementItem | null): number => {
+        if (!inc) return 0;
+        if (typeof inc.operatingProfit === "number") return inc.operatingProfit;
+        return (inc.grossProfit ?? 0) - (inc.sellingExpenses ?? 0) - (inc.adminExpenses ?? 0);
+    };
+
+    const computeInterestCoverage = (bs: BalanceSheetItem): number | null => {
+        const inc = getIncomeOfPeriod(bs);
+        if (!inc) return null;
+        const ebit = computeEbit(inc);
+        const interest = Math.abs(inc.interestExpenses || 0) || Math.abs(inc.financialExpenses || 0);
+        if (interest === 0) return ebit > 0 ? 99 : null;
+        return ebit / interest;
+    };
+
+    const computeNetDebtEbitda = (bs: BalanceSheetItem): number | null => {
+        const inc = getIncomeOfPeriod(bs);
+        if (!inc) return null;
+        const ebit = computeEbit(inc);
+        const ebitda = ebit; // Fallback: use EBIT when depreciation is unavailable in this view.
+        if (!isFinite(ebitda) || ebitda <= 0) return null;
+        const netDebt = (bs.totalLiabilities || 0) - ((bs.cash || 0) + (bs.shortTermInvestments || 0));
+        return netDebt / ebitda;
+    };
+
+    const classify = (value: number | null, t1: number, t2: number, higherIsBetter = false): "good" | "warning" | "danger" => {
+        if (value == null || !isFinite(value)) return "danger";
+        if (higherIsBetter) {
+            if (value > t2) return "good";
+            if (value >= t1) return "warning";
+            return "danger";
+        }
+        if (value < t1) return "good";
+        if (value <= t2) return "warning";
+        return "danger";
+    };
+
+    const riskScore = (status: "good" | "warning" | "danger", value: number | null, t1: number, t2: number, higherIsBetter = false): number => {
+        const base = status === "danger" ? 2 : status === "warning" ? 1 : 0;
+        if (value == null || !isFinite(value)) return 3;
+        let intensity = 0;
+        if (higherIsBetter) {
+            if (value < t1) intensity = Math.min((t1 - value) / Math.max(t1, 1e-9), 1);
+            else if (value <= t2) intensity = Math.min((t2 - value) / Math.max(t2 - t1, 1e-9), 1);
+        } else {
+            if (value > t2) intensity = Math.min((value - t2) / Math.max(t2, 1e-9), 1);
+            else if (value >= t1) intensity = Math.min((value - t1) / Math.max(t2 - t1, 1e-9), 1);
+        }
+        return base + intensity;
+    };
+
+    const markerPercent = (value: number | null, maxScale: number): number => {
+        if (value == null || !isFinite(value) || maxScale <= 0) return 0;
+        return Math.max(0, Math.min((value / maxScale) * 100, 100));
+    };
+
+    const statusLabel = (s: "good" | "warning" | "danger"): string => {
+        if (s === "good") return "Tốt";
+        if (s === "warning") return "Trung bình";
+        return "Rủi ro";
+    };
+
+    const latestDe = safeDiv(latest.totalLiabilities, latest.totalEquity);
+    const latestDa = safeDiv(latest.totalLiabilities, latest.totalAssets) * 100;
+    const latestIc = computeInterestCoverage(latest);
+    const latestNetDebtEbitda = computeNetDebtEbitda(latest);
+    const latestShortDebtRatio = safeDiv(latest.currentLiabilities, latest.totalLiabilities) * 100;
+
+    const deStatus = classify(latestDe, 1, 2, false);
+    const daStatus = classify(latestDa, 50, 70, false);
+    const icStatus = classify(latestIc, 1, 3, true);
+    const ndeStatus = classify(latestNetDebtEbitda, 2, 4, false);
+    const stdStatus = classify(latestShortDebtRatio, 40, 60, false);
+
+    const makeLeverageItem = (
+        title: string,
+        value: number | null,
+        display: string,
+        status: "good" | "warning" | "danger",
+        t1: number,
+        t2: number,
+        maxScale: number,
+        trend: number[],
+        higherIsBetter = false
+    ) => {
+        const lowColor = higherIsBetter ? colorByStatus.danger : colorByStatus.good;
+        const highColor = higherIsBetter ? colorByStatus.good : colorByStatus.danger;
+        return {
+            title,
+            value: display,
+            rawValue: value,
+            status,
+            statusLabel: statusLabel(status),
+            colorHex: colorByStatus[status],
+            riskScore: riskScore(status, value, t1, t2, higherIsBetter),
+            markerPercent: markerPercent(value, maxScale),
+            segments: [
+                { width: Math.max(0, (t1 / maxScale) * 100), color: lowColor },
+                { width: Math.max(0, ((t2 - t1) / maxScale) * 100), color: colorByStatus.warning },
+                { width: Math.max(0, (1 - t2 / maxScale) * 100), color: highColor },
+            ],
+            trend,
+        };
+    };
+
+    const deTrend = viewData.map((d) => safeDiv(d.totalLiabilities, d.totalEquity));
+    const daTrend = viewData.map((d) => safeDiv(d.totalLiabilities, d.totalAssets) * 100);
+    const icTrend = viewData.map((d) => computeInterestCoverage(d)).filter((v): v is number => v != null && isFinite(v));
+    const ndeTrend = viewData.map((d) => computeNetDebtEbitda(d)).filter((v): v is number => v != null && isFinite(v));
+    const stdTrend = viewData.map((d) => safeDiv(d.currentLiabilities, d.totalLiabilities) * 100);
+
+    const leverageItems = [
+        makeLeverageItem(
+            "D/E (Nợ / Vốn chủ sở hữu)",
+            latestDe,
+            latestDe != null && isFinite(latestDe) ? `${fmtNum(latestDe)}x` : "—",
+            deStatus,
+            1,
+            2,
+            3,
+            deTrend,
+            false
+        ),
+        makeLeverageItem(
+            "D/A (Nợ / Tổng tài sản)",
+            latestDa,
+            latestDa != null && isFinite(latestDa) ? `${fmtNum(latestDa)}%` : "—",
+            daStatus,
+            50,
+            70,
+            100,
+            daTrend,
+            false
+        ),
+        makeLeverageItem(
+            "Interest Coverage (EBIT / Chi phí lãi vay)",
+            latestIc,
+            latestIc != null && isFinite(latestIc) ? `${fmtNum(latestIc)}x` : "—",
+            icStatus,
+            1,
+            3,
+            6,
+            icTrend,
+            true
+        ),
+        makeLeverageItem(
+            "Net Debt / EBITDA",
+            latestNetDebtEbitda,
+            latestNetDebtEbitda != null && isFinite(latestNetDebtEbitda) ? `${fmtNum(latestNetDebtEbitda)}x` : "—",
+            ndeStatus,
+            2,
+            4,
+            6,
+            ndeTrend,
+            false
+        ),
+        makeLeverageItem(
+            "Nợ ngắn hạn / Tổng nợ",
+            latestShortDebtRatio,
+            latestShortDebtRatio != null && isFinite(latestShortDebtRatio) ? `${fmtNum(latestShortDebtRatio)}%` : "—",
+            stdStatus,
+            40,
+            60,
+            100,
+            stdTrend,
+            false
+        ),
+    ].sort((a, b) => b.riskScore - a.riskScore);
 
     const mkRow = (label: string, accessor: (d: BalanceSheetItem) => number, level: "main" | "sub" | "detail" = "detail"): TableRow => {
-        const values = viewData.map(d => accessor(d) / unit);
+        const values = tablePeriods.map(d => accessor(d) / unit);
         const lastVal = values[values.length - 1];
         const prevVal = values.length > 1 ? values[values.length - 2] : 0;
         const change = lastVal - prevVal;
-        const total = viewData[viewData.length - 1] ? (viewData[viewData.length - 1].totalAssets / unit) : 1;
+        const total = tablePeriods[tablePeriods.length - 1] ? (tablePeriods[tablePeriods.length - 1].totalAssets / unit) : 1;
         return { label, level, values, change, yoyPct: safeDiv(change, Math.abs(prevVal)) * 100, pctTotal: safeDiv(lastVal, total) * 100 };
     };
 
@@ -460,11 +654,7 @@ export function transformBalanceSheet(
                 inventoryDays: invDays ? Math.round(invDays) + " ngày" : "—"
             };
         })(),
-        leverageItems: [ 
-            { title: "D/A (Nợ/TS)", value: fmtPct(daRatio), rawValue: daRatio*100, max: 100, color: "text-[#8B5CF6]", barColor: "bg-[#8B5CF6]" }, 
-            { title: "D/E (Nợ/Vốn CSH)", value: fmtNum(deRatio)+"x", rawValue: deRatio, max: 3, color: "text-[#3B82F6]", barColor: "bg-[#3B82F6]" },
-            { title: "Tỷ lệ Nợ vay/Vốn CSH", value: fmtNum(safeDiv(latest.currentLiabilities + latest.longTermLiabilities, latest.totalEquity))+"x", rawValue: safeDiv(latest.currentLiabilities + latest.longTermLiabilities, latest.totalEquity), max: 3, color: "text-[#F97316]", barColor: "bg-[#F97316]" }
-        ],
+        leverageItems,
         cccData: (() => {
             const daysInPeriod = latest.period.quarter === 0 ? 365 : 90;
             const inc = incomeData?.find(i => i.period.year === latest.period.year && i.period.quarter === latest.period.quarter) || incomeData?.[0];
@@ -494,7 +684,7 @@ export function transformBalanceSheet(
             { title: "Hệ số thanh toán nhanh", value: ratio?.quickRatio || safeDiv(latest.currentAssets - latest.inventory, latest.currentLiabilities), max: 3, status: ratio?.quickRatio && ratio.quickRatio > 1 ? "good" : "warning" },
             { title: "Hệ số tỷ lệ tiền mặt", value: ratio?.cashRatio || safeDiv(latest.cash, latest.currentLiabilities), max: 2, status: ratio?.cashRatio && ratio.cashRatio > 0.5 ? "good" : "warning" }
         ],
-        tableHeaders: ["Chỉ tiêu", ...viewData.map(d => d.period.period), "Thay đổi", "% Kỳ trước", "% Tổng"],
+        tableHeaders: ["Chỉ tiêu", ...tablePeriods.map(d => d.period.period), "Thay đổi", "% Kỳ trước", "% Tổng"],
         tableData: [
             { ...mkRow("TỔNG TÀI SẢN", d => d.totalAssets, "main"),
                 children: [
@@ -517,7 +707,12 @@ export function transformBalanceSheet(
 }
 
 export function transformIncomeStatement(
-    data: IncomeStatementItem[] | undefined, balanceData: BalanceSheetItem[] | undefined, ratiosData: FinancialRatioItem[] | undefined, unit: number = 1_000_000_000, selectedPeriod: string | null = null
+    data: IncomeStatementItem[] | undefined,
+    balanceData: BalanceSheetItem[] | undefined,
+    ratiosData: FinancialRatioItem[] | undefined,
+    cashFlowData: CashFlowItem[] | undefined,
+    unit: number = 1_000_000_000,
+    selectedPeriod: string | null = null,
 ): IncomeStatementView | null {
     if (!data || data.length === 0) return null;
     const sortedData = [...data].sort((a, b) => a.period.year !== b.period.year ? a.period.year - b.period.year : a.period.quarter - b.period.quarter);
@@ -530,7 +725,9 @@ export function transformIncomeStatement(
 
     const latest = viewData[viewData.length - 1]; const prev = viewData.length > 1 ? viewData[viewData.length - 2] : null;
     const ratio = findRatio(ratiosData, latest.period.year, latest.period.quarter);
-    const bsLatest = balanceData?.find(b => b.period.year === latest.period.year && b.period.quarter === b.period.quarter);
+    const bsLatest = balanceData?.find(b => b.period.year === latest.period.year && b.period.quarter === latest.period.quarter);
+    const cfLatest = cashFlowData?.find(c => c.period.year === latest.period.year && c.period.quarter === latest.period.quarter);
+    const cfPrev = prev ? cashFlowData?.find(c => c.period.year === prev.period.year && c.period.quarter === prev.period.quarter) : null;
 
     const revChg = prev ? ((latest.revenue - prev.revenue) / prev.revenue) * 100 : 0;
     const netChg = prev ? ((latest.netProfit - prev.netProfit) / Math.abs(prev.netProfit)) * 100 : 0;
@@ -538,6 +735,14 @@ export function transformIncomeStatement(
     const netMargin = safeDiv(latest.netProfit, latest.revenue) * 100;
     const netFinancialProfit = (latest.financialIncome || 0) - (latest.financialExpenses || 0);
     const otherProfit = latest.profitBeforeTax - latest.operatingProfit - netFinancialProfit;
+    const latestEbit = latest.operatingProfit;
+    const prevEbit = prev ? prev.operatingProfit : null;
+    const latestDepAmort = cfLatest?.depreciationAmortization ?? 0;
+    const prevDepAmort = cfPrev?.depreciationAmortization ?? 0;
+    const latestEbitda = latestEbit + latestDepAmort;
+    const prevEbitda = prev ? ((prevEbit ?? 0) + prevDepAmort) : null;
+    const ebitChg = prevEbit != null ? safeDiv(latestEbit - prevEbit, Math.abs(prevEbit)) * 100 : 0;
+    const ebitdaChg = prevEbitda != null ? safeDiv(latestEbitda - prevEbitda, Math.abs(prevEbitda)) * 100 : 0;
 
     const roeStr = ratio?.roe ? fmtNum(ratio.roe * 100) + "%" : "—";
     const roaStr = ratio?.roa ? fmtNum(ratio.roa * 100) + "%" : "—";
@@ -554,6 +759,8 @@ export function transformIncomeStatement(
         incomeMetricCards: [
             { label: "Doanh thu thuần", value: fmtVal(latest.revenue, unit), borderColor: "border-l-[#3B82F6]", badges: [{ text: (revChg >= 0 ? "+" : "") + fmtNum(revChg) + "% YoY", color: revChg >= 0 ? GREEN : RED }] },
             { label: "Lợi nhuận gộp", value: fmtVal(latest.grossProfit, unit), borderColor: "border-l-[#F97316]", badges: [{ text: "Biên gộp: " + fmtNum(grossMargin) + "%", color: ORANGE }] },
+            { label: "EBIT", value: fmtVal(latestEbit, unit), borderColor: "border-l-[#8B5CF6]", badges: [{ text: (ebitChg >= 0 ? "+" : "") + fmtNum(ebitChg) + "% YoY", color: ebitChg >= 0 ? GREEN : RED }] },
+            { label: "EBITDA", value: fmtVal(latestEbitda, unit), borderColor: "border-l-[#06B6D4]", badges: [{ text: (ebitdaChg >= 0 ? "+" : "") + fmtNum(ebitdaChg) + "% YoY", color: ebitdaChg >= 0 ? GREEN : RED }] },
             { label: "Lợi nhuận ròng", value: fmtVal(latest.netProfit, unit), borderColor: "border-l-[#F97316]", badges: [ { text: (netChg >= 0 ? "+" : "") + fmtNum(netChg) + "% YoY", color: netChg >= 0 ? GREEN : RED }, { text: "ROS: " + fmtNum(netMargin) + "%", color: PURPLE } ] },
             { label: "Hiệu quả sinh lời", value: "", borderColor: "border-l-[#8B5CF6]", badges: [], listItems: [ { label: "ROS", value: fmtNum(netMargin) + "%" }, { label: "ROA", value: roaStr }, { label: "ROE", value: roeStr } ] },
         ],
@@ -609,7 +816,11 @@ export function transformIncomeStatement(
 }
 
 export function transformCashFlow(
-    data: CashFlowItem[] | undefined, incomeData: IncomeStatementItem[] | undefined, unit: number = 1_000_000_000, selectedPeriod: string | null = null
+    data: CashFlowItem[] | undefined,
+    incomeData: IncomeStatementItem[] | undefined,
+    balanceData?: BalanceSheetItem[] | undefined,
+    unit: number = 1_000_000_000,
+    selectedPeriod: string | null = null,
 ): CashFlowView | null {
     if (!data || data.length === 0) return null;
     const sortedData = [...data].sort((a, b) => a.period.year !== b.period.year ? a.period.year - b.period.year : a.period.quarter - b.period.quarter);
@@ -625,6 +836,81 @@ export function transformCashFlow(
     const cfo = latest.operatingCashFlow;
     const fcf = cfo - capex;
     const incLatest = incomeData?.find(i => i.period.year === latest.period.year && i.period.quarter === latest.period.quarter);
+    const bsLatest = balanceData?.find(b => b.period.year === latest.period.year && b.period.quarter === latest.period.quarter);
+    const ratioNullable = (num: number | null | undefined, den: number | null | undefined): number | null => {
+        if (num == null || den == null || den === 0) return null;
+        return num / den;
+    };
+    const status = (
+        value: number | null,
+        goodMin: number,
+        warnMin: number,
+        higherBetter = true,
+    ): "good" | "warning" | "danger" => {
+        if (value == null || !isFinite(value)) return "danger";
+        if (higherBetter) {
+            if (value >= goodMin) return "good";
+            if (value >= warnMin) return "warning";
+            return "danger";
+        }
+        if (value <= goodMin) return "good";
+        if (value <= warnMin) return "warning";
+        return "danger";
+    };
+    const netProfit = incLatest?.netProfit ?? null;
+    const pbt = incLatest?.profitBeforeTax ?? null;
+    const operatingProfit = incLatest?.operatingProfit ?? null;
+    const netFinancialProfit = incLatest ? (incLatest.financialIncome || 0) - (incLatest.financialExpenses || 0) : null;
+    const otherIncome = (pbt != null && operatingProfit != null && netFinancialProfit != null)
+        ? pbt - operatingProfit - netFinancialProfit
+        : null;
+    const cfoNetIncome = ratioNullable(cfo, netProfit);
+    const accrualRatio = ratioNullable((netProfit ?? 0) - cfo, bsLatest?.totalAssets);
+    const receivablesRevenue = ratioNullable(bsLatest?.shortTermReceivables, incLatest?.revenue);
+    const inventoryCogs = ratioNullable(bsLatest?.inventory, Math.abs(incLatest?.costOfGoodsSold ?? 0));
+    const otherIncomePbt = ratioNullable(otherIncome, pbt);
+    const earningsQualityMetrics = [
+        {
+            key: "cfoNetIncome",
+            label: "CFO / Net Income",
+            rawValue: cfoNetIncome,
+            value: cfoNetIncome != null ? `${fmtNum(cfoNetIncome)}x` : "—",
+            status: status(cfoNetIncome, 1, 0.8, true),
+            hint: "<0.8x: lợi nhuận kế toán chưa chuyển hóa tốt thành tiền",
+        },
+        {
+            key: "accrualRatio",
+            label: "Accrual ratio",
+            rawValue: accrualRatio != null ? accrualRatio * 100 : null,
+            value: accrualRatio != null ? `${fmtNum(accrualRatio * 100)}%` : "—",
+            status: status(accrualRatio != null ? Math.abs(accrualRatio) : null, 5 / 100, 10 / 100, false),
+            hint: "|Accrual| càng thấp càng tốt",
+        },
+        {
+            key: "receivablesRevenue",
+            label: "Receivables / Revenue",
+            rawValue: receivablesRevenue != null ? receivablesRevenue * 100 : null,
+            value: receivablesRevenue != null ? `${fmtNum(receivablesRevenue * 100)}%` : "—",
+            status: status(receivablesRevenue, 0.25, 0.4, false),
+            hint: "Phải thu cao kéo dài có thể làm giảm chất lượng doanh thu",
+        },
+        {
+            key: "inventoryCogs",
+            label: "Inventory / COGS",
+            rawValue: inventoryCogs != null ? inventoryCogs * 100 : null,
+            value: inventoryCogs != null ? `${fmtNum(inventoryCogs * 100)}%` : "—",
+            status: status(inventoryCogs, 0.2, 0.35, false),
+            hint: "Tồn kho phình nhanh hơn COGS cần theo dõi rủi ro tồn đọng",
+        },
+        {
+            key: "otherIncomePbt",
+            label: "Other income / PBT",
+            rawValue: otherIncomePbt != null ? otherIncomePbt * 100 : null,
+            value: otherIncomePbt != null ? `${fmtNum(otherIncomePbt * 100)}%` : "—",
+            status: status(otherIncomePbt != null ? Math.abs(otherIncomePbt) : null, 0.1, 0.2, false),
+            hint: "Tỷ trọng thu nhập khác cao có thể làm lợi nhuận kém bền vững",
+        },
+    ];
     
     return {
         efficiencyMetrics: [
@@ -639,6 +925,7 @@ export function transformCashFlow(
             const inc = incomeData?.find(i => i.period.year === d.period.year && i.period.quarter === d.period.quarter);
             return { year: d.period.period, netIncome: (inc?.netProfit || 0) / unit, ocf: d.operatingCashFlow / unit };
         }),
+        earningsQualityMetrics,
         threeCashFlows: viewData.map(d => ({ year: d.period.period, cfo: d.operatingCashFlow / unit, cfi: d.investingCashFlow / unit, cff: d.financingCashFlow / unit })),
         insightText: cfo > capex ? "Dòng tiền kinh doanh dồi dào, đủ bù đắp chi phí đầu tư (CAPEX)." : "Dòng tiền kinh doanh chưa đủ bù đắp chi tiêu đầu tư.",
         fcfDividendData: viewData.map(d => ({ year: d.period.period, fcf: (d.operatingCashFlow - Math.abs(d.purchaseOfFixedAssets || 0)) / unit, dividend: Math.abs(d.dividendsPaid || 0) / unit })),

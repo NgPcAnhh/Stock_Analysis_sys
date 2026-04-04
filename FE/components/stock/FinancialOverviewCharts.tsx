@@ -32,9 +32,8 @@ function chronological(data: IncomeStatementItem[]): IncomeStatementItem[] {
 }
 
 function annualData(data: IncomeStatementItem[]): IncomeStatementItem[] {
-    const annuals = data.filter((d) => d.period.quarter === 0);
-    const sorted = annuals.length >= 3 ? annuals : data;
-    return chronological(sorted);
+    // Overview charts should show the latest 8 reporting periods (quarterly/annual as available).
+    return chronological(data).slice(-8);
 }
 
 const C = {
@@ -145,6 +144,8 @@ function RevenueStructureChart({ data, registerChart }: { data: IncomeStatementI
         const labels  = rows.map((d) => d.period.period);
         const revenue = rows.map((d) => +toTy(Math.abs(d.revenue)).toFixed(1));
         const finInc  = rows.map((d) => +toTy(Math.abs(d.financialIncome)).toFixed(1));
+        const extraordinaryInc = rows.map((d) => +toTy(Math.abs(d.extraordinaryIncome ?? 0)).toFixed(1));
+        const otherInc = rows.map((d) => +toTy(Math.abs(d.otherIncome ?? 0)).toFixed(1));
         const mkS = (name: string, dt: number[], color: string) => ({
             name, type: "bar" as const, stack: "revenue", data: dt, barMaxWidth: 48,
             itemStyle: { color }, emphasis: { focus: "series" as const },
@@ -152,10 +153,15 @@ function RevenueStructureChart({ data, registerChart }: { data: IncomeStatementI
         });
         return {
             ...baseOpt(),
-            legend: { data: ["Doanh thu thuần", "Doanh thu tài chính"], top: 4, textStyle: { fontSize: 11, fontFamily: "Inter, sans-serif" }, itemGap: 12 },
+            legend: { data: ["Doanh thu thuần", "Doanh thu tài chính", "Thu nhập bất thường / không thường xuyên", "Thu nhập khác"], top: 4, textStyle: { fontSize: 11, fontFamily: "Inter, sans-serif" }, itemGap: 12 },
             xAxis: { type: "category" as const, data: labels, axisLabel: { ...AX, rotate: 30 }, axisTick: { alignWithLabel: true } },
             yAxis: { type: "value" as const, name: "Tỷ VND", nameTextStyle: { fontSize: 10, color: "#9CA3AF", fontFamily: "Inter, sans-serif" }, axisLabel: { formatter: (v: number) => fmtTy(v), ...AX }, splitLine: { lineStyle: { color: "#F3F4F6" } } },
-            series: [mkS("Doanh thu thuần", revenue, C.blue), mkS("Doanh thu tài chính", finInc, C.green)],
+            series: [
+                mkS("Doanh thu thuần", revenue, C.blue),
+                mkS("Doanh thu tài chính", finInc, C.green),
+                mkS("Thu nhập bất thường / không thường xuyên", extraordinaryInc, C.orange),
+                mkS("Thu nhập khác", otherInc, C.indigo),
+            ],
         };
     }, [rows]);
     return (
@@ -182,6 +188,9 @@ function CostStructureChart({ data, registerChart }: { data: IncomeStatementItem
         const selling = rows.map((d) => +toTy(Math.abs(d.sellingExpenses)).toFixed(1));
         const admin   = rows.map((d) => +toTy(Math.abs(d.adminExpenses)).toFixed(1));
         const fin     = rows.map((d) => +toTy(Math.abs(d.financialExpenses)).toFixed(1));
+        const otherExpense = rows.map((d) => +toTy(Math.abs(d.otherExpense ?? 0)).toFixed(1));
+        const currentTax = rows.map((d) => +toTy(Math.abs(d.currentIncomeTaxExpense ?? d.incomeTax ?? 0)).toFixed(1));
+        const deferredTax = rows.map((d) => +toTy(Math.abs(d.deferredIncomeTaxExpense ?? 0)).toFixed(1));
         const mkS = (name: string, dt: number[], color: string) => ({
             name, type: "bar" as const, stack: "cost", data: dt, barMaxWidth: 48,
             itemStyle: { color }, emphasis: { focus: "series" as const },
@@ -189,10 +198,18 @@ function CostStructureChart({ data, registerChart }: { data: IncomeStatementItem
         });
         return {
             ...baseOpt(),
-            legend: { data: ["Gi\u00e1 v\u1ed1n", "Chi ph\u00ed b\u00e1n h\u00e0ng", "Chi ph\u00ed QLDN", "Chi ph\u00ed t\u00e0i ch\u00ednh"], top: 4, textStyle: { fontSize: 11, fontFamily: "Inter, sans-serif" }, itemGap: 12 },
+            legend: { data: ["Giá vốn hàng bán", "Chi phí bán hàng", "Chi phí quản lý doanh nghiệp", "Chi phí tài chính", "Chi phí khác", "Chi phí thuế TNDN hiện hành", "Chi phí thuế TNDN hoãn lại"], top: 4, textStyle: { fontSize: 11, fontFamily: "Inter, sans-serif" }, itemGap: 12 },
             xAxis: { type: "category" as const, data: labels, axisLabel: { ...AX, rotate: 30 }, axisTick: { alignWithLabel: true } },
             yAxis: { type: "value" as const, name: "T\u1ef7 VND", nameTextStyle: { fontSize: 10, color: "#9CA3AF", fontFamily: "Inter, sans-serif" }, axisLabel: { formatter: (v: number) => fmtTy(v), ...AX }, splitLine: { lineStyle: { color: "#F3F4F6" } } },
-            series: [mkS("Gi\u00e1 v\u1ed1n", cogs, C.red), mkS("Chi ph\u00ed b\u00e1n h\u00e0ng", selling, C.orange), mkS("Chi ph\u00ed QLDN", admin, C.purple), mkS("Chi ph\u00ed t\u00e0i ch\u00ednh", fin, C.amber)],
+            series: [
+                mkS("Giá vốn hàng bán", cogs, C.red),
+                mkS("Chi phí bán hàng", selling, C.orange),
+                mkS("Chi phí quản lý doanh nghiệp", admin, C.purple),
+                mkS("Chi phí tài chính", fin, C.amber),
+                mkS("Chi phí khác", otherExpense, C.indigo),
+                mkS("Chi phí thuế TNDN hiện hành", currentTax, C.blue),
+                mkS("Chi phí thuế TNDN hoãn lại", deferredTax, C.green),
+            ],
         };
     }, [rows]);
     return (

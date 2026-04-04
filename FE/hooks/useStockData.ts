@@ -55,6 +55,172 @@ function normalisePeriod(item: Record<string, unknown>): Record<string, unknown>
     return item;
 }
 
+const EPSILON = 1e-9;
+
+function hasMeaningful(values: Array<number | null | undefined>): boolean {
+    return values.some((v) => v != null && Number.isFinite(v) && Math.abs(v) > EPSILON);
+}
+
+function preferApiOrComputed(
+    apiValue: number | null | undefined,
+    computedValue: number | null | undefined,
+    evidenceValues: Array<number | null | undefined>,
+): number | null {
+    if (apiValue != null && Number.isFinite(apiValue) && Math.abs(apiValue) > EPSILON) {
+        return apiValue;
+    }
+    if (computedValue == null || !Number.isFinite(computedValue)) {
+        return apiValue ?? null;
+    }
+    // Keep exact zero when there is no evidence of missing data.
+    if ((apiValue ?? null) === 0 && !hasMeaningful(evidenceValues)) {
+        return 0;
+    }
+    return computedValue;
+}
+
+function withIncomeFallback(item: IncomeStatementItem): IncomeStatementItem {
+    const grossProfitFromRevenue = item.revenue - item.costOfGoodsSold;
+    const grossProfit = preferApiOrComputed(item.grossProfit, grossProfitFromRevenue, [item.revenue, item.costOfGoodsSold]);
+
+    const operatingFromGross = (grossProfit ?? 0) - item.sellingExpenses - item.adminExpenses;
+    const operatingFromOpex = (item.totalOperatingIncome ?? 0) - (item.operatingExpenses ?? 0) - (item.provisionExpenses ?? 0);
+    const operatingProfit = preferApiOrComputed(
+        item.operatingProfit,
+        hasMeaningful([item.totalOperatingIncome, item.operatingExpenses, item.provisionExpenses]) ? operatingFromOpex : operatingFromGross,
+        [grossProfit, item.sellingExpenses, item.adminExpenses, item.totalOperatingIncome, item.operatingExpenses, item.provisionExpenses],
+    );
+
+    const financialExpenses = preferApiOrComputed(
+        item.financialExpenses,
+        item.interestExpenses ?? null,
+        [item.interestExpenses],
+    );
+    const interestExpenses = preferApiOrComputed(
+        item.interestExpenses,
+        financialExpenses,
+        [financialExpenses],
+    );
+
+    const profitBeforeTaxFromOps =
+        (operatingProfit ?? 0) +
+        item.financialIncome -
+        (financialExpenses ?? 0) +
+        (item.otherIncome ?? 0) -
+        (item.otherExpense ?? 0);
+    const profitBeforeTaxFromNet = item.netProfit + item.incomeTax;
+    const profitBeforeTax = preferApiOrComputed(
+        item.profitBeforeTax,
+        hasMeaningful([item.netProfit, item.incomeTax]) ? profitBeforeTaxFromNet : profitBeforeTaxFromOps,
+        [operatingProfit, item.financialIncome, financialExpenses, item.otherIncome, item.otherExpense, item.netProfit, item.incomeTax],
+    );
+
+    const netProfit = preferApiOrComputed(
+        item.netProfit,
+        (profitBeforeTax ?? 0) - item.incomeTax,
+        [profitBeforeTax, item.incomeTax],
+    );
+    const netProfitParent = preferApiOrComputed(item.netProfitParent, netProfit, [netProfit]);
+
+    return {
+        ...item,
+        grossProfit: grossProfit ?? item.grossProfit,
+        operatingProfit: operatingProfit ?? item.operatingProfit,
+        financialExpenses: financialExpenses ?? item.financialExpenses,
+        interestExpenses: interestExpenses ?? item.interestExpenses,
+        profitBeforeTax: profitBeforeTax ?? item.profitBeforeTax,
+        netProfit: netProfit ?? item.netProfit,
+        netProfitParent: netProfitParent ?? item.netProfitParent,
+    };
+}
+
+function withBalanceFallback(item: BalanceSheetItem): BalanceSheetItem {
+    const totalAssetsComputed =
+        (item.totalLiabilitiesAndEquity && item.totalLiabilitiesAndEquity !== 0)
+            ? item.totalLiabilitiesAndEquity
+            : (item.totalLiabilities + item.totalEquity);
+    const totalAssets = preferApiOrComputed(
+        item.totalAssets,
+        totalAssetsComputed,
+        [item.totalLiabilitiesAndEquity, item.totalLiabilities, item.totalEquity, item.currentAssets, item.nonCurrentAssets],
+    );
+
+    const currentAssets = preferApiOrComputed(
+        item.currentAssets,
+        (totalAssets ?? 0) - item.nonCurrentAssets,
+        [totalAssets, item.nonCurrentAssets],
+    );
+    const nonCurrentAssets = preferApiOrComputed(
+        item.nonCurrentAssets,
+        (totalAssets ?? 0) - (currentAssets ?? item.currentAssets),
+        [totalAssets, currentAssets],
+    );
+
+    const totalLiabilities = preferApiOrComputed(
+        item.totalLiabilities,
+        (item.currentLiabilities + item.longTermLiabilities),
+        [item.currentLiabilities, item.longTermLiabilities, item.totalLiabilitiesAndEquity, item.totalEquity],
+    );
+    const currentLiabilities = preferApiOrComputed(
+        item.currentLiabilities,
+        (totalLiabilities ?? 0) - item.longTermLiabilities,
+        [totalLiabilities, item.longTermLiabilities],
+    );
+    const longTermLiabilities = preferApiOrComputed(
+        item.longTermLiabilities,
+        (totalLiabilities ?? item.totalLiabilities) - (currentLiabilities ?? item.currentLiabilities),
+        [totalLiabilities, currentLiabilities],
+    );
+
+    const totalEquity = preferApiOrComputed(
+        item.totalEquity,
+        (totalAssets ?? 0) - (totalLiabilities ?? item.totalLiabilities),
+        [totalAssets, totalLiabilities, item.totalLiabilitiesAndEquity],
+    );
+    const totalLiabilitiesAndEquity = preferApiOrComputed(
+        item.totalLiabilitiesAndEquity,
+        (totalLiabilities ?? item.totalLiabilities) + (totalEquity ?? item.totalEquity),
+        [totalLiabilities, totalEquity, totalAssets],
+    );
+
+    return {
+        ...item,
+        totalAssets: totalAssets ?? item.totalAssets,
+        currentAssets: currentAssets ?? item.currentAssets,
+        nonCurrentAssets: nonCurrentAssets ?? item.nonCurrentAssets,
+        totalLiabilities: totalLiabilities ?? item.totalLiabilities,
+        currentLiabilities: currentLiabilities ?? item.currentLiabilities,
+        longTermLiabilities: longTermLiabilities ?? item.longTermLiabilities,
+        totalEquity: totalEquity ?? item.totalEquity,
+        totalLiabilitiesAndEquity: totalLiabilitiesAndEquity ?? item.totalLiabilitiesAndEquity,
+    };
+}
+
+function withCashFlowFallback(item: CashFlowItem): CashFlowItem {
+    const netCashChange = preferApiOrComputed(
+        item.netCashChange,
+        item.operatingCashFlow + item.investingCashFlow + item.financingCashFlow,
+        [item.operatingCashFlow, item.investingCashFlow, item.financingCashFlow],
+    );
+    const endingCash = preferApiOrComputed(
+        item.endingCash,
+        item.beginningCash + (netCashChange ?? 0),
+        [item.beginningCash, netCashChange],
+    );
+    const beginningCash = preferApiOrComputed(
+        item.beginningCash,
+        (endingCash ?? item.endingCash) - (netCashChange ?? item.netCashChange),
+        [endingCash, netCashChange],
+    );
+
+    return {
+        ...item,
+        netCashChange: netCashChange ?? item.netCashChange,
+        endingCash: endingCash ?? item.endingCash,
+        beginningCash: beginningCash ?? item.beginningCash,
+    };
+}
+
 function transformFinancialReports(json: unknown): FinancialReportsData {
     const raw = json as Record<string, unknown>;
     const rawArr = raw as Record<string, unknown[]>;
@@ -63,12 +229,22 @@ function transformFinancialReports(json: unknown): FinancialReportsData {
     const balanceSheet = Array.isArray(rawArr.balanceSheet) ? rawArr.balanceSheet : [];
     const cashFlow = Array.isArray(rawArr.cashFlow) ? rawArr.cashFlow : [];
 
+    const normalizedIncome = incomeStatement
+        .map((i) => normalisePeriod(i as Record<string, unknown>) as unknown as IncomeStatementItem)
+        .map(withIncomeFallback);
+    const normalizedBalance = balanceSheet
+        .map((i) => normalisePeriod(i as Record<string, unknown>) as unknown as BalanceSheetItem)
+        .map(withBalanceFallback);
+    const normalizedCashFlow = cashFlow
+        .map((i) => normalisePeriod(i as Record<string, unknown>) as unknown as CashFlowItem)
+        .map(withCashFlowFallback);
+
     return {
         isBank: !!(raw.isBank),
         industry: String(raw.industry || ""),
-        incomeStatement: incomeStatement.map((i) => normalisePeriod(i as Record<string, unknown>) as unknown as IncomeStatementItem),
-        balanceSheet: balanceSheet.map((i) => normalisePeriod(i as Record<string, unknown>) as unknown as BalanceSheetItem),
-        cashFlow: cashFlow.map((i) => normalisePeriod(i as Record<string, unknown>) as unknown as CashFlowItem),
+        incomeStatement: normalizedIncome,
+        balanceSheet: normalizedBalance,
+        cashFlow: normalizedCashFlow,
     };
 }
 
@@ -311,6 +487,11 @@ export interface IncomeStatementItem {
     netProfit: number;
     netProfitParent: number;
     eps: number;
+    otherIncome?: number;
+    extraordinaryIncome?: number;
+    otherExpense?: number;
+    currentIncomeTaxExpense?: number;
+    deferredIncomeTaxExpense?: number;
     // Banking-specific extra fields (present when isBank=true)
     interestIncome?: number;           // Thu nhập lãi và các khoản tương tự
     interestExpenseBank?: number;      // Chi phí lãi và các khoản tương tự

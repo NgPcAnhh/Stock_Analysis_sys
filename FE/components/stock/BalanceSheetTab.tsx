@@ -397,11 +397,24 @@ export default function BalanceSheetTab() {
   }, [financialReports, financialRatios, unit, selectedPeriod, stockInfo]);
 
   const incomeDataView = useMemo(() => {
-    return transformIncomeStatement(financialReports?.incomeStatement, financialReports?.balanceSheet, financialRatios ?? undefined, unit, selectedPeriod);
+    return transformIncomeStatement(
+      financialReports?.incomeStatement,
+      financialReports?.balanceSheet,
+      financialRatios ?? undefined,
+      financialReports?.cashFlow,
+      unit,
+      selectedPeriod,
+    );
   }, [financialReports, financialRatios, unit, selectedPeriod]);
 
   const cashFlowDataView = useMemo(() => {
-    return transformCashFlow(financialReports?.cashFlow, financialReports?.incomeStatement, unit, selectedPeriod);
+    return transformCashFlow(
+      financialReports?.cashFlow,
+      financialReports?.incomeStatement,
+      financialReports?.balanceSheet,
+      unit,
+      selectedPeriod,
+    );
   }, [financialReports, unit, selectedPeriod]);
   
   const [subTab, setSubTab] = useState<SubTab>("balance");

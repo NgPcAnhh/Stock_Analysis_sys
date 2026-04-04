@@ -57,10 +57,14 @@ export interface InventoryItem {
 export interface LeverageItem {
   title: string;
   value: string;
-  rawValue: number;
-  max: number;
-  color: string;
-  barColor: string;
+  rawValue: number | null;
+  status: "good" | "warning" | "danger";
+  statusLabel: string;
+  colorHex: string;
+  riskScore: number;
+  markerPercent: number;
+  segments: { width: number; color: string }[];
+  trend: number[];
 }
 
 export interface CCCData {
@@ -213,10 +217,86 @@ export const inventoryFooter = {
 
 // ── 6. Leverage Items (ROW 4 Right) ──
 export const leverageItems: LeverageItem[] = [
-  { title: "Tỷ số nợ trên tài sản (D/A)", value: "44.1%", rawValue: 44.1, max: 100, color: "text-[#8B5CF6]", barColor: "bg-[#8B5CF6]" },
-  { title: "Tỷ số nợ trên vốn CSH (D/E)", value: "0.79x", rawValue: 79, max: 200, color: "text-[#3B82F6]", barColor: "bg-[#3B82F6]" },
-  { title: "Hệ số đòn bẩy tài chính", value: "1.79x", rawValue: 60, max: 100, color: "text-[#F97316]", barColor: "bg-[#F97316]" },
-  { title: "Nợ dài hạn / Tổng nợ", value: "23.8%", rawValue: 23.8, max: 100, color: "text-[#00C076]", barColor: "bg-[#00C076]" },
+  {
+    title: "D/E (Nợ / Vốn chủ sở hữu)",
+    value: "0.79x",
+    rawValue: 0.79,
+    status: "good",
+    statusLabel: "Tốt",
+    colorHex: "#22c55e",
+    riskScore: 0,
+    markerPercent: 26.3,
+    segments: [
+      { width: 33.3, color: "#22c55e" },
+      { width: 33.3, color: "#f59e0b" },
+      { width: 33.4, color: "#ef4444" },
+    ],
+    trend: [0.95, 0.88, 0.84, 0.81, 0.79],
+  },
+  {
+    title: "D/A (Nợ / Tổng tài sản)",
+    value: "44.1%",
+    rawValue: 44.1,
+    status: "good",
+    statusLabel: "Tốt",
+    colorHex: "#22c55e",
+    riskScore: 0,
+    markerPercent: 44.1,
+    segments: [
+      { width: 50, color: "#22c55e" },
+      { width: 20, color: "#f59e0b" },
+      { width: 30, color: "#ef4444" },
+    ],
+    trend: [47.5, 46.8, 45.6, 44.8, 44.1],
+  },
+  {
+    title: "Interest Coverage (EBIT / Chi phí lãi vay)",
+    value: "4.20x",
+    rawValue: 4.2,
+    status: "good",
+    statusLabel: "Tốt",
+    colorHex: "#22c55e",
+    riskScore: 0,
+    markerPercent: 70,
+    segments: [
+      { width: 16.7, color: "#ef4444" },
+      { width: 33.3, color: "#f59e0b" },
+      { width: 50, color: "#22c55e" },
+    ],
+    trend: [3.3, 3.5, 3.8, 4.0, 4.2],
+  },
+  {
+    title: "Net Debt / EBITDA",
+    value: "1.60x",
+    rawValue: 1.6,
+    status: "good",
+    statusLabel: "Tốt",
+    colorHex: "#22c55e",
+    riskScore: 0,
+    markerPercent: 26.7,
+    segments: [
+      { width: 33.3, color: "#22c55e" },
+      { width: 33.3, color: "#f59e0b" },
+      { width: 33.4, color: "#ef4444" },
+    ],
+    trend: [2.1, 2.0, 1.9, 1.7, 1.6],
+  },
+  {
+    title: "Nợ ngắn hạn / Tổng nợ",
+    value: "52.0%",
+    rawValue: 52,
+    status: "warning",
+    statusLabel: "Trung bình",
+    colorHex: "#f59e0b",
+    riskScore: 1,
+    markerPercent: 52,
+    segments: [
+      { width: 40, color: "#22c55e" },
+      { width: 20, color: "#f59e0b" },
+      { width: 40, color: "#ef4444" },
+    ],
+    trend: [49, 50, 50.5, 51.2, 52],
+  },
 ];
 
 // ── 7. CCC Data (ROW 5 Left) ──

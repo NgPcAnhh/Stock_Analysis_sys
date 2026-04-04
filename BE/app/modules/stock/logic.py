@@ -79,6 +79,33 @@ IS_CODES: Dict[str, str] = {
     "otherIncome":      "THU_NH_P_KH_C",                               # Thu nhập khác
 }
 
+# Additional IS fields resolved by ind_name fallback to avoid ind_code drift.
+IS_IND_NAME_FALLBACKS: Dict[str, List[str]] = {
+    "otherIncome": [
+        "Thu nhập khác",
+        "Profits from other activities",
+    ],
+    "extraordinaryIncome": [
+        "Thu nhập/Chi phí khác",
+        "Net Other income/(expenses)",
+        "Net Other income/expenses",
+        "Lãi/lỗ thuần từ hoạt động khác",
+        "(Lãi)/lỗ các hoạt động khác",
+    ],
+    "otherExpense": [
+        "Chi phí khác",
+        "Other expenses",
+    ],
+    "currentIncomeTaxExpense": [
+        "Chi phí thuế TNDN hiện hành",
+        "Thuế TNDN hiện hành",
+    ],
+    "deferredIncomeTaxExpense": [
+        "Chi phí thuế TNDN hoãn lại",
+        "Thuế TNDN hoãn lại",
+    ],
+}
+
 # Balance Sheet
 BS_CODES: Dict[str, str] = {
     "totalAssets":          "T_NG_C_NG_T_I_S_N_NG",           # Tổng cộng tài sản
@@ -218,6 +245,10 @@ def _safe_round(v: Any, ndigits: int = 2) -> Optional[float]:
         return round(float(v), ndigits)
     except (ValueError, TypeError):
         return None
+
+
+def _normalize_ind_name(name: str) -> str:
+    return " ".join((name or "").strip().lower().split())
 
 
 def _compute_evaluation(ratio: Dict, current_price: float, ref_price: float) -> Dict[str, str]:
@@ -1285,25 +1316,40 @@ async def get_financial_reports(
         where_extra = "AND year = :year"
         params["year"] = year
         
+    extra_ind_names: List[str] = []
+    for names in IS_IND_NAME_FALLBACKS.values():
+        extra_ind_names.extend(names)
+
     sql = text(f"""
-        SELECT year, quarter, ind_code, value
+        SELECT year, quarter, ind_code, ind_name, value
         FROM {SCHEMA}.bctc
         WHERE ticker = :ticker
-          AND ind_code = ANY(:codes)
+          AND (
+              ind_code = ANY(:codes)
+              OR ind_name = ANY(:extra_ind_names)
+          )
           {where_extra}
         ORDER BY year DESC, quarter DESC
     """)
+
+    params["extra_ind_names"] = extra_ind_names
     
     res = await db.execute(sql, params)
     rows = res.mappings().all()
 
     # Pivot: {(year, quarter)} -> {ind_code: value}
     pivot: Dict[Tuple[int, str], Dict[str, float]] = {}
+    pivot_ind_name: Dict[Tuple[int, str], Dict[str, float]] = {}
     for r in rows:
         key = (int(r["year"]), str(r["quarter"]))
         if key not in pivot:
             pivot[key] = {}
+        if key not in pivot_ind_name:
+            pivot_ind_name[key] = {}
         pivot[key][r["ind_code"]] = _safe_float(r["value"])
+        normalized_name = _normalize_ind_name(str(r.get("ind_name") or ""))
+        if normalized_name:
+            pivot_ind_name[key][normalized_name] = _safe_float(r["value"])
 
     # Sort periods descending, take latest N
     # If year is filtered, we probably want all quarters of that year, not limited by 'periods' 
@@ -1323,6 +1369,7 @@ async def get_financial_reports(
     income_statement = []
     for year, quarter in sorted_periods:
         data = pivot.get((year, quarter), {})
+        data_by_name = pivot_ind_name.get((year, quarter), {})
         item = _build_period(year, quarter)
 
         for field, code in IS_CODES.items():
@@ -1332,8 +1379,25 @@ async def get_financial_reports(
                 val = data.get(IS_BANK_FALLBACKS[field], 0)
             item[field] = val
 
+        for field, candidates in IS_IND_NAME_FALLBACKS.items():
+            if item.get(field, 0):
+                continue
+            for candidate in candidates:
+                val = data_by_name.get(_normalize_ind_name(candidate))
+                if val not in (None, 0):
+                    item[field] = val
+                    break
+
         # EPS: use basicEps if available, otherwise 0 (ratio endpoint has proper EPS)
         item["eps"] = item.pop("basicEps", 0) or 0
+
+        # Unified aliases for charting in Overview.
+        if item.get("currentIncomeTaxExpense", 0) == 0:
+            item["currentIncomeTaxExpense"] = item.get("incomeTax", 0)
+        item.setdefault("deferredIncomeTaxExpense", 0)
+        item.setdefault("otherExpense", 0)
+        item.setdefault("extraordinaryIncome", 0)
+        item.setdefault("otherIncome", 0)
 
         # Bank-specific extra income statement fields
         if is_bank:
