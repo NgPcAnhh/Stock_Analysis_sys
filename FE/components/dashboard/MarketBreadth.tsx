@@ -56,7 +56,7 @@ export const MarketBreadth = () => {
             tooltip: {
                 trigger: "item",
                 formatter: (params: { name: string; value: number; percent: number }) =>
-                    `<b>${params.name}</b><br/>Số mã: <b>${params.value}</b><br/>Tỷ lệ: <b>${params.percent}%</b>`,
+                    `<b>${params.name}</b><br/><b>${params.value} mã</b><br/>Tỷ lệ: <b>${params.percent}%</b>`,
                 textStyle: {
                     fontFamily: "var(--font-roboto), Roboto, sans-serif",
                 },

@@ -86,3 +86,79 @@ class SectorWatchlistData(BaseModel):
     stocks: Dict[str, List[WatchlistStock]] = Field(
         ..., description="Map: sector_id -> list of stocks"
     )
+
+
+# ── 8. Sector Detail Dashboard ───────────────────────────────────
+class SectorKPI(BaseModel):
+    sectorName: str = Field(..., description="Tên ngành gốc")
+    rsScore: float = Field(0, description="Relative Strength score 1-99")
+    totalTradingValue: float = Field(0, description="Thanh khoản 24H tỷ VND")
+    tradingValueVsAvg: float = Field(0, description="So sánh vs SMA20 %")
+    mfi: float = Field(0, description="Money Flow Index 0-100")
+    marketCap: float = Field(0, description="Vốn hóa ngành tỷ VND")
+    netForeign: float = Field(0, description="Khối ngoại net tỷ VND")
+    pb: float = Field(0, description="P/B ngành")
+    stockCount: int = Field(0, description="Số cổ phiếu")
+
+
+class SectorPerformancePoint(BaseModel):
+    date: str
+    sectorReturn: float
+    vnindexReturn: float
+
+
+class BreadthData(BaseModel):
+    ceiling: int = 0
+    up: int = 0
+    ref: int = 0
+    down: int = 0
+    floor: int = 0
+
+
+class TreemapStock(BaseModel):
+    ticker: str
+    marketCap: float
+    changePercent: float
+    companyName: str = ""
+
+
+class LiquidityPoint(BaseModel):
+    date: str
+    tradingValue: float = 0
+    netForeign: float = 0
+
+
+class ValuationStock(BaseModel):
+    ticker: str
+    pb: float
+    roe: float
+    marketCap: float
+    zone: str = "balanced"
+
+
+class LiquidityByCapGroup(BaseModel):
+    group: str
+    value: float
+
+
+class SectorStockRow(BaseModel):
+    ticker: str
+    companyName: str = ""
+    exchange: str = ""
+    price: float = 0
+    change1D: float = 0
+    volume: int = 0
+    tradingValue: float = 0
+    foreignBuy: float = 0
+    foreignSell: float = 0
+
+
+class SectorDetailData(BaseModel):
+    kpi: SectorKPI
+    performance: List[SectorPerformancePoint]
+    breadth: BreadthData
+    treemap: List[TreemapStock]
+    liquidity: List[LiquidityPoint]
+    valuation: List[ValuationStock]
+    liquidityByCap: List[LiquidityByCapGroup]
+    stocks: List[SectorStockRow]

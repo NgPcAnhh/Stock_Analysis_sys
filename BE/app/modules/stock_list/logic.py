@@ -163,9 +163,9 @@ async def get_stock_overview(
     count_res = await db.execute(count_sql, count_params)
     total = count_res.scalar() or 0
 
-    # If MV is empty (not refreshed yet), fallback to legacy query path.
+    # If legacy query finds no records, return empty response instead of crashing
     if total == 0:
-        return None
+        return _empty_response(page, page_size)
 
     total_pages = math.ceil(total / page_size)
     offset = (page - 1) * page_size
@@ -220,19 +220,19 @@ async def get_stock_overview(
             FROM co_dedup bs
             LEFT JOIN LATERAL (
                 SELECT value / 10000.0 AS shares FROM {SCHEMA}.bctc
-                WHERE ticker = bs.ticker AND ind_code = 'C_PHI_U_PH_TH_NG_NG' AND value > 0
+                WHERE ticker = bs.ticker AND ind_code = 'cp_pho_thong' AND value > 0
                 ORDER BY year DESC, quarter DESC LIMIT 1
             ) s ON true
             LEFT JOIN LATERAL (
                 SELECT value AS equity FROM {SCHEMA}.bctc
-                WHERE ticker = bs.ticker AND ind_code = 'V_N_CH_S_H_U_NG' AND value > 0
+                WHERE ticker = bs.ticker AND ind_code = 'vcsh' AND value > 0
                 ORDER BY year DESC, quarter DESC LIMIT 1
             ) e ON true
             LEFT JOIN LATERAL (
                 SELECT SUM(value) as ttm_ni 
                 FROM (
                     SELECT value FROM {SCHEMA}.bctc
-                    WHERE ticker = bs.ticker AND ind_code = 'L_I_NHU_N_SAU_THU_C_A_C_NG_C_NG_TY_M_NG'
+                    WHERE ticker = bs.ticker AND ind_code = 'lnst_cua_co_dong_cong_ty_me'
                     ORDER BY year DESC, quarter DESC LIMIT 4
                 ) sub
             ) n ON true
@@ -1085,40 +1085,40 @@ async def get_screener_data(db: AsyncSession) -> Dict[str, Any]:
             SELECT UPPER(BTRIM(ticker)) AS ticker, year, quarter, ind_code, value
             FROM {SCHEMA}.bctc
             WHERE ind_code IN (
-                'C_PHI_U_PH_TH_NG_NG',
-                'V_N_CH_S_H_U_NG',
-                'N_PH_I_TR_NG',
-                'L_I_NHU_N_SAU_THU_C_A_C_NG_C_NG_TY_M_NG',
-                'DOANH_THU_THU_N',
-                'C_T_C_TR'
+                'cp_pho_thong',
+                'vcsh',
+                'no_phai_tra',
+                'lnst_cua_co_dong_cong_ty_me',
+                'doanh_thu_thuan',
+                'co_tuc_da_tra'
             ) AND value IS NOT NULL AND value != 0
         ),
         shares AS (
             SELECT DISTINCT ON (ticker)
                 ticker, value / 10000.0 AS shares
             FROM bctc_data
-            WHERE ind_code = 'C_PHI_U_PH_TH_NG_NG' AND value > 0
+            WHERE ind_code = 'cp_pho_thong' AND value > 0
             ORDER BY ticker, year DESC, quarter DESC
         ),
         equity AS (
             SELECT DISTINCT ON (ticker)
                 ticker, value AS equity
             FROM bctc_data
-            WHERE ind_code = 'V_N_CH_S_H_U_NG' AND value > 0
+            WHERE ind_code = 'vcsh' AND value > 0
             ORDER BY ticker, year DESC, quarter DESC
         ),
         total_liabilities AS (
             SELECT DISTINCT ON (ticker)
                 ticker, value AS liabilities
             FROM bctc_data
-            WHERE ind_code = 'N_PH_I_TR_NG'
+            WHERE ind_code = 'no_phai_tra'
             ORDER BY ticker, year DESC, quarter DESC
         ),
         ranked_div AS (
             SELECT ticker, value,
                 ROW_NUMBER() OVER (PARTITION BY ticker ORDER BY year DESC, quarter DESC) AS rn
             FROM bctc_data
-            WHERE ind_code = 'C_T_C_TR'
+            WHERE ind_code = 'co_tuc_da_tra'
         ),
         ttm_div AS (
             SELECT ticker, SUM(ABS(value)) AS ttm_div
@@ -1129,7 +1129,7 @@ async def get_screener_data(db: AsyncSession) -> Dict[str, Any]:
             SELECT ticker, value,
                 ROW_NUMBER() OVER (PARTITION BY ticker ORDER BY year DESC, quarter DESC) AS rn
             FROM bctc_data
-            WHERE ind_code = 'L_I_NHU_N_SAU_THU_C_A_C_NG_C_NG_TY_M_NG'
+            WHERE ind_code = 'lnst_cua_co_dong_cong_ty_me'
         ),
         ttm_ni AS (
             SELECT ticker, SUM(value) AS ttm_ni
@@ -1145,7 +1145,7 @@ async def get_screener_data(db: AsyncSession) -> Dict[str, Any]:
             SELECT ticker, value,
                 ROW_NUMBER() OVER (PARTITION BY ticker ORDER BY year DESC, quarter DESC) AS rn
             FROM bctc_data
-            WHERE ind_code = 'DOANH_THU_THU_N'
+            WHERE ind_code = 'doanh_thu_thuan'
         ),
         ttm_rev AS (
             SELECT ticker, SUM(value) AS ttm_rev

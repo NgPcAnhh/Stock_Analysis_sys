@@ -12,8 +12,6 @@ const mono = "font-[var(--font-roboto-mono)]";
 const GREEN = "#00C076";
 const RED = "#EF4444";
 const ORANGE = "#F97316";
-const BLUE = "#3B82F6";
-const PURPLE = "#8B5CF6";
 
 const fmtN = (n: number | null) => {
   if (n == null) return "—";
@@ -215,17 +213,146 @@ function DuPontSection() {
 }
 
 // ══════════════════════════════════════════════════════════════
-//  ROW 3 – Revenue & Profit Trends
+//  ROW 3 – Profit Section (Profit Drivers + Profit Funnel)
 // ══════════════════════════════════════════════════════════════
-function RevenueProfitTrends() {
+function ProfitSection() {
+  const ctx = React.useContext(IsCtx);
+  const viewCtx = ctx as typeof isDefaults & {
+    profitDrivers?: Array<{ name: string; value: number; color: string; isTotal?: boolean }>;
+  };
+  const profitDrivers = viewCtx.profitDrivers ?? [];
+  const profitFunnel = ctx.profitFunnel ?? isDefaults.profitFunnel;
+
+  const profitDriverChart = useMemo(() => {
+    const parts = profitDrivers.filter((d) => !d.isTotal);
+    if (parts.length === 0) return null;
+    return {
+      tooltip: {
+        trigger: "axis" as const,
+        axisPointer: { type: "shadow" as const },
+        valueFormatter: (value: number) => (value != null ? `${fmtN(value)} Tỷ` : "—"),
+      },
+      grid: { top: 18, left: 90, right: 20, bottom: 20 },
+      xAxis: { type: "value" as const },
+      yAxis: {
+        type: "category" as const,
+        data: parts.map((d) => d.name),
+        axisLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: { fontSize: 11, color: "#6b7280" },
+      },
+      series: [
+        {
+          type: "bar",
+          data: parts.map((d) => ({
+            value: d.value,
+            itemStyle: { color: d.value >= 0 ? d.color : RED, borderRadius: [0, 4, 4, 0] },
+          })),
+          barWidth: "45%",
+          label: {
+            show: true,
+            position: "right" as const,
+            formatter: (p: { value: number }) => fmtN(p.value),
+            fontSize: 10,
+            fontFamily: "Roboto Mono, monospace",
+            color: "#374151",
+          },
+          markLine: { data: [{ xAxis: 0 }], lineStyle: { color: "#D1D5DB", type: "dashed" as const } },
+        },
+      ],
+    };
+  }, [profitDrivers]);
+
+  const pbtTotal = useMemo(() => {
+    const total = profitDrivers.find((d) => d.isTotal)?.value;
+    if (total != null) return total;
+    return profitDrivers.filter((d) => !d.isTotal).reduce((sum, d) => sum + d.value, 0);
+  }, [profitDrivers]);
+
+  const funnelChart = useMemo(() => {
+    const sorted = [...profitFunnel].sort((a, b) => b.value - a.value);
+    return {
+      tooltip: {
+        trigger: "item" as const,
+        formatter: (p: { name: string; value: number }) => `${p.name}: ${fmtN(p.value)}`,
+      },
+      series: [
+        {
+          type: "funnel",
+          top: "6%",
+          bottom: "6%",
+          left: "8%",
+          width: "84%",
+          minSize: "20%",
+          maxSize: "100%",
+          sort: "descending" as const,
+          gap: 3,
+          label: {
+            show: true,
+            position: "inside" as const,
+            color: "#ffffff",
+            fontSize: 11,
+            fontWeight: 600,
+            lineHeight: 16,
+            formatter: (p: { name: string; value: number }) => `${p.name}\n${fmtN(p.value)}`,
+          },
+          labelLine: { show: false },
+          itemStyle: {
+            borderColor: "#fff",
+            borderWidth: 1,
+          },
+          data: sorted.map((d) => ({ value: d.value, name: d.name, itemStyle: { color: d.color } })),
+        },
+      ],
+    };
+  }, [profitFunnel]);
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+      <div className="bg-card rounded-xl shadow-sm border border-border/50 p-5 h-full flex flex-col">
+        <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5 mb-3">
+          <span>🧭</span> Động lực Lợi nhuận Trước Thuế
+        </h3>
+        <p className="text-[10px] text-muted-foreground mb-2">Phân rã LNTT thành các nguồn đóng góp, đơn vị: Tỷ VND.</p>
+        {profitDriverChart ? (
+          <ReactECharts option={profitDriverChart} style={{ height: 260 }} />
+        ) : (
+          <div className="h-[260px] flex items-center justify-center text-xs text-muted-foreground">Không đủ dữ liệu</div>
+        )}
+        <div className="space-y-1.5 mt-2 max-h-[150px] overflow-y-auto pr-1">
+          {profitDrivers.map((d) => {
+            const pct = pbtTotal !== 0 ? (d.value / pbtTotal) * 100 : 0;
+            return (
+              <div key={d.name} className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: d.value >= 0 ? d.color : RED }} />
+                  <span className="text-xs text-muted-foreground">{d.name}</span>
+                </div>
+                <span className={`text-xs font-bold ${mono}`}>{fmtN(d.value)} ({pct >= 0 ? "+" : ""}{pct.toFixed(1)}%)</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="bg-card rounded-xl shadow-sm border border-border/50 p-5 h-full flex flex-col">
+        <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5 mb-3">
+          <span>📉</span> Phễu Hiệu Quả (Profit Funnel)
+        </h3>
+        <div className="flex-1 min-h-[420px]">
+          <ReactECharts option={funnelChart} style={{ height: "100%" }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════
+//  ROW 4 – Revenue & Cost Trend
+// ══════════════════════════════════════════════════════════════
+function RevenueCostTrendSection() {
   const ctx = React.useContext(IsCtx);
   const revenueTrend = ctx.revenueTrend ?? isDefaults.revenueTrend;
-  const costStructure = ctx.costStructure ?? isDefaults.costStructure;
-  const costStructureModelLabel = (ctx as typeof isDefaults & { costStructureModelLabel?: string }).costStructureModelLabel;
-  const totalCostPct = useMemo(
-    () => Number(costStructure.reduce((sum, item) => sum + Number(item.value || 0), 0).toFixed(1)),
-    [costStructure]
-  );
   const years = revenueTrend.map((d: any) => String(d.year));
 
   const comboChart = useMemo(
@@ -236,7 +363,7 @@ function RevenueProfitTrends() {
         textStyle: { fontSize: 11 },
         data: ["Doanh Thu", "Giá Vốn", "LN Gộp"],
       },
-      grid: { top: 42, left: 55, right: 20, bottom: 28 },
+      grid: { top: 48, left: 55, right: 20, bottom: 32, containLabel: true },
       xAxis: { type: "category" as const, data: years },
       yAxis: { type: "value" as const },
       series: [
@@ -266,6 +393,32 @@ function RevenueProfitTrends() {
       ],
     }),
     [years]
+  );
+
+  return (
+    <div className="bg-card rounded-xl shadow-sm border border-border/50 p-5 h-full flex flex-col">
+        <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5 mb-3">
+          <span>📊</span> Diễn biến Doanh thu & Chi phí
+        </h3>
+        <div className="w-full">
+          <ReactECharts option={comboChart} style={{ height: 300 }} />
+        </div>
+      </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════
+//  ROW 5 – Cost Structure + Cost Management Efficiency
+// ══════════════════════════════════════════════════════════════
+function CostStructureEfficiencySection() {
+  const ctx = React.useContext(IsCtx);
+  const costStructure = ctx.costStructure ?? isDefaults.costStructure;
+  const efficiencyData = ctx.efficiencyData ?? isDefaults.efficiencyData;
+  const costStructureModelLabel = (ctx as typeof isDefaults & { costStructureModelLabel?: string }).costStructureModelLabel;
+
+  const totalCostPct = useMemo(
+    () => Number(costStructure.reduce((sum, item) => sum + Number(item.value || 0), 0).toFixed(1)),
+    [costStructure]
   );
 
   const donutChart = useMemo(
@@ -299,20 +452,30 @@ function RevenueProfitTrends() {
     [costStructure, totalCostPct]
   );
 
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-10 gap-4 items-stretch">
-      {/* Left: Combo Chart 70% */}
-      <div className="lg:col-span-7 bg-card rounded-xl shadow-sm border border-border/50 p-5 h-full flex flex-col">
-        <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5 mb-3">
-          <span>📊</span> Diễn biến Doanh thu & Chi phí
-        </h3>
-        <div className="flex-1 min-h-[300px]">
-          <ReactECharts option={comboChart} style={{ height: "100%" }} />
-        </div>
-      </div>
+  const efficiencyChart = useMemo(
+    () => ({
+      tooltip: {
+        trigger: "axis" as const,
+        valueFormatter: (value: number) => (value != null ? Number(value).toFixed(3) + "%" : "—"),
+      },
+      grid: { top: 24, left: 50, right: 20, bottom: 28 },
+      xAxis: { type: "category" as const, data: efficiencyData.map((d) => String(d.year)) },
+      yAxis: { type: "value" as const, axisLabel: { formatter: "{value}%" } },
+      series: [
+        {
+          type: "bar",
+          data: efficiencyData.map((d) => d.costToRevenue),
+          itemStyle: { color: ORANGE, borderRadius: [4, 4, 0, 0] },
+          barWidth: "45%",
+        },
+      ],
+    }),
+    [efficiencyData]
+  );
 
-      {/* Right: Donut 30% */}
-      <div className="lg:col-span-3 bg-card rounded-xl shadow-sm border border-border/50 p-5 h-full">
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="bg-card rounded-xl shadow-sm border border-border/50 p-5 h-full">
         <div className="flex items-start justify-between gap-2 mb-3">
           <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
             <span>🍩</span> Cơ cấu Chi phí (Common Size)
@@ -323,9 +486,8 @@ function RevenueProfitTrends() {
             </span>
           )}
         </div>
-        <ReactECharts option={donutChart} style={{ height: 230 }} />
-        {/* Legend */}
-        <div className="space-y-1.5 mt-2 max-h-[200px] overflow-y-auto pr-1">
+        <ReactECharts option={donutChart} style={{ height: 250 }} />
+        <div className="space-y-1.5 mt-2 max-h-[170px] overflow-y-auto pr-1">
           {costStructure.map((d) => (
             <div key={d.name} className="flex items-center justify-between">
               <div className="flex items-center gap-1.5">
@@ -337,18 +499,51 @@ function RevenueProfitTrends() {
           ))}
         </div>
       </div>
+
+      <div className="bg-card rounded-xl shadow-sm border border-border/50 p-5 h-full">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+            <span className="w-1 h-4 bg-[#3B82F6] rounded-full" />
+            Hiệu quả Quản lý Chi phí
+          </h3>
+          <span className="text-[10px] font-semibold text-[#00C076] bg-green-50 px-2 py-0.5 rounded-full border border-green-200">
+            Thấp hơn là Tốt hơn
+          </span>
+        </div>
+        <ReactECharts option={efficiencyChart} style={{ height: 320 }} />
+      </div>
     </div>
   );
 }
 
 // ══════════════════════════════════════════════════════════════
-//  ROW 4 – Growth & Efficiency
+//  ROW 6 – Revenue Mix + Revenue & Profit Growth
 // ══════════════════════════════════════════════════════════════
-function GrowthAndEfficiency() {
+function RevenueMixGrowthSection() {
   const ctx = React.useContext(IsCtx);
+  const revenueBySegment = ctx.revenueBySegment ?? isDefaults.revenueBySegment;
   const growthData = ctx.growthData ?? isDefaults.growthData;
-  const efficiencyData = ctx.efficiencyData ?? isDefaults.efficiencyData;
+  const costStructureModelLabel = (ctx as typeof isDefaults & { costStructureModelLabel?: string }).costStructureModelLabel;
   const years = growthData.map((d: any) => String(d.year));
+
+  const revPie = useMemo(
+    () => ({
+      tooltip: { trigger: "item" as const, formatter: "{b}: {d}%" },
+      series: [
+        {
+          type: "pie",
+          radius: ["40%", "72%"],
+          label: { show: false },
+          data: revenueBySegment.map((d) => ({
+            value: d.value,
+            name: d.name,
+            itemStyle: { color: d.color },
+          })),
+        },
+      ],
+    }),
+    [revenueBySegment]
+  );
 
   const growthChart = useMemo(
     () => ({
@@ -388,181 +583,17 @@ function GrowthAndEfficiency() {
     [years]
   );
 
-  const efficiencyChart = useMemo(
-    () => ({
-      tooltip: { 
-        trigger: "axis" as const,
-        valueFormatter: (value: number) => (value != null ? Number(value).toFixed(3) + "%" : "—"),
-      },
-      grid: { top: 24, left: 50, right: 20, bottom: 28 },
-      xAxis: { type: "category" as const, data: efficiencyData.map((d) => String(d.year)) },
-      yAxis: { type: "value" as const, axisLabel: { formatter: "{value}%" } },
-      series: [
-        {
-          type: "bar",
-          data: efficiencyData.map((d) => d.costToRevenue),
-          itemStyle: { color: ORANGE, borderRadius: [4, 4, 0, 0] },
-          barWidth: "45%",
-        },
-      ],
-    }),
-    [efficiencyData]
-  );
-
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      {/* Growth */}
-      <div className="bg-card rounded-xl shadow-sm border-2 border-blue-200 p-5">
-        <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5 mb-3">
-          <span className="w-1 h-4 bg-[#F97316] rounded-full" />
-          Tốc độ Tăng trưởng (YoY Growth %)
-        </h3>
-        <ReactECharts option={growthChart} style={{ height: 260 }} />
-      </div>
-
-      {/* Efficiency */}
-      <div className="bg-card rounded-xl shadow-sm border-2 border-blue-200 p-5">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
-            <span className="w-1 h-4 bg-[#3B82F6] rounded-full" />
-            Hiệu quả Quản lý Chi phí
-          </h3>
-          <span className="text-[10px] font-semibold text-[#00C076] bg-green-50 px-2 py-0.5 rounded-full border border-green-200">
-            Thấp hơn là Tốt hơn
-          </span>
-        </div>
-        <ReactECharts option={efficiencyChart} style={{ height: 260 }} />
-      </div>
-    </div>
-  );
-}
-
-// ══════════════════════════════════════════════════════════════
-//  ROW 5 – Segment Charts (3 columns)
-// ══════════════════════════════════════════════════════════════
-function SegmentCharts() {
-  const ctx = React.useContext(IsCtx);
-  const revenueBySegment = ctx.revenueBySegment ?? isDefaults.revenueBySegment;
-  const viewCtx = ctx as typeof isDefaults & {
-    costStructureModelLabel?: string;
-    profitDrivers?: Array<{ name: string; value: number; color: string; isTotal?: boolean }>;
-  };
-  const costStructureModelLabel = viewCtx.costStructureModelLabel;
-  const profitDrivers = viewCtx.profitDrivers ?? [];
-  const profitFunnel = ctx.profitFunnel ?? isDefaults.profitFunnel;
-  const revPie = useMemo(
-    () => ({
-      tooltip: { trigger: "item" as const, formatter: "{b}: {d}%" },
-      series: [
-        {
-          type: "pie",
-          radius: ["40%", "72%"],
-          label: { show: false },
-          data: revenueBySegment.map((d) => ({
-            value: d.value,
-            name: d.name,
-            itemStyle: { color: d.color },
-          })),
-        },
-      ],
-    }),
-    [revenueBySegment]
-  );
-
-  const profitDriverChart = useMemo(() => {
-    const parts = profitDrivers.filter((d) => !d.isTotal);
-    if (parts.length === 0) return null;
-    return {
-      tooltip: {
-        trigger: "axis" as const,
-        axisPointer: { type: "shadow" as const },
-        valueFormatter: (value: number) => (value != null ? `${fmtN(value)} Tỷ` : "—"),
-      },
-      grid: { top: 18, left: 90, right: 20, bottom: 20 },
-      xAxis: { type: "value" as const },
-      yAxis: {
-        type: "category" as const,
-        data: parts.map((d) => d.name),
-        axisLine: { show: false },
-        axisTick: { show: false },
-        axisLabel: { fontSize: 11, color: "#6b7280" },
-      },
-      series: [
-        {
-          type: "bar",
-          data: parts.map((d) => ({
-            value: d.value,
-            itemStyle: { color: d.value >= 0 ? d.color : "#EF4444", borderRadius: [0, 4, 4, 0] },
-          })),
-          barWidth: "45%",
-          label: {
-            show: true,
-            position: "right" as const,
-            formatter: (p: { value: number }) => fmtN(p.value),
-            fontSize: 10,
-            fontFamily: "Roboto Mono, monospace",
-            color: "#374151",
-          },
-          markLine: { data: [{ xAxis: 0 }], lineStyle: { color: "#D1D5DB", type: "dashed" as const } },
-        },
-      ],
-    };
-  }, [profitDrivers]);
-
-  const pbtTotal = useMemo(() => {
-    const total = profitDrivers.find((d) => d.isTotal)?.value;
-    if (total != null) return total;
-    return profitDrivers.filter((d) => !d.isTotal).reduce((sum, d) => sum + d.value, 0);
-  }, [profitDrivers]);
-
-  const funnelChart = useMemo(
-    () => ({
-      tooltip: { trigger: "axis" as const },
-      grid: { top: 12, left: 120, right: 40, bottom: 12 },
-      xAxis: { type: "value" as const, show: false },
-      yAxis: {
-        type: "category" as const,
-        data: profitFunnel.map((d) => d.name).reverse(),
-        axisLine: { show: false },
-        axisTick: { show: false },
-        axisLabel: { fontSize: 11, color: "#6b7280" },
-      },
-      series: [
-        {
-          type: "bar",
-          data: profitFunnel
-            .map((d) => ({
-              value: d.value,
-              itemStyle: { color: d.color, borderRadius: [0, 4, 4, 0] },
-            }))
-            .reverse(),
-          barWidth: "55%",
-          label: {
-            show: true,
-            position: "right" as const,
-            formatter: (p: { value: number }) => fmtN(p.value),
-            fontSize: 11,
-            fontFamily: "Roboto Mono, monospace",
-            color: "#374151",
-          },
-        },
-      ],
-    }),
-    [profitFunnel]
-  );
-
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-      {/* Revenue by Segment */}
-      <div className="bg-card rounded-xl shadow-sm border border-border/50 p-5">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="bg-card rounded-xl shadow-sm border border-border/50 p-5 h-full">
         <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5 mb-3">
           <span>📊</span> Cơ cấu Nguồn Thu (% tổng thu nhập)
         </h3>
         {costStructureModelLabel && (
           <p className="text-[10px] text-muted-foreground mb-2">Mô hình: {costStructureModelLabel}</p>
         )}
-        <ReactECharts option={revPie} style={{ height: 180 }} />
-        <div className="space-y-1.5 mt-2 max-h-[170px] overflow-y-auto pr-1">
+        <ReactECharts option={revPie} style={{ height: 240 }} />
+        <div className="space-y-1.5 mt-2 max-h-[190px] overflow-y-auto pr-1">
           {revenueBySegment.map((d) => (
             <div key={d.name} className="flex items-center justify-between">
               <div className="flex items-center gap-1.5">
@@ -575,48 +606,19 @@ function SegmentCharts() {
         </div>
       </div>
 
-      {/* Profit Drivers */}
-      <div className="bg-card rounded-xl shadow-sm border border-border/50 p-5">
+      <div className="bg-card rounded-xl shadow-sm border border-border/50 p-5 h-full">
         <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5 mb-3">
-          <span>🧭</span> Động lực Lợi nhuận Trước Thuế
+          <span className="w-1 h-4 bg-[#F97316] rounded-full" />
+          Tốc độ Tăng trưởng (YoY Growth %)
         </h3>
-        <p className="text-[10px] text-muted-foreground mb-2">Phân rã LNTT thành các nguồn đóng góp, đơn vị: Tỷ VND.</p>
-        {profitDriverChart ? (
-          <ReactECharts option={profitDriverChart} style={{ height: 180 }} />
-        ) : (
-          <div className="h-[180px] flex items-center justify-center text-xs text-muted-foreground">Không đủ dữ liệu</div>
-        )}
-        <div className="space-y-1.5 mt-2 max-h-[170px] overflow-y-auto pr-1">
-          {profitDrivers.map((d) => {
-            const pct = pbtTotal !== 0 ? (d.value / pbtTotal) * 100 : 0;
-            return (
-              <div key={d.name} className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: d.value >= 0 ? d.color : "#EF4444" }} />
-                  <span className="text-xs text-muted-foreground">{d.name}</span>
-                </div>
-                <span className={`text-xs font-bold ${mono}`}>{fmtN(d.value)} ({pct >= 0 ? "+" : ""}{pct.toFixed(1)}%)</span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Profit Funnel */}
-      <div className="bg-card rounded-xl shadow-sm border border-border/50 p-5 h-full flex flex-col">
-        <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5 mb-3">
-          <span>📉</span> Phễu Hiệu Quả (Profit Funnel)
-        </h3>
-        <div className="flex-1 min-h-[220px]">
-          <ReactECharts option={funnelChart} style={{ height: "100%" }} />
-        </div>
+        <ReactECharts option={growthChart} style={{ height: 320 }} />
       </div>
     </div>
   );
 }
 
 // ══════════════════════════════════════════════════════════════
-//  ROW 6 – Detailed Income Statement Table
+//  ROW 7 – Detailed Income Statement Table
 // ══════════════════════════════════════════════════════════════
 function DetailedTable() {
   const ctx = React.useContext(IsCtx);
@@ -701,18 +703,20 @@ function DetailedTable() {
 export default function IncomeStatementDeepDive({ data }: { data?: Record<string, unknown> }) {
   return (
     <IsCtx.Provider value={data ? { ...isDefaults, ...data } as typeof isDefaults : isDefaults}>
-      <div className="space-y-5">
+      <div className="space-y-6">
         {/* ROW 1 */}
         <KeyMetricCards />
         {/* ROW 2 */}
         <DuPontSection />
         {/* ROW 3 */}
-        <RevenueProfitTrends />
+        <ProfitSection />
         {/* ROW 4 */}
-        <GrowthAndEfficiency />
+        <RevenueCostTrendSection />
         {/* ROW 5 */}
-        <SegmentCharts />
+        <CostStructureEfficiencySection />
         {/* ROW 6 */}
+        <RevenueMixGrowthSection />
+        {/* ROW 7 */}
         <DetailedTable />
       </div>
     </IsCtx.Provider>

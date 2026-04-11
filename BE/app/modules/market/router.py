@@ -12,6 +12,7 @@ from app.modules.market.schemas import (
     HeatmapSector,
     IndexImpactItem,
     SectorAnalysisItem,
+    SectorDetailData,
     SectorOverviewItem,
     SectorWatchlistData,
 )
@@ -75,3 +76,11 @@ async def sector_analysis(db: AsyncSession = Depends(get_db)):
 async def sector_watchlist(db: AsyncSession = Depends(get_db)):
     """Bảng giá chi tiết theo ngành — danh sách ngành + cổ phiếu."""
     return await logic.get_sector_watchlist(db)
+# ── 8. Sector Detail ────────────────────────────────────────────────
+@router.get("/sector-detail", response_model=SectorDetailData)
+async def sector_detail(
+    sector_slug: str = Query(..., description="Slug of the sector (e.g., bat_dong_san)"),
+    db: AsyncSession = Depends(get_db)
+):
+    """Chi tiết về 1 ngành: KPI, line chart, treemap, thanh khoản, định giá..."""
+    return await logic.get_sector_detail(db, sector_slug=sector_slug)

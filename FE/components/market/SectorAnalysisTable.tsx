@@ -11,6 +11,8 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { ArrowUpDown, RefreshCw } from "lucide-react";
+import Link from "next/link";
+import { slugify } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -172,7 +174,9 @@ export default function SectorAnalysisTable() {
                             {sorted.map((row) => (
                                 <TableRow key={row.name} className="hover:bg-muted/50 transition-colors">
                                     <TableCell className="sticky left-0 bg-card font-semibold text-foreground min-w-[160px] z-10">
-                                        {row.name}
+                                        <Link href={`/market/sector/${slugify(row.name)}`} className="text-orange-500 hover:underline">
+                                            {row.name}
+                                        </Link>
                                     </TableCell>
                                     <TableCell className="text-right text-muted-foreground">{row.stockCount}</TableCell>
                                     <TableCell className="text-right text-muted-foreground font-medium">{row.marketCap}</TableCell>

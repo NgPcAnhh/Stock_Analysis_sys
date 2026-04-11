@@ -62,21 +62,21 @@ _EB_RANKED_DATES_CTE = f"""
 # ────────────────────────────────────────────────────────────────────
 # Income Statement
 IS_CODES: Dict[str, str] = {
-    "revenue":          "DOANH_THU_THU_N",                           # Doanh thu thuần
-    "costOfGoodsSold":  "GI_V_N_H_NG_B_N",                           # Giá vốn hàng bán
-    "grossProfit":      "L_I_G_P",                                    # Lợi nhuận gộp
-    "sellingExpenses":  "CHI_PH_B_N_H_NG",                            # Chi phí bán hàng
-    "adminExpenses":    "CHI_PH_QU_N_L_DN",                           # Chi phí quản lý DN
-    "operatingProfit":  "L_I_L_T_HO_T_NG_KINH_DOANH",                # LN từ HĐKD
-    "financialIncome":  "THU_NH_P_T_I_CH_NH",                         # Thu nhập tài chính
-    "financialExpenses":"CHI_PH_T_I_CH_NH",                           # Chi phí tài chính
-    "interestExpenses": "CHI_PH_TI_N_L_I_VAY",                        # Chi phí lãi vay
-    "profitBeforeTax":  "LN_TR_C_THU",                                # LNTT
-    "incomeTax":        "CHI_PH_THU_TNDN_HI_N_H_NH",                  # Thuế TNDN hiện hành
-    "netProfit":        "L_I_NHU_N_THU_N",                            # LNST
-    "netProfitParent":  "L_I_NHU_N_SAU_THU_C_A_C_NG_C_NG_TY_M_NG",   # LNST của CTMN
-    "basicEps":         "L_I_C_B_N_TR_N_C_PHI_U",                     # EPS cơ bản (VND/share)
-    "otherIncome":      "THU_NH_P_KH_C",                               # Thu nhập khác
+    "revenue":          "doanh_thu_thuan",
+    "costOfGoodsSold":  "gia_von_hang_ban",
+    "grossProfit":      "ln_gop",
+    "sellingExpenses":  "chi_phi_ban_hang",
+    "adminExpenses":    "cp_qldn",
+    "operatingProfit":  "lai_lo_tu_hoat_dong_kinh_doanh",
+    "financialIncome":  "dt_tc",
+    "financialExpenses":"chi_phi_tai_chinh",
+    "interestExpenses": "cp_lai_vay",
+    "profitBeforeTax":  "lntt",
+    "incomeTax":        "thue_tndn_hh",
+    "netProfit":        "loi_nhuan_thuan",
+    "netProfitParent":  "lnst_cua_co_dong_cong_ty_me",
+    "basicEps":         "lai_co_ban_tren_co_phieu",
+    "otherIncome":      "thu_nhap_khac",
 }
 
 # Additional IS fields resolved by ind_name fallback to avoid ind_code drift.
@@ -108,87 +108,87 @@ IS_IND_NAME_FALLBACKS: Dict[str, List[str]] = {
 
 # Balance Sheet
 BS_CODES: Dict[str, str] = {
-    "totalAssets":          "T_NG_C_NG_T_I_S_N_NG",           # Tổng cộng tài sản
-    "currentAssets":        "T_I_S_N_NG_N_H_N_NG",            # TS ngắn hạn
-    "cash":                 "TI_N_V_T_NG_NG_TI_N_NG",         # Tiền và tương đương tiền
-    "shortTermInvestments": "GI_TR_THU_N_U_T_NG_N_H_N_NG",    # Đầu tư ngắn hạn
-    "shortTermReceivables": "C_C_KHO_N_PH_I_THU_NG_N_H_N_NG", # Phải thu ngắn hạn
-    "inventory":            "H_NG_T_N_KHO_R_NG_NG",            # Hàng tồn kho
-    "nonCurrentAssets":     "T_I_S_N_D_I_H_N_NG",             # TS dài hạn
-    "fixedAssets":          "GI_TR_R_NG_T_I_S_N_U_T",         # TSCĐ
-    "longTermInvestments":  "U_T_D_I_H_N_NG",                  # Đầu tư dài hạn
-    "totalLiabilities":     "N_PH_I_TR_NG",                    # Tổng nợ phải trả
-    "currentLiabilities":   "N_NG_N_H_N_NG",                   # Nợ ngắn hạn
-    "longTermLiabilities":  "N_D_I_H_N_NG",                    # Nợ dài hạn
-    "totalEquity":          "V_N_CH_S_H_U_NG",                 # Vốn chủ sở hữu
-    "charterCapital":       "V_N_G_P_C_A_CH_S_H_U_NG",        # Vốn góp
-    "retainedEarnings":     "L_I_CH_A_PH_N_PH_I_NG",          # LN chưa phân phối
-    "outstandingSharesPar": "C_PHI_U_PH_TH_NG_NG",             # CP phổ thông (par value)
+    "totalAssets":          "tong_ts",
+    "currentAssets":        "ts_nh",
+    "cash":                 "tien_va_tuong_duong_tien",
+    "shortTermInvestments": "gia_tri_thuan_dau_tu_ngan_han",
+    "shortTermReceivables": "cac_khoan_phai_thu",
+    "inventory":            "htk_rong",
+    "nonCurrentAssets":     "ts_dh",
+    "fixedAssets":          "gia_tri_rong_tai_san_dau_tu",
+    "longTermInvestments":  "dt_tc_dh",
+    "totalLiabilities":     "no_phai_tra",
+    "currentLiabilities":   "no_ngan_han",
+    "longTermLiabilities":  "no_dai_han",
+    "totalEquity":          "vcsh",
+    "charterCapital":       "von_gop_csh",
+    "retainedEarnings":     "lnst_chua_pp",
+    "outstandingSharesPar": "cp_pho_thong",
 }
 
 # Cash Flow
 CF_CODES: Dict[str, str] = {
-    "operatingCashFlow":     "L_U_CHUY_N_TI_N_T_R_NG_T_C_C_HO_T_NG_SXKD",          # LCTT từ HĐSXKD
-    "profitBeforeTax":       "LN_TR_C_THU",                                           # LNTT
-    "depreciationAmortization": "KH_U_HAO_TSC",                                       # Khấu hao TSCĐ
-    "provisionsAndReserves": "D_PH_NG_RR_T_N_D_NG",                                   # Dự phòng rủi ro
-    "workingCapitalChanges": "L_U_CHUY_N_TI_N_THU_N_T_H_KD_TR_C_THAY_I_VL",          # LCTT thuần trước thay đổi VLĐ
-    "interestPaid":          "CHI_PH_L_I_VAY_TR",                                     # Chi phí lãi vay trả
-    "incomeTaxPaid":         "TI_N_THU_NH_P_DOANH_NGHI_P_TR",                         # Thuế TNDN trả
-    "investingCashFlow":     "L_U_CHUY_N_T_HO_T_NG_U_T",                              # LCTT từ HĐĐT
-    "purchaseOfFixedAssets": "MUA_S_M_TSC",                                            # Mua sắm TSCĐ
-    "proceedsFromDisposal":  "TI_N_THU_C_T_THANH_L_T_I_S_N_C_NH",                     # Thu từ thanh lý TSCĐ
-    "investmentInSubsidiaries":"U_T_V_O_C_C_DOANH_NGHI_P_KH_C",                      # Đầu tư vào DN khác
-    "financingCashFlow":     "L_U_CHUY_N_TI_N_T_HO_T_NG_T_I_CH_NH",                   # LCTT từ HĐTC
-    "proceedsFromBorrowing": "TI_N_THU_C_C_C_KHO_N_I_VAY",                             # Thu từ vay
-    "repaymentOfBorrowing":  "TI_N_TR_C_C_KHO_N_I_VAY",                                # Trả nợ vay
-    "dividendsPaid":         "C_T_C_TR",                                                # Cổ tức trả
-    "proceedsFromEquity":    "T_NG_V_N_C_PH_N_T_G_P_V_N_V_HO_C_PH_T_H_NH_C_PHI_U",   # Tăng vốn cổ phần
-    "netCashChange":         "L_U_CHUY_N_TI_N_THU_N_TRONG_K",                          # LC tiền thuần trong kỳ
-    "beginningCash":         "TI_N_V_T_NG_NG_TI_N",                                    # Tiền đầu kỳ
-    "endingCash":            "TI_N_V_T_NG_NG_TI_N_CU_I_K",                              # Tiền cuối kỳ
+    "operatingCashFlow":     "luu_chuyen_tien_te_rong_tu_cac_hoat_dong_sxkd",
+    "profitBeforeTax":       "lntt",
+    "depreciationAmortization": "khau_hao_tscd",
+    "provisionsAndReserves": "dp_rr_td",
+    "workingCapitalChanges": "luu_chuyen_tien_thuan_tu_hdkd_truoc_thay_doi_vld",
+    "interestPaid":          "lai_vay_da_tra",
+    "incomeTaxPaid":         "thue_tndn_da_nop",
+    "investingCashFlow":     "lctt_hd_dt",
+    "purchaseOfFixedAssets": "mua_sam_tscd",
+    "proceedsFromDisposal":  "tien_thu_duoc_tu_thanh_ly_tai_san_co_dinh",
+    "investmentInSubsidiaries":"dau_tu_vao_cac_doanh_nghiep_khac",
+    "financingCashFlow":     "luu_chuyen_tien_tu_hoat_dong_tai_chinh",
+    "proceedsFromBorrowing": "tien_thu_duoc_cac_khoan_di_vay",
+    "repaymentOfBorrowing":  "tien_tra_cac_khoan_di_vay",
+    "dividendsPaid":         "co_tuc_da_tra",
+    "proceedsFromEquity":    "tang_von_co_phan_tu_gop_von_va_hoac_phat_hanh_co_phieu",
+    "netCashChange":         "luu_chuyen_tien_thuan_trong_ky",
+    "beginningCash":         "tien_va_tuong_duong_tien",
+    "endingCash":            "tien_va_tuong_duong_tien_cuoi_ky",
 }
 
 # ── Bank / securities-firm IS fallback codes ──
 # Banks don't have DOANH_THU_THU_N, GI_V_N_H_NG_B_N, etc.
 # Map to bank-specific equivalents so charts still render for bank tickers.
 IS_BANK_FALLBACKS: Dict[str, str] = {
-    "revenue":          "DOANH_THU_NG",                    # Doanh thu (đồng) — fallback
-    "grossProfit":      "T_NG_THU_NH_P_HO_T_NG",          # Tổng thu nhập hoạt động
-    "operatingProfit":  "LN_T_H_KD_TR_C_CF_D_PH_NG",     # LN từ HĐKD trước CF dự phòng
-    "financialIncome":  "THU_NH_P_L_I_THU_N",              # Thu nhập lãi thuần
-    "financialExpenses":"CHI_PH_L_I_V_C_C_KHO_N_T_NG_T",  # Chi phí lãi và tương tự
-    "incomeTax":        "THU_TNDN",                         # Thuế TNDN (bank-aggregate)
+    "revenue":          "doanh_thu",
+    "grossProfit":      "tong_tn_hd",
+    "operatingProfit":  "ln_tu_hdkd_truoc_cf_du_phong",
+    "financialIncome":  "tn_lai_thuan",
+    "financialExpenses":"chi_phi_lai_va_cac_khoan_tuong_tu",
+    "incomeTax":        "thue_tndn",
 }
 
 # ── Bank-specific EXTRA fields for income statement (ngân hàng) ──
 # These are fetched in addition to IS_CODES when isBank detected.
 IS_BANK_EXTRA_CODES: Dict[str, str] = {
-    "interestIncome":       "THU_NH_P_L_I_V_C_C_KHO_N_T_NG_T",   # Thu nhập lãi và các khoản tương tự
-    "interestExpenseBank":  "CHI_PH_L_I_V_C_C_KHO_N_T_NG_T",      # Chi phí lãi và các khoản tương tự
-    "netInterestIncome":    "THU_NH_P_L_I_THU_N",                   # Thu nhập lãi thuần (NII)
-    "netServiceFeeIncome":  "L_I_L_T_PHI_D_CH_V",                   # Lãi thuần từ phí dịch vụ
-    "tradingFxIncome":      "L_I_L_T_H_KD_NGO_I_H_I",              # Lãi thuần từ kinh doanh ngoại hối
-    "tradingSecuritiesIncome":"L_I_L_T_MUA_B_N_CK_KD",             # Lãi thuần từ mua bán CK kinh doanh
-    "investmentSecuritiesIncome":"L_I_L_T_MUA_B_N_CK_T",           # Lãi thuần từ mua bán CK đầu tư
-    "otherOperatingIncome": "L_I_L_T_HO_T_NG_KH_C",                # Lãi thuần từ hoạt động khác
-    "totalOperatingIncome": "T_NG_THU_NH_P_HO_T_NG",               # Tổng thu nhập hoạt động (TOI)
-    "operatingExpenses":    "CHI_PH_HO_T_NG",                       # Chi phí hoạt động (OPEX)
-    "prePpopProfit":        "LN_T_H_KD_TR_C_CF_D_PH_NG",           # LN trước dự phòng (PPOP)
-    "provisionExpenses":    "CHI_PH_D_PH_NG_RR_TD",                 # Chi phí dự phòng rủi ro tín dụng
+    "interestIncome":       "thu_nhap_lai_va_cac_khoan_tuong_tu",
+    "interestExpenseBank":  "chi_phi_lai_va_cac_khoan_tuong_tu",
+    "netInterestIncome":    "tn_lai_thuan",
+    "netServiceFeeIncome":  "ln_thuan_dv",
+    "tradingFxIncome":      "kinh_doanh_ngoai_hoi_va_vang",
+    "tradingSecuritiesIncome":"lai_lo_thuan_tu_kinh_doanh_chung_khoan",
+    "investmentSecuritiesIncome":"lai_lo_thuan_tu_thanh_ly_chung_khoan_dau_tu",
+    "otherOperatingIncome": "hoat_dong_khac",
+    "totalOperatingIncome": "tong_tn_hd",
+    "operatingExpenses":    "chi_phi_hoat_dong_khac",
+    "prePpopProfit":        "ln_tu_hdkd_truoc_cf_du_phong",
+    "provisionExpenses":    "chi_phi_du_phong_rui_ro_tin_dung",
 }
 
 # ── Bank-specific EXTRA fields for balance sheet ──
 BS_BANK_EXTRA_CODES: Dict[str, str] = {
-    "loansToCustomers":      "CHO_VAY_KH_CH_H_NG_THU_N",            # Cho vay và ứng trước KH (thuần)
-    "loansToCustomersGross": "CHO_VAY_V_NG_TR_C_KH_CH_H_NG",        # Cho vay KH (gộp, trước dự phòng)
-    "loanLossReserves":      "D_PH_NG_RR_CHO_VAY_KH_CH_H_NG",       # Dự phòng rủi ro cho vay KH
-    "customerDeposits":      "TI_N_G_I_C_A_KH_CH_H_NG",             # Tiền gửi của khách hàng
-    "sbvDeposits":           "TI_N_G_I_T_I_NHNN_VI_T_NAM",          # Tiền gửi tại NHNN Việt Nam
-    "interBankDeposits":     "TI_N_G_I_V_CHO_VAY_C_C_TD_KH_C",      # Tiền gửi tại TCTD khác
-    "tradingSecurities":     "CH_NG_KHO_N_KINH_DOANH_THU_N",        # Chứng khoán kinh doanh (thuần)
-    "investmentSecurities":  "CH_NG_KHO_N_U_T_THU_N",               # Chứng khoán đầu tư (thuần)
-    "debtSecuritiesIssued":  "PH_T_H_NH_GI_Y_T_C_GI_TR",            # Phát hành giấy tờ có giá
+    "loansToCustomers":      "cho_vay_khach_hang",
+    "loansToCustomersGross": "cho_vay_khach_hang",
+    "loanLossReserves":      "du_phong_rui_ro_cho_vay_khach_hang",
+    "customerDeposits":      "tien_gui_cua_khach_hang",
+    "sbvDeposits":           "tien_gui_tai_ngan_hang_nha_nuoc_viet_nam",
+    "interBankDeposits":     "tien_gui_tai_cac_tctd_khac_va_cho_vay_cac_tctd_khac",
+    "tradingSecurities":     "chung_khoan_kinh_doanh",
+    "investmentSecurities":  "chung_khoan_dau_tu",
+    "debtSecuritiesIssued":  "phat_hanh_giay_to_co_gia",
 }
 
 # Banking industry detection keywords (Vietnamese ICB names)
@@ -904,12 +904,12 @@ async def _query_latest_ratio(db: AsyncSession, ticker: str) -> Optional[Dict]:
             FROM (
                 SELECT ticker, value, year, quarter, 1 AS priority
                 FROM {SCHEMA}.bctc
-                WHERE ind_code = 'C_PHI_U_PH_TH_NG_NG'
+                WHERE ind_code = 'cp_pho_thong'
                   AND ticker = :ticker AND value IS NOT NULL AND value > 0
                 UNION ALL
                 SELECT ticker, value, year, quarter, 2 AS priority
                 FROM {SCHEMA}.bctc
-                WHERE ind_code = 'V_N_G_P_C_A_CH_S_H_U_NG'
+                WHERE ind_code = 'von_gop_csh'
                   AND ticker = :ticker AND value IS NOT NULL AND value > 0
             ) combined
             ORDER BY ticker, priority, year DESC, quarter DESC
@@ -918,7 +918,7 @@ async def _query_latest_ratio(db: AsyncSession, ticker: str) -> Optional[Dict]:
         bctc_equity AS (
             SELECT value AS equity
             FROM {SCHEMA}.bctc
-            WHERE ind_code = 'V_N_CH_S_H_U_NG'
+            WHERE ind_code = 'vcsh'
               AND ticker = :ticker AND value IS NOT NULL AND value > 0
             ORDER BY year DESC, quarter DESC
             LIMIT 1
@@ -928,7 +928,7 @@ async def _query_latest_ratio(db: AsyncSession, ticker: str) -> Optional[Dict]:
             SELECT value,
                 ROW_NUMBER() OVER (ORDER BY year DESC, quarter DESC) AS rn
             FROM {SCHEMA}.bctc
-            WHERE ind_code = 'L_I_NHU_N_SAU_THU_C_A_C_NG_C_NG_TY_M_NG'
+            WHERE ind_code = 'lnst_cua_co_dong_cong_ty_me'
               AND ticker = :ticker AND value IS NOT NULL AND value != 0
         ),
         ttm_ni AS (
@@ -1084,13 +1084,13 @@ async def get_financial_ratios(
         FROM {SCHEMA}.bctc
         WHERE ticker = :ticker
           AND ind_code IN (
-              'C_PHI_U_PH_TH_NG_NG', 
-              'V_N_G_P_C_A_CH_S_H_U_NG', 
-              'V_N_CH_S_H_U_NG', 
-              'L_I_NHU_N_SAU_THU_C_A_C_NG_C_NG_TY_M_NG',
-              'DOANH_THU_THU_N',
-              'L_I_G_P',
-              'T_NG_C_NG_T_I_S_N_NG'
+              'cp_pho_thong', 
+              'von_gop_csh', 
+              'vcsh', 
+              'lnst_cua_co_dong_cong_ty_me',
+              'doanh_thu_thuan',
+              'ln_gop',
+              'tong_ts'
           )
           {'AND year = :year' if year else ''}
     """
@@ -1104,11 +1104,11 @@ async def get_financial_ratios(
     def update_map(y, q, key, val):
         k = (int(y), int(q))
         if k not in bctc_map: bctc_map[k] = {}
-        # Logic for shares priority: prefer C_PHI_U_PH_TH_NG_NG over V_N_G_P_C_A_CH_S_H_U_NG
+        # Logic for shares priority: prefer cp_pho_thong over von_gop_csh
         if key == "shares":
             curr = bctc_map[k].get("shares_prio", 99)
-            # 1 for C_PHI_U..., 2 for V_N_G...
-            prio = 1 if val[1] == 'C_PHI_U_PH_TH_NG_NG' else 2
+            # 1 for cp_pho_thong, 2 for von_gop_csh
+            prio = 1 if val[1] == 'cp_pho_thong' else 2
             if prio < curr:
                 bctc_map[k]["shares"] = val[0]
                 bctc_map[k]["shares_prio"] = prio
@@ -1118,17 +1118,17 @@ async def get_financial_ratios(
     for b in bctc_raw:
         code = b["ind_code"]
         val = _safe_float(b["value"])
-        if code in ('C_PHI_U_PH_TH_NG_NG', 'V_N_G_P_C_A_CH_S_H_U_NG'):
+        if code in ('cp_pho_thong', 'von_gop_csh'):
             update_map(b["year"], b["quarter"], "shares", (val / 10000.0, code))
-        elif code == 'V_N_CH_S_H_U_NG':
+        elif code == 'vcsh':
             update_map(b["year"], b["quarter"], "equity", val)
-        elif code == 'L_I_NHU_N_SAU_THU_C_A_C_NG_C_NG_TY_M_NG':
+        elif code == 'lnst_cua_co_dong_cong_ty_me':
             update_map(b["year"], b["quarter"], "net_income", val)
-        elif code == 'DOANH_THU_THU_N':
+        elif code == 'doanh_thu_thuan':
             update_map(b["year"], b["quarter"], "revenue", val)
-        elif code == 'L_I_G_P':
+        elif code == 'ln_gop':
             update_map(b["year"], b["quarter"], "gross_profit", val)
-        elif code == 'T_NG_C_NG_T_I_S_N_NG':
+        elif code == 'tong_ts':
             update_map(b["year"], b["quarter"], "total_assets", val)
 
     # Fetch price at each quarter-end for PE/PB computation
@@ -1718,12 +1718,12 @@ async def get_stock_comparison(
                 FROM (
                     SELECT ticker, value, year, quarter, 1 AS priority
                     FROM {SCHEMA}.bctc
-                    WHERE ind_code = 'C_PHI_U_PH_TH_NG_NG'
+                    WHERE ind_code = 'cp_pho_thong'
                       AND ticker = ANY(:tickers) AND value IS NOT NULL AND value > 0
                     UNION ALL
                     SELECT ticker, value, year, quarter, 2 AS priority
                     FROM {SCHEMA}.bctc
-                    WHERE ind_code = 'V_N_G_P_C_A_CH_S_H_U_NG'
+                    WHERE ind_code = 'von_gop_csh'
                       AND ticker = ANY(:tickers) AND value IS NOT NULL AND value > 0
                 ) combined
                 ORDER BY ticker, priority, year DESC, quarter DESC
@@ -1732,7 +1732,7 @@ async def get_stock_comparison(
             equity AS (
                 SELECT DISTINCT ON (ticker) ticker, value AS equity
                 FROM {SCHEMA}.bctc
-                WHERE ind_code = 'V_N_CH_S_H_U_NG'
+                WHERE ind_code = 'vcsh'
                   AND ticker = ANY(:tickers) AND value IS NOT NULL AND value > 0
                 ORDER BY ticker, year DESC, quarter DESC
             ),
@@ -1740,7 +1740,7 @@ async def get_stock_comparison(
             assets AS (
                 SELECT DISTINCT ON (ticker) ticker, value AS total_assets
                 FROM {SCHEMA}.bctc
-                WHERE ind_code = 'T_NG_C_NG_T_I_S_N_NG'
+                WHERE ind_code = 'tong_ts'
                   AND ticker = ANY(:tickers) AND value IS NOT NULL AND value > 0
                 ORDER BY ticker, year DESC, quarter DESC
             ),
@@ -1748,7 +1748,7 @@ async def get_stock_comparison(
             liabilities AS (
                 SELECT DISTINCT ON (ticker) ticker, value AS total_liabilities
                 FROM {SCHEMA}.bctc
-                WHERE ind_code = 'N_PH_I_TR_NG'
+                WHERE ind_code = 'no_phai_tra'
                   AND ticker = ANY(:tickers) AND value IS NOT NULL
                 ORDER BY ticker, year DESC, quarter DESC
             ),
@@ -1757,7 +1757,7 @@ async def get_stock_comparison(
                 SELECT ticker, value,
                     ROW_NUMBER() OVER (PARTITION BY ticker ORDER BY year DESC, quarter DESC) AS rn
                 FROM {SCHEMA}.bctc
-                WHERE ind_code = 'DOANH_THU_THU_N'
+                WHERE ind_code = 'doanh_thu_thuan'
                   AND ticker = ANY(:tickers) AND value IS NOT NULL AND value != 0
             ),
             revenue_ttm AS (
@@ -1770,7 +1770,7 @@ async def get_stock_comparison(
                 SELECT ticker, value,
                     ROW_NUMBER() OVER (PARTITION BY ticker ORDER BY year DESC, quarter DESC) AS rn
                 FROM {SCHEMA}.bctc
-                WHERE ind_code = 'L_I_G_P'
+                WHERE ind_code = 'ln_gop'
                   AND ticker = ANY(:tickers) AND value IS NOT NULL
             ),
             gross_profit_ttm AS (
@@ -1783,7 +1783,7 @@ async def get_stock_comparison(
                 SELECT ticker, value,
                     ROW_NUMBER() OVER (PARTITION BY ticker ORDER BY year DESC, quarter DESC) AS rn
                 FROM {SCHEMA}.bctc
-                WHERE ind_code = 'L_I_NHU_N_SAU_THU_C_A_C_NG_C_NG_TY_M_NG'
+                WHERE ind_code = 'lnst_cua_co_dong_cong_ty_me'
                   AND ticker = ANY(:tickers) AND value IS NOT NULL AND value != 0
             ),
             net_income_ttm AS (

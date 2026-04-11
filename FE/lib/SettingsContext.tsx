@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import {
     LayoutDashboard, BarChart2, LineChart, PieChart,
-    Newspaper, Activity, Settings, Monitor, type LucideIcon,
+    Newspaper, Activity, Settings, Monitor, BriefcaseBusiness, type LucideIcon,
 } from "lucide-react";
 
 // ─── Sidebar icon registry ────────────────────────────────────────────────────
@@ -16,6 +16,7 @@ export const SIDEBAR_ICON_MAP: Record<string, LucideIcon> = {
     Activity,
     Settings,
     Monitor,
+    BriefcaseBusiness,
 };
 
 // ─── Sidebar nav items ────────────────────────────────────────────────────────
@@ -34,9 +35,42 @@ export const DEFAULT_SIDEBAR_ITEMS: SidebarNavItem[] = [
     { id: "price-board", name: "Bảng điện",  href: "/price-board", iconName: "Monitor",         enabled: true },
     { id: "stocks",      name: "Cổ phiếu",   href: "/stocks",      iconName: "LineChart",       enabled: true },
     { id: "analysis",    name: "Phân tích",  href: "/analysis",    iconName: "PieChart",        enabled: true },
+    { id: "portfolio-assumption", name: "Giả định danh mục", href: "/portfolio-assumption", iconName: "BriefcaseBusiness", enabled: true },
     { id: "news",        name: "Tin tức",    href: "/news",        iconName: "Newspaper",       enabled: true },
     { id: "settings",    name: "Cài đặt",    href: "/settings",    iconName: "Settings",        enabled: true },
 ];
+
+function reconcileSidebarItems(savedItems: SidebarNavItem[]): SidebarNavItem[] {
+    const defaultById = new Map(DEFAULT_SIDEBAR_ITEMS.map((item) => [item.id, item]));
+    const merged: SidebarNavItem[] = savedItems
+        .filter((item) => defaultById.has(item.id))
+        .map((item) => ({ ...defaultById.get(item.id)!, ...item }));
+
+    const findInsertIndex = (defaultIndex: number): number => {
+        for (let i = defaultIndex - 1; i >= 0; i--) {
+            const prevId = DEFAULT_SIDEBAR_ITEMS[i].id;
+            const existingIndex = merged.findIndex((item) => item.id === prevId);
+            if (existingIndex >= 0) return existingIndex + 1;
+        }
+        for (let i = defaultIndex + 1; i < DEFAULT_SIDEBAR_ITEMS.length; i++) {
+            const nextId = DEFAULT_SIDEBAR_ITEMS[i].id;
+            const existingIndex = merged.findIndex((item) => item.id === nextId);
+            if (existingIndex >= 0) return existingIndex;
+        }
+        return merged.length;
+    };
+
+    for (let idx = 0; idx < DEFAULT_SIDEBAR_ITEMS.length; idx++) {
+        const defaultItem = DEFAULT_SIDEBAR_ITEMS[idx];
+        const exists = merged.some((item) => item.id === defaultItem.id);
+        if (!exists) {
+            const insertAt = findInsertIndex(idx);
+            merged.splice(insertAt, 0, defaultItem);
+        }
+    }
+
+    return merged;
+}
 
 // ─── Context ──────────────────────────────────────────────────────────────────
 interface SettingsContextType {
@@ -63,7 +97,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
             if (saved) {
                 const parsed = JSON.parse(saved);
                 if (typeof parsed.darkMode === "boolean") setDarkModeState(parsed.darkMode);
-                if (Array.isArray(parsed.sidebarItems)) setSidebarItemsState(parsed.sidebarItems);
+                if (Array.isArray(parsed.sidebarItems)) {
+                    setSidebarItemsState(reconcileSidebarItems(parsed.sidebarItems));
+                }
             }
         } catch { /* ignore */ }
         setMounted(true);

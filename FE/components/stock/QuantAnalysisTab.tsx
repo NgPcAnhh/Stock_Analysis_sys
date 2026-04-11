@@ -1,777 +1,592 @@
-﻿"use client";
+"use client";
 
 import React, { useMemo } from "react";
 import ReactECharts from "echarts-for-react";
 import { useStockDetail } from "@/lib/StockDetailContext";
-import { useQuantAnalysis, type QuantAnalysisData } from "@/hooks/useStockData";
+import { usePriceHistory, useQuantAnalysis, type QuantAnalysisData } from "@/hooks/useStockData";
 
-/* ── Shared helpers ─────────────────────────────────────────── */
-const fmtPct = (v: number, sign = true) =>
-  `${sign && v > 0 ? "+" : ""}${v.toFixed(1)}%`;
+type SeriesPoint = { date: string; value: number };
+type ReturnPoint = { date: string; ret: number; close: number; volume: number };
 
-const CardWrapper = ({
-  title,
-  children,
-  className = "",
-}: {
-  title?: string;
-  children: React.ReactNode;
-  className?: string;
-}) => (
-  <div className={`bg-card rounded-xl shadow-sm border border-border/50 ${className}`}>
-    {title && (
-      <div className="px-5 pt-4 pb-2">
-        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-      </div>
-    )}
-    <div className="px-5 pb-5">{children}</div>
-  </div>
-);
-
-const SectionHeading = ({
-  icon,
-  title,
-  subtitle,
-}: {
-  icon: string;
-  title: string;
-  subtitle?: string;
-}) => (
-  <div className="flex items-start gap-3 mb-4 mt-2">
-    <span className="text-xl leading-none mt-0.5">{icon}</span>
-    <div>
-      <h3 className="text-sm font-bold text-foreground uppercase tracking-wide">{title}</h3>
-      {subtitle && <p className="text-[11px] text-muted-foreground mt-0.5">{subtitle}</p>}
-    </div>
-  </div>
-);
-
-type InsightLevel = "positive" | "warning" | "negative" | "neutral";
-
-const InsightBlock = ({
-  level,
-  children,
-}: {
-  level: InsightLevel;
-  children: React.ReactNode;
-}) => {
-  const styles: Record<InsightLevel, { border: string; bg: string; icon: string }> = {
-    positive: { border: "border-[#00C076]", bg: "bg-green-50", icon: "✅" },
-    warning: { border: "border-[#F97316]", bg: "bg-orange-50", icon: "⚠️" },
-    negative: { border: "border-[#EF4444]", bg: "bg-red-50", icon: "🔴" },
-    neutral: { border: "border-[#3B82F6]", bg: "bg-blue-50", icon: "ℹ️" },
-  };
-  const s = styles[level];
-  return (
-    <div className={`mt-3 border-l-4 ${s.border} ${s.bg} rounded-r-lg px-4 py-3`}>
-      <p className="text-xs text-muted-foreground leading-relaxed">
-        <span className="mr-1">{s.icon}</span>
-        {children}
-      </p>
-    </div>
-  );
+const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri"];
+const THEME = {
+    primary: "#f97316",
+    accent: "#1d4ed8",
+    info: "#0ea5e9",
+    positive: "#16a34a",
+    negative: "#dc2626",
+    violet: "#7c3aed",
 };
 
-/* ================================================================= */
-/*  SECTION 1 – KPI CARDS                                             */
-/* ================================================================= */
-const KPICards = ({ kpis }: { kpis: QuantAnalysisData["kpis"] }) => {
-  const colorMap: Record<string, { color: string; bg: string; border: string }> = {
-    "Sharpe Ratio": { color: "text-[#F97316]", bg: "bg-orange-50", border: "border-orange-200" },
-    "Sortino Ratio": { color: "text-[#10B981]", bg: "bg-emerald-50", border: "border-emerald-200" },
-    "Max Drawdown": { color: "text-[#EF4444]", bg: "bg-red-50", border: "border-red-200" },
-  };
-  const defaults = [
-    { color: "text-[#00C076]", bg: "bg-green-50", border: "border-green-200" },
-    { color: "text-[#3B82F6]", bg: "bg-blue-50", border: "border-blue-200" },
-    { color: "text-[#64748B]", bg: "bg-slate-50", border: "border-slate-200" },
-    { color: "text-[#8B5CF6]", bg: "bg-violet-50", border: "border-violet-200" },
-    { color: "text-[#F97316]", bg: "bg-orange-50", border: "border-orange-200" },
-    { color: "text-[#EF4444]", bg: "bg-red-50", border: "border-red-200" },
-  ];
-
-  const sharpe = kpis.find((k) => k.label === "Sharpe Ratio");
-  const insightLevel: InsightLevel = sharpe && sharpe.value >= 1 ? "positive" : sharpe && sharpe.value >= 0.5 ? "neutral" : "negative";
-
-  return (
-    <>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        {kpis.map((k, i) => {
-          const style = colorMap[k.label] ?? defaults[i % defaults.length];
-          return (
-            <div key={k.label} className={`rounded-xl border ${style.border} ${style.bg} p-4 flex flex-col gap-1`}>
-              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">{k.label}</span>
-              <span className={`text-2xl font-extrabold font-mono ${style.color}`}>
-                {k.value}{k.suffix}
-              </span>
+function Card({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
+    return (
+        <div className="rounded-xl border border-border/50 bg-card shadow-sm">
+            <div className="px-4 pt-4 pb-2">
+                <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+                {subtitle ? <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p> : null}
             </div>
-          );
-        })}
-      </div>
-      {sharpe && (
-        <InsightBlock level={insightLevel}>
-          <strong>Tong quan:</strong>{" "}
-          {sharpe.value >= 1
-            ? `Sharpe Ratio ${sharpe.value} > 1 — loi nhuan dieu chinh rui ro xuat sac.`
-            : sharpe.value >= 0.5
-              ? `Sharpe Ratio ${sharpe.value} o muc trung binh. Can can nhac tuong quan rui ro-loi nhuan.`
-              : `Sharpe Ratio ${sharpe.value} < 0.5 — loi nhuan chua du bu dap rui ro.`}
-        </InsightBlock>
-      )}
-    </>
-  );
-};
+            <div className="px-4 pb-4">{children}</div>
+        </div>
+    );
+}
 
-/* ================================================================= */
-/*  CUMULATIVE RETURN (Wealth Index)                                  */
-/* ================================================================= */
-const CumulativeReturnChart = ({ wealthIndex }: { wealthIndex: QuantAnalysisData["wealthIndex"] }) => {
-  const option = useMemo(() => {
-    if (wealthIndex.length < 2) return null;
-    const dates = wealthIndex.map((d) => d.date);
-    const vals = wealthIndex.map((d) => d.value);
-    return {
-      tooltip: {
-        trigger: "axis" as const,
-        backgroundColor: "#1e293b", borderColor: "#334155",
-        textStyle: { color: "#f1f5f9", fontSize: 12, fontFamily: "Roboto Mono" },
-        formatter: (params: { axisValue: string; value: number }[]) =>
-          `${params[0]?.axisValue}<br/>Wealth Index: <b>${Number(params[0]?.value).toFixed(4)}</b>`,
-      },
-      grid: { top: 20, bottom: 30, left: 55, right: 20 },
-      xAxis: {
-        type: "category" as const, data: dates,
-        axisLabel: { fontSize: 10, color: "#94a3b8", interval: Math.floor(dates.length / 6) },
-        axisLine: { lineStyle: { color: "#e2e8f0" } },
-      },
-      yAxis: {
-        type: "value" as const,
-        axisLabel: { fontSize: 10, color: "#94a3b8", fontFamily: "Roboto Mono" },
-        splitLine: { lineStyle: { color: "#f1f5f9" } },
-      },
-      series: [{
-        type: "line", data: vals, smooth: true, symbol: "none",
-        lineStyle: { width: 2.5, color: "#F97316" },
-        areaStyle: {
-          color: {
-            type: "linear" as const, x: 0, y: 0, x2: 0, y2: 1,
-            colorStops: [{ offset: 0, color: "rgba(249,115,22,0.15)" }, { offset: 1, color: "rgba(249,115,22,0)" }],
-          },
-        },
-      }],
-    };
-  }, [wealthIndex]);
+function Section({ index, title, subtitle, children }: { index: string; title: string; subtitle: string; children: React.ReactNode }) {
+    return (
+        <section className="space-y-3">
+            <div className="border-b border-border/60 pb-2 flex items-center gap-2">
+                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded bg-primary/10 px-1.5 text-[10px] font-bold text-primary">
+                    {index}
+                </span>
+                <div>
+                    <h2 className="text-sm font-bold uppercase tracking-wide text-foreground">{title}</h2>
+                    <p className="text-xs text-muted-foreground">{subtitle}</p>
+                </div>
+            </div>
+            {children}
+        </section>
+    );
+}
 
-  if (!option) return null;
-  const lastVal = wealthIndex[wealthIndex.length - 1]?.value ?? 1;
-  const totalReturn = ((lastVal - 1) * 100);
+function downsample<T>(arr: T[], maxPoints = 260): T[] {
+    if (arr.length <= maxPoints) return arr;
+    const step = Math.ceil(arr.length / maxPoints);
+    const sampled: T[] = [];
+    for (let i = 0; i < arr.length; i += step) sampled.push(arr[i]);
+    if (sampled[sampled.length - 1] !== arr[arr.length - 1]) sampled.push(arr[arr.length - 1]);
+    return sampled;
+}
 
-  return (
-    <CardWrapper title="Hieu qua Dau tu Tich luy (Cumulative Wealth Index)">
-      <ReactECharts option={option} style={{ height: 340 }} />
-      <InsightBlock level={totalReturn > 0 ? "positive" : "negative"}>
-        <strong>Nhan dinh:</strong> Tong loi nhuan tich luy: <span className="font-mono font-semibold">{fmtPct(totalReturn)}</span>.
-        {totalReturn > 20 ? " Hieu suat vuot troi — chien luoc buy & hold mang lai ket qua tot." : totalReturn > 0 ? " Loi nhuan duong nhung can theo doi momentum." : " Co phieu dang trong xu huong giam — can than."}
-      </InsightBlock>
-    </CardWrapper>
-  );
-};
+function mean(arr: number[]): number {
+    if (!arr.length) return 0;
+    return arr.reduce((s, v) => s + v, 0) / arr.length;
+}
 
-/* ================================================================= */
-/*  DRAWDOWN CHART                                                    */
-/* ================================================================= */
-const DrawdownChart = ({ drawdownData }: { drawdownData: QuantAnalysisData["drawdownData"] }) => {
-  const option = useMemo(() => {
-    if (drawdownData.length < 2) return null;
-    const dates = drawdownData.map((d) => d.date);
-    const vals = drawdownData.map((d) => d.value);
-    return {
-      tooltip: {
-        trigger: "axis" as const,
-        backgroundColor: "#1e293b", borderColor: "#334155",
-        textStyle: { color: "#f1f5f9", fontSize: 11, fontFamily: "Roboto Mono" },
-        formatter: (params: { axisValue: string; value: number }[]) =>
-          `${params[0]?.axisValue}<br/>Drawdown: <b style="color:#EF4444">${Number(params[0]?.value).toFixed(1)}%</b>`,
-      },
-      grid: { top: 15, bottom: 30, left: 50, right: 15 },
-      xAxis: {
-        type: "category" as const, data: dates,
-        axisLabel: { fontSize: 9, color: "#94a3b8", interval: Math.floor(dates.length / 5) },
-        axisLine: { lineStyle: { color: "#e2e8f0" } },
-      },
-      yAxis: {
-        type: "value" as const, max: 0,
-        axisLabel: { fontSize: 9, color: "#94a3b8", fontFamily: "Roboto Mono", formatter: (v: number) => v.toFixed(0) + "%" },
-        splitLine: { lineStyle: { color: "#f1f5f9" } },
-      },
-      series: [{
-        type: "line", data: vals, symbol: "none",
-        lineStyle: { width: 1, color: "#EF4444" },
-        areaStyle: {
-          color: {
-            type: "linear" as const, x: 0, y: 0, x2: 0, y2: 1,
-            colorStops: [{ offset: 0, color: "rgba(239,68,68,0.35)" }, { offset: 1, color: "rgba(239,68,68,0.05)" }],
-          },
-        },
-      }],
-    };
-  }, [drawdownData]);
+function stdev(arr: number[]): number {
+    if (arr.length < 2) return 0;
+    const m = mean(arr);
+    const variance = arr.reduce((s, v) => s + (v - m) ** 2, 0) / arr.length;
+    return Math.sqrt(variance);
+}
 
-  if (!option) return null;
-  const mdd = Math.min(...drawdownData.map((d) => d.value));
-  const ddLevel: InsightLevel = mdd > -15 ? "positive" : mdd > -30 ? "warning" : "negative";
+function toISODate(raw: string): string {
+    const d = new Date(raw);
+    if (Number.isNaN(d.getTime())) return raw;
+    return d.toISOString().slice(0, 10);
+}
 
-  return (
-    <CardWrapper title="Sut giam Toi da (Underwater Chart)">
-      <ReactECharts option={option} style={{ height: 260 }} />
-      <InsightBlock level={ddLevel}>
-        <strong>Drawdown:</strong>{" "}
-        {mdd > -15
-          ? `Max Drawdown ${fmtPct(mdd, false)} — muc sut giam nho, phu hop nha dau tu on dinh.`
-          : mdd > -30
-            ? `Max Drawdown ${fmtPct(mdd, false)} — muc sut giam trung binh. Can quan ly kich thuoc vi the.`
-            : `Max Drawdown ${fmtPct(mdd, false)} — rui ro cao, bien dong manh.`}
-      </InsightBlock>
-    </CardWrapper>
-  );
-};
+function rollingVol(returns: ReturnPoint[], window: number): SeriesPoint[] {
+    if (returns.length <= window) return [];
+    const out: SeriesPoint[] = [];
+    for (let i = window; i < returns.length; i++) {
+        const segment = returns.slice(i - window, i).map((r) => r.ret);
+        out.push({
+            date: returns[i].date,
+            value: stdev(segment) * Math.sqrt(252) * 100,
+        });
+    }
+    return downsample(out);
+}
 
-/* ================================================================= */
-/*  ROLLING VOLATILITY                                                */
-/* ================================================================= */
-const RollingVolatilityChart = ({ rollingVolatility }: { rollingVolatility: QuantAnalysisData["rollingVolatility"] }) => {
-  const average = useMemo(() => {
-    if (rollingVolatility.length === 0) return 0;
-    return rollingVolatility.reduce((s, d) => s + d.value, 0) / rollingVolatility.length;
-  }, [rollingVolatility]);
+function rollingSharpe(returns: ReturnPoint[], window: number, rf = 0.045): SeriesPoint[] {
+    if (returns.length <= window) return [];
+    const dailyRf = rf / 252;
+    const out: SeriesPoint[] = [];
+    for (let i = window; i < returns.length; i++) {
+        const segment = returns.slice(i - window, i).map((r) => r.ret);
+        const m = mean(segment);
+        const s = stdev(segment);
+        const value = s > 0 ? ((m - dailyRf) / s) * Math.sqrt(252) : 0;
+        out.push({ date: returns[i].date, value });
+    }
+    return downsample(out);
+}
 
-  const option = useMemo(() => {
-    if (rollingVolatility.length < 2) return null;
-    const dates = rollingVolatility.map((d) => d.date);
-    const vals = rollingVolatility.map((d) => d.value);
-    return {
-      tooltip: {
-        trigger: "axis" as const, backgroundColor: "#1e293b", borderColor: "#334155",
-        textStyle: { color: "#f1f5f9", fontSize: 11, fontFamily: "Roboto Mono" },
-      },
-      grid: { top: 15, bottom: 30, left: 50, right: 15 },
-      xAxis: {
-        type: "category" as const, data: dates,
-        axisLabel: { fontSize: 9, color: "#94a3b8", interval: Math.floor(dates.length / 5) },
-        axisLine: { lineStyle: { color: "#e2e8f0" } },
-      },
-      yAxis: {
-        type: "value" as const,
-        axisLabel: { fontSize: 9, color: "#94a3b8", fontFamily: "Roboto Mono", formatter: (v: number) => v.toFixed(0) + "%" },
-        splitLine: { lineStyle: { color: "#f1f5f9" } },
-      },
-      series: [
-        {
-          type: "line", data: vals, symbol: "none", smooth: true,
-          lineStyle: { width: 1.5, color: "#3B82F6" },
-          areaStyle: {
-            color: {
-              type: "linear" as const, x: 0, y: 0, x2: 0, y2: 1,
-              colorStops: [{ offset: 0, color: "rgba(59,130,246,0.12)" }, { offset: 1, color: "rgba(59,130,246,0)" }],
-            },
-          },
-        },
-        {
-          type: "line", data: vals.map(() => average), symbol: "none",
-          lineStyle: { width: 1, color: "#94a3b8", type: "dashed" as const },
-          tooltip: { show: false }, silent: true,
-        },
-      ],
-    };
-  }, [rollingVolatility, average]);
+function rollingBeta(returns: ReturnPoint[], window: number): SeriesPoint[] {
+    if (returns.length <= window + 10) return [];
 
-  if (!option) return null;
-  const recentVol = rollingVolatility.slice(-30).reduce((s, d) => s + d.value, 0) / Math.max(rollingVolatility.slice(-30).length, 1);
-  const volLevel: InsightLevel = recentVol <= average ? "positive" : recentVol <= average * 1.3 ? "neutral" : "negative";
-
-  return (
-    <CardWrapper title="Do bien dong truot (Rolling Volatility)">
-      <ReactECharts option={option} style={{ height: 260 }} />
-      <div className="flex items-center justify-between mt-1 text-[10px] text-muted-foreground font-mono">
-        <span>Trung binh: {average.toFixed(1)}%</span>
-        <span>Hien tai: {recentVol.toFixed(1)}%</span>
-      </div>
-      <InsightBlock level={volLevel}>
-        <strong>Volatility:</strong>{" "}
-        {recentVol <= average
-          ? `Bien dong gan day (${recentVol.toFixed(1)}%) thap hon trung binh (${average.toFixed(1)}%) — thi truong on dinh.`
-          : `Bien dong dang tang (${recentVol.toFixed(1)}% vs TB ${average.toFixed(1)}%) — can trong.`}
-      </InsightBlock>
-    </CardWrapper>
-  );
-};
-
-/* ================================================================= */
-/*  ROLLING SHARPE                                                    */
-/* ================================================================= */
-const RollingSharpeChart = ({ rollingSharpe }: { rollingSharpe: QuantAnalysisData["rollingSharpe"] }) => {
-  const average = useMemo(() => {
-    if (rollingSharpe.length === 0) return 0;
-    return rollingSharpe.reduce((s, d) => s + d.value, 0) / rollingSharpe.length;
-  }, [rollingSharpe]);
-
-  const option = useMemo(() => {
-    if (rollingSharpe.length < 2) return null;
-    const dates = rollingSharpe.map((d) => d.date);
-    const vals = rollingSharpe.map((d) => d.value);
-    return {
-      tooltip: {
-        trigger: "axis" as const, backgroundColor: "#1e293b", borderColor: "#334155",
-        textStyle: { color: "#f1f5f9", fontSize: 11, fontFamily: "Roboto Mono" },
-      },
-      grid: { top: 20, bottom: 30, left: 50, right: 15 },
-      xAxis: {
-        type: "category" as const, data: dates,
-        axisLabel: { fontSize: 9, color: "#94a3b8", interval: Math.floor(dates.length / 5) },
-        axisLine: { lineStyle: { color: "#e2e8f0" } },
-      },
-      yAxis: {
-        type: "value" as const,
-        axisLabel: { fontSize: 9, color: "#94a3b8", fontFamily: "Roboto Mono" },
-        splitLine: { lineStyle: { color: "#f1f5f9" } },
-      },
-      visualMap: {
-        show: false,
-        pieces: [
-          { lt: 0, color: "#EF4444" },
-          { gte: 0, lt: 1, color: "#F97316" },
-          { gte: 1, color: "#00C076" },
-        ],
-        seriesIndex: 0,
-      },
-      series: [
-        {
-          type: "line", data: vals, symbol: "none", smooth: true,
-          lineStyle: { width: 1.5 },
-          areaStyle: {
-            color: {
-              type: "linear" as const, x: 0, y: 0, x2: 0, y2: 1,
-              colorStops: [{ offset: 0, color: "rgba(59,130,246,0.08)" }, { offset: 1, color: "rgba(59,130,246,0)" }],
-            },
-          },
-        },
-        {
-          type: "line", data: vals.map(() => 1), symbol: "none",
-          lineStyle: { width: 1, color: "#00C076", type: "dashed" as const },
-          tooltip: { show: false }, silent: true,
-        },
-        {
-          type: "line", data: vals.map(() => 0), symbol: "none",
-          lineStyle: { width: 1, color: "#EF4444", type: "dotted" as const },
-          tooltip: { show: false }, silent: true,
-        },
-      ],
-    };
-  }, [rollingSharpe]);
-
-  if (!option) return null;
-  const recent = rollingSharpe.slice(-30).reduce((s, d) => s + d.value, 0) / Math.max(rollingSharpe.slice(-30).length, 1);
-  const level: InsightLevel = recent >= 1 ? "positive" : recent >= 0 ? "neutral" : "negative";
-
-  return (
-    <CardWrapper title="Rolling Sharpe Ratio">
-      <ReactECharts option={option} style={{ height: 260 }} />
-      <div className="flex items-center justify-between mt-1 text-[10px] text-muted-foreground font-mono">
-        <span>TB dai han: {average.toFixed(2)}</span>
-        <span>Gan day: {recent.toFixed(2)}</span>
-      </div>
-      <InsightBlock level={level}>
-        <strong>Rolling Sharpe:</strong>{" "}
-        {recent >= 1
-          ? `Sharpe gan nhat (${recent.toFixed(2)}) > 1 — giai doan loi nhuan/rui ro rat tot.`
-          : recent >= 0
-            ? `Sharpe (${recent.toFixed(2)}) duong nhung duoi 1 — hieu qua o muc binh thuong.`
-            : `Sharpe (${recent.toFixed(2)}) am — co phieu dang thua lo trong ngan han.`}
-      </InsightBlock>
-    </CardWrapper>
-  );
-};
-
-/* ================================================================= */
-/*  VAR SUMMARY                                                       */
-/* ================================================================= */
-const VaRSummary = ({ varData }: { varData: QuantAnalysisData["varData"] }) => {
-  const items = [
-    { label: "VaR 95%", value: `${varData.var95}%`, color: "text-[#F97316]", desc: "Thua lo toi da 1 ngay (95%)" },
-    { label: "VaR 99%", value: `${varData.var99}%`, color: "text-[#EF4444]", desc: "Thua lo toi da 1 ngay (99%)" },
-    { label: "CVaR 95%", value: `${varData.cvar95}%`, color: "text-[#EF4444]", desc: "Ky vong thua lo khi vuot VaR" },
-  ];
-
-  const level: InsightLevel = varData.var95 > -3 ? "neutral" : varData.var95 > -5 ? "warning" : "negative";
-
-  return (
-    <CardWrapper title="Gia tri Rui ro (Value at Risk)">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {items.map((it) => (
-          <div key={it.label} className="rounded-lg bg-muted/50 border border-border/50 p-3">
-            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{it.label}</span>
-            <div className={`text-xl font-extrabold font-mono ${it.color} mt-1`}>{it.value}</div>
-            <span className="text-[10px] text-muted-foreground">{it.desc}</span>
-          </div>
-        ))}
-      </div>
-      <InsightBlock level={level}>
-        <strong>Value at Risk:</strong>{" "}
-        {varData.var95 > -3
-          ? `VaR 95% = ${varData.var95}% — rui ro hang ngay o muc thap.`
-          : varData.var95 > -5
-            ? `VaR 95% = ${varData.var95}% — rui ro trung binh.`
-            : `VaR 95% = ${varData.var95}% — rui ro cao. Can ket hop stop-loss.`}
-      </InsightBlock>
-    </CardWrapper>
-  );
-};
-
-/* ================================================================= */
-/*  MONTHLY HEATMAP                                                   */
-/* ================================================================= */
-const MonthlyHeatmap = ({ monthlyReturns }: { monthlyReturns: QuantAnalysisData["monthlyReturns"] }) => {
-  const { years, grouped } = useMemo(() => {
-    const yrs = [...new Set(monthlyReturns.map((m) => m.year))].sort();
-    const grp = new Map<string, number>();
-    monthlyReturns.forEach((m) => grp.set(`${m.year}-${m.month}`, m.return));
-    return { years: yrs, grouped: grp };
-  }, [monthlyReturns]);
-
-  const months = ["T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10", "T11", "T12"];
-
-  const option = useMemo(() => {
-    if (years.length < 1) return null;
-    const heatData: [number, number, number][] = [];
-    years.forEach((yr, yi) => {
-      for (let m = 1; m <= 12; m++) {
-        const v = grouped.get(`${yr}-${m}`) ?? 0;
-        heatData.push([m - 1, yi, v]);
-      }
+    // Proxy benchmark from long moving average return; avoids extra network requests for index series.
+    const benchmark = returns.map((_, i) => {
+        const start = Math.max(0, i - 60);
+        const segment = returns.slice(start, i + 1).map((r) => r.ret);
+        return mean(segment);
     });
 
-    const allVals = heatData.map((d) => d[2]).filter((v) => v !== 0);
-    const minVal = allVals.length ? Math.min(...allVals) : -10;
-    const maxVal = allVals.length ? Math.max(...allVals) : 10;
-
-    return {
-      tooltip: {
-        position: "top" as const, backgroundColor: "#1e293b", borderColor: "#334155",
-        textStyle: { color: "#f1f5f9", fontSize: 11, fontFamily: "Roboto Mono" },
-        formatter: (p: { data: [number, number, number] }) => {
-          const mi = p.data[0]; const yi = p.data[1]; const v = p.data[2];
-          return `<b>${years[yi]}</b> – ${months[mi]}<br/>Ty suat: <b style="color:${v >= 0 ? "#00C076" : "#EF4444"}">${v > 0 ? "+" : ""}${v}%</b>`;
-        },
-      },
-      grid: { top: 10, bottom: 40, left: 60, right: 20 },
-      xAxis: {
-        type: "category" as const, data: months, splitArea: { show: true },
-        axisLabel: { fontSize: 11, color: "#64748b", fontWeight: 600 },
-        axisLine: { show: false }, axisTick: { show: false },
-      },
-      yAxis: {
-        type: "category" as const, data: years.map(String), splitArea: { show: true },
-        axisLabel: { fontSize: 11, color: "#64748b", fontWeight: 600, fontFamily: "Roboto Mono" },
-        axisLine: { show: false }, axisTick: { show: false },
-      },
-      visualMap: {
-        min: minVal, max: maxVal, calculable: false, orient: "horizontal" as const,
-        left: "center", bottom: 0, itemWidth: 12, itemHeight: 120,
-        textStyle: { fontSize: 10, color: "#94a3b8" },
-        inRange: { color: ["#fca5a5", "#fecaca", "#fef2f2", "#f0fdf4", "#bbf7d0", "#4ade80"] },
-      },
-      series: [{
-        type: "heatmap", data: heatData,
-        label: {
-          show: true, fontSize: 10, fontFamily: "Roboto Mono", fontWeight: 600,
-          formatter: (p: { data: [number, number, number] }) => { const v = p.data[2]; return v !== 0 ? `${v > 0 ? "+" : ""}${v}%` : ""; },
-          color: "#1e293b",
-        },
-        emphasis: { itemStyle: { shadowBlur: 6, shadowColor: "rgba(0,0,0,0.2)" } },
-        itemStyle: { borderWidth: 2, borderColor: "#fff", borderRadius: 4 },
-      }],
-    };
-  }, [years, grouped, months]);
-
-  if (!option) return null;
-  return (
-    <CardWrapper title="Bieu do Nhiet Ty suat sinh loi Hang thang">
-      <ReactECharts option={option} style={{ height: Math.max(220, years.length * 45 + 80) }} />
-    </CardWrapper>
-  );
-};
-
-/* ================================================================= */
-/*  HISTOGRAM                                                         */
-/* ================================================================= */
-const ReturnHistogram = ({ histogram }: { histogram: QuantAnalysisData["histogram"] }) => {
-  const option = useMemo(() => {
-    if (histogram.length < 2) return null;
-    const categories = histogram.map((b) => `${b.bin}%`);
-    const counts = histogram.map((b) => b.count);
-    return {
-      tooltip: { trigger: "axis" as const, backgroundColor: "#1e293b", borderColor: "#334155", textStyle: { color: "#f1f5f9", fontSize: 11 } },
-      grid: { top: 25, bottom: 35, left: 45, right: 15 },
-      xAxis: {
-        type: "category" as const, data: categories,
-        axisLabel: { fontSize: 8, color: "#94a3b8", rotate: 30, interval: Math.max(0, Math.floor(categories.length / 15)) },
-        axisLine: { lineStyle: { color: "#e2e8f0" } },
-      },
-      yAxis: {
-        type: "value" as const,
-        axisLabel: { fontSize: 9, color: "#94a3b8", fontFamily: "Roboto Mono" },
-        splitLine: { lineStyle: { color: "#f1f5f9" } },
-      },
-      series: [{
-        name: "Tan suat", type: "bar", data: counts.map((c, i) => ({
-          value: c,
-          itemStyle: { color: histogram[i].bin >= 0 ? "#00C076" : "#EF4444", borderRadius: [3, 3, 0, 0] },
-        })),
-        barWidth: "60%",
-      }],
-    };
-  }, [histogram]);
-
-  if (!option) return null;
-  return (
-    <CardWrapper title="Phan phoi Ty suat sinh loi Ngay">
-      <ReactECharts option={option} style={{ height: 280 }} />
-    </CardWrapper>
-  );
-};
-
-/* ================================================================= */
-/*  RADAR                                                             */
-/* ================================================================= */
-const RiskRewardRadar = ({ radarMetrics }: { radarMetrics: QuantAnalysisData["radarMetrics"] }) => {
-  const option = useMemo(() => {
-    if (radarMetrics.length < 3) return null;
-    return {
-      tooltip: { backgroundColor: "#1e293b", borderColor: "#334155", textStyle: { color: "#f1f5f9", fontSize: 11 } },
-      radar: {
-        indicator: radarMetrics.map((m) => ({ name: m.axis, max: 100 })),
-        radius: "65%",
-        axisName: { color: "#64748b", fontSize: 10 },
-        splitLine: { lineStyle: { color: "#f1f5f9" } },
-        splitArea: { areaStyle: { color: ["#fff", "#fafafa", "#f8fafc", "#f1f5f9"] } },
-        axisLine: { lineStyle: { color: "#e2e8f0" } },
-      },
-      series: [{
-        type: "radar",
-        data: [{
-          name: "Co phieu",
-          value: radarMetrics.map((m) => m.value),
-          lineStyle: { color: "#F97316", width: 2 },
-          areaStyle: { color: "rgba(249,115,22,0.15)" },
-          itemStyle: { color: "#F97316" },
-        }],
-      }],
-    };
-  }, [radarMetrics]);
-
-  if (!option) return null;
-  const avgScore = radarMetrics.reduce((s, m) => s + m.value, 0) / radarMetrics.length;
-  const level: InsightLevel = avgScore > 60 ? "positive" : avgScore > 40 ? "neutral" : "negative";
-
-  return (
-    <CardWrapper title="Danh gia Rui ro – Loi nhuan (Risk-Reward Radar)">
-      <ReactECharts option={option} style={{ height: 320 }} />
-      <InsightBlock level={level}>
-        <strong>Tong hop:</strong> Diem trung binh: <span className="font-mono font-semibold">{avgScore.toFixed(1)}/100</span>.{" "}
-        {avgScore > 60 ? "Co phieu co profile risk-reward tot." : avgScore > 40 ? "Muc trung binh — can xem xet tung tieu chi." : "Profile yeu — can than."}
-      </InsightBlock>
-    </CardWrapper>
-  );
-};
-
-/* ================================================================= */
-/*  MONTE CARLO (server-computed)                                     */
-/* ================================================================= */
-const MonteCarloDisplay = ({ monteCarlo }: { monteCarlo: QuantAnalysisData["monteCarlo"] }) => {
-  const { percentiles, expectedPrice, p5, p95, probUp, simulations, days } = monteCarlo;
-
-  const option = useMemo(() => {
-    if (!percentiles || Object.keys(percentiles).length === 0) return null;
-    const numPoints = percentiles.p50?.length ?? 0;
-    if (numPoints < 2) return null;
-
-    const xLabels = Array.from({ length: numPoints }, (_, i) => `D${Math.round((i / numPoints) * days)}`);
-
-    const series: Record<string, unknown>[] = [];
-    // Fan chart bands
-    if (percentiles.p5 && percentiles.p95) {
-      series.push({
-        name: "P5-P95 Band", type: "line", data: percentiles.p95, symbol: "none",
-        lineStyle: { width: 0 },
-        areaStyle: { color: "rgba(249,115,22,0.08)" },
-        stack: "band", z: 1,
-      });
-      series.push({
-        name: "P5", type: "line", data: percentiles.p5, symbol: "none",
-        lineStyle: { width: 1, color: "#EF4444", type: "dashed" },
-        z: 5,
-      });
+    const out: SeriesPoint[] = [];
+    for (let i = window; i < returns.length; i++) {
+        const xs = returns.slice(i - window, i).map((r) => r.ret);
+        const ys = benchmark.slice(i - window, i);
+        const mx = mean(xs);
+        const my = mean(ys);
+        let cov = 0;
+        let vy = 0;
+        for (let j = 0; j < xs.length; j++) {
+            cov += (xs[j] - mx) * (ys[j] - my);
+            vy += (ys[j] - my) ** 2;
+        }
+        const beta = vy > 0 ? cov / vy : 1;
+        out.push({ date: returns[i].date, value: beta });
     }
-    if (percentiles.p25 && percentiles.p75) {
-      series.push({
-        name: "P25-P75", type: "line", data: percentiles.p75, symbol: "none",
-        lineStyle: { width: 0 },
-        areaStyle: { color: "rgba(249,115,22,0.12)" },
-        z: 2,
-      });
-    }
-    if (percentiles.p50) {
-      series.push({
-        name: "Trung vi (P50)", type: "line", data: percentiles.p50, symbol: "none",
-        lineStyle: { width: 3, color: "#F97316" }, z: 10,
-      });
-    }
-    if (percentiles.p95) {
-      series.push({
-        name: "Tich cuc (P95)", type: "line", data: percentiles.p95, symbol: "none",
-        lineStyle: { width: 1.5, color: "#00C076", type: "dashed" }, z: 5,
-      });
+    return downsample(out);
+}
+
+function computeRSI(closes: number[], period = 14): (number | null)[] {
+    if (closes.length < period + 1) return closes.map(() => null);
+    const rsi: (number | null)[] = Array(closes.length).fill(null);
+
+    let gains = 0;
+    let losses = 0;
+    for (let i = 1; i <= period; i++) {
+        const diff = closes[i] - closes[i - 1];
+        if (diff >= 0) gains += diff;
+        else losses += Math.abs(diff);
     }
 
-    return {
-      tooltip: { trigger: "axis" as const, backgroundColor: "#1e293b", borderColor: "#334155", textStyle: { color: "#f1f5f9", fontSize: 11, fontFamily: "Roboto Mono" } },
-      legend: {
-        top: 0, right: 0,
-        data: ["Trung vi (P50)", "Tich cuc (P95)", "P5"],
-        textStyle: { fontSize: 11, color: "#64748b" },
-      },
-      grid: { top: 40, bottom: 30, left: 65, right: 15 },
-      xAxis: {
-        type: "category" as const, data: xLabels,
-        axisLabel: { fontSize: 9, color: "#94a3b8", interval: Math.max(Math.floor(numPoints / 6), 1) },
-        axisLine: { lineStyle: { color: "#e2e8f0" } },
-      },
-      yAxis: {
-        type: "value" as const,
-        axisLabel: { fontSize: 9, color: "#94a3b8", fontFamily: "Roboto Mono", formatter: (v: number) => (v / 1000).toFixed(0) + "K" },
-        splitLine: { lineStyle: { color: "#f1f5f9" } },
-      },
-      series,
-    };
-  }, [percentiles, days]);
+    let avgGain = gains / period;
+    let avgLoss = losses / period;
+    rsi[period] = avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss);
 
-  const fmtVND = (v: number) => v.toLocaleString("vi-VN") + " d";
-  const level: InsightLevel = probUp >= 65 ? "positive" : probUp >= 50 ? "neutral" : "negative";
+    for (let i = period + 1; i < closes.length; i++) {
+        const diff = closes[i] - closes[i - 1];
+        const gain = diff > 0 ? diff : 0;
+        const loss = diff < 0 ? Math.abs(diff) : 0;
+        avgGain = (avgGain * (period - 1) + gain) / period;
+        avgLoss = (avgLoss * (period - 1) + loss) / period;
+        rsi[i] = avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss);
+    }
 
-  const statItems = [
-    { label: "Ky vong (TB)", value: fmtVND(expectedPrice), color: "text-[#F97316]" },
-    { label: "Kich ban Tich cuc (P95)", value: fmtVND(p95), color: "text-[#00C076]" },
-    { label: "Kich ban Tieu cuc (P5)", value: fmtVND(p5), color: "text-[#EF4444]" },
-  ];
+    return rsi;
+}
 
-  return (
-    <CardWrapper title={`Mo phong Monte Carlo (${simulations} kich ban · ${days} ngay)`}>
-      {option ? (
-        <>
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-            <div className="lg:col-span-9">
-              <ReactECharts option={option} style={{ height: 380 }} />
-            </div>
-            <div className="lg:col-span-3 flex flex-col gap-3">
-              {statItems.map((it) => (
-                <div key={it.label} className="bg-muted/50 rounded-lg border border-border/50 p-3">
-                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{it.label}</span>
-                  <div className={`text-lg font-extrabold font-mono ${it.color} mt-0.5`}>{it.value}</div>
-                </div>
-              ))}
-              <div className="bg-muted/50 rounded-lg border border-border/50 p-3">
-                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Xac suat co lai</span>
-                <div className="text-lg font-extrabold font-mono text-foreground mt-0.5">{probUp}%</div>
-                <div className="mt-2 h-2 w-full rounded-full bg-muted overflow-hidden">
-                  <div className="h-full rounded-full bg-[#00C076] transition-all" style={{ width: `${probUp}%` }} />
-                </div>
-              </div>
-            </div>
-          </div>
-          <InsightBlock level={level}>
-            <strong>Nhan dinh:</strong> Dua tren {simulations} kich ban, co phieu co{" "}
-            <span className="font-mono font-semibold">{probUp}%</span> xac suat tang gia sau {days} ngay.
-            {probUp >= 65 ? " Phan bo nghieng tich cuc." : probUp >= 50 ? " Phan bo can bang." : " Xac suat thua lo cao — can than."}
-          </InsightBlock>
-        </>
-      ) : (
-        <p className="text-muted-foreground text-center py-8">Khong du du lieu de mo phong</p>
-      )}
-    </CardWrapper>
-  );
-};
+function movingAverage(values: number[], period: number): (number | null)[] {
+    return values.map((_, i) => {
+        if (i + 1 < period) return null;
+        const seg = values.slice(i + 1 - period, i + 1);
+        return mean(seg);
+    });
+}
 
-/* ================================================================= */
-/*  MAIN EXPORT                                                       */
-/* ================================================================= */
+function autocorrelation(returns: number[], maxLag = 20): { lag: number; value: number }[] {
+    if (returns.length < maxLag + 5) return [];
+    const m = mean(returns);
+    const denom = returns.reduce((s, v) => s + (v - m) ** 2, 0);
+    if (denom === 0) return [];
+
+    const out: { lag: number; value: number }[] = [];
+    for (let lag = 1; lag <= maxLag; lag++) {
+        let num = 0;
+        for (let i = lag; i < returns.length; i++) {
+            num += (returns[i] - m) * (returns[i - lag] - m);
+        }
+        out.push({ lag, value: num / denom });
+    }
+    return out;
+}
+
+function seriesFromQuant(wealth: QuantAnalysisData["wealthIndex"]): SeriesPoint[] {
+    return wealth.map((x) => ({ date: toISODate(x.date), value: x.value * 100 }));
+}
+
+function useQuantDerivedData(priceHistory: Array<{ date: string; close: number; volume: number }>) {
+    return useMemo(() => {
+        const sorted = [...priceHistory]
+            .filter((p) => Number.isFinite(p.close) && p.close > 0)
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+        const sampled = downsample(sorted, 700);
+        const returns: ReturnPoint[] = [];
+        for (let i = 1; i < sampled.length; i++) {
+            const prev = sampled[i - 1].close;
+            const cur = sampled[i].close;
+            if (!prev || !Number.isFinite(prev) || !Number.isFinite(cur)) continue;
+            returns.push({
+                date: toISODate(sampled[i].date),
+                ret: cur / prev - 1,
+                close: cur,
+                volume: sampled[i].volume || 0,
+            });
+        }
+
+        const closes = sampled.map((x) => x.close);
+        const dates = sampled.map((x) => toISODate(x.date));
+        const sma50 = movingAverage(closes, 50);
+        const sma200 = movingAverage(closes, 200);
+        const rsi14 = computeRSI(closes, 14);
+
+        const retValues = returns.map((r) => r.ret);
+        const mu = mean(retValues);
+        const sigma = stdev(retValues);
+
+        const weekdayMap = new Map<string, number[]>();
+        DAY_NAMES.forEach((d) => weekdayMap.set(d, []));
+        returns.forEach((r) => {
+            const day = new Date(r.date).getDay();
+            const idx = day >= 1 && day <= 5 ? day - 1 : -1;
+            if (idx >= 0) weekdayMap.get(DAY_NAMES[idx])?.push(r.ret * 100);
+        });
+
+        const dayOfWeek = DAY_NAMES.map((name) => ({ day: name, value: mean(weekdayMap.get(name) || []) }));
+
+        const priceMin = Math.min(...closes);
+        const priceMax = Math.max(...closes);
+        const bins = 20;
+        const width = (priceMax - priceMin) / bins || 1;
+        const vp = Array.from({ length: bins }, (_, i) => ({
+            price: priceMin + width * (i + 0.5),
+            volume: 0,
+        }));
+
+        returns.forEach((r) => {
+            const idx = Math.min(bins - 1, Math.max(0, Math.floor((r.close - priceMin) / width)));
+            vp[idx].volume += r.volume;
+        });
+
+        const sortedReturns = [...retValues].sort((a, b) => a - b);
+        const tailThresholds = [-0.02, -0.03, -0.04, -0.05];
+        const tailCounts = tailThresholds.map((t) => ({
+            label: `< ${(t * 100).toFixed(0)}%`,
+            count: sortedReturns.filter((r) => r <= t).length,
+        }));
+
+        return {
+            sampled,
+            dates,
+            closes,
+            returns,
+            retValues,
+            sma50,
+            sma200,
+            rsi14,
+            mu,
+            sigma,
+            dayOfWeek,
+            volumeProfile: vp,
+            acf: autocorrelation(retValues, 20),
+            tailCounts,
+        };
+    }, [priceHistory]);
+}
+
 export default function QuantAnalysisTab() {
-  const { ticker } = useStockDetail();
-  const { data, loading, error } = useQuantAnalysis(ticker);
+    const { ticker, priceHistory } = useStockDetail();
+    const { data, loading, error } = useQuantAnalysis(ticker);
+    const { data: fullPriceHistory } = usePriceHistory(ticker, "ALL");
+    const workingPriceHistory = (fullPriceHistory && fullPriceHistory.length > 0 ? fullPriceHistory : (priceHistory || []));
+    const derived = useQuantDerivedData(workingPriceHistory);
 
-  if (loading && !data) return <div className="text-center py-12 text-muted-foreground animate-pulse">Dang tai phan tich dinh luong...</div>;
-  if (error && !data) return <div className="text-center py-12 text-red-500">Loi: {error}</div>;
-  if (!data) return <div className="text-center py-12 text-muted-foreground">Khong co du lieu</div>;
+    if (loading && !data) return <div className="py-12 text-center text-sm text-muted-foreground animate-pulse">Đang tải dashboard định lượng...</div>;
+    if (error && !data) return <div className="py-12 text-center text-sm text-red-500">Lỗi tải dữ liệu định lượng: {error}</div>;
+    if (!data) return <div className="py-12 text-center text-sm text-muted-foreground">Không có dữ liệu định lượng</div>;
 
-  return (
-    <div className="space-y-6">
-      {/* Title */}
-      <div className="flex items-center gap-2">
-        <span className="w-1.5 h-6 bg-gradient-to-b from-[#F97316] to-[#F59E0B] rounded-full" />
-        <h2 className="text-base font-bold text-foreground">Phan tich Dinh luong – {ticker}</h2>
-      </div>
+    const normalized = seriesFromQuant(data.wealthIndex);
+    const proxyBenchmark = normalized.map((v, i, arr) => {
+        if (i === 0) return 100;
+        const start = Math.max(0, i - 20);
+        return mean(arr.slice(start, i + 1).map((x) => x.value));
+    });
 
-      {/* SECTION 1: HIEU SUAT DAU TU */}
-      <section>
-        <SectionHeading icon="📊" title="Hieu suat Dau tu" subtitle="Danh gia kha nang sinh loi theo thoi gian" />
-        <div className="space-y-4">
-          <KPICards kpis={data.kpis} />
-          <CumulativeReturnChart wealthIndex={data.wealthIndex} />
+    const returnsLen = derived.returns.length;
+    const volWindowShort = Math.min(30, Math.max(10, Math.floor(returnsLen * 0.12)));
+    const volWindowLong = Math.min(90, Math.max(volWindowShort + 5, Math.floor(returnsLen * 0.35)));
+    const sharpeWindow = Math.min(252, Math.max(60, Math.floor(returnsLen * 0.7)));
+    const betaWindow = Math.min(252, Math.max(60, Math.floor(returnsLen * 0.65)));
+
+    // Risk charts prefer full history via /price-history?period=ALL.
+    const vol30 = rollingVol(derived.returns, volWindowShort);
+    const vol90 = rollingVol(derived.returns, volWindowLong);
+    const sharpe252 = rollingSharpe(derived.returns, sharpeWindow);
+    const beta252 = rollingBeta(derived.returns, betaWindow);
+
+    const monthlySeasonality = Array.from({ length: 12 }, (_, i) => {
+        const m = i + 1;
+        const vals = data.monthlyReturns.filter((x) => x.month === m).map((x) => x.return);
+        return { month: `T${m}`, value: mean(vals) };
+    });
+
+    const allMonthYears = [...new Set(data.monthlyReturns.map((x) => x.year))].sort((a, b) => a - b);
+    const monthYears = allMonthYears.slice(-10);
+    const heatMapData: [number, number, number][] = [];
+    monthYears.forEach((y, yi) => {
+        for (let m = 1; m <= 12; m++) {
+            const found = data.monthlyReturns.find((x) => x.year === y && x.month === m);
+            heatMapData.push([m - 1, yi, found?.return ?? 0]);
+        }
+    });
+
+    const histogramBins = data.histogram.map((h) => h.bin);
+    const histogramCounts = data.histogram.map((h) => h.count);
+    const maxCount = Math.max(...histogramCounts, 1);
+    const normalCurve = histogramBins.map((x) => {
+        const p = (1 / (derived.sigma * Math.sqrt(2 * Math.PI))) * Math.exp(-((x / 100 - derived.mu) ** 2) / (2 * derived.sigma ** 2));
+        return (p / Math.max(1e-9, 1 / (derived.sigma * Math.sqrt(2 * Math.PI)))) * maxCount;
+    });
+
+    return (
+        <div className="space-y-6 pb-8">
+            <div className="border-b border-border/60 pb-3">
+                <h1 className="text-base font-bold text-foreground">Dashboard Định lượng - {ticker}</h1>
+                <p className="text-xs text-muted-foreground mt-1">
+                    Bản dựng theo đặc tả 5 phân hệ/13 biểu đồ. Dữ liệu rủi ro dùng history-price toàn kỳ để đảm bảo đủ chuỗi tính rolling.
+                </p>
+            </div>
+
+            <Section index="I" title="Overview & Trend" subtitle="Hiệu suất tích lũy, drawdown và kỹ thuật tổng hợp">
+                <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
+                    <div className="xl:col-span-8">
+                        <Card title="1) Lợi nhuận tích lũy (Normalized)" subtitle="Base 100: Asset vs benchmark proxy">
+                            <ReactECharts
+                                style={{ height: 330 }}
+                                option={{
+                                    tooltip: { trigger: "axis" },
+                                    legend: { top: 0 },
+                                    grid: { top: 30, left: 48, right: 16, bottom: 28 },
+                                    xAxis: { type: "category", data: normalized.map((x) => x.date), boundaryGap: false },
+                                    yAxis: { type: "value" },
+                                    series: [
+                                        { name: ticker, type: "line", data: normalized.map((x) => x.value), smooth: true, symbol: "none", lineStyle: { width: 2, color: THEME.accent } },
+                                        { name: "Benchmark Proxy", type: "line", data: proxyBenchmark, smooth: true, symbol: "none", lineStyle: { width: 2, color: THEME.primary, type: "dashed" } },
+                                    ],
+                                }}
+                            />
+                        </Card>
+                    </div>
+                    <div className="xl:col-span-4">
+                        <Card title="2) Hồ sơ sụt giảm (Underwater)">
+                            <ReactECharts
+                                style={{ height: 330 }}
+                                option={{
+                                    tooltip: { trigger: "axis" },
+                                    grid: { top: 16, left: 44, right: 10, bottom: 26 },
+                                    xAxis: { type: "category", data: data.drawdownData.map((x) => toISODate(x.date)), boundaryGap: false },
+                                    yAxis: { type: "value", max: 0, axisLabel: { formatter: "{value}%" } },
+                                    series: [{ type: "line", data: data.drawdownData.map((x) => x.value), symbol: "none", lineStyle: { color: THEME.negative, width: 1.6 }, areaStyle: { color: "rgba(220,38,38,0.15)" } }],
+                                }}
+                            />
+                        </Card>
+                    </div>
+                </div>
+
+                <Card title="3) Phân tích kỹ thuật tổng hợp" subtitle="Giá, SMA50, SMA200 và RSI14">
+                    <ReactECharts
+                        style={{ height: 360 }}
+                        option={{
+                            tooltip: { trigger: "axis" },
+                            legend: { top: 0 },
+                            grid: { top: 30, left: 52, right: 52, bottom: 30 },
+                            xAxis: { type: "category", data: derived.dates, boundaryGap: false },
+                            yAxis: [
+                                { type: "value", name: "Price" },
+                                { type: "value", name: "RSI", min: 0, max: 100, splitLine: { show: false } },
+                            ],
+                            series: [
+                                { name: "Close", type: "line", data: derived.closes, symbol: "none", lineStyle: { color: THEME.accent, width: 1.8 } },
+                                { name: "SMA50", type: "line", data: derived.sma50, symbol: "none", lineStyle: { color: THEME.primary, width: 1.5 } },
+                                { name: "SMA200", type: "line", data: derived.sma200, symbol: "none", lineStyle: { color: THEME.violet, width: 1.5 } },
+                                { name: "RSI14", type: "line", yAxisIndex: 1, data: derived.rsi14, symbol: "none", lineStyle: { color: THEME.negative, width: 1.3, type: "dashed" } },
+                            ],
+                            markLine: {
+                                symbol: "none",
+                                silent: true,
+                                data: [
+                                    { yAxis: 70, yAxisIndex: 1, lineStyle: { color: THEME.primary, type: "dotted" } },
+                                    { yAxis: 30, yAxisIndex: 1, lineStyle: { color: THEME.positive, type: "dotted" } },
+                                ],
+                            },
+                        }}
+                    />
+                </Card>
+            </Section>
+
+            <Section index="II" title="Risk & Volatility" subtitle="Biến động trượt, Sharpe trượt và độ nhạy beta">
+                <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
+                    <div className="xl:col-span-6">
+                        <Card title="4) Rolling Volatility" subtitle="So sánh 30d và 90d (annualized)">
+                            {vol30.length > 3 && vol90.length > 3 ? (
+                                <ReactECharts
+                                    style={{ height: 300 }}
+                                    option={{
+                                        tooltip: { trigger: "axis" },
+                                        legend: { top: 0 },
+                                        grid: { top: 28, left: 48, right: 14, bottom: 24 },
+                                        xAxis: { type: "category", data: vol30.map((x) => x.date), boundaryGap: false },
+                                        yAxis: { type: "value", axisLabel: { formatter: "{value}%" } },
+                                        series: [
+                                            { name: `${volWindowShort}d`, type: "line", data: vol30.map((x) => Number(x.value.toFixed(2))), symbol: "none", lineStyle: { color: THEME.info, width: 1.8 } },
+                                            { name: `${volWindowLong}d`, type: "line", data: vol90.map((x) => Number(x.value.toFixed(2))), symbol: "none", lineStyle: { color: THEME.primary, width: 1.8 } },
+                                        ],
+                                    }}
+                                />
+                            ) : (
+                                <div className="h-[300px] flex items-center justify-center text-sm text-muted-foreground">Không đủ dữ liệu để tính rolling volatility.</div>
+                            )}
+                        </Card>
+                    </div>
+                    <div className="xl:col-span-6">
+                        <Card title="5) Rolling Sharpe" subtitle="Cửa sổ 252 phiên">
+                            {sharpe252.length > 3 ? (
+                                <ReactECharts
+                                    style={{ height: 300 }}
+                                    option={{
+                                        tooltip: { trigger: "axis" },
+                                        grid: { top: 18, left: 48, right: 14, bottom: 24 },
+                                        xAxis: { type: "category", data: sharpe252.map((x) => x.date), boundaryGap: false },
+                                        yAxis: { type: "value" },
+                                        series: [{ type: "line", data: sharpe252.map((x) => Number(x.value.toFixed(2))), symbol: "none", lineStyle: { color: THEME.positive, width: 1.8 } }],
+                                        markLine: { symbol: "none", silent: true, data: [{ yAxis: 1 }, { yAxis: 0 }] },
+                                    }}
+                                />
+                            ) : (
+                                <div className="h-[300px] flex items-center justify-center text-sm text-muted-foreground">Không đủ dữ liệu để tính rolling Sharpe.</div>
+                            )}
+                        </Card>
+                    </div>
+                </div>
+
+                <Card title="6) Rolling Beta" subtitle="Beta trượt 252 phiên so với benchmark proxy">
+                    {beta252.length > 3 ? (
+                        <ReactECharts
+                            style={{ height: 280 }}
+                            option={{
+                                tooltip: { trigger: "axis" },
+                                grid: { top: 18, left: 48, right: 14, bottom: 24 },
+                                xAxis: { type: "category", data: beta252.map((x) => x.date), boundaryGap: false },
+                                yAxis: { type: "value" },
+                                series: [{ type: "line", data: beta252.map((x) => Number(x.value.toFixed(3))), symbol: "none", lineStyle: { color: THEME.violet, width: 1.8 } }],
+                                markLine: { symbol: "none", silent: true, data: [{ yAxis: 1 }] },
+                            }}
+                        />
+                    ) : (
+                        <div className="h-[280px] flex items-center justify-center text-sm text-muted-foreground">Không đủ dữ liệu để tính rolling Beta.</div>
+                    )}
+                </Card>
+            </Section>
+
+            <Section index="III" title="Stats & Tail Risk" subtitle="Phân phối lợi nhuận và nhận diện rủi ro đuôi">
+                <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
+                    <div className="xl:col-span-8">
+                        <Card title="7) Histogram + Normal Curve" subtitle="So sánh phân phối thực tế với chuẩn lý thuyết">
+                            <ReactECharts
+                                style={{ height: 320 }}
+                                option={{
+                                    tooltip: { trigger: "axis" },
+                                    legend: { top: 0 },
+                                    grid: { top: 28, left: 50, right: 14, bottom: 30 },
+                                    xAxis: { type: "category", data: histogramBins.map((x) => x.toFixed(2)), axisLabel: { interval: Math.max(1, Math.floor(histogramBins.length / 12)) } },
+                                    yAxis: { type: "value" },
+                                    series: [
+                                        { name: "Histogram", type: "bar", data: histogramCounts, itemStyle: { color: "#60a5fa" }, barMaxWidth: 14 },
+                                        { name: "Normal", type: "line", data: normalCurve.map((x) => Number(x.toFixed(2))), symbol: "none", lineStyle: { color: THEME.primary, width: 2 } },
+                                    ],
+                                }}
+                            />
+                        </Card>
+                    </div>
+                    <div className="xl:col-span-4">
+                        <Card title="8) Fat-tail VaR" subtitle="Đếm số phiên rơi mạnh ở đuôi trái">
+                            <ReactECharts
+                                style={{ height: 320 }}
+                                option={{
+                                    tooltip: { trigger: "axis" },
+                                    grid: { top: 16, left: 40, right: 12, bottom: 24 },
+                                    xAxis: { type: "category", data: derived.tailCounts.map((x) => x.label) },
+                                    yAxis: { type: "value" },
+                                    series: [{ type: "bar", data: derived.tailCounts.map((x) => x.count), itemStyle: { color: THEME.negative }, barMaxWidth: 28 }],
+                                }}
+                            />
+                            <div className="mt-2 text-xs text-muted-foreground">
+                                VaR95: <span className="font-semibold text-foreground">{data.varData?.var95 ?? "N/A"}%</span> | VaR99: <span className="font-semibold text-foreground">{data.varData?.var99 ?? "N/A"}%</span>
+                            </div>
+                        </Card>
+                    </div>
+                </div>
+            </Section>
+
+            <Section index="IV" title="Micro-Structure" subtitle="Hành vi dòng tiền và quán tính chuỗi lợi nhuận">
+                <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
+                    <div className="xl:col-span-6">
+                        <Card title="9) Volume Profile" subtitle="Khối lượng tích lũy theo vùng giá">
+                            <ReactECharts
+                                style={{ height: 300 }}
+                                option={{
+                                    tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
+                                    grid: { top: 16, left: 62, right: 14, bottom: 24 },
+                                    xAxis: { type: "value" },
+                                    yAxis: { type: "category", data: derived.volumeProfile.map((x) => x.price.toFixed(1)) },
+                                    series: [{ type: "bar", data: derived.volumeProfile.map((x) => Math.round(x.volume)), itemStyle: { color: THEME.accent }, barMaxWidth: 12 }],
+                                }}
+                            />
+                        </Card>
+                    </div>
+                    <div className="xl:col-span-6">
+                        <Card title="10) Autocorrelation (ACF)" subtitle="Lag 1-20 của chuỗi lợi nhuận ngày">
+                            <ReactECharts
+                                style={{ height: 300 }}
+                                option={{
+                                    tooltip: { trigger: "axis" },
+                                    grid: { top: 16, left: 44, right: 14, bottom: 24 },
+                                    xAxis: { type: "category", data: derived.acf.map((x) => `Lag ${x.lag}`) },
+                                    yAxis: { type: "value", min: -1, max: 1 },
+                                    series: [{ type: "bar", data: derived.acf.map((x) => Number(x.value.toFixed(4))), itemStyle: { color: THEME.positive }, barMaxWidth: 16 }],
+                                }}
+                            />
+                        </Card>
+                    </div>
+                </div>
+            </Section>
+
+            <Section index="V" title="Seasonality" subtitle="Mùa vụ theo tháng và hiệu ứng theo thứ">
+                <Card title="11) Heatmap hiệu suất theo tháng/năm" subtitle="Xanh: dương, Đỏ: âm">
+                    <ReactECharts
+                        style={{ height: Math.max(280, monthYears.length * 42 + 90) }}
+                        option={{
+                            tooltip: { position: "top" },
+                            grid: { top: 12, left: 54, right: 20, bottom: 42 },
+                            xAxis: { type: "category", data: ["T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10", "T11", "T12"], splitArea: { show: true } },
+                            yAxis: { type: "category", data: monthYears.map(String), splitArea: { show: true } },
+                            visualMap: {
+                                min: -20,
+                                max: 20,
+                                calculable: false,
+                                orient: "horizontal",
+                                left: "center",
+                                bottom: 0,
+                                inRange: { color: ["#fecaca", "#fef2f2", "#ecfeff", "#bbf7d0", "#16a34a"] },
+                            },
+                            series: [{ type: "heatmap", data: heatMapData, label: { show: true, formatter: (p: { data: [number, number, number] }) => `${p.data[2].toFixed(1)}%`, fontSize: 10 } }],
+                        }}
+                    />
+                </Card>
+
+                <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
+                    <div className="xl:col-span-6">
+                        <Card title="12) Seasonality theo tháng" subtitle="Lợi nhuận trung bình của từng tháng">
+                            <ReactECharts
+                                style={{ height: 280 }}
+                                option={{
+                                    tooltip: { trigger: "axis" },
+                                    grid: { top: 16, left: 46, right: 14, bottom: 24 },
+                                    xAxis: { type: "category", data: monthlySeasonality.map((x) => x.month) },
+                                    yAxis: { type: "value", axisLabel: { formatter: "{value}%" } },
+                                    series: [{ type: "bar", data: monthlySeasonality.map((x) => Number(x.value.toFixed(2))), itemStyle: { color: THEME.info }, barMaxWidth: 18 }],
+                                }}
+                            />
+                        </Card>
+                    </div>
+                    <div className="xl:col-span-6">
+                        <Card title="13) Hiệu ứng ngày trong tuần" subtitle="Lợi nhuận trung bình từ Thứ 2 đến Thứ 6">
+                            <ReactECharts
+                                style={{ height: 280 }}
+                                option={{
+                                    tooltip: { trigger: "axis" },
+                                    grid: { top: 16, left: 46, right: 14, bottom: 24 },
+                                    xAxis: { type: "category", data: derived.dayOfWeek.map((x) => x.day) },
+                                    yAxis: { type: "value", axisLabel: { formatter: "{value}%" } },
+                                    series: [{ type: "bar", data: derived.dayOfWeek.map((x) => Number(x.value.toFixed(3))), itemStyle: { color: THEME.violet }, barMaxWidth: 24 }],
+                                }}
+                            />
+                        </Card>
+                    </div>
+                </div>
+            </Section>
         </div>
-      </section>
-
-      <hr className="border-border/50" />
-
-      {/* SECTION 2: PHAN TICH RUI RO */}
-      <section>
-        <SectionHeading icon="⚠️" title="Phan tich Rui ro" subtitle="Do luong bien dong, sut giam va rui ro duoi (tail risk)" />
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-            <div className="lg:col-span-7"><DrawdownChart drawdownData={data.drawdownData} /></div>
-            <div className="lg:col-span-5"><VaRSummary varData={data.varData} /></div>
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <RollingVolatilityChart rollingVolatility={data.rollingVolatility} />
-            <RollingSharpeChart rollingSharpe={data.rollingSharpe} />
-          </div>
-        </div>
-      </section>
-
-      <hr className="border-border/50" />
-
-      {/* SECTION 3: PHAN TICH THONG KE */}
-      <section>
-        <SectionHeading icon="📈" title="Phan tich Thong ke" subtitle="Phan phoi loi nhuan va hieu ung mua vu" />
-        <div className="space-y-4">
-          <MonthlyHeatmap monthlyReturns={data.monthlyReturns} />
-          <ReturnHistogram histogram={data.histogram} />
-        </div>
-      </section>
-
-      <hr className="border-border/50" />
-
-      {/* SECTION 4: MO PHONG MONTE CARLO */}
-      <section>
-        <SectionHeading icon="🎲" title="Mo phong Monte Carlo" subtitle="Du phong gia co phieu tu kich ban ngau nhien" />
-        <MonteCarloDisplay monteCarlo={data.monteCarlo} />
-      </section>
-
-      <hr className="border-border/50" />
-
-      {/* SECTION 5: DANH GIA TONG HOP */}
-      <section>
-        <SectionHeading icon="🎯" title="Danh gia Tong hop" subtitle="Radar da chieu rui ro – loi nhuan" />
-        <RiskRewardRadar radarMetrics={data.radarMetrics} />
-      </section>
-    </div>
-  );
+    );
 }

@@ -445,6 +445,95 @@ function WaterfallChart() {
   );
 }
 
+// ==================== ROW 6: CASH FLOW DATA TABLE ====================
+function CashFlowDataTable() {
+  const ctx = React.useContext(CfCtx);
+  const tableHeaders =
+    (ctx as typeof cfDefaults & { cashFlowTableHeaders?: string[] }).cashFlowTableHeaders ??
+    ["Chỉ tiêu", ...(ctx.threeCashFlows ?? cfDefaults.threeCashFlows).map((d) => d.year), "Thay đổi"];
+  const tableData =
+    (ctx as typeof cfDefaults & {
+      cashFlowTableData?: Array<{ label: string; values: number[]; growth: number | null; isBold?: boolean }>;
+    }).cashFlowTableData ??
+    [];
+
+  const fallbackRows =
+    tableData.length > 0
+      ? tableData
+      : [
+          {
+            label: "Lưu chuyển tiền thuần từ HĐKD",
+            values: (ctx.threeCashFlows ?? cfDefaults.threeCashFlows).map((d) => d.cfo),
+            growth: null,
+            isBold: true,
+          },
+          {
+            label: "Lưu chuyển tiền thuần từ HĐĐT",
+            values: (ctx.threeCashFlows ?? cfDefaults.threeCashFlows).map((d) => d.cfi),
+            growth: null,
+            isBold: true,
+          },
+          {
+            label: "Lưu chuyển tiền thuần từ HĐTC",
+            values: (ctx.threeCashFlows ?? cfDefaults.threeCashFlows).map((d) => d.cff),
+            growth: null,
+            isBold: true,
+          },
+        ];
+
+  return (
+    <div className="bg-card rounded-xl shadow-sm border border-border/50 border-t-4 border-t-[#F97316] overflow-hidden">
+      <div className="px-6 py-4 border-b border-border/50">
+        <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+          <span>📋</span> Bảng số liệu Lưu chuyển tiền tệ
+        </h3>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[820px]">
+          <thead>
+            <tr className="bg-muted/60 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              {tableHeaders.map((h) => (
+                <th
+                  key={h}
+                  className={`py-3 px-3 ${h === "Chỉ tiêu" ? "text-left" : "text-right"} whitespace-nowrap`}
+                >
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {fallbackRows.map((row, idx) => {
+              const fontClass = row.isBold ? "font-bold text-foreground" : "text-muted-foreground";
+              const bgClass = row.isBold ? "bg-orange-50/40" : "";
+              return (
+                <tr key={idx} className={`${bgClass} border-b border-border/30 hover:bg-muted/30 transition-colors`}>
+                  <td className={`py-2 px-3 text-left text-sm whitespace-nowrap ${fontClass}`}>{row.label}</td>
+                  {row.values.map((v, i) => (
+                    <td key={i} className={`py-2 px-3 text-right text-sm ${monoFont} whitespace-nowrap ${fontClass}`}>
+                      {fmt(v)}
+                    </td>
+                  ))}
+                  <td className={`py-2 px-3 text-right text-sm ${monoFont} whitespace-nowrap`}>
+                    {row.growth != null ? (
+                      <span className={row.growth >= 0 ? "text-green-600 font-semibold" : "text-red-500 font-semibold"}>
+                        {row.growth >= 0 ? "↑" : "↓"} {row.growth >= 0 ? "+" : ""}
+                        {row.growth.toFixed(1)}%
+                      </span>
+                    ) : (
+                      "—"
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 // ==================== MAIN COMPONENT ====================
 export default function CashFlowDeepDive({ data }: { data?: Record<string, unknown> }) {
   return (
@@ -460,6 +549,8 @@ export default function CashFlowDeepDive({ data }: { data?: Record<string, unkno
         <CashFlowBreakdown />
         {/* ROW 5 */}
         <WaterfallChart />
+        {/* ROW 6 */}
+        <CashFlowDataTable />
       </div>
     </CfCtx.Provider>
   );

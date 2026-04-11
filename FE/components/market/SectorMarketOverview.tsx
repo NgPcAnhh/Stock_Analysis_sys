@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RefreshCw, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { slugify } from "@/lib/utils";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -180,7 +182,11 @@ const SectorMarketOverview = () => {
                             <TableBody>
                                 {data.map((item) => (
                                     <TableRow key={item.name}>
-                                        <TableCell className="font-medium">{item.name}</TableCell>
+                                        <TableCell className="font-medium">
+                                            <Link href={`/market/sector/${slugify(item.name)}`} className="text-orange-500 hover:underline">
+                                                {item.name}
+                                            </Link>
+                                        </TableCell>
                                         <TableCell
                                             className={`text-right font-bold ${item.change >= 0 ? "text-green-600" : "text-red-600"}`}
                                         >

@@ -19,7 +19,7 @@ const robotoMono = Roboto_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "StockPro - Nền tảng phân tích chứng khoán chuyên nghiệp",
+  title: "FinVision - Nền tảng phân tích chứng khoán chuyên nghiệp",
   description: "Cập nhật dữ liệu thị trường, tin tức tài chính và công cụ phân tích chứng khoán hàng đầu Việt Nam.",
 };
 

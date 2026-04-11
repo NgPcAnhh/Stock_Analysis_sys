@@ -6,13 +6,14 @@ import NavigationTabs from "@/components/stock/NavigationTabs";
 import PriceHistoryChart from "@/components/stock/PriceHistoryChart";
 import OrderBook from "@/components/stock/OrderBook";
 import HistoricalDataTable from "@/components/stock/HistoricalDataTable";
+import TechnicalGaugeCard from "@/components/stock/TechnicalGaugeCard";
 import ShareholderList from "@/components/stock/ShareholderList";
 import ShareholderDonutChart from "@/components/stock/ShareholderDonutChart";
 import CorporateNews from "@/components/stock/CorporateNews";
 import RecommendationsSection from "@/components/stock/RecommendationsSection";
 import CompanyProfileTab from "@/components/stock/CompanyProfileTab";
 import StockComparisonTab from "@/components/stock/StockComparisonTab";
-import DashboardTab from "@/components/stock/DashboardTab";
+import QuantAnalysisTab from "@/components/stock/QuantAnalysisTab";
 import BalanceSheetTab from "@/components/stock/BalanceSheetTab";
 import FinancialReportsTab from "@/components/stock/FinancialReportsTab";
 import FinancialOverviewCharts from "@/components/stock/FinancialOverviewCharts";
@@ -130,7 +131,14 @@ export default function StockDetailPage({ params }: StockDetailPageProps) {
                                 <span className="w-1 h-5 bg-gradient-to-b from-orange-400 to-orange-600 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.4)]" />
                                 Dữ liệu giao dịch lịch sử
                             </h2>
-                            <HistoricalDataTable />
+                            <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,72%)_minmax(0,28%)] gap-4">
+                                <div className="min-w-0">
+                                    <HistoricalDataTable />
+                                </div>
+                                <div className="min-w-0">
+                                    <TechnicalGaugeCard ticker={upperTicker} />
+                                </div>
+                            </div>
                         </section>
 
                         {/* ── Dashboard số liệu tài chính ── */}
@@ -215,7 +223,7 @@ export default function StockDetailPage({ params }: StockDetailPageProps) {
 
                 {activeTab === "quant" && (
                     <div className="py-4">
-                        <DashboardTab />
+                        <QuantAnalysisTab />
                     </div>
                 )}
 

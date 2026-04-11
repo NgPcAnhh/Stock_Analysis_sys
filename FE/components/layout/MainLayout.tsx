@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { StockTicker } from "./StockTicker";
+import ScrollToTopButton from "./ScrollToTopButton";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/AuthContext";
 import { useSessionTracking, usePageViewTracking, useErrorTracking } from "@/hooks/useTracking";
@@ -64,12 +65,14 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             <div className="flex flex-col flex-1 overflow-hidden w-full transition-all duration-300">
                 <Header onMenuClick={() => setIsMobileMenuOpen(true)} />
                 {pathname === "/" && <StockTicker />}
-                <main className="flex-1 overflow-y-auto scroll-smooth bg-muted/20">
+                <main data-scroll-root="app" className="flex-1 overflow-y-auto scroll-smooth bg-muted/20">
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                         {children}
                     </div>
                 </main>
             </div>
+
+            <ScrollToTopButton />
         </div>
     );
 }

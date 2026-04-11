@@ -87,7 +87,7 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_mi_ticker_date
 -- ────────────────────────────────────────────────────────────
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_bctc_earnings
     ON bctc (ticker, year DESC, quarter DESC)
-    WHERE ind_code = 'IS24' AND value IS NOT NULL;
+    WHERE ind_code = 'lnst_cua_co_dong_cong_ty_me' AND value IS NOT NULL;
 
 -- ────────────────────────────────────────────────────────────
 -- news — used for listing / search

@@ -57,6 +57,13 @@ export interface CashFlowView {
     fcfDividendData: any[];
     waterfallData: any[];
     netCashChange: number;
+    cashFlowTableHeaders: string[];
+    cashFlowTableData: {
+        label: string;
+        values: number[];
+        growth: number | null;
+        isBold?: boolean;
+    }[];
 }
 
 const GREEN = "#00C076";
@@ -911,6 +918,24 @@ export function transformCashFlow(
             hint: "Tỷ trọng thu nhập khác cao có thể làm lợi nhuận kém bền vững",
         },
     ];
+
+    const toTableValues = (getter: (d: CashFlowItem) => number) => viewData.map((d) => getter(d) / unit);
+    const calcGrowth = (arr: number[]): number | null => {
+        if (arr.length < 2) return null;
+        const last = arr[arr.length - 1];
+        const prev = arr[arr.length - 2];
+        if (prev === 0) return null;
+        return fmtNum(((last - prev) / Math.abs(prev)) * 100);
+    };
+
+    const cfoVals = toTableValues((d) => d.operatingCashFlow || 0);
+    const cfiVals = toTableValues((d) => d.investingCashFlow || 0);
+    const cffVals = toTableValues((d) => d.financingCashFlow || 0);
+    const netVals = toTableValues((d) => d.netCashChange || 0);
+    const capexVals = toTableValues((d) => Math.abs(d.purchaseOfFixedAssets || 0));
+    const divVals = toTableValues((d) => Math.abs(d.dividendsPaid || 0));
+    const beginVals = toTableValues((d) => d.beginningCash || 0);
+    const endVals = toTableValues((d) => d.endingCash || 0);
     
     return {
         efficiencyMetrics: [
@@ -935,6 +960,17 @@ export function transformCashFlow(
             { name: "CFF", value: latest.financingCashFlow / unit, color: "#9CA3AF", base: (latest.operatingCashFlow + latest.investingCashFlow) / unit, isTotal: false },
             { name: "Tiền ròng tăng/giảm", value: latest.netCashChange / unit, color: latest.netCashChange >= 0 ? GREEN : RED, base: 0, isTotal: true },
         ],
-        netCashChange: latest.netCashChange / unit
+        netCashChange: latest.netCashChange / unit,
+        cashFlowTableHeaders: ["Chỉ tiêu", ...viewData.map(d => d.period.period), "Thay đổi"],
+        cashFlowTableData: [
+            { label: "Lưu chuyển tiền thuần từ HĐKD", values: cfoVals, growth: calcGrowth(cfoVals), isBold: true },
+            { label: "Lưu chuyển tiền thuần từ HĐĐT", values: cfiVals, growth: calcGrowth(cfiVals), isBold: true },
+            { label: "Lưu chuyển tiền thuần từ HĐTC", values: cffVals, growth: calcGrowth(cffVals), isBold: true },
+            { label: "Chi tiêu CAPEX", values: capexVals, growth: calcGrowth(capexVals) },
+            { label: "Cổ tức chi trả", values: divVals, growth: calcGrowth(divVals) },
+            { label: "Tiền đầu kỳ", values: beginVals, growth: calcGrowth(beginVals) },
+            { label: "Tiền cuối kỳ", values: endVals, growth: calcGrowth(endVals), isBold: true },
+            { label: "Tiền ròng tăng/giảm", values: netVals, growth: calcGrowth(netVals), isBold: true },
+        ]
     };
 }

@@ -347,30 +347,30 @@ async def get_sector_analysis(db: AsyncSession) -> List[Dict[str, Any]]:
             SELECT ticker, year, quarter, ind_code, value
             FROM {SCHEMA}.bctc
             WHERE ind_code IN (
-                'C_PHI_U_PH_TH_NG_NG',
-                'V_N_CH_S_H_U_NG',
-                'L_I_NHU_N_SAU_THU_C_A_C_NG_C_NG_TY_M_NG'
+                'cp_pho_thong',
+                'vcsh',
+                'lnst_cua_co_dong_cong_ty_me'
             ) AND value IS NOT NULL AND value != 0
         ),
         shares AS (
             SELECT DISTINCT ON (ticker)
                 ticker, value / 10000.0 AS shares
             FROM bctc_data
-            WHERE ind_code = 'C_PHI_U_PH_TH_NG_NG' AND value > 0
+            WHERE ind_code = 'cp_pho_thong' AND value > 0
             ORDER BY ticker, year DESC, quarter DESC
         ),
         equity AS (
             SELECT DISTINCT ON (ticker)
                 ticker, value AS equity
             FROM bctc_data
-            WHERE ind_code = 'V_N_CH_S_H_U_NG' AND value > 0
+            WHERE ind_code = 'vcsh' AND value > 0
             ORDER BY ticker, year DESC, quarter DESC
         ),
         ranked_ni AS (
             SELECT ticker, value,
                 ROW_NUMBER() OVER (PARTITION BY ticker ORDER BY year DESC, quarter DESC) AS rn
             FROM bctc_data
-            WHERE ind_code = 'L_I_NHU_N_SAU_THU_C_A_C_NG_C_NG_TY_M_NG'
+            WHERE ind_code = 'lnst_cua_co_dong_cong_ty_me'
         ),
         ttm_ni AS (
             SELECT ticker, SUM(value) AS ttm_ni
@@ -628,3 +628,528 @@ async def get_sector_watchlist(db: AsyncSession) -> Dict[str, Any]:
 
     result = {"sectors": sectors, "stocks": stocks_map}
     return result
+
+
+# ────────────────────────────────────────────────────────────────────
+# 8. Sector Detail Dashboard
+# ────────────────────────────────────────────────────────────────────
+
+import math
+
+def safe_float(v: Any, default: float = 0.0) -> float:
+    """Convert value to float safely, returning default for None/NaN/Inf."""
+    if v is None:
+        return default
+    try:
+        f = float(v)
+        if math.isnan(f) or math.isinf(f):
+            return default
+        return f
+    except (ValueError, TypeError):
+        return default
+
+def safe_str(v: Any, default: str = "") -> str:
+    """Convert value to string safely, treating NaN/None as empty."""
+    if v is None:
+        return default
+    s = str(v).strip()
+    if s in ("NaN", "nan", "None", "null", ""):
+        return default
+    return s
+
+@cached("market:sector_detail", ttl=180)
+async def get_sector_detail(db: AsyncSession, sector_slug: str) -> Dict[str, Any]:
+
+    """Full dashboard data for a single sector identified by slug."""
+    await db.execute(_STMT_TIMEOUT)
+
+    # ── Step 0: Resolve slug → sector name ───────────────────────
+    all_sectors_sql = text(f"""
+        SELECT DISTINCT icb_name2 AS sector
+        FROM {SCHEMA}.company_overview
+        WHERE icb_name2 IS NOT NULL AND BTRIM(icb_name2) NOT IN ('', 'NaN')
+    """)
+    sector_rows = (await db.execute(all_sectors_sql)).mappings().all()
+    sector_name: str | None = None
+    for r in sector_rows:
+        if _slugify(r["sector"]) == sector_slug:
+            sector_name = r["sector"]
+            break
+    if sector_name is None:
+        return _empty_sector_detail(sector_slug)
+
+    # ── Step 1: KPI + Breadth + Stock Table + Treemap ────────────
+
+    main_sql = text(f"""
+        WITH eb_ranked AS (
+            SELECT trading_date,
+                   ROW_NUMBER() OVER (ORDER BY trading_date DESC) AS rn
+            FROM {SCHEMA}.electric_board
+            WHERE match_price IS NOT NULL
+            GROUP BY trading_date
+        ),
+        eb_latest_dt AS (SELECT trading_date AS td FROM eb_ranked WHERE rn = 1),
+        eb_prev_dt   AS (SELECT trading_date AS td FROM eb_ranked WHERE rn = 2),
+        sector_tickers AS (
+            SELECT DISTINCT ON (UPPER(BTRIM(ticker)))
+                UPPER(BTRIM(ticker)) AS ticker,
+                organ_short_name,
+                CASE WHEN exchange = 'HSX' THEN 'HOSE'
+                     WHEN exchange IS NOT NULL AND BTRIM(exchange) NOT IN ('', 'NaN') THEN BTRIM(exchange)
+                     ELSE 'HOSE' END AS exchange
+            FROM {SCHEMA}.company_overview
+            WHERE BTRIM(icb_name2) = :sector_name
+              AND ticker IS NOT NULL AND BTRIM(ticker) NOT IN ('', 'NaN')
+            ORDER BY UPPER(BTRIM(ticker)), exchange
+        ),
+        stock_data AS (
+            SELECT eb.ticker,
+                   eb.match_price AS price,
+                   COALESCE(eb.ref_price, 0) AS ref_price,
+                   COALESCE(eb.accumulated_volume, 0) AS volume,
+                   COALESCE(eb.highest_price, eb.match_price) AS high_price,
+                   COALESCE(eb.lowest_price, eb.match_price) AS low_price,
+                   COALESCE(eb.foreign_buy_volume, 0) AS fb_vol,
+                   COALESCE(eb.foreign_sell_volume, 0) AS fs_vol,
+                   st.organ_short_name AS company_name,
+                   st.exchange
+            FROM {SCHEMA}.electric_board eb
+            JOIN sector_tickers st ON UPPER(BTRIM(eb.ticker)) = st.ticker
+            WHERE eb.trading_date = (SELECT td FROM eb_latest_dt)
+              AND eb.match_price IS NOT NULL AND eb.match_price > 0
+        )
+        SELECT * FROM stock_data ORDER BY (price * volume) DESC
+    """)
+    res = await db.execute(main_sql, {"sector_name": sector_name})
+    stock_rows = res.mappings().all()
+
+    if not stock_rows:
+        return _empty_sector_detail(sector_slug, sector_name)
+
+    # ── Build stock table, treemap, breadth, KPI from stock_rows ─
+    stocks_out = []
+    treemap_out = []
+    total_trading_value = 0.0
+    total_market_cap_proxy = 0.0
+    net_foreign = 0.0
+    breadth = {"ceiling": 0, "up": 0, "ref": 0, "down": 0, "floor": 0}
+
+    for r in stock_rows:
+        price = safe_float(r["price"] or 0)
+        ref = safe_float(r["ref_price"] or 0)
+        vol = int(r["volume"] or 0)
+        fb = int(r["fb_vol"] or 0)
+        fs = int(r["fs_vol"] or 0)
+        exchange = r["exchange"] or "HOSE"
+        change_pct = round((price - ref) / ref * 100, 2) if ref > 0 else 0
+        trade_val = round(price * vol / 1e9, 2)  # tỷ VND (price in 1000s VND × vol)
+        # electric_board prices are already in 1000s VND unit? Check: match_price is raw.
+        # Actually match_price is in raw VND (e.g. 25.50 for 25,500 VND)
+        # trade_val in tỷ = price * 1000 * vol / 1e9 = price * vol / 1e6
+        fb_val = round(fb * price / 1e9, 2)
+        fs_val = round(fs * price / 1e9, 2)
+
+        total_trading_value += trade_val
+        total_market_cap_proxy += (price * vol)  # rough proxy
+        net_foreign += (fb_val - fs_val)
+
+        # Breadth
+        limit = {"HOSE": 7, "HNX": 10, "UPCOM": 15}.get(exchange, 7)
+        if change_pct >= limit:
+            breadth["ceiling"] += 1
+        elif change_pct <= -limit:
+            breadth["floor"] += 1
+        elif change_pct > 0:
+            breadth["up"] += 1
+        elif change_pct < 0:
+            breadth["down"] += 1
+        else:
+            breadth["ref"] += 1
+
+        stocks_out.append({
+            "ticker": r["ticker"],
+            "companyName": safe_str(r["company_name"]),
+            "exchange": exchange,
+            "price": price,
+            "change1D": change_pct,
+            "volume": vol,
+            "tradingValue": trade_val,
+            "foreignBuy": fb_val,
+            "foreignSell": fs_val,
+        })
+
+        treemap_out.append({
+            "ticker": r["ticker"],
+            "marketCap": trade_val,  # use trade value as size proxy
+            "changePercent": change_pct,
+            "companyName": safe_str(r["company_name"]),
+        })
+
+    stock_count = len(stocks_out)
+
+    # ── Step 2: Valuation P/B vs ROE from financial_ratio ────────
+    val_sql = text(f"""
+        SELECT DISTINCT ON (fr.ticker)
+            fr.ticker,
+            COALESCE(fr.pb, 0) AS pb,
+            COALESCE(fr.roe, 0) AS roe,
+            COALESCE(fr.market_cap, 0) AS market_cap
+        FROM {SCHEMA}.financial_ratio fr
+        JOIN (
+            SELECT DISTINCT ON (UPPER(BTRIM(ticker)))
+                UPPER(BTRIM(ticker)) AS ticker
+            FROM {SCHEMA}.company_overview
+            WHERE BTRIM(icb_name2) = :sector_name
+              AND ticker IS NOT NULL AND BTRIM(ticker) NOT IN ('', 'NaN')
+            ORDER BY UPPER(BTRIM(ticker))
+        ) st ON UPPER(BTRIM(fr.ticker)) = st.ticker
+        WHERE fr.roe IS NOT NULL
+        ORDER BY fr.ticker, fr.year DESC, fr.quarter DESC
+    """)
+    val_res = await db.execute(val_sql, {"sector_name": sector_name})
+    val_rows = val_res.mappings().all()
+
+    valuation_out = []
+    total_equity_proxy = 0.0
+    total_mcap_for_pb = 0.0
+    for vr in val_rows:
+        pb = safe_float(vr["pb"] or 0)
+        roe = safe_float(vr["roe"] or 0) * 100  # convert to percentage
+        mcap = safe_float(vr["market_cap"] or 0)
+        zone = "balanced"
+        if pb < 1.5 and roe > 15:
+            zone = "attractive"
+        elif pb > 2.0 and roe < 12:
+            zone = "risk"
+        valuation_out.append({
+            "ticker": vr["ticker"],
+            "pb": round(pb, 2),
+            "roe": round(roe, 2),
+            "marketCap": round(mcap, 2),
+            "zone": zone,
+        })
+        if pb > 0 and mcap > 0:
+            total_mcap_for_pb += mcap
+            total_equity_proxy += mcap / pb
+
+    sector_pb = round(total_mcap_for_pb / total_equity_proxy, 2) if total_equity_proxy > 0 else 0
+
+    # ── Step 3: Liquidity by cap group ───────────────────────────
+    cap_sql = text(f"""
+        WITH sector_stocks AS (
+            SELECT DISTINCT ON (UPPER(BTRIM(co.ticker)))
+                UPPER(BTRIM(co.ticker)) AS ticker
+            FROM {SCHEMA}.company_overview co
+            WHERE BTRIM(co.icb_name2) = :sector_name
+              AND co.ticker IS NOT NULL AND BTRIM(co.ticker) NOT IN ('', 'NaN')
+            ORDER BY UPPER(BTRIM(co.ticker))
+        ),
+        latest_fr AS (
+            SELECT DISTINCT ON (fr.ticker)
+                fr.ticker, COALESCE(fr.market_cap, 0) AS market_cap
+            FROM {SCHEMA}.financial_ratio fr
+            JOIN sector_stocks ss ON UPPER(BTRIM(fr.ticker)) = ss.ticker
+            ORDER BY fr.ticker, fr.year DESC, fr.quarter DESC
+        ),
+        eb_date AS (
+            SELECT MAX(trading_date) AS td
+            FROM {SCHEMA}.electric_board WHERE match_price IS NOT NULL
+        )
+        SELECT
+            CASE
+                WHEN COALESCE(lfr.market_cap, 0) >= 10000 THEN 'Large Cap'
+                WHEN COALESCE(lfr.market_cap, 0) >= 1000 THEN 'Mid Cap'
+                ELSE 'Small Cap'
+            END AS cap_group,
+            ROUND((SUM(eb.match_price * COALESCE(eb.accumulated_volume, 0)) / 1e9)::numeric, 1) AS trade_val
+        FROM {SCHEMA}.electric_board eb
+        JOIN sector_stocks ss ON UPPER(BTRIM(eb.ticker)) = ss.ticker
+        LEFT JOIN latest_fr lfr ON UPPER(BTRIM(eb.ticker)) = UPPER(BTRIM(lfr.ticker))
+        WHERE eb.trading_date = (SELECT td FROM eb_date)
+          AND eb.match_price IS NOT NULL AND eb.match_price > 0
+        GROUP BY cap_group
+        ORDER BY trade_val DESC
+    """)
+    cap_res = await db.execute(cap_sql, {"sector_name": sector_name})
+    cap_rows = cap_res.mappings().all()
+    liq_by_cap = [{"group": r["cap_group"], "value": safe_float(r["trade_val"] or 0)} for r in cap_rows]
+
+    # ── Step 4: Liquidity history (30 sessions) ──────────────────
+    liq_history_sql = text(f"""
+        WITH sector_stocks AS (
+            SELECT DISTINCT ON (UPPER(BTRIM(ticker)))
+                UPPER(BTRIM(ticker)) AS ticker
+            FROM {SCHEMA}.company_overview
+            WHERE BTRIM(icb_name2) = :sector_name
+              AND ticker IS NOT NULL AND BTRIM(ticker) NOT IN ('', 'NaN')
+            ORDER BY UPPER(BTRIM(ticker))
+        ),
+        latest_date AS (
+            SELECT MAX(trading_date::date) AS td
+            FROM {SCHEMA}.history_price WHERE close IS NOT NULL
+        ),
+        daily_tv AS (
+            SELECT
+                hp.trading_date::date AS trading_date,
+                ROUND((SUM(hp.close * COALESCE(hp.volume, 0)) / 1e6)::numeric, 1) AS trade_val
+            FROM {SCHEMA}.history_price hp
+            JOIN sector_stocks ss ON UPPER(BTRIM(hp.ticker)) = ss.ticker
+            CROSS JOIN latest_date
+            WHERE hp.close IS NOT NULL AND hp.close > 0
+              AND hp.trading_date::date >= latest_date.td - INTERVAL '90 days'
+            GROUP BY hp.trading_date::date
+        ),
+        daily_nf AS (
+            SELECT
+                eb.trading_date::date AS trading_date,
+                ROUND((SUM(
+                    COALESCE(eb.foreign_buy_volume, 0) * eb.match_price
+                    - COALESCE(eb.foreign_sell_volume, 0) * eb.match_price
+                ) / 1e9)::numeric, 1) AS net_foreign
+            FROM {SCHEMA}.electric_board eb
+            JOIN sector_stocks ss ON UPPER(BTRIM(eb.ticker)) = ss.ticker
+            CROSS JOIN latest_date
+            WHERE eb.match_price IS NOT NULL AND eb.match_price > 0
+              AND eb.trading_date::date >= latest_date.td - INTERVAL '90 days'
+            GROUP BY eb.trading_date::date
+        ),
+        daily_liq AS (
+            SELECT
+                COALESCE(tv.trading_date, nf.trading_date) AS trading_date,
+                COALESCE(tv.trade_val, 0) AS trade_val,
+                COALESCE(nf.net_foreign, 0) AS net_foreign
+            FROM daily_tv tv
+            FULL OUTER JOIN daily_nf nf ON tv.trading_date = nf.trading_date
+        ),
+        ranked_liq AS (
+            SELECT
+                trading_date,
+                trade_val,
+                net_foreign,
+                LAG(trade_val) OVER (ORDER BY trading_date ASC) AS prev_trade_val
+            FROM daily_liq
+            ORDER BY trading_date DESC
+            LIMIT 30
+        )
+        SELECT * FROM ranked_liq ORDER BY trading_date ASC
+    """)
+    liq_res = await db.execute(liq_history_sql, {"sector_name": sector_name})
+    liq_rows = liq_res.mappings().all()
+    liquidity_out = []
+    sma20_vals = []
+    
+    for lr in liq_rows:
+        tv = safe_float(lr["trade_val"] or 0)
+        dt = lr["trading_date"]
+        date_str = dt.strftime("%d/%m") if hasattr(dt, "strftime") else str(dt)[5:10].replace("-", "/")
+        liquidity_out.append({
+            "date": date_str,
+            "tradingValue": tv,
+            "netForeign": safe_float(lr["net_foreign"] or 0),
+        })
+
+    # SMA20: Take the last 20 points from the 30 fetched
+    for lr in list(liq_rows)[-20:]:
+        sma20_vals.append(safe_float(lr["trade_val"] or 0))
+
+    sma20 = sum(sma20_vals) / len(sma20_vals) if sma20_vals else 0
+    trading_vs_avg = round((total_trading_value - sma20) / sma20 * 100, 1) if sma20 > 0 else 0
+
+    # ── Step 5: Performance vs VN-Index (6 months) ───────────────
+    perf_sql = text(f"""
+        WITH sector_stocks AS (
+            SELECT DISTINCT ON (UPPER(BTRIM(ticker)))
+                UPPER(BTRIM(ticker)) AS ticker
+            FROM {SCHEMA}.company_overview
+            WHERE BTRIM(icb_name2) = :sector_name
+              AND ticker IS NOT NULL AND BTRIM(ticker) NOT IN ('', 'NaN')
+            ORDER BY UPPER(BTRIM(ticker))
+        ),
+        sector_daily AS (
+            SELECT hp.trading_date,
+                   SUM(hp.close * hp.volume) AS sector_value
+            FROM {SCHEMA}.history_price hp
+            JOIN sector_stocks ss ON UPPER(BTRIM(hp.ticker)) = ss.ticker
+            WHERE hp.close IS NOT NULL AND hp.close > 0
+              AND hp.trading_date >= (
+                  (SELECT MAX(trading_date) FROM {SCHEMA}.history_price WHERE close IS NOT NULL)::date
+                  - INTERVAL '6 months'
+              )::text
+            GROUP BY hp.trading_date
+        ),
+        vnindex AS (
+            SELECT trading_date, close
+            FROM {SCHEMA}.market_index
+            WHERE UPPER(ticker) = 'VNINDEX'
+              AND close IS NOT NULL
+              AND trading_date::date >= (CURRENT_DATE - INTERVAL '6 months')
+        )
+        SELECT sd.trading_date,
+               sd.sector_value,
+               COALESCE(vi.close, 0) AS vnindex_close
+        FROM sector_daily sd
+        LEFT JOIN vnindex vi ON sd.trading_date = vi.trading_date::text
+        ORDER BY sd.trading_date ASC
+    """)
+    perf_res = await db.execute(perf_sql, {"sector_name": sector_name})
+    perf_rows = perf_res.mappings().all()
+
+    performance_out = []
+    if perf_rows:
+        base_sector = safe_float(perf_rows[0]["sector_value"]) if perf_rows[0]["sector_value"] else 1
+        base_vni = safe_float(perf_rows[0]["vnindex_close"]) if perf_rows[0]["vnindex_close"] else 1
+        if base_sector == 0:
+            base_sector = 1
+        if base_vni == 0:
+            base_vni = 1
+        for pr in perf_rows:
+            sv = safe_float(pr["sector_value"] or base_sector)
+            vi = safe_float(pr["vnindex_close"] or base_vni)
+            dt = pr["trading_date"]
+            date_str = str(dt)[:10]
+            performance_out.append({
+                "date": date_str,
+                "sectorReturn": round((sv / base_sector - 1) * 100, 2),
+                "vnindexReturn": round((vi / base_vni - 1) * 100, 2),
+            })
+        # Downsample to ~60 points max for chart
+        if len(performance_out) > 60:
+            step = len(performance_out) // 60
+            sampled = [performance_out[i] for i in range(0, len(performance_out), step)]
+            if sampled[-1] != performance_out[-1]:
+                sampled.append(performance_out[-1])
+            performance_out = sampled
+
+    # ── Step 6: RS Score (proxy — rank sector change vs all sectors)
+    rs_sql = text(f"""
+        WITH {_RANKED_DATES_CTE},
+        sector_changes AS (
+            SELECT co.icb_name2 AS sector,
+                   AVG((cur.close - prev.close) / NULLIF(prev.close, 0) * 100) AS avg_change
+            FROM {SCHEMA}.company_overview co
+            JOIN {SCHEMA}.history_price cur ON cur.ticker = co.ticker
+                AND cur.trading_date = (SELECT td FROM latest_date)
+            JOIN {SCHEMA}.history_price prev ON prev.ticker = co.ticker
+                AND prev.trading_date = (SELECT td FROM prev_date)
+            WHERE prev.close > 0 AND cur.close IS NOT NULL
+              AND co.icb_name2 IS NOT NULL
+            GROUP BY co.icb_name2
+        ),
+        ranked AS (
+            SELECT sector, avg_change,
+                   PERCENT_RANK() OVER (ORDER BY avg_change ASC) * 99 + 1 AS rs_score
+            FROM sector_changes
+        )
+        SELECT rs_score FROM ranked WHERE BTRIM(sector) = :sector_name
+    """)
+    rs_res = await db.execute(rs_sql, {"sector_name": sector_name})
+    rs_row = rs_res.mappings().first()
+    rs_score = round(safe_float(rs_row["rs_score"]), 1) if rs_row else 50
+
+    # ── Step 7: MFI (proxy — simplified from TP × Volume) ────────
+    mfi_sql = text(f"""
+        WITH sector_stocks AS (
+            SELECT DISTINCT ON (UPPER(BTRIM(ticker)))
+                UPPER(BTRIM(ticker)) AS ticker
+            FROM {SCHEMA}.company_overview
+            WHERE BTRIM(icb_name2) = :sector_name
+              AND ticker IS NOT NULL AND BTRIM(ticker) NOT IN ('', 'NaN')
+            ORDER BY UPPER(BTRIM(ticker))
+        ),
+        last_dates AS (
+            SELECT DISTINCT trading_date
+            FROM {SCHEMA}.history_price
+            WHERE close IS NOT NULL
+            ORDER BY trading_date DESC
+            LIMIT 15
+        ),
+        daily_flow AS (
+            SELECT hp.trading_date,
+                   SUM((hp.high + hp.low + hp.close) / 3.0 * hp.volume) AS raw_mf,
+                   LAG(SUM((hp.high + hp.low + hp.close) / 3.0)) OVER (ORDER BY hp.trading_date) AS prev_tp,
+                   SUM((hp.high + hp.low + hp.close) / 3.0) AS curr_tp
+            FROM {SCHEMA}.history_price hp
+            JOIN sector_stocks ss ON UPPER(BTRIM(hp.ticker)) = ss.ticker
+            WHERE hp.trading_date IN (SELECT trading_date FROM last_dates)
+              AND hp.close IS NOT NULL AND hp.volume > 0
+            GROUP BY hp.trading_date
+        )
+        SELECT
+            COALESCE(SUM(CASE WHEN curr_tp > COALESCE(prev_tp, 0) THEN raw_mf ELSE 0 END), 0) AS pos_flow,
+            COALESCE(SUM(CASE WHEN curr_tp <= COALESCE(prev_tp, 0) THEN raw_mf ELSE 0 END), 0) AS neg_flow
+        FROM daily_flow
+        WHERE prev_tp IS NOT NULL
+    """)
+    mfi_res = await db.execute(mfi_sql, {"sector_name": sector_name})
+    mfi_row = mfi_res.mappings().first()
+    pos = safe_float(mfi_row["pos_flow"]) if mfi_row and mfi_row["pos_flow"] else 0
+    neg = safe_float(mfi_row["neg_flow"]) if mfi_row and mfi_row["neg_flow"] else 0
+    mfi = round(100 - 100 / (1 + pos / neg), 1) if neg > 0 else (100 if pos > 0 else 50)
+    mfi = max(0, min(100, mfi))
+
+    # ── Assemble response ────────────────────────────────────────
+    kpi = {
+        "sectorName": sector_name,
+        "rsScore": rs_score,
+        "totalTradingValue": round(total_trading_value, 1),
+        "tradingValueVsAvg": trading_vs_avg,
+        "mfi": mfi,
+        "marketCap": round(total_trading_value * 20, 0),  # rough proxy
+        "netForeign": round(net_foreign, 1),
+        "pb": sector_pb,
+        "stockCount": stock_count,
+    }
+
+    # Try to get a better market cap from financial_ratio
+    mcap_sql = text(f"""
+        WITH sector_stocks AS (
+            SELECT DISTINCT ON (UPPER(BTRIM(ticker)))
+                UPPER(BTRIM(ticker)) AS ticker
+            FROM {SCHEMA}.company_overview
+            WHERE BTRIM(icb_name2) = :sector_name
+              AND ticker IS NOT NULL AND BTRIM(ticker) NOT IN ('', 'NaN')
+            ORDER BY UPPER(BTRIM(ticker))
+        )
+        SELECT COALESCE(SUM(sub.market_cap), 0) AS total_mcap
+        FROM (
+            SELECT DISTINCT ON (fr.ticker) fr.market_cap
+            FROM {SCHEMA}.financial_ratio fr
+            JOIN sector_stocks ss ON UPPER(BTRIM(fr.ticker)) = ss.ticker
+            WHERE fr.market_cap IS NOT NULL AND fr.market_cap > 0
+            ORDER BY fr.ticker, fr.year DESC, fr.quarter DESC
+        ) sub
+    """)
+    mcap_res = await db.execute(mcap_sql, {"sector_name": sector_name})
+    mcap_row = mcap_res.mappings().first()
+    if mcap_row and safe_float(mcap_row["total_mcap"] or 0) > 0:
+        kpi["marketCap"] = round(safe_float(mcap_row["total_mcap"]), 0)
+
+    return {
+        "kpi": kpi,
+        "performance": performance_out,
+        "breadth": breadth,
+        "treemap": treemap_out,
+        "liquidity": liquidity_out,
+        "valuation": valuation_out,
+        "liquidityByCap": liq_by_cap,
+        "stocks": stocks_out,
+    }
+
+
+def _empty_sector_detail(slug: str, name: str | None = None) -> Dict[str, Any]:
+    """Return an empty sector detail structure."""
+    return {
+        "kpi": {
+            "sectorName": name or slug,
+            "rsScore": 0, "totalTradingValue": 0, "tradingValueVsAvg": 0,
+            "mfi": 50, "marketCap": 0, "netForeign": 0, "pb": 0, "stockCount": 0,
+        },
+        "performance": [],
+        "breadth": {"ceiling": 0, "up": 0, "ref": 0, "down": 0, "floor": 0},
+        "treemap": [],
+        "liquidity": [],
+        "valuation": [],
+        "liquidityByCap": [],
+        "stocks": [],
+    }
+

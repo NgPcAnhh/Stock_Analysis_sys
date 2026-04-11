@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RefreshCw } from "lucide-react";
+import { slugify } from "@/lib/utils";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -251,8 +252,10 @@ export function SectorWatchlist() {
                             >
                                 {/* Sector header */}
                                 <div className="flex justify-between items-center px-3 py-2 bg-muted/50 border-b border-border/50">
-                                    <span className="text-xs font-bold text-foreground truncate">
-                                        {sector.name}
+                                    <span className="text-xs font-bold text-foreground truncate shrink max-w-[150px]">
+                                        <Link href={`/market/sector/${slugify(sector.name)}`} className="text-orange-500 hover:underline">
+                                            {sector.name}
+                                        </Link>
                                     </span>
                                     <div className="flex items-center gap-1.5 text-[10px] shrink-0 ml-2">
                                         <span className="text-green-600 font-semibold">{sectorUp}&#8593;</span>
