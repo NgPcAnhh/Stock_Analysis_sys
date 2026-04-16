@@ -270,7 +270,7 @@ export default function PortfolioAssumptionPage() {
                                 <CardHeader>
                                     <CardTitle className="text-base flex items-center justify-between">
                                         <span>1) Ma trận Tương quan</span>
-                                        <Info className="h-4 w-4 text-muted-foreground" title="Đo lường mức độ đồng pha. Càng gần 1, các mã càng biến động giống nhau. Gần -1 giúp giảm thiểu rủi ro." />
+                                        <Info className="h-4 w-4 text-muted-foreground" aria-label="Đo lường mức độ đồng pha. Càng gần 1, các mã càng biến động giống nhau. Gần -1 giúp giảm thiểu rủi ro." />
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>

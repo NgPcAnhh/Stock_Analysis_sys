@@ -1,0 +1,302 @@
+{
+  "generatedAt": "2026-04-15 23:08:45",
+  "baseUrl": "http://localhost:8000/api/v1",
+  "mode": "pragmatic",
+  "errors": [],
+  "results": [
+    {
+      "ticker": "BVH",
+      "dashboard": "insurance",
+      "sector": "",
+      "industry": "Bảo hiểm",
+      "score": 35.2,
+      "insights": [
+        "Combined Ratio around 0.0% indicates manageable underwriting quality.",
+        "Core financial reports are present, enabling baseline insurance dashboard analysis."
+      ],
+      "risks": [
+        "More than half of key insurance KPIs are proxy-based; interpretation should be cautious."
+      ],
+      "fallback_recommendations": [
+        "Replace stress curve with solvency and leverage gauges when liquid asset fields are missing."
+      ],
+      "checks": [
+        {
+          "code": "INS_DATA_PRESENCE",
+          "status": "pass",
+          "message": "Insurance core timeseries available (>=4 periods).",
+          "evidence": "income=17, balance=17"
+        },
+        {
+          "code": "INS_SPECIAL_ENDPOINT",
+          "status": "pass",
+          "message": "insurance-tcdn specialized payload reachable.",
+          "evidence": "ok"
+        },
+        {
+          "code": "INS_KPI_CONFIDENCE",
+          "status": "proxy",
+          "message": "Insurance KPI coverage and confidence quality.",
+          "evidence": "present=6/6, proxy_ratio=0.6666666666666666"
+        },
+        {
+          "code": "INS_COMBINED_RATIO_COMPUTABLE",
+          "status": "pass",
+          "message": "Combined Ratio can be derived from available IS fields.",
+          "evidence": "nep=10549601874802.0, claims=0.0, opex=None, combined=0.0"
+        },
+        {
+          "code": "INS_STRESS_TEST_READY",
+          "status": "pass",
+          "message": "Stress-test series is available for liquidity risk insights.",
+          "evidence": "ok"
+        }
+      ]
+    },
+    {
+      "ticker": "BIC",
+      "dashboard": "insurance",
+      "sector": "",
+      "industry": "Bảo hiểm",
+      "score": 38.800000000000004,
+      "insights": [
+        "Combined Ratio around 0.0% indicates manageable underwriting quality.",
+        "Core financial reports are present, enabling baseline insurance dashboard analysis."
+      ],
+      "risks": [
+        "More than half of key insurance KPIs are proxy-based; interpretation should be cautious."
+      ],
+      "fallback_recommendations": [
+        "Fallbacks not required for current payload quality."
+      ],
+      "checks": [
+        {
+          "code": "INS_DATA_PRESENCE",
+          "status": "pass",
+          "message": "Insurance core timeseries available (>=4 periods).",
+          "evidence": "income=12, balance=12"
+        },
+        {
+          "code": "INS_SPECIAL_ENDPOINT",
+          "status": "pass",
+          "message": "insurance-tcdn specialized payload reachable.",
+          "evidence": "ok"
+        },
+        {
+          "code": "INS_KPI_CONFIDENCE",
+          "status": "proxy",
+          "message": "Insurance KPI coverage and confidence quality.",
+          "evidence": "present=6/6, proxy_ratio=0.6666666666666666"
+        },
+        {
+          "code": "INS_COMBINED_RATIO_COMPUTABLE",
+          "status": "pass",
+          "message": "Combined Ratio can be derived from available IS fields.",
+          "evidence": "nep=1096571314717.0, claims=0.0, opex=None, combined=0.0"
+        },
+        {
+          "code": "INS_STRESS_TEST_READY",
+          "status": "pass",
+          "message": "Stress-test series is available for liquidity risk insights.",
+          "evidence": "ok"
+        }
+      ]
+    },
+    {
+      "ticker": "MIG",
+      "dashboard": "insurance",
+      "sector": "",
+      "industry": "Bảo hiểm",
+      "score": 38.800000000000004,
+      "insights": [
+        "Combined Ratio around 0.0% indicates manageable underwriting quality.",
+        "Core financial reports are present, enabling baseline insurance dashboard analysis."
+      ],
+      "risks": [
+        "More than half of key insurance KPIs are proxy-based; interpretation should be cautious."
+      ],
+      "fallback_recommendations": [
+        "Fallbacks not required for current payload quality."
+      ],
+      "checks": [
+        {
+          "code": "INS_DATA_PRESENCE",
+          "status": "pass",
+          "message": "Insurance core timeseries available (>=4 periods).",
+          "evidence": "income=12, balance=12"
+        },
+        {
+          "code": "INS_SPECIAL_ENDPOINT",
+          "status": "pass",
+          "message": "insurance-tcdn specialized payload reachable.",
+          "evidence": "ok"
+        },
+        {
+          "code": "INS_KPI_CONFIDENCE",
+          "status": "proxy",
+          "message": "Insurance KPI coverage and confidence quality.",
+          "evidence": "present=6/6, proxy_ratio=0.6666666666666666"
+        },
+        {
+          "code": "INS_COMBINED_RATIO_COMPUTABLE",
+          "status": "pass",
+          "message": "Combined Ratio can be derived from available IS fields.",
+          "evidence": "nep=1146889117332.0, claims=0.0, opex=None, combined=0.0"
+        },
+        {
+          "code": "INS_STRESS_TEST_READY",
+          "status": "pass",
+          "message": "Stress-test series is available for liquidity risk insights.",
+          "evidence": "ok"
+        }
+      ]
+    },
+    {
+      "ticker": "HCM",
+      "dashboard": "finco",
+      "sector": "",
+      "industry": "Dịch vụ tài chính",
+      "score": 38.800000000000004,
+      "insights": [
+        "Leverage D/E=3.20x is within a manageable range for finance operators.",
+        "Current ratio=1.45x indicates acceptable short-term coverage."
+      ],
+      "risks": [],
+      "fallback_recommendations": [
+        "Use receivables-based credit proxy charts and label them explicitly as proxy.",
+        "Replace credit-cost chart with leverage + ROE/ROA trend from financial_ratios.",
+        "Use net margin and ROE decomposition instead of NIM where netInterestIncome is absent."
+      ],
+      "checks": [
+        {
+          "code": "FINCO_DATA_PRESENCE",
+          "status": "pass",
+          "message": "Finco core timeseries available (>=4 periods).",
+          "evidence": "income=12, balance=12"
+        },
+        {
+          "code": "FINCO_LOAN_BASE",
+          "status": "proxy",
+          "message": "Loan base available for credit metrics (loan book preferred, receivables proxy allowed).",
+          "evidence": "loans=None, receivables=655784034843.0"
+        },
+        {
+          "code": "FINCO_CREDIT_COST_READY",
+          "status": "fail",
+          "message": "Credit-cost/provision burden can be computed.",
+          "evidence": "provision=None, ppop=None, loans=None, receivables=655784034843.0"
+        },
+        {
+          "code": "FINCO_NIM_OR_MARGIN",
+          "status": "proxy",
+          "message": "NIM-like earning metric can be derived (or fallback to net margin).",
+          "evidence": "netInterestIncome=None, totalAssets=46499006000000.0, nim=None"
+        },
+        {
+          "code": "FINCO_LIQUIDITY_LEVERAGE",
+          "status": "pass",
+          "message": "Leverage and liquidity lenses are available for ALM proxy insights.",
+          "evidence": "de=3.1973145559172074, current_ratio=1.4498516109501287"
+        }
+      ]
+    },
+    {
+      "ticker": "VIX",
+      "dashboard": "finco",
+      "sector": "",
+      "industry": "Dịch vụ tài chính",
+      "score": 38.800000000000004,
+      "insights": [
+        "Leverage D/E=1.59x is within a manageable range for finance operators.",
+        "Current ratio=2.87x indicates acceptable short-term coverage."
+      ],
+      "risks": [],
+      "fallback_recommendations": [
+        "Use receivables-based credit proxy charts and label them explicitly as proxy.",
+        "Replace credit-cost chart with leverage + ROE/ROA trend from financial_ratios.",
+        "Use net margin and ROE decomposition instead of NIM where netInterestIncome is absent."
+      ],
+      "checks": [
+        {
+          "code": "FINCO_DATA_PRESENCE",
+          "status": "pass",
+          "message": "Finco core timeseries available (>=4 periods).",
+          "evidence": "income=20, balance=20"
+        },
+        {
+          "code": "FINCO_LOAN_BASE",
+          "status": "proxy",
+          "message": "Loan base available for credit metrics (loan book preferred, receivables proxy allowed).",
+          "evidence": "loans=None, receivables=1462242000000.0"
+        },
+        {
+          "code": "FINCO_CREDIT_COST_READY",
+          "status": "fail",
+          "message": "Credit-cost/provision burden can be computed.",
+          "evidence": "provision=None, ppop=None, loans=None, receivables=1462242000000.0"
+        },
+        {
+          "code": "FINCO_NIM_OR_MARGIN",
+          "status": "proxy",
+          "message": "NIM-like earning metric can be derived (or fallback to net margin).",
+          "evidence": "netInterestIncome=None, totalAssets=34167047000000.0, nim=None"
+        },
+        {
+          "code": "FINCO_LIQUIDITY_LEVERAGE",
+          "status": "pass",
+          "message": "Leverage and liquidity lenses are available for ALM proxy insights.",
+          "evidence": "de=1.5925157038555962, current_ratio=2.8725008801785803"
+        }
+      ]
+    },
+    {
+      "ticker": "SSI",
+      "dashboard": "finco",
+      "sector": "",
+      "industry": "Dịch vụ tài chính",
+      "score": 35.2,
+      "insights": [
+        "Leverage D/E=2.93x is within a manageable range for finance operators.",
+        "Current ratio=1.44x indicates acceptable short-term coverage."
+      ],
+      "risks": [],
+      "fallback_recommendations": [
+        "Use receivables-based credit proxy charts and label them explicitly as proxy.",
+        "Replace credit-cost chart with leverage + ROE/ROA trend from financial_ratios.",
+        "Use net margin and ROE decomposition instead of NIM where netInterestIncome is absent."
+      ],
+      "checks": [
+        {
+          "code": "FINCO_DATA_PRESENCE",
+          "status": "pass",
+          "message": "Finco core timeseries available (>=4 periods).",
+          "evidence": "income=20, balance=20"
+        },
+        {
+          "code": "FINCO_LOAN_BASE",
+          "status": "proxy",
+          "message": "Loan base available for credit metrics (loan book preferred, receivables proxy allowed).",
+          "evidence": "loans=None, receivables=573616000000.0"
+        },
+        {
+          "code": "FINCO_CREDIT_COST_READY",
+          "status": "fail",
+          "message": "Credit-cost/provision burden can be computed.",
+          "evidence": "provision=None, ppop=None, loans=None, receivables=573616000000.0"
+        },
+        {
+          "code": "FINCO_NIM_OR_MARGIN",
+          "status": "proxy",
+          "message": "NIM-like earning metric can be derived (or fallback to net margin).",
+          "evidence": "netInterestIncome=None, totalAssets=94049979000000.0, nim=None"
+        },
+        {
+          "code": "FINCO_LIQUIDITY_LEVERAGE",
+          "status": "pass",
+          "message": "Leverage and liquidity lenses are available for ALM proxy insights.",
+          "evidence": "de=2.93298341892574, current_ratio=1.4429788402608454"
+        }
+      ]
+    }
+  ]
+}

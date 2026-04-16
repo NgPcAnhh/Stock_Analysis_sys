@@ -64,6 +64,25 @@ async def financial_reports(
     return await logic.get_financial_reports(db, ticker=ticker, periods=periods, year=year)
 
 
+# ── 4.1 Insurance TCDN Dashboard ─────────────────────────────
+@router.get("/{ticker}/insurance-tcdn")
+async def insurance_tcdn(
+    ticker: str,
+    period: str | None = Query(None, description="Kỳ dữ liệu (VD: Q4/2024)"),
+    year: int | None = Query(None, description="Lọc theo năm cụ thể (VD: 2024)"),
+    scenario: str = Query("adverse", pattern="^(baseline|adverse|severe)$"),
+    db: AsyncSession = Depends(get_db),
+):
+    """Payload chuyên dụng cho Dashboard TCDN ngành bảo hiểm."""
+    return await logic.get_insurance_tcdn_dashboard(
+        db,
+        ticker=ticker,
+        period=period,
+        year=year,
+        scenario=scenario,
+    )
+
+
 # ── 5. Company Profile ───────────────────────────────────────────
 @router.get("/{ticker}/profile")
 async def company_profile(

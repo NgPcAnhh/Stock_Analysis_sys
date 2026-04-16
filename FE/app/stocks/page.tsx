@@ -141,13 +141,14 @@ export default function StocksPage() {
         }, 500);
         return () => clearTimeout(timer);
     }, [search]);
-    const [sortKey, setSortKey] = useState<SortKey>("market_cap");
-    const [sortDir, setSortDir] = useState<SortDir>("desc");
+    const [sortKey, setSortKey] = useState<SortKey>("ticker");
+    const [sortDir, setSortDir] = useState<SortDir>("asc");
     const [page, setPage] = useState(1);
     const pageSize = 30;
 
-    /* ── Debounce refs ── */
-    const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    /* ── Fetch/cache refs ── */
+    const overviewCacheRef = useRef<Map<string, OverviewResponse>>(new Map());
+    const fetchControllerRef = useRef<AbortController | null>(null);
     const trackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     /* ── Fetch stock overview data ── */
@@ -163,14 +164,34 @@ export default function StocksPage() {
             if (debouncedSearch) params.set("search", debouncedSearch);
             if (sectorFilter !== "Tất cả") params.set("sector", sectorFilter);
 
-            const res = await fetch(`${API}/stock-list/overview?${params}`);
+            const queryString = params.toString();
+            const cached = overviewCacheRef.current.get(queryString);
+            if (cached) {
+                setStocks(cached.data);
+                setTotal(cached.total);
+                setTotalPages(cached.total_pages);
+                setSummary(cached.summary);
+                setLoading(false);
+                setInitialLoad(false);
+                return;
+            }
+
+            fetchControllerRef.current?.abort();
+            const controller = new AbortController();
+            fetchControllerRef.current = controller;
+
+            const res = await fetch(`${API}/stock-list/overview?${queryString}`, {
+                signal: controller.signal,
+            });
             if (!res.ok) throw new Error("API error");
             const json: OverviewResponse = await res.json();
+            overviewCacheRef.current.set(queryString, json);
             setStocks(json.data);
             setTotal(json.total);
             setTotalPages(json.total_pages);
             setSummary(json.summary);
         } catch (err) {
+            if (err instanceof DOMException && err.name === "AbortError") return;
             console.error("Failed to fetch stock overview:", err);
         } finally {
             setLoading(false);
@@ -237,7 +258,7 @@ export default function StocksPage() {
             className={`cursor-pointer hover:bg-muted/50 select-none whitespace-nowrap ${className}`}
             onClick={() => toggleSort(field)}
         >
-            <div className="flex items-center gap-1">
+            <div className="flex items-center justify-center gap-1">
                 {label}
                 <ArrowUpDown className={`w-3 h-3 ${sortKey === field ? "text-orange-500" : "text-gray-300"}`} />
             </div>
@@ -416,17 +437,17 @@ export default function StocksPage() {
                             <Table>
                                 <TableHeader>
                                     <TableRow className="bg-muted/50 text-xs">
-                                        <TableHead className="w-[160px] sticky left-0 bg-muted/50 z-10">Mã CK</TableHead>
-                                        <SortHeader label="Giá" field="current_price" className="text-right" />
-                                        <SortHeader label="Thay đổi" field="price_change_percent" className="text-right" />
+                                        <TableHead className="w-[180px] sticky left-0 bg-muted/50 z-10 text-left">Mã CK</TableHead>
+                                        <SortHeader label="Giá" field="current_price" className="text-center" />
+                                        <SortHeader label="Thay đổi" field="price_change_percent" className="text-center" />
                                         <TableHead className="text-center w-[90px]">Xu hướng</TableHead>
-                                        <SortHeader label="KLGD" field="volume" className="text-right" />
-                                        <SortHeader label="Vốn hóa" field="market_cap" className="text-right" />
-                                        <SortHeader label="P/E" field="pe" className="text-right" />
-                                        <SortHeader label="P/B" field="pb" className="text-right" />
-                                        <SortHeader label="EPS" field="eps" className="text-right" />
-                                        <SortHeader label="ROE" field="roe" className="text-right" />
-                                        <SortHeader label="52W %" field="week_change_52" className="text-right" />
+                                        <SortHeader label="KLGD" field="volume" className="text-center" />
+                                        <SortHeader label="Vốn hóa" field="market_cap" className="text-center" />
+                                        <SortHeader label="P/E" field="pe" className="text-center" />
+                                        <SortHeader label="P/B" field="pb" className="text-center" />
+                                        <SortHeader label="EPS" field="eps" className="text-center" />
+                                        <SortHeader label="ROE" field="roe" className="text-center" />
+                                        <SortHeader label="52W %" field="week_change_52" className="text-center" />
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -443,21 +464,21 @@ export default function StocksPage() {
                                                         </div>
                                                     </div>
                                                 </TableCell>
-                                                <TableCell className="text-right"><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
-                                                <TableCell className="text-right">
-                                                    <div className="flex flex-col items-end gap-1">
+                                                <TableCell className="text-center"><Skeleton className="h-4 w-16 mx-auto" /></TableCell>
+                                                <TableCell className="text-center">
+                                                    <div className="flex flex-col items-center gap-1">
                                                         <Skeleton className="h-3 w-12" />
                                                         <Skeleton className="h-4 w-14 rounded" />
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="text-center"><Skeleton className="h-8 w-20 mx-auto rounded" /></TableCell>
-                                                <TableCell className="text-right"><Skeleton className="h-4 w-12 ml-auto" /></TableCell>
-                                                <TableCell className="text-right"><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
-                                                <TableCell className="text-right"><Skeleton className="h-4 w-10 ml-auto" /></TableCell>
-                                                <TableCell className="text-right"><Skeleton className="h-4 w-10 ml-auto" /></TableCell>
-                                                <TableCell className="text-right"><Skeleton className="h-4 w-14 ml-auto" /></TableCell>
-                                                <TableCell className="text-right"><Skeleton className="h-4 w-12 ml-auto" /></TableCell>
-                                                <TableCell className="text-right"><Skeleton className="h-4 w-12 ml-auto" /></TableCell>
+                                                <TableCell className="text-center"><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
+                                                <TableCell className="text-center"><Skeleton className="h-4 w-16 mx-auto" /></TableCell>
+                                                <TableCell className="text-center"><Skeleton className="h-4 w-10 mx-auto" /></TableCell>
+                                                <TableCell className="text-center"><Skeleton className="h-4 w-10 mx-auto" /></TableCell>
+                                                <TableCell className="text-center"><Skeleton className="h-4 w-14 mx-auto" /></TableCell>
+                                                <TableCell className="text-center"><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
+                                                <TableCell className="text-center"><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
                                             </TableRow>
                                         ))
                                     )}
@@ -476,7 +497,7 @@ export default function StocksPage() {
                                                 className="hover:bg-orange-50/50 transition-colors group"
                                             >
                                                 {/* Ticker + Company */}
-                                                <TableCell className="sticky left-0 bg-card group-hover:bg-orange-50/50 z-10">
+                                                <TableCell className="sticky left-0 bg-card group-hover:bg-orange-50/50 z-10 text-left">
                                                     <Link
                                                         href={`/stock/${stock.ticker}`}
                                                         className="block"
@@ -499,7 +520,7 @@ export default function StocksPage() {
                                                 </TableCell>
 
                                                 {/* Price */}
-                                                <TableCell className="text-right">
+                                                <TableCell className="text-center">
                                                     <Link href={`/stock/${stock.ticker}`} className="block" onClick={() => trackClick(stock.ticker)}>
                                                         <span className={`font-semibold text-sm ${isUp ? "text-green-600" : "text-red-600"}`}>
                                                             {stock.current_price != null ? formatPrice(stock.current_price) : "—"}
@@ -508,8 +529,8 @@ export default function StocksPage() {
                                                 </TableCell>
 
                                                 {/* Change */}
-                                                <TableCell className="text-right">
-                                                    <div className="flex flex-col items-end">
+                                                <TableCell className="text-center">
+                                                    <div className="flex flex-col items-center">
                                                         <span className={`text-xs font-medium ${isUp ? "text-green-600" : "text-red-600"}`}>
                                                             {stock.price_change != null ? `${isUp ? "+" : ""}${formatPrice(stock.price_change)}` : "—"}
                                                         </span>
@@ -527,32 +548,32 @@ export default function StocksPage() {
                                                 </TableCell>
 
                                                 {/* Volume */}
-                                                <TableCell className="text-right text-xs text-foreground font-medium">
+                                                <TableCell className="text-center text-xs text-foreground font-medium">
                                                     {stock.volume != null ? formatVolume(stock.volume) : "—"}
                                                 </TableCell>
 
                                                 {/* Market Cap */}
-                                                <TableCell className="text-right text-xs text-foreground font-medium">
+                                                <TableCell className="text-center text-xs text-foreground font-medium">
                                                     {stock.market_cap != null ? formatMarketCap(stock.market_cap) : "—"}
                                                 </TableCell>
 
                                                 {/* P/E */}
-                                                <TableCell className="text-right text-xs text-foreground">
+                                                <TableCell className="text-center text-xs text-foreground">
                                                     {stock.pe != null ? stock.pe.toFixed(1) : "—"}
                                                 </TableCell>
 
                                                 {/* P/B */}
-                                                <TableCell className="text-right text-xs text-foreground">
+                                                <TableCell className="text-center text-xs text-foreground">
                                                     {stock.pb != null ? stock.pb.toFixed(1) : "—"}
                                                 </TableCell>
 
                                                 {/* EPS */}
-                                                <TableCell className="text-right text-xs text-foreground">
+                                                <TableCell className="text-center text-xs text-foreground">
                                                     {stock.eps != null ? stock.eps.toLocaleString() : "—"}
                                                 </TableCell>
 
                                                 {/* ROE */}
-                                                <TableCell className="text-right">
+                                                <TableCell className="text-center">
                                                     {stock.roe != null ? (
                                                         <span className={`text-xs font-medium ${stock.roe >= 15 ? "text-green-600" : stock.roe >= 0 ? "text-foreground" : "text-red-600"}`}>
                                                             {stock.roe.toFixed(1)}%
@@ -561,7 +582,7 @@ export default function StocksPage() {
                                                 </TableCell>
 
                                                 {/* 52W Change */}
-                                                <TableCell className="text-right">
+                                                <TableCell className="text-center">
                                                     {stock.week_change_52 != null ? (
                                                         <span className={`text-xs font-medium ${stock.week_change_52 >= 0 ? "text-green-600" : "text-red-600"}`}>
                                                             {stock.week_change_52 > 0 ? "+" : ""}{stock.week_change_52.toFixed(1)}%

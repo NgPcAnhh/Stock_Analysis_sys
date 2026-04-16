@@ -156,6 +156,9 @@ latest_fr AS (
         roe,
         roa,
         market_cap,
+        pe,
+        pb,
+        eps,
         dividend_yield,
         debt_to_equity
     FROM financial_ratio
@@ -301,18 +304,24 @@ SELECT
     END AS price_change_percent,
 
     CASE
+        WHEN fr.market_cap IS NOT NULL
+            THEN fr.market_cap
         WHEN sh.shares > 0 AND hp.close > 0
             THEN ROUND((hp.close * 1000 * sh.shares / 1e9)::numeric, 1)
-        ELSE fr.market_cap
+        ELSE NULL
     END AS market_cap,
 
     CASE
+        WHEN fr.eps IS NOT NULL
+            THEN fr.eps
         WHEN sh.shares > 0 AND ni.ttm_ni IS NOT NULL
             THEN ROUND((ni.ttm_ni / sh.shares)::numeric, 0)
         ELSE NULL
     END AS eps,
 
     CASE
+        WHEN fr.pe IS NOT NULL
+            THEN fr.pe
         WHEN sh.shares > 0
              AND ni.ttm_ni IS NOT NULL
              AND ni.ttm_ni > 0
@@ -323,6 +332,8 @@ SELECT
     END AS pe,
 
     CASE
+        WHEN fr.pb IS NOT NULL
+            THEN fr.pb
         WHEN sh.shares > 0
              AND eq.equity > 0
              AND hp.close > 0
@@ -336,22 +347,22 @@ SELECT
     ROUND((fr.roa * 100)::numeric, 2) AS roa,
 
     CASE
-        WHEN tl.total_liabilities IS NOT NULL AND eq.equity > 0
-            THEN ROUND((tl.total_liabilities / eq.equity)::numeric, 2)
         WHEN fr.debt_to_equity IS NOT NULL
             THEN ROUND(fr.debt_to_equity::numeric, 2)
+        WHEN tl.total_liabilities IS NOT NULL AND eq.equity > 0
+            THEN ROUND((tl.total_liabilities / eq.equity)::numeric, 2)
         ELSE NULL
     END AS debt_to_equity,
 
     CASE
+        WHEN fr.dividend_yield IS NOT NULL
+            THEN ROUND((fr.dividend_yield * 100)::numeric, 2)
         WHEN dv.ttm_div IS NOT NULL
              AND dv.ttm_div > 0
              AND hp.close > 0
              AND sh.shares > 0
              AND hp.close * 1000 * sh.shares > 0
             THEN ROUND((dv.ttm_div / (hp.close * 1000 * sh.shares) * 100)::numeric, 2)
-        WHEN fr.dividend_yield IS NOT NULL
-            THEN ROUND((fr.dividend_yield * 100)::numeric, 2)
         ELSE NULL
     END AS dividend_yield,
 

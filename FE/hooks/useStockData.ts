@@ -242,9 +242,12 @@ function transformFinancialReports(json: unknown): FinancialReportsData {
     return {
         isBank: !!(raw.isBank),
         industry: String(raw.industry || ""),
+        reportLayout: (raw.reportLayout as FinancialReportsData["reportLayout"] | undefined) ?? undefined,
+        reportLayoutLabel: String(raw.reportLayoutLabel || ""),
         incomeStatement: normalizedIncome,
         balanceSheet: normalizedBalance,
         cashFlow: normalizedCashFlow,
+        reportTables: (raw.reportTables as FinancialReportTables | undefined) ?? undefined,
     };
 }
 
@@ -254,6 +257,23 @@ export function useFinancialReports(ticker: string, periods = 12, year?: number 
         url: `${API_BASE}/api/v1/stock/${ticker}/financial-reports?periods=${periods}${q}`,
         refreshInterval: 300_000,
         transform: transformFinancialReports,
+    });
+}
+
+// ── Insurance TCDN Dashboard ────────────────────────────────
+export function useInsuranceTcdnDashboard(
+    ticker: string,
+    options?: { period?: string | null; year?: number | null; scenario?: "baseline" | "adverse" | "severe" },
+) {
+    const params = new URLSearchParams();
+    if (options?.period) params.set("period", options.period);
+    if (options?.year != null) params.set("year", String(options.year));
+    if (options?.scenario) params.set("scenario", options.scenario);
+    const query = params.toString();
+
+    return useOptimizedFetch<InsuranceTcdnDashboardData>({
+        url: `${API_BASE}/api/v1/stock/${ticker}/insurance-tcdn${query ? `?${query}` : ""}`,
+        refreshInterval: 300_000,
     });
 }
 
@@ -563,9 +583,69 @@ export interface CashFlowItem {
 export interface FinancialReportsData {
     isBank: boolean;
     industry: string;
+    reportLayout?: "nonFinancial" | "bank" | "financial" | "insurance";
+    reportLayoutLabel?: string;
     incomeStatement: IncomeStatementItem[];
     balanceSheet: BalanceSheetItem[];
     cashFlow: CashFlowItem[];
+    reportTables?: FinancialReportTables;
+}
+
+export interface FinancialReportTableRow {
+    indCode: string;
+    label: string;
+    values: number[];
+    section?: string;
+    sectionLabel?: string;
+    sectionOrder?: number;
+    rowOrder?: number;
+}
+
+export interface FinancialReportTable {
+    periods: string[];
+    rows: FinancialReportTableRow[];
+}
+
+export interface FinancialReportTables {
+    incomeStatement: FinancialReportTable;
+    balanceSheet: FinancialReportTable;
+    cashFlow: FinancialReportTable;
+}
+
+export interface InsuranceMetricPayload {
+    value: number | null;
+    confidence: "high" | "proxy" | "low" | "missing" | string;
+    formula: string;
+    source: string;
+}
+
+export interface InsuranceTcdnDashboardData {
+    ticker: string;
+    industry: string;
+    isInsurance: boolean;
+    selectedPeriod: string | null;
+    scenario: "baseline" | "adverse" | "severe" | string;
+    kpis: Record<string, InsuranceMetricPayload>;
+    stress: {
+        days: number[];
+        cumulativeOutflows: Array<number | null>;
+        liquidAssetsLine: Array<number | null>;
+        breachDay: number | null;
+        outflowRate: number;
+    };
+    trends: {
+        periods: string[];
+        nep: Array<number | null>;
+        claims: Array<number | null>;
+        combinedRatioPct: Array<number | null>;
+        assets: Array<number | null>;
+        equity: Array<number | null>;
+        liquidAssets: Array<number | null>;
+    };
+    meta: {
+        fallbackMode: boolean;
+        notes: string[];
+    };
 }
 
 // Company Profile

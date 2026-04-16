@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import React, { useState, useMemo, useCallback, useEffect, useRef, useDeferredValue } from "react";
 import Link from "next/link";
 import {
   STOCK_SECTORS,
@@ -172,8 +172,9 @@ export default function StockScreener() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [filters, setFilters] = useState<ScreenerFilters>({ ...DEFAULT_FILTERS });
   const [search, setSearch] = useState("");
-  const [sortKey, setSortKey] = useState<SortKey>("marketCap");
-  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const deferredSearch = useDeferredValue(search);
+  const [sortKey, setSortKey] = useState<SortKey>("ticker");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(20);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(["market"]));
@@ -360,8 +361,8 @@ export default function StockScreener() {
     );
 
     // Search
-    if (search) {
-      const q = search.toLowerCase();
+    if (deferredSearch) {
+      const q = deferredSearch.toLowerCase();
       list = list.filter(
         (s) => s.ticker.toLowerCase().includes(q) || s.companyName.toLowerCase().includes(q)
       );
@@ -435,7 +436,7 @@ export default function StockScreener() {
     });
 
     return list;
-  }, [allStocks, search, filters, sortKey, sortDir, favoriteTickers]);
+  }, [allStocks, deferredSearch, filters, sortKey, sortDir, favoriteTickers]);
 
   // — pagination
   const totalPages = Math.ceil(filtered.length / rowsPerPage);

@@ -32,6 +32,11 @@ class Settings(BaseSettings):
     PORT: int = 8000
     WORKERS: int = 4
 
+    # Stock list materialized view refresh
+    STOCK_MV_REFRESH_ENABLED: bool = True
+    STOCK_MV_REFRESH_INTERVAL_SECONDS: int = 3600
+    STOCK_MV_REFRESH_RUN_ON_STARTUP: bool = True
+
     # Auth / JWT
     JWT_SECRET_KEY: str = "change-me-in-production"
     JWT_ALGORITHM: str = "HS256"

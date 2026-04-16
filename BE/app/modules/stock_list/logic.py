@@ -253,28 +253,36 @@ async def get_stock_overview(
             END AS price_change_percent,
             hp.volume,
             -- Market cap from BCTC shares
-            CASE WHEN bm.shares > 0 AND hp.close > 0
-                THEN ROUND((hp.close * 1000 * bm.shares / 1e9)::numeric, 1)
-                ELSE fr.market_cap
+            CASE
+                WHEN fr.market_cap IS NOT NULL THEN fr.market_cap
+                WHEN bm.shares > 0 AND hp.close > 0
+                    THEN ROUND((hp.close * 1000 * bm.shares / 1e9)::numeric, 1)
+                ELSE NULL
             END AS computed_market_cap,
             -- EPS from BCTC
-            CASE WHEN bm.shares > 0 AND bm.ttm_ni IS NOT NULL
-                THEN ROUND((bm.ttm_ni / bm.shares)::numeric, 0)
-                ELSE fr.eps
+            CASE
+                WHEN fr.eps IS NOT NULL THEN fr.eps
+                WHEN bm.shares > 0 AND bm.ttm_ni IS NOT NULL
+                    THEN ROUND((bm.ttm_ni / bm.shares)::numeric, 0)
+                ELSE NULL
             END AS computed_eps,
             -- P/E from price and computed EPS
-            CASE WHEN bm.shares > 0 AND bm.ttm_ni IS NOT NULL AND bm.ttm_ni > 0
-                    AND hp.close * 1000 * bm.shares / bm.ttm_ni > 0
-                    AND hp.close * 1000 * bm.shares / bm.ttm_ni < 500
-                THEN ROUND((hp.close * 1000 / (bm.ttm_ni / bm.shares))::numeric, 2)
-                ELSE fr.pe
+            CASE
+                WHEN fr.pe IS NOT NULL THEN fr.pe
+                WHEN bm.shares > 0 AND bm.ttm_ni IS NOT NULL AND bm.ttm_ni > 0
+                        AND hp.close * 1000 * bm.shares / bm.ttm_ni > 0
+                        AND hp.close * 1000 * bm.shares / bm.ttm_ni < 500
+                    THEN ROUND((hp.close * 1000 / (bm.ttm_ni / bm.shares))::numeric, 2)
+                ELSE NULL
             END AS computed_pe,
             -- P/B from price, shares, equity
-            CASE WHEN bm.shares > 0 AND bm.equity > 0 AND hp.close > 0
-                    AND hp.close * 1000 * bm.shares / bm.equity > 0
-                    AND hp.close * 1000 * bm.shares / bm.equity < 100
-                THEN ROUND((hp.close * 1000 * bm.shares / bm.equity)::numeric, 2)
-                ELSE fr.pb
+            CASE
+                WHEN fr.pb IS NOT NULL THEN fr.pb
+                WHEN bm.shares > 0 AND bm.equity > 0 AND hp.close > 0
+                        AND hp.close * 1000 * bm.shares / bm.equity > 0
+                        AND hp.close * 1000 * bm.shares / bm.equity < 100
+                    THEN ROUND((hp.close * 1000 * bm.shares / bm.equity)::numeric, 2)
+                ELSE NULL
             END AS computed_pb,
             fr.roe,
             fr.roa,
@@ -302,7 +310,8 @@ async def get_stock_overview(
         res = await db.execute(main_sql, query_params)
         rows = res.mappings().all()
     except Exception as exc:
-        logger.error("get_stock_overview query error: %s", exc)
+        logger.exception("get_stock_overview query error")
+        await db.rollback()
         return _empty_response(page, page_size)
 
     tickers = [r["ticker"] for r in rows]
@@ -737,6 +746,10 @@ async def _get_screener_base_from_mv(db: AsyncSession) -> Optional[List[Dict[str
             (mv.current_price / 1000.0) AS close_raw,
             ((mv.current_price - mv.price_change) / 1000.0) AS prev_close_raw,
             mv.volume,
+            mv.market_cap,
+            mv.pe,
+            mv.pb,
+            mv.eps,
             mv.shares,
             mv.equity,
             mv.ttm_ni,
@@ -1159,7 +1172,15 @@ async def get_screener_data(db: AsyncSession) -> Dict[str, Any]:
         ),
         latest_fr AS (
             SELECT DISTINCT ON (UPPER(BTRIM(ticker)))
-                UPPER(BTRIM(ticker)) AS ticker, roe, roa, debt_to_equity, dividend_yield
+                UPPER(BTRIM(ticker)) AS ticker,
+                roe,
+                roa,
+                debt_to_equity,
+                dividend_yield,
+                market_cap,
+                pe,
+                pb,
+                eps
             FROM {SCHEMA}.financial_ratio
             ORDER BY UPPER(BTRIM(ticker)), year DESC, quarter DESC
         ),
@@ -1240,6 +1261,10 @@ async def get_screener_data(db: AsyncSession) -> Dict[str, Any]:
             fr.roa,
             fr.debt_to_equity,
             fr.dividend_yield,
+            fr.market_cap,
+            fr.pe,
+            fr.pb,
+            fr.eps,
             tl.liabilities AS total_liabilities,
             dv.ttm_div,
             eb.foreign_buy,
@@ -1381,25 +1406,25 @@ async def get_screener_data(db: AsyncSession) -> Dict[str, Any]:
             price_change_pct = round((close_raw - prev_raw) / prev_raw * 100, 2)
 
         # Market cap (tỷ VND)
-        market_cap = None
-        if close_raw and shares and shares > 0:
+        market_cap = float(r["market_cap"]) if r["market_cap"] is not None else None
+        if market_cap is None and close_raw and shares and shares > 0:
             market_cap = round(close_raw * 1000 * shares / 1e9, 1)
 
         # EPS (VND)
-        eps = None
-        if ttm_ni_val is not None and shares and shares > 0:
+        eps = float(r["eps"]) if r["eps"] is not None else None
+        if eps is None and ttm_ni_val is not None and shares and shares > 0:
             eps = round(ttm_ni_val / shares, 0)
 
         # P/E
-        pe = None
-        if eps and eps > 0 and current_price:
+        pe = float(r["pe"]) if r["pe"] is not None else None
+        if pe is None and eps and eps > 0 and current_price:
             pe_val = current_price / eps
             if 0 < pe_val < 500:
                 pe = round(pe_val, 2)
 
         # P/B
-        pb = None
-        if close_raw and shares and shares > 0 and equity_val and equity_val > 0:
+        pb = float(r["pb"]) if r["pb"] is not None else None
+        if pb is None and close_raw and shares and shares > 0 and equity_val and equity_val > 0:
             pb_val = close_raw * 1000 * shares / equity_val
             if 0 < pb_val < 100:
                 pb = round(pb_val, 2)
@@ -1408,23 +1433,19 @@ async def get_screener_data(db: AsyncSession) -> Dict[str, Any]:
         roe = round(float(r["roe"]) * 100, 2) if r["roe"] else None
         roa = round(float(r["roa"]) * 100, 2) if r["roa"] else None
 
-        # Debt to equity — compute from BCTC (liabilities / equity), fallback to financial_ratio
-        dte = None
+        # Debt to equity — prefer financial_ratio, fallback to BCTC (liabilities / equity)
+        dte = round(float(r["debt_to_equity"]), 2) if r["debt_to_equity"] is not None else None
         total_liab = float(r["total_liabilities"]) if r["total_liabilities"] else None
-        if total_liab is not None and equity_val and equity_val > 0:
+        if dte is None and total_liab is not None and equity_val and equity_val > 0:
             dte = round(total_liab / equity_val, 2)
-        elif r["debt_to_equity"]:
-            dte = round(float(r["debt_to_equity"]), 2)
 
-        # Dividend yield — compute from BCTC TTM dividends / market_cap, fallback to FR
-        div_yield = None
+        # Dividend yield — prefer financial_ratio, fallback to BCTC TTM dividends / market_cap
+        div_yield = round(float(r["dividend_yield"]) * 100, 2) if r["dividend_yield"] is not None else None
         ttm_div_val = float(r["ttm_div"]) if r["ttm_div"] else None
-        if ttm_div_val and ttm_div_val > 0 and close_raw and shares and shares > 0:
+        if div_yield is None and ttm_div_val and ttm_div_val > 0 and close_raw and shares and shares > 0:
             mkt = close_raw * 1000 * shares
             if mkt > 0:
                 div_yield = round(ttm_div_val / mkt * 100, 2)
-        if div_yield is None and r["dividend_yield"]:
-            div_yield = round(float(r["dividend_yield"]) * 100, 2)
 
         # Revenue growth (TTM vs prev TTM, %)
         revenue_growth = None

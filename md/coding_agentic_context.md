@@ -12,6 +12,7 @@ login_name: guest@example.com
 password: 123456789
 
 hoặc 
+
 login_name: pcanh@admin.com
 password: 123456
 

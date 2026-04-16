@@ -16,6 +16,7 @@ import { Footer } from "@/components/layout/Footer";
 import { BarChart3, TrendingUp, ChevronDown, Rocket, Activity, LineChart, Newspaper, ArrowRight, Database, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/AuthContext";
+import { PriceBoardPopup } from "@/components/dashboard/PriceBoardPopup";
 
 export default function Home() {
     const [activeTicker, setActiveTicker] = useState("VNINDEX");
@@ -27,6 +28,8 @@ export default function Home() {
 
     return (
         <div className="min-h-screen relative bg-background">
+            {isAuthenticated && <PriceBoardPopup />}
+
             {/* Ambient Background Glows */}
             {!isAuthenticated && (
                 <div className="absolute top-0 w-full h-[800px] overflow-hidden -z-10 pointer-events-none">

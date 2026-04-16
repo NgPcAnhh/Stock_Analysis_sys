@@ -1,4302 +1,4302 @@
 [
   {
-    "stt": 1,
-    "ind_name": "Ảnh hưởng của chênh lệch tỷ giá",
-    "ind_code": "ah_tygia"
+    "raw_name": "Ảnh hưởng của chênh lệch tỷ giá",
+    "old_ind_code": "ah_tygia",
+    "norm_name": "Ảnh hưởng của thay đổi tỷ giá hối đoái"
   },
   {
-    "stt": 2,
-    "ind_name": "Ảnh hưởng của thay đổi tỷ giá",
-    "ind_code": "ah_tygia"
+    "raw_name": "Ảnh hưởng của thay đổi tỷ giá",
+    "old_ind_code": "ah_tygia",
+    "norm_name": "Ảnh hưởng của thay đổi tỷ giá hối đoái"
   },
   {
-    "stt": 3,
-    "ind_name": "Available-for Sales Securities",
-    "ind_code": "chung_khoan_dau_tu_san_sang_de_ban"
+    "raw_name": "Available-for Sales Securities",
+    "old_ind_code": "chung_khoan_dau_tu_san_sang_de_ban",
+    "norm_name": "Chứng khoán đầu tư sẵn sàng để bán"
   },
   {
-    "stt": 4,
-    "ind_name": "Balances with the SBV",
-    "ind_code": "tien_gui_tai_ngan_hang_nha_nuoc_viet_nam"
+    "raw_name": "Balances with the SBV",
+    "old_ind_code": "tien_gui_tai_ngan_hang_nha_nuoc_viet_nam",
+    "norm_name": "Tiền gửi tại Ngân hàng Nhà nước Việt Nam"
   },
   {
-    "stt": 5,
-    "ind_name": "Budget sources and other funds",
-    "ind_code": "von_ngan_sach_nha_nuoc_va_quy_khac"
+    "raw_name": "Budget sources and other funds",
+    "old_ind_code": "von_ngan_sach_nha_nuoc_va_quy_khac",
+    "norm_name": "Vốn ngân sách nhà nước và quỹ khác"
   },
   {
-    "stt": 6,
-    "ind_name": "_Các công cụ tài chính phái sinh và khoản nợ tài chính khác",
-    "ind_code": "phai_sinh_va_no_tc_khac"
+    "raw_name": "_Các công cụ tài chính phái sinh và khoản nợ tài chính khác",
+    "old_ind_code": "phai_sinh_va_no_tc_khac",
+    "norm_name": "Các công cụ tài chính phái sinh và các khoản nợ tài chính khác"
   },
   {
-    "stt": 7,
-    "ind_name": "Các công cụ tài chính phái sinh và khoản nợ tài chính khác",
-    "ind_code": "phai_sinh_va_no_tc_khac"
+    "raw_name": "Các công cụ tài chính phái sinh và khoản nợ tài chính khác",
+    "old_ind_code": "phai_sinh_va_no_tc_khac",
+    "norm_name": "Các công cụ tài chính phái sinh và các khoản nợ tài chính khác"
   },
   {
-    "stt": 8,
-    "ind_name": "Các khoản giảm trừ doanh thu",
-    "ind_code": "cac_khoan_giam_tru_doanh_thu"
+    "raw_name": "Các khoản giảm trừ doanh thu",
+    "old_ind_code": "cac_khoan_giam_tru_doanh_thu",
+    "norm_name": "Các khoản giảm trừ doanh thu"
   },
   {
-    "stt": 9,
-    "ind_name": "Các khoản nợ chính phủ và NHNN Việt Nam",
-    "ind_code": "cac_khoan_no_chinh_phu_va_nhnn_viet_nam"
+    "raw_name": "Các khoản nợ chính phủ và NHNN Việt Nam",
+    "old_ind_code": "cac_khoan_no_chinh_phu_va_nhnn_viet_nam",
+    "norm_name": "Các khoản nợ Chính phủ và Ngân hàng Nhà nước Việt Nam"
   },
   {
-    "stt": 10,
-    "ind_name": "Các khoản nợ khác",
-    "ind_code": "cac_khoan_no_khac"
+    "raw_name": "Các khoản nợ khác",
+    "old_ind_code": "cac_khoan_no_khac",
+    "norm_name": "Các khoản nợ khác"
   },
   {
-    "stt": 11,
-    "ind_name": "Các khoản phải thu",
-    "ind_code": "cac_khoan_phai_thu"
+    "raw_name": "Các khoản phải thu",
+    "old_ind_code": "cac_khoan_phai_thu",
+    "norm_name": "Các khoản phải thu"
   },
   {
-    "stt": 12,
-    "ind_name": "Các khoản phải thu ngắn hạn (đồng)",
-    "ind_code": "cac_khoan_phai_thu"
+    "raw_name": "Các khoản phải thu ngắn hạn (đồng)",
+    "old_ind_code": "cac_khoan_phai_thu",
+    "norm_name": "Các khoản phải thu ngắn hạn"
   },
   {
-    "stt": 13,
-    "ind_name": "_Các quỹ khác",
-    "ind_code": "quy_khac"
+    "raw_name": "_Các quỹ khác",
+    "old_ind_code": "quy_khac",
+    "norm_name": "Quỹ khác"
   },
   {
-    "stt": 14,
-    "ind_name": "Các quỹ khác",
-    "ind_code": "quy_khac"
+    "raw_name": "Các quỹ khác",
+    "old_ind_code": "quy_khac",
+    "norm_name": "Quỹ khác"
   },
   {
-    "stt": 15,
-    "ind_name": "Capital",
-    "ind_code": "von_cua_to_chuc_tin_dung"
+    "raw_name": "Capital",
+    "old_ind_code": "von_cua_to_chuc_tin_dung",
+    "norm_name": "Vốn của tổ chức tín dụng"
   },
   {
-    "stt": 16,
-    "ind_name": "Chênh lệch đánh giá lại tài sản",
-    "ind_code": "chenh_lech_danh_gia_lai_tai_san"
+    "raw_name": "Chênh lệch đánh giá lại tài sản",
+    "old_ind_code": "chenh_lech_danh_gia_lai_tai_san",
+    "norm_name": "Chênh lệch đánh giá lại tài sản"
   },
   {
-    "stt": 17,
-    "ind_name": "Chênh lệch tỷ giá hối đoái",
-    "ind_code": "cl_tygia"
+    "raw_name": "Chênh lệch tỷ giá hối đoái",
+    "old_ind_code": "cl_tygia",
+    "norm_name": "Chênh lệch tỷ giá hối đoái"
   },
   {
-    "stt": 18,
-    "ind_name": "Chi phí bán hàng",
-    "ind_code": "chi_phi_ban_hang"
+    "raw_name": "Chi phí bán hàng",
+    "old_ind_code": "chi_phi_ban_hang",
+    "norm_name": "Chi phí bán hàng"
   },
   {
-    "stt": 19,
-    "ind_name": "Chi phí dự phòng rủi ro tín dụng",
-    "ind_code": "chi_phi_du_phong_rui_ro_tin_dung"
+    "raw_name": "Chi phí dự phòng rủi ro tín dụng",
+    "old_ind_code": "chi_phi_du_phong_rui_ro_tin_dung",
+    "norm_name": "Chi phí dự phòng rủi ro tín dụng"
   },
   {
-    "stt": 20,
-    "ind_name": "Chi phí hoạt động dịch vụ",
-    "ind_code": "cp_dv"
+    "raw_name": "Chi phí hoạt động dịch vụ",
+    "old_ind_code": "cp_dv",
+    "norm_name": "Chi phí hoạt động dịch vụ"
   },
   {
-    "stt": 21,
-    "ind_name": "Chi phí hoạt động khác",
-    "ind_code": "chi_phi_hoat_dong_khac"
+    "raw_name": "Chi phí hoạt động khác",
+    "old_ind_code": "chi_phi_hoat_dong_khac",
+    "norm_name": "Chi phí hoạt động khác"
   },
   {
-    "stt": 22,
-    "ind_name": "Chi phí lãi và các khoản tương tự",
-    "ind_code": "chi_phi_lai_va_cac_khoan_tuong_tu"
+    "raw_name": "Chi phí lãi và các khoản tương tự",
+    "old_ind_code": "chi_phi_lai_va_cac_khoan_tuong_tu",
+    "norm_name": "Chi phí lãi và các khoản tương tự"
   },
   {
-    "stt": 23,
-    "ind_name": "Chi phí lãi vay",
-    "ind_code": "cp_lai_vay"
+    "raw_name": "Chi phí lãi vay",
+    "old_ind_code": "cp_lai_vay",
+    "norm_name": "Chi phí lãi vay"
   },
   {
-    "stt": 24,
-    "ind_name": "Chi phí lãi vay đã trả",
-    "ind_code": "lai_vay_da_tra"
+    "raw_name": "Chi phí lãi vay đã trả",
+    "old_ind_code": "lai_vay_da_tra",
+    "norm_name": "Chi phí lãi vay đã trả"
   },
   {
-    "stt": 25,
-    "ind_name": "Chi phí lãi vay (Lưu chuyển tiền tệ)",
-    "ind_code": "cp_lai_vay_lctt"
+    "raw_name": "Chi phí lãi vay (Lưu chuyển tiền tệ)",
+    "old_ind_code": "cp_lai_vay_lctt",
+    "norm_name": "Chi phí lãi vay trong lưu chuyển tiền tệ"
   },
   {
-    "stt": 26,
-    "ind_name": "Chi phí quản lý DN",
-    "ind_code": "cp_qldn"
+    "raw_name": "Chi phí quản lý DN",
+    "old_ind_code": "cp_qldn",
+    "norm_name": "Chi phí quản lý doanh nghiệp"
   },
   {
-    "stt": 27,
-    "ind_name": "Chi phí quản lý doanh nghiệp",
-    "ind_code": "cp_qldn"
+    "raw_name": "Chi phí quản lý doanh nghiệp",
+    "old_ind_code": "cp_qldn",
+    "norm_name": "Chi phí quản lý doanh nghiệp"
   },
   {
-    "stt": 28,
-    "ind_name": "Chi phí tài chính",
-    "ind_code": "chi_phi_tai_chinh"
+    "raw_name": "Chi phí tài chính",
+    "old_ind_code": "chi_phi_tai_chinh",
+    "norm_name": "Chi phí tài chính"
   },
   {
-    "stt": 29,
-    "ind_name": "Chi phí thuế TNDN hiện hành",
-    "ind_code": "thue_tndn_hh"
+    "raw_name": "Chi phí thuế TNDN hiện hành",
+    "old_ind_code": "thue_tndn_hh",
+    "norm_name": "Chi phí thuế thu nhập doanh nghiệp hiện hành"
   },
   {
-    "stt": 30,
-    "ind_name": "Chi phí thuế TNDN hoãn lại",
-    "ind_code": "thue_tndn_hl"
+    "raw_name": "Chi phí thuế TNDN hoãn lại",
+    "old_ind_code": "thue_tndn_hl",
+    "norm_name": "Chi phí thuế thu nhập doanh nghiệp hoãn lại"
   },
   {
-    "stt": 31,
-    "ind_name": "Chi phí tiền lãi vay",
-    "ind_code": "cp_lai_vay"
+    "raw_name": "Chi phí tiền lãi vay",
+    "old_ind_code": "cp_lai_vay",
+    "norm_name": "Chi phí tiền lãi vay"
   },
   {
-    "stt": 32,
-    "ind_name": "Chi phí trả trước dài hạn",
-    "ind_code": "chi_phi_tra_truoc_dai_han"
+    "raw_name": "Chi phí trả trước dài hạn",
+    "old_ind_code": "chi_phi_tra_truoc_dai_han",
+    "norm_name": "Chi phí trả trước dài hạn"
   },
   {
-    "stt": 33,
-    "ind_name": "Chi trả cho việc mua lại, trả cổ phiếu",
-    "ind_code": "chi_tra_cho_viec_mua_lai_tra_co_phieu"
+    "raw_name": "Chi trả cho việc mua lại, trả cổ phiếu",
+    "old_ind_code": "chi_tra_cho_viec_mua_lai_tra_co_phieu",
+    "norm_name": "Chi trả cho việc mua lại, trả cổ phiếu"
   },
   {
-    "stt": 34,
-    "ind_name": "Chi từ các quỹ của TCTD",
-    "ind_code": "chi_tu_cac_quy_cua_tctd"
+    "raw_name": "Chi từ các quỹ của TCTD",
+    "old_ind_code": "chi_tu_cac_quy_cua_tctd",
+    "norm_name": "Chi từ các quỹ của tổ chức tín dụng"
   },
   {
-    "stt": 35,
-    "ind_name": "_Cho vay khách hàng",
-    "ind_code": "cho_vay_khach_hang"
+    "raw_name": "_Cho vay khách hàng",
+    "old_ind_code": "cho_vay_khach_hang",
+    "norm_name": "Cho vay khách hàng"
   },
   {
-    "stt": 36,
-    "ind_name": "Chứng khoán đầu tư",
-    "ind_code": "chung_khoan_dau_tu"
+    "raw_name": "Chứng khoán đầu tư",
+    "old_ind_code": "chung_khoan_dau_tu",
+    "norm_name": "Chứng khoán đầu tư"
   },
   {
-    "stt": 37,
-    "ind_name": "Chứng khoán đầu tư giữ đến ngày đáo hạn",
-    "ind_code": "chung_khoan_dau_tu_giu_den_ngay_dao_han"
+    "raw_name": "Chứng khoán đầu tư giữ đến ngày đáo hạn",
+    "old_ind_code": "chung_khoan_dau_tu_giu_den_ngay_dao_han",
+    "norm_name": "Chứng khoán đầu tư giữ đến ngày đáo hạn"
   },
   {
-    "stt": 38,
-    "ind_name": "Chứng khoán đầu tư sẵn sàng để bán",
-    "ind_code": "chung_khoan_dau_tu_san_sang_de_ban"
+    "raw_name": "Chứng khoán đầu tư sẵn sàng để bán",
+    "old_ind_code": "chung_khoan_dau_tu_san_sang_de_ban",
+    "norm_name": "Chứng khoán đầu tư sẵn sàng để bán"
   },
   {
-    "stt": 39,
-    "ind_name": "_Chứng khoán kinh doanh",
-    "ind_code": "chung_khoan_kinh_doanh"
+    "raw_name": "_Chứng khoán kinh doanh",
+    "old_ind_code": "chung_khoan_kinh_doanh",
+    "norm_name": "Chứng khoán kinh doanh"
   },
   {
-    "stt": 40,
-    "ind_name": "Chứng khoán kinh doanh",
-    "ind_code": "chung_khoan_kinh_doanh"
+    "raw_name": "Chứng khoán kinh doanh",
+    "old_ind_code": "chung_khoan_kinh_doanh",
+    "norm_name": "Chứng khoán kinh doanh"
   },
   {
-    "stt": 41,
-    "ind_name": "Cổ đông của Công ty mẹ",
-    "ind_code": "co_dong_cua_cong_ty_me"
+    "raw_name": "Cổ đông của Công ty mẹ",
+    "old_ind_code": "co_dong_cua_cong_ty_me",
+    "norm_name": "Cổ đông của Công ty mẹ"
   },
   {
-    "stt": 42,
-    "ind_name": "Cổ đông thiểu số",
-    "ind_code": "loi_ich_cd_ts"
+    "raw_name": "Cổ đông thiểu số",
+    "old_ind_code": "loi_ich_cd_ts",
+    "norm_name": "Lợi ích của cổ đông không kiểm soát"
   },
   {
-    "stt": 43,
-    "ind_name": "Convertible bonds (Bn. VND)",
-    "ind_code": "tp_chuyen_doi"
+    "raw_name": "Convertible bonds (Bn. VND)",
+    "old_ind_code": "tp_chuyen_doi",
+    "norm_name": "Trái phiếu chuyển đổi"
   },
   {
-    "stt": 44,
-    "ind_name": "Convertible bonds/CDs and other valuable papers issued",
-    "ind_code": "giay_to_co_gia_phat_hanh"
+    "raw_name": "Convertible bonds/CDs and other valuable papers issued",
+    "old_ind_code": "giay_to_co_gia_phat_hanh",
+    "norm_name": "Giấy tờ có giá phát hành"
   },
   {
-    "stt": 45,
-    "ind_name": "Cổ phiếu phổ thông",
-    "ind_code": "cp_pho_thong"
+    "raw_name": "Cổ phiếu phổ thông",
+    "old_ind_code": "cp_pho_thong",
+    "norm_name": "Cổ phiếu phổ thông"
   },
   {
-    "stt": 46,
-    "ind_name": "Cổ phiếu phổ thông (đồng)",
-    "ind_code": "cp_pho_thong"
+    "raw_name": "Cổ phiếu phổ thông (đồng)",
+    "old_ind_code": "cp_pho_thong",
+    "norm_name": "Cổ phiếu phổ thông"
   },
   {
-    "stt": 47,
-    "ind_name": "Cố tức đã nhận",
-    "ind_code": "co_tuc_da_nhan"
+    "raw_name": "Cố tức đã nhận",
+    "old_ind_code": "co_tuc_da_nhan",
+    "norm_name": "Cổ tức đã nhận"
   },
   {
-    "stt": 48,
-    "ind_name": "Cổ tức đã trả",
-    "ind_code": "co_tuc_da_tra"
+    "raw_name": "Cổ tức đã trả",
+    "old_ind_code": "co_tuc_da_tra",
+    "norm_name": "Cổ tức đã trả"
   },
   {
-    "stt": 49,
-    "ind_name": "Cổ tức, lợi nhuận đã trả cho chủ sở hữu",
-    "ind_code": "co_tuc_loi_nhuan_da_tra_cho_chu_so_huu"
+    "raw_name": "Cổ tức, lợi nhuận đã trả cho chủ sở hữu",
+    "old_ind_code": "co_tuc_loi_nhuan_da_tra_cho_chu_so_huu",
+    "norm_name": "Cổ tức, lợi nhuận đã trả cho chủ sở hữu"
   },
   {
-    "stt": 50,
-    "ind_name": "Đầu tư dài hạn (đồng)",
-    "ind_code": "dt_tc_dh"
+    "raw_name": "Đầu tư dài hạn (đồng)",
+    "old_ind_code": "dt_tc_dh",
+    "norm_name": "Đầu tư dài hạn"
   },
   {
-    "stt": 51,
-    "ind_name": "Đầu tư tài chính dài hạn",
-    "ind_code": "dt_tc_dh"
+    "raw_name": "Đầu tư tài chính dài hạn",
+    "old_ind_code": "dt_tc_dh",
+    "norm_name": "Đầu tư tài chính dài hạn"
   },
   {
-    "stt": 52,
-    "ind_name": "Đầu tư tài chính ngắn hạn",
-    "ind_code": "dau_tu_tai_chinh_ngan_han"
+    "raw_name": "Đầu tư tài chính ngắn hạn",
+    "old_ind_code": "dau_tu_tai_chinh_ngan_han",
+    "norm_name": "Đầu tư tài chính ngắn hạn"
   },
   {
-    "stt": 53,
-    "ind_name": "Đầu tư vào các doanh nghiệp khác",
-    "ind_code": "dau_tu_vao_cac_doanh_nghiep_khac"
+    "raw_name": "Đầu tư vào các doanh nghiệp khác",
+    "old_ind_code": "dau_tu_vao_cac_doanh_nghiep_khac",
+    "norm_name": "Đầu tư vào các doanh nghiệp khác"
   },
   {
-    "stt": 54,
-    "ind_name": "Đầu tư vào công ty con",
-    "ind_code": "dau_tu_vao_cong_ty_con"
+    "raw_name": "Đầu tư vào công ty con",
+    "old_ind_code": "dau_tu_vao_cong_ty_con",
+    "norm_name": "Đầu tư vào công ty con"
   },
   {
-    "stt": 55,
-    "ind_name": "Đầu tư vào công ty liên doanh",
-    "ind_code": "dau_tu_vao_cong_ty_lien_doanh"
+    "raw_name": "Đầu tư vào công ty liên doanh",
+    "old_ind_code": "dau_tu_vao_cong_ty_lien_doanh",
+    "norm_name": "Đầu tư vào công ty liên doanh"
   },
   {
-    "stt": 56,
-    "ind_name": "Deposits and borrowings from other credit institutions",
-    "ind_code": "tien_gui_va_vay_cac_to_chuc_tin_dung_khac"
+    "raw_name": "Deposits and borrowings from other credit institutions",
+    "old_ind_code": "tien_gui_va_vay_cac_to_chuc_tin_dung_khac",
+    "norm_name": "Tiền gửi và vay các tổ chức tín dụng khác"
   },
   {
-    "stt": 57,
-    "ind_name": "Deposits from customers",
-    "ind_code": "tien_gui_cua_khach_hang"
+    "raw_name": "Deposits from customers",
+    "old_ind_code": "tien_gui_cua_khach_hang",
+    "norm_name": "Tiền gửi của khách hàng"
   },
   {
-    "stt": 58,
-    "ind_name": "_Derivatives and other financial liabilities",
-    "ind_code": "phai_sinh_va_no_tc_khac"
+    "raw_name": "_Derivatives and other financial liabilities",
+    "old_ind_code": "phai_sinh_va_no_tc_khac",
+    "norm_name": "Các công cụ tài chính phái sinh và các khoản nợ tài chính khác"
   },
   {
-    "stt": 59,
-    "ind_name": "Derivatives and other financial liabilities",
-    "ind_code": "phai_sinh_va_no_tc_khac"
+    "raw_name": "Derivatives and other financial liabilities",
+    "old_ind_code": "phai_sinh_va_no_tc_khac",
+    "norm_name": "Các công cụ tài chính phái sinh và các khoản nợ tài chính khác"
   },
   {
-    "stt": 60,
-    "ind_name": "Difference upon Assets Revaluation",
-    "ind_code": "chenh_lech_danh_gia_lai_tai_san"
+    "raw_name": "Difference upon Assets Revaluation",
+    "old_ind_code": "chenh_lech_danh_gia_lai_tai_san",
+    "norm_name": "Chênh lệch đánh giá lại tài sản"
   },
   {
-    "stt": 61,
-    "ind_name": "Dividends received",
-    "ind_code": "co_tuc_da_nhan"
+    "raw_name": "Dividends received",
+    "old_ind_code": "co_tuc_da_nhan",
+    "norm_name": "Cổ tức đã nhận"
   },
   {
-    "stt": 62,
-    "ind_name": "Doanh thu",
-    "ind_code": "doanh_thu"
+    "raw_name": "Doanh thu",
+    "old_ind_code": "doanh_thu",
+    "norm_name": "Doanh thu"
   },
   {
-    "stt": 63,
-    "ind_name": "Doanh thu bán hàng",
-    "ind_code": "doanh_thu_ban_hang"
+    "raw_name": "Doanh thu bán hàng",
+    "old_ind_code": "doanh_thu_ban_hang",
+    "norm_name": "Doanh thu bán hàng"
   },
   {
-    "stt": 64,
-    "ind_name": "Doanh thu bán hàng và cung cấp dịch vụ",
-    "ind_code": "doanh_thu_ban_hang_va_cung_cap_dich_vu"
+    "raw_name": "Doanh thu bán hàng và cung cấp dịch vụ",
+    "old_ind_code": "doanh_thu_ban_hang_va_cung_cap_dich_vu",
+    "norm_name": "Doanh thu bán hàng và cung cấp dịch vụ"
   },
   {
-    "stt": 65,
-    "ind_name": "Doanh thu (đồng)",
-    "ind_code": "doanh_thu"
+    "raw_name": "Doanh thu (đồng)",
+    "old_ind_code": "doanh_thu",
+    "norm_name": "Doanh thu"
   },
   {
-    "stt": 66,
-    "ind_name": "Doanh thu tài chính",
-    "ind_code": "dt_tc"
+    "raw_name": "Doanh thu tài chính",
+    "old_ind_code": "dt_tc",
+    "norm_name": "Doanh thu hoạt động tài chính"
   },
   {
-    "stt": 67,
-    "ind_name": "Doanh thu thuần",
-    "ind_code": "doanh_thu_thuan"
+    "raw_name": "Doanh thu thuần",
+    "old_ind_code": "doanh_thu_thuan",
+    "norm_name": "Doanh thu thuần"
   },
   {
-    "stt": 68,
-    "ind_name": "Due to Gov and borrowings from SBV",
-    "ind_code": "cac_khoan_no_chinh_phu_va_nhnn_viet_nam"
+    "raw_name": "Due to Gov and borrowings from SBV",
+    "old_ind_code": "cac_khoan_no_chinh_phu_va_nhnn_viet_nam",
+    "norm_name": "Các khoản nợ Chính phủ và Ngân hàng Nhà nước Việt Nam"
   },
   {
-    "stt": 69,
-    "ind_name": "Dự phòng giảm giá chứng khoán đầu tư",
-    "ind_code": "du_phong_giam_gia_chung_khoan_dau_tu"
+    "raw_name": "Dự phòng giảm giá chứng khoán đầu tư",
+    "old_ind_code": "du_phong_giam_gia_chung_khoan_dau_tu",
+    "norm_name": "Dự phòng giảm giá chứng khoán đầu tư"
   },
   {
-    "stt": 70,
-    "ind_name": "Dự phòng giảm giá chứng khoán kinh doanh",
-    "ind_code": "du_phong_giam_gia_chung_khoan_kinh_doanh"
+    "raw_name": "Dự phòng giảm giá chứng khoán kinh doanh",
+    "old_ind_code": "du_phong_giam_gia_chung_khoan_kinh_doanh",
+    "norm_name": "Dự phòng giảm giá chứng khoán kinh doanh"
   },
   {
-    "stt": 71,
-    "ind_name": "Dự phòng giảm giá đầu tư dài hạn",
-    "ind_code": "du_phong_giam_gia_dau_tu_dai_han"
+    "raw_name": "Dự phòng giảm giá đầu tư dài hạn",
+    "old_ind_code": "du_phong_giam_gia_dau_tu_dai_han",
+    "norm_name": "Dự phòng giảm giá đầu tư dài hạn"
   },
   {
-    "stt": 72,
-    "ind_name": "Dự phòng RR tín dụng",
-    "ind_code": "dp_rr_td"
+    "raw_name": "Dự phòng RR tín dụng",
+    "old_ind_code": "dp_rr_td",
+    "norm_name": "Dự phòng rủi ro tín dụng"
   },
   {
-    "stt": 73,
-    "ind_name": "Dự phòng rủi ro cho vay khách hàng",
-    "ind_code": "du_phong_rui_ro_cho_vay_khach_hang"
+    "raw_name": "Dự phòng rủi ro cho vay khách hàng",
+    "old_ind_code": "du_phong_rui_ro_cho_vay_khach_hang",
+    "norm_name": "Dự phòng rủi ro cho vay khách hàng"
   },
   {
-    "stt": 74,
-    "ind_name": "Dự phòng tổn thất tín dụng",
-    "ind_code": "du_phong_ton_that_tin_dung"
+    "raw_name": "Dự phòng tổn thất tín dụng",
+    "old_ind_code": "du_phong_ton_that_tin_dung",
+    "norm_name": "Dự phòng tổn thất tín dụng"
   },
   {
-    "stt": 75,
-    "ind_name": "EPS_basis",
-    "ind_code": "eps_basis"
+    "raw_name": "EPS_basis",
+    "old_ind_code": "eps_basis",
+    "norm_name": "Lãi cơ bản trên cổ phiếu"
   },
   {
-    "stt": 76,
-    "ind_name": "Fees and Comission Expenses",
-    "ind_code": "cp_dv"
+    "raw_name": "Fees and Comission Expenses",
+    "old_ind_code": "cp_dv",
+    "norm_name": "Chi phí hoạt động dịch vụ"
   },
   {
-    "stt": 77,
-    "ind_name": "Fees and Comission Income",
-    "ind_code": "tn_dv"
+    "raw_name": "Fees and Comission Income",
+    "old_ind_code": "tn_dv",
+    "norm_name": "Thu nhập từ hoạt động dịch vụ"
   },
   {
-    "stt": 78,
-    "ind_name": "Foreign Currency Difference reserve",
-    "ind_code": "cl_tygia"
+    "raw_name": "Foreign Currency Difference reserve",
+    "old_ind_code": "cl_tygia",
+    "norm_name": "Chênh lệch tỷ giá hối đoái"
   },
   {
-    "stt": 79,
-    "ind_name": "Funds received from Gov, international and other institutions",
-    "ind_code": "von_tai_tro_uy_thac_dau_tu_cua_cp_va_cac_to_chuc_td_khac"
+    "raw_name": "Funds received from Gov, international and other institutions",
+    "old_ind_code": "von_tai_tro_uy_thac_dau_tu_cua_cp_va_cac_to_chuc_td_khac",
+    "norm_name": "Vốn tài trợ, ủy thác đầu tư của Chính phủ và các tổ chức tín dụng khác"
   },
   {
-    "stt": 80,
-    "ind_name": "Giá trị ròng tài sản đầu tư",
-    "ind_code": "gia_tri_rong_tai_san_dau_tu"
+    "raw_name": "Giá trị ròng tài sản đầu tư",
+    "old_ind_code": "gia_tri_rong_tai_san_dau_tu",
+    "norm_name": "Giá trị ròng tài sản đầu tư"
   },
   {
-    "stt": 81,
-    "ind_name": "Giá trị thuần đầu tư ngắn hạn (đồng)",
-    "ind_code": "gia_tri_thuan_dau_tu_ngan_han"
+    "raw_name": "Giá trị thuần đầu tư ngắn hạn (đồng)",
+    "old_ind_code": "gia_tri_thuan_dau_tu_ngan_han",
+    "norm_name": "Giá trị thuần đầu tư ngắn hạn"
   },
   {
-    "stt": 82,
-    "ind_name": "Giá vốn hàng bán",
-    "ind_code": "gia_von_hang_ban"
+    "raw_name": "Giá vốn hàng bán",
+    "old_ind_code": "gia_von_hang_ban",
+    "norm_name": "Giá vốn hàng bán"
   },
   {
-    "stt": 83,
-    "ind_name": "Goodwill",
-    "ind_code": "loi_the_tm"
+    "raw_name": "Goodwill",
+    "old_ind_code": "loi_the_tm",
+    "norm_name": "Lợi thế thương mại"
   },
   {
-    "stt": 84,
-    "ind_name": "Hàng tồn kho",
-    "ind_code": "hang_ton_kho"
+    "raw_name": "Hàng tồn kho",
+    "old_ind_code": "hang_ton_kho",
+    "norm_name": "Hàng tồn kho"
   },
   {
-    "stt": 85,
-    "ind_name": "Hàng tồn kho ròng",
-    "ind_code": "htk_rong"
+    "raw_name": "Hàng tồn kho ròng",
+    "old_ind_code": "htk_rong",
+    "norm_name": "Hàng tồn kho ròng"
   },
   {
-    "stt": 86,
-    "ind_name": "Hàng tồn kho, ròng (đồng)",
-    "ind_code": "htk_rong"
+    "raw_name": "Hàng tồn kho, ròng (đồng)",
+    "old_ind_code": "htk_rong",
+    "norm_name": "Hàng tồn kho, ròng"
   },
   {
-    "stt": 87,
-    "ind_name": "Held-to-Maturity Securities",
-    "ind_code": "chung_khoan_dau_tu_giu_den_ngay_dao_han"
+    "raw_name": "Held-to-Maturity Securities",
+    "old_ind_code": "chung_khoan_dau_tu_giu_den_ngay_dao_han",
+    "norm_name": "Chứng khoán đầu tư giữ đến ngày đáo hạn"
   },
   {
-    "stt": 88,
-    "ind_name": "Hoạt động khác",
-    "ind_code": "hoat_dong_khac"
+    "raw_name": "Hoạt động khác",
+    "old_ind_code": "hoat_dong_khac",
+    "norm_name": "Hoạt động khác"
   },
   {
-    "stt": 89,
-    "ind_name": "_Increase/Decrease in payables",
-    "ind_code": "tg_ptr"
+    "raw_name": "_Increase/Decrease in payables",
+    "old_ind_code": "tg_ptr",
+    "norm_name": "Tăng/giảm payables"
   },
   {
-    "stt": 90,
-    "ind_name": "_Increase/Decrease in receivables",
-    "ind_code": "tg_pt"
+    "raw_name": "_Increase/Decrease in receivables",
+    "old_ind_code": "tg_pt",
+    "norm_name": "Tăng/giảm receivables"
   },
   {
-    "stt": 91,
-    "ind_name": "Intagible fixed assets",
-    "ind_code": "tscd_vh"
+    "raw_name": "Intagible fixed assets",
+    "old_ind_code": "tscd_vh",
+    "norm_name": "Tài sản cố định vô hình"
   },
   {
-    "stt": 92,
-    "ind_name": "Interest and Similar Expenses",
-    "ind_code": "chi_phi_lai_va_cac_khoan_tuong_tu"
+    "raw_name": "Interest and Similar Expenses",
+    "old_ind_code": "chi_phi_lai_va_cac_khoan_tuong_tu",
+    "norm_name": "Chi phí lãi và các khoản tương tự"
   },
   {
-    "stt": 93,
-    "ind_name": "Interest and Similar Income",
-    "ind_code": "thu_nhap_lai_va_cac_khoan_tuong_tu"
+    "raw_name": "Interest and Similar Income",
+    "old_ind_code": "thu_nhap_lai_va_cac_khoan_tuong_tu",
+    "norm_name": "Thu nhập lãi và các khoản tương tự"
   },
   {
-    "stt": 94,
-    "ind_name": "Investment in joint ventures",
-    "ind_code": "dau_tu_vao_cong_ty_lien_doanh"
+    "raw_name": "Investment in joint ventures",
+    "old_ind_code": "dau_tu_vao_cong_ty_lien_doanh",
+    "norm_name": "Đầu tư vào công ty liên doanh"
   },
   {
-    "stt": 95,
-    "ind_name": "Investment in properties",
-    "ind_code": "bat_dong_san_dau_tu"
+    "raw_name": "Investment in properties",
+    "old_ind_code": "bat_dong_san_dau_tu",
+    "norm_name": "Bất động sản đầu tư"
   },
   {
-    "stt": 96,
-    "ind_name": "Investment Securities",
-    "ind_code": "chung_khoan_dau_tu"
+    "raw_name": "Investment Securities",
+    "old_ind_code": "chung_khoan_dau_tu",
+    "norm_name": "Chứng khoán đầu tư"
   },
   {
-    "stt": 97,
-    "ind_name": "Investments in associate companies",
-    "ind_code": "dau_tu_vao_cong_ty_lien_ket"
+    "raw_name": "Investments in associate companies",
+    "old_ind_code": "dau_tu_vao_cong_ty_lien_ket",
+    "norm_name": "Đầu tư vào công ty liên kết"
   },
   {
-    "stt": 98,
-    "ind_name": "Khấu hao TSCĐ",
-    "ind_code": "khau_hao_tscd"
+    "raw_name": "Khấu hao TSCĐ",
+    "old_ind_code": "khau_hao_tscd",
+    "norm_name": "Khấu hao tài sản cố định"
   },
   {
-    "stt": 99,
-    "ind_name": "Khấu hao và hao mòn",
-    "ind_code": "khau_hao_va_hao_mon"
+    "raw_name": "Khấu hao và hao mòn",
+    "old_ind_code": "khau_hao_va_hao_mon",
+    "norm_name": "Khấu hao và hao mòn"
   },
   {
-    "stt": 100,
-    "ind_name": "Kinh doanh ngoại hối và vàng",
-    "ind_code": "kinh_doanh_ngoai_hoi_va_vang"
+    "raw_name": "Kinh doanh ngoại hối và vàng",
+    "old_ind_code": "kinh_doanh_ngoai_hoi_va_vang",
+    "norm_name": "Kinh doanh ngoại hối và vàng"
   },
   {
-    "stt": 101,
-    "ind_name": "Lãi chưa phân phối (đồng)",
-    "ind_code": "lnst_chua_pp"
+    "raw_name": "Lãi chưa phân phối (đồng)",
+    "old_ind_code": "lnst_chua_pp",
+    "norm_name": "Lợi nhuận sau thuế chưa phân phối"
   },
   {
-    "stt": 102,
-    "ind_name": "Lãi cơ bản trên cổ phiếu",
-    "ind_code": "lai_co_ban_tren_co_phieu"
+    "raw_name": "Lãi cơ bản trên cổ phiếu",
+    "old_ind_code": "lai_co_ban_tren_co_phieu",
+    "norm_name": "Lãi cơ bản trên cổ phiếu"
   },
   {
-    "stt": 103,
-    "ind_name": "Lãi gộp",
-    "ind_code": "ln_gop"
+    "raw_name": "Lãi gộp",
+    "old_ind_code": "ln_gop",
+    "norm_name": "Lợi nhuận gộp"
   },
   {
-    "stt": 104,
-    "ind_name": "(Lãi)/lỗ các hoạt động khác",
-    "ind_code": "lai_lo_cac_hoat_dong_khac"
+    "raw_name": "(Lãi)/lỗ các hoạt động khác",
+    "old_ind_code": "lai_lo_cac_hoat_dong_khac",
+    "norm_name": "Lãi/lỗ các hoạt động khác"
   },
   {
-    "stt": 105,
-    "ind_name": "Lãi/lỗ chênh lệch tỷ giá chưa thực hiện",
-    "ind_code": "lai_lo_chenh_lech_ty_gia_chua_thuc_hien"
+    "raw_name": "Lãi/lỗ chênh lệch tỷ giá chưa thực hiện",
+    "old_ind_code": "lai_lo_chenh_lech_ty_gia_chua_thuc_hien",
+    "norm_name": "Lãi/lỗ chênh lệch tỷ giá hối đoái chưa thực hiện"
   },
   {
-    "stt": 106,
-    "ind_name": "Lãi/Lỗ chênh lệch tỷ giá chưa thực hiện",
-    "ind_code": "lai_lo_chenh_lech_ty_gia_chua_thuc_hien"
+    "raw_name": "Lãi/Lỗ chênh lệch tỷ giá chưa thực hiện",
+    "old_ind_code": "lai_lo_chenh_lech_ty_gia_chua_thuc_hien",
+    "norm_name": "Lãi/lỗ chênh lệch tỷ giá hối đoái chưa thực hiện"
   },
   {
-    "stt": 107,
-    "ind_name": "Lãi/Lỗ ròng trước thuế",
-    "ind_code": "lntt"
+    "raw_name": "Lãi/Lỗ ròng trước thuế",
+    "old_ind_code": "lntt",
+    "norm_name": "Lãi/lỗ ròng trước thuế"
   },
   {
-    "stt": 108,
-    "ind_name": "Lãi/lỗ thuần từ hoạt động khác",
-    "ind_code": "lai_lo_thuan_tu_hoat_dong_khac"
+    "raw_name": "Lãi/lỗ thuần từ hoạt động khác",
+    "old_ind_code": "lai_lo_thuan_tu_hoat_dong_khac",
+    "norm_name": "Lãi/lỗ thuần từ hoạt động khác"
   },
   {
-    "stt": 109,
-    "ind_name": "Lãi lỗ trong công ty liên doanh, liên kết",
-    "ind_code": "lai_lo_trong_cong_ty_lien_doanh_lien_ket"
+    "raw_name": "Lãi lỗ trong công ty liên doanh, liên kết",
+    "old_ind_code": "lai_lo_trong_cong_ty_lien_doanh_lien_ket",
+    "norm_name": "Lãi lỗ trong công ty liên doanh, liên kết"
   },
   {
-    "stt": 110,
-    "ind_name": "Lãi/lỗ từ công ty liên doanh",
-    "ind_code": "lai_lo_tu_cong_ty_lien_doanh"
+    "raw_name": "Lãi/lỗ từ công ty liên doanh",
+    "old_ind_code": "lai_lo_tu_cong_ty_lien_doanh",
+    "norm_name": "Lãi/lỗ từ công ty liên doanh"
   },
   {
-    "stt": 111,
-    "ind_name": "Lãi/lỗ từ công ty liên doanh liên kết",
-    "ind_code": "lai_lo_tu_cong_ty_lien_doanh_lien_ket"
+    "raw_name": "Lãi/lỗ từ công ty liên doanh liên kết",
+    "old_ind_code": "lai_lo_tu_cong_ty_lien_doanh_lien_ket",
+    "norm_name": "Lãi/lỗ từ công ty liên doanh, liên kết"
   },
   {
-    "stt": 112,
-    "ind_name": "Lãi/lỗ từ hoạt động đầu tư",
-    "ind_code": "lai_lo_tu_hoat_dong_dau_tu"
+    "raw_name": "Lãi/lỗ từ hoạt động đầu tư",
+    "old_ind_code": "lai_lo_tu_hoat_dong_dau_tu",
+    "norm_name": "Lãi/lỗ từ hoạt động đầu tư"
   },
   {
-    "stt": 113,
-    "ind_name": "Lãi/Lỗ từ hoạt động đầu tư",
-    "ind_code": "lai_lo_tu_hoat_dong_dau_tu"
+    "raw_name": "Lãi/Lỗ từ hoạt động đầu tư",
+    "old_ind_code": "lai_lo_tu_hoat_dong_dau_tu",
+    "norm_name": "Lãi/lỗ từ hoạt động đầu tư"
   },
   {
-    "stt": 114,
-    "ind_name": "Lãi/Lỗ từ hoạt động kinh doanh",
-    "ind_code": "lai_lo_tu_hoat_dong_kinh_doanh"
+    "raw_name": "Lãi/Lỗ từ hoạt động kinh doanh",
+    "old_ind_code": "lai_lo_tu_hoat_dong_kinh_doanh",
+    "norm_name": "Lãi/lỗ từ hoạt động kinh doanh"
   },
   {
-    "stt": 115,
-    "ind_name": "Lãi/Lỗ từ thanh lý tài sản cố định",
-    "ind_code": "lai_lo_tu_thanh_ly_tai_san_co_dinh"
+    "raw_name": "Lãi/Lỗ từ thanh lý tài sản cố định",
+    "old_ind_code": "lai_lo_tu_thanh_ly_tai_san_co_dinh",
+    "norm_name": "Lãi/lỗ từ thanh lý tài sản cố định"
   },
   {
-    "stt": 116,
-    "ind_name": "Lãi thuần từ hoạt động dịch vụ",
-    "ind_code": "ln_thuan_dv"
+    "raw_name": "Lãi thuần từ hoạt động dịch vụ",
+    "old_ind_code": "ln_thuan_dv",
+    "norm_name": "Lãi thuần từ hoạt động dịch vụ"
   },
   {
-    "stt": 117,
-    "ind_name": "Lãi tiền gửi và cổ tức",
-    "ind_code": "lai_tien_gui_va_co_tuc"
+    "raw_name": "Lãi tiền gửi và cổ tức",
+    "old_ind_code": "lai_tien_gui_va_co_tuc",
+    "norm_name": "Lãi tiền gửi và cổ tức"
   },
   {
-    "stt": 118,
-    "ind_name": "Leased assets",
-    "ind_code": "tai_san_thue_tai_chinh"
+    "raw_name": "Leased assets",
+    "old_ind_code": "tai_san_thue_tai_chinh",
+    "norm_name": "Tài sản thuê tài chính"
   },
   {
-    "stt": 119,
-    "ind_name": "Less: Provision for diminuation in value of long term investments",
-    "ind_code": "du_phong_giam_gia_dau_tu_dai_han"
+    "raw_name": "Less: Provision for diminuation in value of long term investments",
+    "old_ind_code": "du_phong_giam_gia_dau_tu_dai_han",
+    "norm_name": "Dự phòng giảm giá đầu tư dài hạn"
   },
   {
-    "stt": 120,
-    "ind_name": "Less: Provision for diminution in value of investment securities",
-    "ind_code": "du_phong_giam_gia_chung_khoan_dau_tu"
+    "raw_name": "Less: Provision for diminution in value of investment securities",
+    "old_ind_code": "du_phong_giam_gia_chung_khoan_dau_tu",
+    "norm_name": "Dự phòng giảm giá chứng khoán đầu tư"
   },
   {
-    "stt": 121,
-    "ind_name": "Less: Provision for losses on loans and advances to customers",
-    "ind_code": "du_phong_rui_ro_cho_vay_khach_hang"
+    "raw_name": "Less: Provision for losses on loans and advances to customers",
+    "old_ind_code": "du_phong_rui_ro_cho_vay_khach_hang",
+    "norm_name": "Dự phòng rủi ro cho vay khách hàng"
   },
   {
-    "stt": 122,
-    "ind_name": "LNST chưa phân phối",
-    "ind_code": "lnst_chua_pp"
+    "raw_name": "LNST chưa phân phối",
+    "old_ind_code": "lnst_chua_pp",
+    "norm_name": "Lợi nhuận sau thuế chưa phân phối"
   },
   {
-    "stt": 123,
-    "ind_name": "LNST của cổ đông công ty mẹ",
-    "ind_code": "lnst_cua_co_dong_cong_ty_me"
+    "raw_name": "LNST của cổ đông công ty mẹ",
+    "old_ind_code": "lnst_cua_co_dong_cong_ty_me",
+    "norm_name": "Lợi nhuận sau thuế của cổ đông công ty mẹ"
   },
   {
-    "stt": 124,
-    "ind_name": "LNST phân bổ cho CĐ công ty mẹ",
-    "ind_code": "lnst_phan_bo_cho_cd_cong_ty_me"
+    "raw_name": "LNST phân bổ cho CĐ công ty mẹ",
+    "old_ind_code": "lnst_phan_bo_cho_cd_cong_ty_me",
+    "norm_name": "Lợi nhuận sau thuế phân bổ cho cổ đông công ty mẹ"
   },
   {
-    "stt": 125,
-    "ind_name": "LN trước thuế",
-    "ind_code": "lntt"
+    "raw_name": "LN trước thuế",
+    "old_ind_code": "lntt",
+    "norm_name": "Lợi nhuận trước thuế"
   },
   {
-    "stt": 126,
-    "ind_name": "LN từ HĐKD trước CF dự phòng",
-    "ind_code": "ln_tu_hdkd_truoc_cf_du_phong"
+    "raw_name": "LN từ HĐKD trước CF dự phòng",
+    "old_ind_code": "ln_tu_hdkd_truoc_cf_du_phong",
+    "norm_name": "Lợi nhuận từ hoạt động kinh doanh trước chi phí dự phòng"
   },
   {
-    "stt": 127,
-    "ind_name": "Loans and advances to customers",
-    "ind_code": "cho_vay_khach_hang"
+    "raw_name": "Loans and advances to customers",
+    "old_ind_code": "cho_vay_khach_hang",
+    "norm_name": "Cho vay khách hàng"
   },
   {
-    "stt": 128,
-    "ind_name": "Loans and advances to customers, net",
-    "ind_code": "cho_vay_khach_hang_rong"
+    "raw_name": "Loans and advances to customers, net",
+    "old_ind_code": "cho_vay_khach_hang_rong",
+    "norm_name": "Cho vay khách hàng ròng"
   },
   {
-    "stt": 129,
-    "ind_name": "Lợi ích cổ đông thiểu số",
-    "ind_code": "loi_ich_cd_ts"
+    "raw_name": "Lợi ích cổ đông thiểu số",
+    "old_ind_code": "loi_ich_cd_ts",
+    "norm_name": "Lợi ích của cổ đông không kiểm soát"
   },
   {
-    "stt": 130,
-    "ind_name": "Lợi ích cổ đông thiểu số (Nguồn vốn)",
-    "ind_code": "loi_ich_cd_ts"
+    "raw_name": "Lợi ích cổ đông thiểu số (Nguồn vốn)",
+    "old_ind_code": "loi_ich_cd_ts",
+    "norm_name": "Lợi ích của cổ đông không kiểm soát"
   },
   {
-    "stt": 131,
-    "ind_name": "LỢI ÍCH CỦA CỔ ĐÔNG THIỂU SỐ",
-    "ind_code": "loi_ich_cd_ts"
+    "raw_name": "LỢI ÍCH CỦA CỔ ĐÔNG THIỂU SỐ",
+    "old_ind_code": "loi_ich_cd_ts",
+    "norm_name": "Lợi ích của cổ đông không kiểm soát"
   },
   {
-    "stt": 132,
-    "ind_name": "Lợi nhuận gộp",
-    "ind_code": "ln_gop"
+    "raw_name": "Lợi nhuận gộp",
+    "old_ind_code": "ln_gop",
+    "norm_name": "Lợi nhuận gộp"
   },
   {
-    "stt": 133,
-    "ind_name": "Lợi nhuận khác",
-    "ind_code": "loi_nhuan_khac"
+    "raw_name": "Lợi nhuận khác",
+    "old_ind_code": "loi_nhuan_khac",
+    "norm_name": "Lợi nhuận khác"
   },
   {
-    "stt": 134,
-    "ind_name": "Lợi nhuận/Lỗ thuần trước thuế",
-    "ind_code": "lntt"
+    "raw_name": "Lợi nhuận/Lỗ thuần trước thuế",
+    "old_ind_code": "lntt",
+    "norm_name": "Lợi nhuận/lỗ thuần trước thuế"
   },
   {
-    "stt": 135,
-    "ind_name": "Lợi nhuận sau thuế của Cổ đông công ty mẹ (đồng)",
-    "ind_code": "loi_nhuan_sau_thue_cua_co_dong_cong_ty_me"
+    "raw_name": "Lợi nhuận sau thuế của Cổ đông công ty mẹ (đồng)",
+    "old_ind_code": "loi_nhuan_sau_thue_cua_co_dong_cong_ty_me",
+    "norm_name": "Lợi nhuận sau thuế của Cổ đông công ty mẹ"
   },
   {
-    "stt": 136,
-    "ind_name": "Lợi nhuận sau thuế thu nhập DN",
-    "ind_code": "loi_nhuan_sau_thue_thu_nhap_dn"
+    "raw_name": "Lợi nhuận sau thuế thu nhập DN",
+    "old_ind_code": "loi_nhuan_sau_thue_thu_nhap_dn",
+    "norm_name": "Lợi nhuận sau thuế thu nhập doanh nghiệp"
   },
   {
-    "stt": 137,
-    "ind_name": "Lợi nhuận thuần",
-    "ind_code": "loi_nhuan_thuan"
+    "raw_name": "Lợi nhuận thuần",
+    "old_ind_code": "loi_nhuan_thuan",
+    "norm_name": "Lợi nhuận thuần"
   },
   {
-    "stt": 138,
-    "ind_name": "Lợi nhuận trước thuế",
-    "ind_code": "lntt"
+    "raw_name": "Lợi nhuận trước thuế",
+    "old_ind_code": "lntt",
+    "norm_name": "Lợi nhuận trước thuế"
   },
   {
-    "stt": 139,
-    "ind_name": "Lợi nhuận từ HĐKD",
-    "ind_code": "ln_tu_hdkd"
+    "raw_name": "Lợi nhuận từ HĐKD",
+    "old_ind_code": "ln_tu_hdkd",
+    "norm_name": "Lợi nhuận từ hoạt động kinh doanh"
   },
   {
-    "stt": 140,
-    "ind_name": "Lợi nhuận từ HĐKD trước thay đổi vốn lưu động",
-    "ind_code": "loi_nhuan_tu_hdkd_truoc_thay_doi_von_luu_dong"
+    "raw_name": "Lợi nhuận từ HĐKD trước thay đổi vốn lưu động",
+    "old_ind_code": "loi_nhuan_tu_hdkd_truoc_thay_doi_von_luu_dong",
+    "norm_name": "Lợi nhuận từ hoạt động kinh doanh trước thay đổi vốn lưu động"
   },
   {
-    "stt": 141,
-    "ind_name": "Lợi thế thương mại",
-    "ind_code": "loi_the_tm"
+    "raw_name": "Lợi thế thương mại",
+    "old_ind_code": "loi_the_tm",
+    "norm_name": "Lợi thế thương mại"
   },
   {
-    "stt": 142,
-    "ind_name": "Lợi thế thương mại (đồng)",
-    "ind_code": "loi_the_tm"
+    "raw_name": "Lợi thế thương mại (đồng)",
+    "old_ind_code": "loi_the_tm",
+    "norm_name": "Lợi thế thương mại"
   },
   {
-    "stt": 143,
-    "ind_name": "Lưu chuyển tiền tệ ròng từ các hoạt động SXKD",
-    "ind_code": "luu_chuyen_tien_te_rong_tu_cac_hoat_dong_sxkd"
+    "raw_name": "Lưu chuyển tiền tệ ròng từ các hoạt động SXKD",
+    "old_ind_code": "luu_chuyen_tien_te_rong_tu_cac_hoat_dong_sxkd",
+    "norm_name": "Lưu chuyển tiền tệ ròng từ các hoạt động sản xuất kinh doanh"
   },
   {
-    "stt": 144,
-    "ind_name": "Lưu chuyển tiền thuần trong kỳ",
-    "ind_code": "luu_chuyen_tien_thuan_trong_ky"
+    "raw_name": "Lưu chuyển tiền thuần trong kỳ",
+    "old_ind_code": "luu_chuyen_tien_thuan_trong_ky",
+    "norm_name": "Lưu chuyển tiền thuần trong kỳ"
   },
   {
-    "stt": 145,
-    "ind_name": "Lưu chuyển tiền thuần từ HĐ đầu tư",
-    "ind_code": "lctt_thuan_hd_dt"
+    "raw_name": "Lưu chuyển tiền thuần từ HĐ đầu tư",
+    "old_ind_code": "lctt_thuan_hd_dt",
+    "norm_name": "Lưu chuyển tiền thuần từ hoạt động đầu tư"
   },
   {
-    "stt": 146,
-    "ind_name": "Lưu chuyển tiền thuần từ HĐKD",
-    "ind_code": "luu_chuyen_tien_thuan_tu_hdkd"
+    "raw_name": "Lưu chuyển tiền thuần từ HĐKD",
+    "old_ind_code": "luu_chuyen_tien_thuan_tu_hdkd",
+    "norm_name": "Lưu chuyển tiền thuần từ hoạt động kinh doanh"
   },
   {
-    "stt": 147,
-    "ind_name": "Lưu chuyển tiền thuần từ HĐKD trước thay đổi VLĐ",
-    "ind_code": "luu_chuyen_tien_thuan_tu_hdkd_truoc_thay_doi_vld"
+    "raw_name": "Lưu chuyển tiền thuần từ HĐKD trước thay đổi VLĐ",
+    "old_ind_code": "luu_chuyen_tien_thuan_tu_hdkd_truoc_thay_doi_vld",
+    "norm_name": "Lưu chuyển tiền thuần từ hoạt động kinh doanh trước thay đổi vốn lưu động"
   },
   {
-    "stt": 148,
-    "ind_name": "Lưu chuyển tiền thuần từ HĐKD trước thuế",
-    "ind_code": "luu_chuyen_tien_thuan_tu_hdkd_truoc_thue"
+    "raw_name": "Lưu chuyển tiền thuần từ HĐKD trước thuế",
+    "old_ind_code": "luu_chuyen_tien_thuan_tu_hdkd_truoc_thue",
+    "norm_name": "Lưu chuyển tiền thuần từ hoạt động kinh doanh trước thuế"
   },
   {
-    "stt": 149,
-    "ind_name": "Lưu chuyển tiền thuần từ HĐ tài chính",
-    "ind_code": "luu_chuyen_tien_thuan_tu_hd_tai_chinh"
+    "raw_name": "Lưu chuyển tiền thuần từ HĐ tài chính",
+    "old_ind_code": "luu_chuyen_tien_thuan_tu_hd_tai_chinh",
+    "norm_name": "Lưu chuyển tiền thuần từ hoạt động tài chính"
   },
   {
-    "stt": 150,
-    "ind_name": "Lưu chuyển tiền từ hoạt động tài chính",
-    "ind_code": "luu_chuyen_tien_tu_hoat_dong_tai_chinh"
+    "raw_name": "Lưu chuyển tiền từ hoạt động tài chính",
+    "old_ind_code": "luu_chuyen_tien_tu_hoat_dong_tai_chinh",
+    "norm_name": "Lưu chuyển tiền từ hoạt động tài chính"
   },
   {
-    "stt": 151,
-    "ind_name": "Lưu chuyển từ hoạt động đầu tư",
-    "ind_code": "lctt_hd_dt"
+    "raw_name": "Lưu chuyển từ hoạt động đầu tư",
+    "old_ind_code": "lctt_hd_dt",
+    "norm_name": "Lưu chuyển tiền từ hoạt động đầu tư"
   },
   {
-    "stt": 152,
-    "ind_name": "Mua sắm TSCĐ",
-    "ind_code": "mua_sam_tscd"
+    "raw_name": "Mua sắm TSCĐ",
+    "old_ind_code": "mua_sam_tscd",
+    "norm_name": "Mua sắm tài sản cố định"
   },
   {
-    "stt": 153,
-    "ind_name": "Net Cash Flows from Operating Activities before BIT",
-    "ind_code": "net_cash_flows_from_operating_activities_before_bit"
+    "raw_name": "Net Cash Flows from Operating Activities before BIT",
+    "old_ind_code": "net_cash_flows_from_operating_activities_before_bit",
+    "norm_name": "Lưu chuyển tiền thuần từ hoạt động kinh doanh trước thuế"
   },
   {
-    "stt": 154,
-    "ind_name": "Net Fee and Commission Income",
-    "ind_code": "ln_thuan_dv"
+    "raw_name": "Net Fee and Commission Income",
+    "old_ind_code": "ln_thuan_dv",
+    "norm_name": "Lãi thuần từ hoạt động dịch vụ"
   },
   {
-    "stt": 155,
-    "ind_name": "Net gain (loss) from disposal of investment securities",
-    "ind_code": "lai_lo_thuan_tu_thanh_ly_chung_khoan_dau_tu"
+    "raw_name": "Net gain (loss) from disposal of investment securities",
+    "old_ind_code": "lai_lo_thuan_tu_thanh_ly_chung_khoan_dau_tu",
+    "norm_name": "Lãi/lỗ thuần từ thanh lý chứng khoán đầu tư"
   },
   {
-    "stt": 156,
-    "ind_name": "Net gain (loss) from foreign currency and gold dealings",
-    "ind_code": "lai_lo_thuan_tu_kinh_doanh_ngoai_hoi_va_vang"
+    "raw_name": "Net gain (loss) from foreign currency and gold dealings",
+    "old_ind_code": "lai_lo_thuan_tu_kinh_doanh_ngoai_hoi_va_vang",
+    "norm_name": "Lãi/lỗ thuần từ kinh doanh ngoại hối và vàng"
   },
   {
-    "stt": 157,
-    "ind_name": "Net gain (loss) from trading of trading securities",
-    "ind_code": "lai_lo_thuan_tu_kinh_doanh_chung_khoan"
+    "raw_name": "Net gain (loss) from trading of trading securities",
+    "old_ind_code": "lai_lo_thuan_tu_kinh_doanh_chung_khoan",
+    "norm_name": "Lãi/lỗ thuần từ kinh doanh chứng khoán"
   },
   {
-    "stt": 158,
-    "ind_name": "Net income from associated companies",
-    "ind_code": "thu_nhap_thuan_tu_cong_ty_lien_ket"
+    "raw_name": "Net income from associated companies",
+    "old_ind_code": "thu_nhap_thuan_tu_cong_ty_lien_ket",
+    "norm_name": "Thu nhập thuần từ công ty liên kết"
   },
   {
-    "stt": 159,
-    "ind_name": "Net Interest Income",
-    "ind_code": "tn_lai_thuan"
+    "raw_name": "Net Interest Income",
+    "old_ind_code": "tn_lai_thuan",
+    "norm_name": "Thu nhập lãi thuần"
   },
   {
-    "stt": 160,
-    "ind_name": "Net Other income/(expenses)",
-    "ind_code": "tn_cp_khac_thuan"
+    "raw_name": "Net Other income/(expenses)",
+    "old_ind_code": "tn_cp_khac_thuan",
+    "norm_name": "Thu nhập/chi phí khác thuần"
   },
   {
-    "stt": 161,
-    "ind_name": "Net Other income/expenses",
-    "ind_code": "tn_cp_khac_thuan"
+    "raw_name": "Net Other income/expenses",
+    "old_ind_code": "tn_cp_khac_thuan",
+    "norm_name": "Thu nhập/chi phí khác thuần"
   },
   {
-    "stt": 162,
-    "ind_name": "Người mua trả tiền trước",
-    "ind_code": "nguoi_mua_tra_tien_truoc"
+    "raw_name": "Người mua trả tiền trước",
+    "old_ind_code": "nguoi_mua_tra_tien_truoc",
+    "norm_name": "Người mua trả tiền trước"
   },
   {
-    "stt": 163,
-    "ind_name": "Người mua trả tiền trước ngắn hạn (đồng)",
-    "ind_code": "nguoi_mua_tra_tien_truoc"
+    "raw_name": "Người mua trả tiền trước ngắn hạn (đồng)",
+    "old_ind_code": "nguoi_mua_tra_tien_truoc",
+    "norm_name": "Người mua trả tiền trước ngắn hạn"
   },
   {
-    "stt": 164,
-    "ind_name": "Nợ dài hạn",
-    "ind_code": "no_dai_han"
+    "raw_name": "Nợ dài hạn",
+    "old_ind_code": "no_dai_han",
+    "norm_name": "Nợ dài hạn"
   },
   {
-    "stt": 165,
-    "ind_name": "Nợ dài hạn (đồng)",
-    "ind_code": "no_dai_han"
+    "raw_name": "Nợ dài hạn (đồng)",
+    "old_ind_code": "no_dai_han",
+    "norm_name": "Nợ dài hạn"
   },
   {
-    "stt": 166,
-    "ind_name": "Nợ ngắn hạn",
-    "ind_code": "no_ngan_han"
+    "raw_name": "Nợ ngắn hạn",
+    "old_ind_code": "no_ngan_han",
+    "norm_name": "Nợ ngắn hạn"
   },
   {
-    "stt": 167,
-    "ind_name": "Nợ ngắn hạn (đồng)",
-    "ind_code": "no_ngan_han"
+    "raw_name": "Nợ ngắn hạn (đồng)",
+    "old_ind_code": "no_ngan_han",
+    "norm_name": "Nợ ngắn hạn"
   },
   {
-    "stt": 168,
-    "ind_name": "Nợ phải trả",
-    "ind_code": "no_phai_tra"
+    "raw_name": "Nợ phải trả",
+    "old_ind_code": "no_phai_tra",
+    "norm_name": "Nợ phải trả"
   },
   {
-    "stt": 169,
-    "ind_name": "NỢ PHẢI TRẢ (đồng)",
-    "ind_code": "no_phai_tra"
+    "raw_name": "NỢ PHẢI TRẢ (đồng)",
+    "old_ind_code": "no_phai_tra",
+    "norm_name": "Nợ phải trả"
   },
   {
-    "stt": 170,
-    "ind_name": "Operating Profit before Provision",
-    "ind_code": "ln_tu_hdkd_truoc_cf_du_phong"
+    "raw_name": "Operating Profit before Provision",
+    "old_ind_code": "ln_tu_hdkd_truoc_cf_du_phong",
+    "norm_name": "Lợi nhuận từ hoạt động kinh doanh trước chi phí dự phòng"
   },
   {
-    "stt": 171,
-    "ind_name": "Other Assets",
-    "ind_code": "ts_co_khac"
+    "raw_name": "Other Assets",
+    "old_ind_code": "ts_co_khac",
+    "norm_name": "Tài sản có khác"
   },
   {
-    "stt": 172,
-    "ind_name": "Other expenses",
-    "ind_code": "chi_phi_khac"
+    "raw_name": "Other expenses",
+    "old_ind_code": "chi_phi_khac",
+    "norm_name": "Chi phí khác"
   },
   {
-    "stt": 173,
-    "ind_name": "Other liabilities",
-    "ind_code": "no_khac"
+    "raw_name": "Other liabilities",
+    "old_ind_code": "no_khac",
+    "norm_name": "Nợ khác"
   },
   {
-    "stt": 174,
-    "ind_name": "Other payments on operating activities",
-    "ind_code": "tien_chi_khac_tu_cac_hoat_dong_kinh_doanh"
+    "raw_name": "Other payments on operating activities",
+    "old_ind_code": "tien_chi_khac_tu_cac_hoat_dong_kinh_doanh",
+    "norm_name": "Tiền chi khác từ hoạt động kinh doanh"
   },
   {
-    "stt": 175,
-    "ind_name": "Other receipts from operating activities",
-    "ind_code": "tien_thu_khac_tu_cac_hoat_dong_kinh_doanh"
+    "raw_name": "Other receipts from operating activities",
+    "old_ind_code": "tien_thu_khac_tu_cac_hoat_dong_kinh_doanh",
+    "norm_name": "Tiền thu khác từ hoạt động kinh doanh"
   },
   {
-    "stt": 176,
-    "ind_name": "_Other Reserves",
-    "ind_code": "quy_khac_khac"
+    "raw_name": "_Other Reserves",
+    "old_ind_code": "quy_khac_khac",
+    "norm_name": "Quỹ khác"
   },
   {
-    "stt": 177,
-    "ind_name": "Other Reserves",
-    "ind_code": "quy_khac_khac"
+    "raw_name": "Other Reserves",
+    "old_ind_code": "quy_khac_khac",
+    "norm_name": "Quỹ khác"
   },
   {
-    "stt": 178,
-    "ind_name": "Payment from reserves",
-    "ind_code": "chi_tu_cac_quy_cua_tctd"
+    "raw_name": "Payment from reserves",
+    "old_ind_code": "chi_tu_cac_quy_cua_tctd",
+    "norm_name": "Chi từ các quỹ của tổ chức tín dụng"
   },
   {
-    "stt": 179,
-    "ind_name": "Phải thu dài hạn của khách hàng",
-    "ind_code": "phai_thu_dai_han_cua_khach_hang"
+    "raw_name": "Phải thu dài hạn của khách hàng",
+    "old_ind_code": "phai_thu_dai_han_cua_khach_hang",
+    "norm_name": "Phải thu dài hạn của khách hàng"
   },
   {
-    "stt": 180,
-    "ind_name": "Phải thu dài hạn (đồng)",
-    "ind_code": "phai_thu_dai_han"
+    "raw_name": "Phải thu dài hạn (đồng)",
+    "old_ind_code": "phai_thu_dai_han",
+    "norm_name": "Phải thu dài hạn"
   },
   {
-    "stt": 181,
-    "ind_name": "Phải thu dài hạn khác",
-    "ind_code": "phai_thu_dai_han_khac"
+    "raw_name": "Phải thu dài hạn khác",
+    "old_ind_code": "phai_thu_dai_han_khac",
+    "norm_name": "Phải thu dài hạn khác"
   },
   {
-    "stt": 182,
-    "ind_name": "Phải thu dài hạn khác (đồng)",
-    "ind_code": "phai_thu_dai_han_khac"
+    "raw_name": "Phải thu dài hạn khác (đồng)",
+    "old_ind_code": "phai_thu_dai_han_khac",
+    "norm_name": "Phải thu dài hạn khác"
   },
   {
-    "stt": 183,
-    "ind_name": "Phải thu về cho vay dài hạn",
-    "ind_code": "phai_thu_ve_cho_vay_dai_han"
+    "raw_name": "Phải thu về cho vay dài hạn",
+    "old_ind_code": "phai_thu_ve_cho_vay_dai_han",
+    "norm_name": "Phải thu về cho vay dài hạn"
   },
   {
-    "stt": 184,
-    "ind_name": "Phải thu về cho vay dài hạn (đồng)",
-    "ind_code": "phai_thu_ve_cho_vay_dai_han"
+    "raw_name": "Phải thu về cho vay dài hạn (đồng)",
+    "old_ind_code": "phai_thu_ve_cho_vay_dai_han",
+    "norm_name": "Phải thu về cho vay dài hạn"
   },
   {
-    "stt": 185,
-    "ind_name": "Phải thu về cho vay ngắn hạn",
-    "ind_code": "phai_thu_ve_cho_vay_ngan_han"
+    "raw_name": "Phải thu về cho vay ngắn hạn",
+    "old_ind_code": "phai_thu_ve_cho_vay_ngan_han",
+    "norm_name": "Phải thu về cho vay ngắn hạn"
   },
   {
-    "stt": 186,
-    "ind_name": "Phải thu về cho vay ngắn hạn (đồng)",
-    "ind_code": "phai_thu_ve_cho_vay_ngan_han"
+    "raw_name": "Phải thu về cho vay ngắn hạn (đồng)",
+    "old_ind_code": "phai_thu_ve_cho_vay_ngan_han",
+    "norm_name": "Phải thu về cho vay ngắn hạn"
   },
   {
-    "stt": 187,
-    "ind_name": "Phát hành giấy tờ có giá",
-    "ind_code": "phat_hanh_giay_to_co_gia"
+    "raw_name": "Phát hành giấy tờ có giá",
+    "old_ind_code": "phat_hanh_giay_to_co_gia",
+    "norm_name": "Phát hành giấy tờ có giá"
   },
   {
-    "stt": 188,
-    "ind_name": "Placements with and loans to other credit institutions",
-    "ind_code": "tien_gui_tai_cac_tctd_khac_va_cho_vay_cac_tctd_khac"
+    "raw_name": "Placements with and loans to other credit institutions",
+    "old_ind_code": "tien_gui_tai_cac_tctd_khac_va_cho_vay_cac_tctd_khac",
+    "norm_name": "Tiền gửi tại các tổ chức tín dụng khác và cho vay các tổ chức tín dụng khác"
   },
   {
-    "stt": 189,
-    "ind_name": "Profit/Loss from disposal of fixed assets",
-    "ind_code": "lai_lo_tu_thanh_ly_tai_san_co_dinh"
+    "raw_name": "Profit/Loss from disposal of fixed assets",
+    "old_ind_code": "lai_lo_tu_thanh_ly_tai_san_co_dinh",
+    "norm_name": "Lãi/lỗ từ thanh lý tài sản cố định"
   },
   {
-    "stt": 190,
-    "ind_name": "Profits from other activities",
-    "ind_code": "loi_nhuan_khac"
+    "raw_name": "Profits from other activities",
+    "old_ind_code": "loi_nhuan_khac",
+    "norm_name": "Lợi nhuận khác"
   },
   {
-    "stt": 191,
-    "ind_name": "Provision for diminution in value of Trading Securities",
-    "ind_code": "du_phong_giam_gia_chung_khoan_kinh_doanh"
+    "raw_name": "Provision for diminution in value of Trading Securities",
+    "old_ind_code": "du_phong_giam_gia_chung_khoan_kinh_doanh",
+    "norm_name": "Dự phòng giảm giá chứng khoán kinh doanh"
   },
   {
-    "stt": 192,
-    "ind_name": "Quỹ của tổ chức tín dụng",
-    "ind_code": "quy_cua_to_chuc_tin_dung"
+    "raw_name": "Quỹ của tổ chức tín dụng",
+    "old_ind_code": "quy_cua_to_chuc_tin_dung",
+    "norm_name": "Quỹ của tổ chức tín dụng"
   },
   {
-    "stt": 193,
-    "ind_name": "Quỹ đầu tư phát triển",
-    "ind_code": "quy_dtpt"
+    "raw_name": "Quỹ đầu tư phát triển",
+    "old_ind_code": "quy_dtpt",
+    "norm_name": "Quỹ đầu tư phát triển"
   },
   {
-    "stt": 194,
-    "ind_name": "Quỹ đầu tư và phát triển (đồng)",
-    "ind_code": "quy_dtpt"
+    "raw_name": "Quỹ đầu tư và phát triển (đồng)",
+    "old_ind_code": "quy_dtpt",
+    "norm_name": "Quỹ đầu tư và phát triển"
   },
   {
-    "stt": 195,
-    "ind_name": "Reserves",
-    "ind_code": "quy_du_tru"
+    "raw_name": "Reserves",
+    "old_ind_code": "quy_du_tru",
+    "norm_name": "Quỹ dự trữ"
   },
   {
-    "stt": 196,
-    "ind_name": "Tài sản cố định",
-    "ind_code": "tscd"
+    "raw_name": "Tài sản cố định",
+    "old_ind_code": "tscd",
+    "norm_name": "Tài sản cố định"
   },
   {
-    "stt": 197,
-    "ind_name": "Tài sản cố định (đồng)",
-    "ind_code": "tscd"
+    "raw_name": "Tài sản cố định (đồng)",
+    "old_ind_code": "tscd",
+    "norm_name": "Tài sản cố định"
   },
   {
-    "stt": 198,
-    "ind_name": "Tài sản cố định hữu hình",
-    "ind_code": "tscd_hh"
+    "raw_name": "Tài sản cố định hữu hình",
+    "old_ind_code": "tscd_hh",
+    "norm_name": "Tài sản cố định hữu hình"
   },
   {
-    "stt": 199,
-    "ind_name": "Tài sản cố định thuê tài chính",
-    "ind_code": "tai_san_co_dinh_thue_tai_chinh"
+    "raw_name": "Tài sản cố định thuê tài chính",
+    "old_ind_code": "tai_san_co_dinh_thue_tai_chinh",
+    "norm_name": "Tài sản cố định thuê tài chính"
   },
   {
-    "stt": 200,
-    "ind_name": "Tài sản cố định vô hình",
-    "ind_code": "tscd_vh"
+    "raw_name": "Tài sản cố định vô hình",
+    "old_ind_code": "tscd_vh",
+    "norm_name": "Tài sản cố định vô hình"
   },
   {
-    "stt": 201,
-    "ind_name": "Tài sản Có khác",
-    "ind_code": "ts_co_khac"
+    "raw_name": "Tài sản Có khác",
+    "old_ind_code": "ts_co_khac",
+    "norm_name": "Tài sản có khác"
   },
   {
-    "stt": 202,
-    "ind_name": "Tài sản dài hạn",
-    "ind_code": "ts_dh"
+    "raw_name": "Tài sản dài hạn",
+    "old_ind_code": "ts_dh",
+    "norm_name": "Tài sản dài hạn"
   },
   {
-    "stt": 203,
-    "ind_name": "TÀI SẢN DÀI HẠN (đồng)",
-    "ind_code": "ts_dh"
+    "raw_name": "TÀI SẢN DÀI HẠN (đồng)",
+    "old_ind_code": "ts_dh",
+    "norm_name": "Tài sản dài hạn"
   },
   {
-    "stt": 204,
-    "ind_name": "Tài sản dài hạn khác",
-    "ind_code": "ts_dh_khac"
+    "raw_name": "Tài sản dài hạn khác",
+    "old_ind_code": "ts_dh_khac",
+    "norm_name": "Tài sản dài hạn khác"
   },
   {
-    "stt": 205,
-    "ind_name": "Tài sản dài hạn khác (Bn)",
-    "ind_code": "ts_dh_khac"
+    "raw_name": "Tài sản dài hạn khác (Bn)",
+    "old_ind_code": "ts_dh_khac",
+    "norm_name": "Tài sản dài hạn khác"
   },
   {
-    "stt": 206,
-    "ind_name": "Tài sản dài hạn khác (đồng)",
-    "ind_code": "ts_dh_khac"
+    "raw_name": "Tài sản dài hạn khác (đồng)",
+    "old_ind_code": "ts_dh_khac",
+    "norm_name": "Tài sản dài hạn khác"
   },
   {
-    "stt": 207,
-    "ind_name": "Tài sản lưu động khác",
-    "ind_code": "tsld_khac"
+    "raw_name": "Tài sản lưu động khác",
+    "old_ind_code": "tsld_khac",
+    "norm_name": "Tài sản lưu động khác"
   },
   {
-    "stt": 208,
-    "ind_name": "Tài sản lưu động khác (đồng)",
-    "ind_code": "tsld_khac"
+    "raw_name": "Tài sản lưu động khác (đồng)",
+    "old_ind_code": "tsld_khac",
+    "norm_name": "Tài sản lưu động khác"
   },
   {
-    "stt": 209,
-    "ind_name": "Tài sản ngắn hạn",
-    "ind_code": "ts_nh"
+    "raw_name": "Tài sản ngắn hạn",
+    "old_ind_code": "ts_nh",
+    "norm_name": "Tài sản ngắn hạn"
   },
   {
-    "stt": 210,
-    "ind_name": "TÀI SẢN NGẮN HẠN (đồng)",
-    "ind_code": "ts_nh"
+    "raw_name": "TÀI SẢN NGẮN HẠN (đồng)",
+    "old_ind_code": "ts_nh",
+    "norm_name": "Tài sản ngắn hạn"
   },
   {
-    "stt": 211,
-    "ind_name": "Tài sản ngắn hạn khác",
-    "ind_code": "ts_nh_khac"
+    "raw_name": "Tài sản ngắn hạn khác",
+    "old_ind_code": "ts_nh_khac",
+    "norm_name": "Tài sản ngắn hạn khác"
   },
   {
-    "stt": 212,
-    "ind_name": "Tài sản ngắn hạn khác (Bn)",
-    "ind_code": "ts_nh_khac"
+    "raw_name": "Tài sản ngắn hạn khác (Bn)",
+    "old_ind_code": "ts_nh_khac",
+    "norm_name": "Tài sản ngắn hạn khác"
   },
   {
-    "stt": 213,
-    "ind_name": "_Tăng/Giảm các khoản phải thu",
-    "ind_code": "tg_pt"
+    "raw_name": "_Tăng/Giảm các khoản phải thu",
+    "old_ind_code": "tg_pt",
+    "norm_name": "Tăng/giảm các khoản phải thu"
   },
   {
-    "stt": 214,
-    "ind_name": "Tăng/Giảm các khoản phải thu",
-    "ind_code": "tg_pt"
+    "raw_name": "Tăng/Giảm các khoản phải thu",
+    "old_ind_code": "tg_pt",
+    "norm_name": "Tăng/giảm các khoản phải thu"
   },
   {
-    "stt": 215,
-    "ind_name": "_Tăng/Giảm các khoản phải trả",
-    "ind_code": "tg_ptr"
+    "raw_name": "_Tăng/Giảm các khoản phải trả",
+    "old_ind_code": "tg_ptr",
+    "norm_name": "Tăng/giảm các khoản phải trả"
   },
   {
-    "stt": 216,
-    "ind_name": "Tăng/Giảm các khoản phải trả",
-    "ind_code": "tg_ptr"
+    "raw_name": "Tăng/Giảm các khoản phải trả",
+    "old_ind_code": "tg_ptr",
+    "norm_name": "Tăng/giảm các khoản phải trả"
   },
   {
-    "stt": 217,
-    "ind_name": "Tăng/Giảm chi phí trả trước",
-    "ind_code": "tang_giam_chi_phi_tra_truoc"
+    "raw_name": "Tăng/Giảm chi phí trả trước",
+    "old_ind_code": "tang_giam_chi_phi_tra_truoc",
+    "norm_name": "Tăng/giảm chi phí trả trước"
   },
   {
-    "stt": 218,
-    "ind_name": "Tăng/Giảm hàng tồn kho",
-    "ind_code": "tang_giam_hang_ton_kho"
+    "raw_name": "Tăng/Giảm hàng tồn kho",
+    "old_ind_code": "tang_giam_hang_ton_kho",
+    "norm_name": "Tăng/giảm hàng tồn kho"
   },
   {
-    "stt": 219,
-    "ind_name": "Tangible fixed assets",
-    "ind_code": "tscd_hh"
+    "raw_name": "Tangible fixed assets",
+    "old_ind_code": "tscd_hh",
+    "norm_name": "Tài sản cố định hữu hình"
   },
   {
-    "stt": 220,
-    "ind_name": "Tăng trưởng doanh thu (%)",
-    "ind_code": "tang_truong_doanh_thu_phan_tram"
+    "raw_name": "Tăng trưởng doanh thu (%)",
+    "old_ind_code": "tang_truong_doanh_thu_phan_tram",
+    "norm_name": "Tăng trưởng doanh thu (%)"
   },
   {
-    "stt": 221,
-    "ind_name": "Tăng trưởng doanh thu YoY",
-    "ind_code": "tang_truong_doanh_thu_yoy"
+    "raw_name": "Tăng trưởng doanh thu YoY",
+    "old_ind_code": "tang_truong_doanh_thu_yoy",
+    "norm_name": "Tăng trưởng doanh thu YoY"
   },
   {
-    "stt": 222,
-    "ind_name": "Tăng trưởng LNST mẹ YoY",
-    "ind_code": "tang_truong_lnst_me_yoy"
+    "raw_name": "Tăng trưởng LNST mẹ YoY",
+    "old_ind_code": "tang_truong_lnst_me_yoy",
+    "norm_name": "Tăng trưởng lợi nhuận sau thuế mẹ YoY"
   },
   {
-    "stt": 223,
-    "ind_name": "Tăng trưởng lợi nhuận (%)",
-    "ind_code": "tang_truong_loi_nhuan_phan_tram"
+    "raw_name": "Tăng trưởng lợi nhuận (%)",
+    "old_ind_code": "tang_truong_loi_nhuan_phan_tram",
+    "norm_name": "Tăng trưởng lợi nhuận (%)"
   },
   {
-    "stt": 224,
-    "ind_name": "Tăng vốn cổ phần từ góp vốn và/hoặc phát hành cổ phiếu",
-    "ind_code": "tang_von_co_phan_tu_gop_von_va_hoac_phat_hanh_co_phieu"
+    "raw_name": "Tăng vốn cổ phần từ góp vốn và/hoặc phát hành cổ phiếu",
+    "old_ind_code": "tang_von_co_phan_tu_gop_von_va_hoac_phat_hanh_co_phieu",
+    "norm_name": "Tăng vốn cổ phần từ góp vốn và/hoặc phát hành cổ phiếu"
   },
   {
-    "stt": 225,
-    "ind_name": "Tax For the Year",
-    "ind_code": "thue_tndn"
+    "raw_name": "Tax For the Year",
+    "old_ind_code": "thue_tndn",
+    "norm_name": "Chi phí thuế thu nhập doanh nghiệp"
   },
   {
-    "stt": 226,
-    "ind_name": "Thuế TNDN",
-    "ind_code": "thue_tndn"
+    "raw_name": "Thuế TNDN",
+    "old_ind_code": "thue_tndn",
+    "norm_name": "Thuế thu nhập doanh nghiệp"
   },
   {
-    "stt": 227,
-    "ind_name": "Thuế TNDN đã nộp",
-    "ind_code": "thue_tndn_da_nop"
+    "raw_name": "Thuế TNDN đã nộp",
+    "old_ind_code": "thue_tndn_da_nop",
+    "norm_name": "Thuế thu nhập doanh nghiệp đã nộp"
   },
   {
-    "stt": 228,
-    "ind_name": "Thuế TNDN hiện hành",
-    "ind_code": "thue_tndn_hh"
+    "raw_name": "Thuế TNDN hiện hành",
+    "old_ind_code": "thue_tndn_hh",
+    "norm_name": "Thuế thu nhập doanh nghiệp hiện hành"
   },
   {
-    "stt": 229,
-    "ind_name": "Thuế TNDN hoãn lại",
-    "ind_code": "thue_tndn_hl"
+    "raw_name": "Thuế TNDN hoãn lại",
+    "old_ind_code": "thue_tndn_hl",
+    "norm_name": "Thuế thu nhập doanh nghiệp hoãn lại"
   },
   {
-    "stt": 230,
-    "ind_name": "Thu lãi và cổ tức",
-    "ind_code": "thu_lai_va_co_tuc"
+    "raw_name": "Thu lãi và cổ tức",
+    "old_ind_code": "thu_lai_va_co_tuc",
+    "norm_name": "Thu lãi và cổ tức"
   },
   {
-    "stt": 231,
-    "ind_name": "Thu nhập/Chi phí khác",
-    "ind_code": "tn_cp_khac"
+    "raw_name": "Thu nhập/Chi phí khác",
+    "old_ind_code": "tn_cp_khac",
+    "norm_name": "Thu nhập/chi phí khác"
   },
   {
-    "stt": 232,
-    "ind_name": "Thu nhập khác",
-    "ind_code": "thu_nhap_khac"
+    "raw_name": "Thu nhập khác",
+    "old_ind_code": "thu_nhap_khac",
+    "norm_name": "Thu nhập khác"
   },
   {
-    "stt": 233,
-    "ind_name": "Thu nhập lãi",
-    "ind_code": "thu_nhap_lai"
+    "raw_name": "Thu nhập lãi",
+    "old_ind_code": "thu_nhap_lai",
+    "norm_name": "Thu nhập lãi"
   },
   {
-    "stt": 234,
-    "ind_name": "Thu nhập lãi thuần",
-    "ind_code": "tn_lai_thuan"
+    "raw_name": "Thu nhập lãi thuần",
+    "old_ind_code": "tn_lai_thuan",
+    "norm_name": "Thu nhập lãi thuần"
   },
   {
-    "stt": 235,
-    "ind_name": "Thu nhập lãi và các khoản tương tự",
-    "ind_code": "thu_nhap_lai_va_cac_khoan_tuong_tu"
+    "raw_name": "Thu nhập lãi và các khoản tương tự",
+    "old_ind_code": "thu_nhap_lai_va_cac_khoan_tuong_tu",
+    "norm_name": "Thu nhập lãi và các khoản tương tự"
   },
   {
-    "stt": 236,
-    "ind_name": "Thu nhập tài chính",
-    "ind_code": "dt_tc"
+    "raw_name": "Thu nhập tài chính",
+    "old_ind_code": "dt_tc",
+    "norm_name": "Doanh thu hoạt động tài chính"
   },
   {
-    "stt": 237,
-    "ind_name": "Thu nhập từ hoạt động dịch vụ",
-    "ind_code": "tn_dv"
+    "raw_name": "Thu nhập từ hoạt động dịch vụ",
+    "old_ind_code": "tn_dv",
+    "norm_name": "Thu nhập từ hoạt động dịch vụ"
   },
   {
-    "stt": 238,
-    "ind_name": "Tiền chi cho vay, mua công cụ nợ của đơn vị khác (đồng)",
-    "ind_code": "tien_chi_cho_vay_mua_cong_cu_no_cua_don_vi_khac"
+    "raw_name": "Tiền chi cho vay, mua công cụ nợ của đơn vị khác (đồng)",
+    "old_ind_code": "tien_chi_cho_vay_mua_cong_cu_no_cua_don_vi_khac",
+    "norm_name": "Tiền chi cho vay, mua công cụ nợ của đơn vị khác"
   },
   {
-    "stt": 239,
-    "ind_name": "Tiền chi đầu tư góp vốn vào đơn vị khác",
-    "ind_code": "tien_chi_dau_tu_gop_von_vao_don_vi_khac"
+    "raw_name": "Tiền chi đầu tư góp vốn vào đơn vị khác",
+    "old_ind_code": "tien_chi_dau_tu_gop_von_vao_don_vi_khac",
+    "norm_name": "Tiền chi đầu tư góp vốn vào đơn vị khác"
   },
   {
-    "stt": 240,
-    "ind_name": "Tiền chi khác từ các hoạt động kinh doanh",
-    "ind_code": "tien_chi_khac_tu_cac_hoat_dong_kinh_doanh"
+    "raw_name": "Tiền chi khác từ các hoạt động kinh doanh",
+    "old_ind_code": "tien_chi_khac_tu_cac_hoat_dong_kinh_doanh",
+    "norm_name": "Tiền chi khác từ các hoạt động kinh doanh"
   },
   {
-    "stt": 241,
-    "ind_name": "Tiền chi mua sắm TSCĐ",
-    "ind_code": "tien_chi_mua_sam_tscd"
+    "raw_name": "Tiền chi mua sắm TSCĐ",
+    "old_ind_code": "tien_chi_mua_sam_tscd",
+    "norm_name": "Tiền chi mua sắm tài sản cố định"
   },
   {
-    "stt": 242,
-    "ind_name": "Tiền chi trả vốn góp, mua lại cổ phiếu",
-    "ind_code": "tien_chi_tra_von_gop_mua_lai_co_phieu"
+    "raw_name": "Tiền chi trả vốn góp, mua lại cổ phiếu",
+    "old_ind_code": "tien_chi_tra_von_gop_mua_lai_co_phieu",
+    "norm_name": "Tiền chi trả vốn góp, mua lại cổ phiếu"
   },
   {
-    "stt": 243,
-    "ind_name": "Tiền cho vay, mua công cụ nợ",
-    "ind_code": "tien_cho_vay_mua_cong_cu_no"
+    "raw_name": "Tiền cho vay, mua công cụ nợ",
+    "old_ind_code": "tien_cho_vay_mua_cong_cu_no",
+    "norm_name": "Tiền cho vay, mua công cụ nợ"
   },
   {
-    "stt": 244,
-    "ind_name": "Tiền gửi của khách hàng",
-    "ind_code": "tien_gui_cua_khach_hang"
+    "raw_name": "Tiền gửi của khách hàng",
+    "old_ind_code": "tien_gui_cua_khach_hang",
+    "norm_name": "Tiền gửi của khách hàng"
   },
   {
-    "stt": 245,
-    "ind_name": "Tiền gửi tại các TCTD khác và cho vay các TCTD khác",
-    "ind_code": "tien_gui_tai_cac_tctd_khac_va_cho_vay_cac_tctd_khac"
+    "raw_name": "Tiền gửi tại các TCTD khác và cho vay các TCTD khác",
+    "old_ind_code": "tien_gui_tai_cac_tctd_khac_va_cho_vay_cac_tctd_khac",
+    "norm_name": "Tiền gửi tại các tổ chức tín dụng khác và cho vay các tổ chức tín dụng khác"
   },
   {
-    "stt": 246,
-    "ind_name": "Tiền gửi tại ngân hàng nhà nước Việt Nam",
-    "ind_code": "tien_gui_tai_ngan_hang_nha_nuoc_viet_nam"
+    "raw_name": "Tiền gửi tại ngân hàng nhà nước Việt Nam",
+    "old_ind_code": "tien_gui_tai_ngan_hang_nha_nuoc_viet_nam",
+    "norm_name": "Tiền gửi tại ngân hàng nhà nước Việt Nam"
   },
   {
-    "stt": 247,
-    "ind_name": "Tiền gửi và vay các Tổ chức tín dụng khác",
-    "ind_code": "tien_gui_va_vay_cac_to_chuc_tin_dung_khac"
+    "raw_name": "Tiền gửi và vay các Tổ chức tín dụng khác",
+    "old_ind_code": "tien_gui_va_vay_cac_to_chuc_tin_dung_khac",
+    "norm_name": "Tiền gửi và vay các Tổ chức tín dụng khác"
   },
   {
-    "stt": 248,
-    "ind_name": "Tiền lãi vay đã trả",
-    "ind_code": "lai_vay_da_tra"
+    "raw_name": "Tiền lãi vay đã trả",
+    "old_ind_code": "lai_vay_da_tra",
+    "norm_name": "Tiền lãi vay đã trả"
   },
   {
-    "stt": 249,
-    "ind_name": "Tiền thanh toán vốn gốc đi thuê tài chính",
-    "ind_code": "tien_thanh_toan_von_goc_di_thue_tai_chinh"
+    "raw_name": "Tiền thanh toán vốn gốc đi thuê tài chính",
+    "old_ind_code": "tien_thanh_toan_von_goc_di_thue_tai_chinh",
+    "norm_name": "Tiền thanh toán vốn gốc đi thuê tài chính"
   },
   {
-    "stt": 250,
-    "ind_name": "Tiền thu cổ tức và lợi nhuận được chia",
-    "ind_code": "tien_thu_co_tuc_va_loi_nhuan_duoc_chia"
+    "raw_name": "Tiền thu cổ tức và lợi nhuận được chia",
+    "old_ind_code": "tien_thu_co_tuc_va_loi_nhuan_duoc_chia",
+    "norm_name": "Tiền thu cổ tức và lợi nhuận được chia"
   },
   {
-    "stt": 251,
-    "ind_name": "Tiền thu được các khoản đi vay",
-    "ind_code": "tien_thu_duoc_cac_khoan_di_vay"
+    "raw_name": "Tiền thu được các khoản đi vay",
+    "old_ind_code": "tien_thu_duoc_cac_khoan_di_vay",
+    "norm_name": "Tiền thu được các khoản đi vay"
   },
   {
-    "stt": 252,
-    "ind_name": "Tiền thu được từ thanh lý tài sản cố định",
-    "ind_code": "tien_thu_duoc_tu_thanh_ly_tai_san_co_dinh"
+    "raw_name": "Tiền thu được từ thanh lý tài sản cố định",
+    "old_ind_code": "tien_thu_duoc_tu_thanh_ly_tai_san_co_dinh",
+    "norm_name": "Tiền thu được từ thanh lý tài sản cố định"
   },
   {
-    "stt": 253,
-    "ind_name": "Tiền thu hồi cho vay, bán công cụ nợ",
-    "ind_code": "tien_thu_hoi_cho_vay_ban_cong_cu_no"
+    "raw_name": "Tiền thu hồi cho vay, bán công cụ nợ",
+    "old_ind_code": "tien_thu_hoi_cho_vay_ban_cong_cu_no",
+    "norm_name": "Tiền thu hồi cho vay, bán công cụ nợ"
   },
   {
-    "stt": 254,
-    "ind_name": "Tiền thu hồi cho vay, bán lại các công cụ nợ của đơn vị khác (đồng)",
-    "ind_code": "tien_thu_hoi_cho_vay_ban_lai_cac_cong_cu_no_cua_don_vi_khac"
+    "raw_name": "Tiền thu hồi cho vay, bán lại các công cụ nợ của đơn vị khác (đồng)",
+    "old_ind_code": "tien_thu_hoi_cho_vay_ban_lai_cac_cong_cu_no_cua_don_vi_khac",
+    "norm_name": "Tiền thu hồi cho vay, bán lại các công cụ nợ của đơn vị khác"
   },
   {
-    "stt": 255,
-    "ind_name": "Tiền thu hồi đầu tư góp vốn vào đơn vị khác",
-    "ind_code": "tien_thu_hoi_dau_tu_gop_von_vao_don_vi_khac"
+    "raw_name": "Tiền thu hồi đầu tư góp vốn vào đơn vị khác",
+    "old_ind_code": "tien_thu_hoi_dau_tu_gop_von_vao_don_vi_khac",
+    "norm_name": "Tiền thu hồi đầu tư góp vốn vào đơn vị khác"
   },
   {
-    "stt": 256,
-    "ind_name": "Tiền thu khác từ các hoạt động kinh doanh",
-    "ind_code": "tien_thu_khac_tu_cac_hoat_dong_kinh_doanh"
+    "raw_name": "Tiền thu khác từ các hoạt động kinh doanh",
+    "old_ind_code": "tien_thu_khac_tu_cac_hoat_dong_kinh_doanh",
+    "norm_name": "Tiền thu khác từ các hoạt động kinh doanh"
   },
   {
-    "stt": 257,
-    "ind_name": "Tiền thu lãi cho vay, cổ tức và lợi nhuận được chia",
-    "ind_code": "tien_thu_lai_cho_vay_co_tuc_va_loi_nhuan_duoc_chia"
+    "raw_name": "Tiền thu lãi cho vay, cổ tức và lợi nhuận được chia",
+    "old_ind_code": "tien_thu_lai_cho_vay_co_tuc_va_loi_nhuan_duoc_chia",
+    "norm_name": "Tiền thu lãi cho vay, cổ tức và lợi nhuận được chia"
   },
   {
-    "stt": 258,
-    "ind_name": "Tiền thu nhập doanh nghiệp đã trả",
-    "ind_code": "thue_tndn_da_nop"
+    "raw_name": "Tiền thu nhập doanh nghiệp đã trả",
+    "old_ind_code": "thue_tndn_da_nop",
+    "norm_name": "Tiền thu nhập doanh nghiệp đã trả"
   },
   {
-    "stt": 259,
-    "ind_name": "Tiền thu thanh lý TSCĐ",
-    "ind_code": "tien_thu_thanh_ly_tscd"
+    "raw_name": "Tiền thu thanh lý TSCĐ",
+    "old_ind_code": "tien_thu_thanh_ly_tscd",
+    "norm_name": "Tiền thu thanh lý tài sản cố định"
   },
   {
-    "stt": 260,
-    "ind_name": "Tiền thu từ đi vay",
-    "ind_code": "tien_thu_tu_di_vay"
+    "raw_name": "Tiền thu từ đi vay",
+    "old_ind_code": "tien_thu_tu_di_vay",
+    "norm_name": "Tiền thu từ đi vay"
   },
   {
-    "stt": 261,
-    "ind_name": "Tiền thu từ phát hành cổ phiếu, nhận vốn góp",
-    "ind_code": "tien_thu_tu_phat_hanh_co_phieu_nhan_von_gop"
+    "raw_name": "Tiền thu từ phát hành cổ phiếu, nhận vốn góp",
+    "old_ind_code": "tien_thu_tu_phat_hanh_co_phieu_nhan_von_gop",
+    "norm_name": "Tiền thu từ phát hành cổ phiếu, nhận vốn góp"
   },
   {
-    "stt": 262,
-    "ind_name": "Tiền thu từ việc bán các khoản đầu tư vào doanh nghiệp khác",
-    "ind_code": "tien_thu_tu_viec_ban_cac_khoan_dau_tu_vao_doanh_nghiep_khac"
+    "raw_name": "Tiền thu từ việc bán các khoản đầu tư vào doanh nghiệp khác",
+    "old_ind_code": "tien_thu_tu_viec_ban_cac_khoan_dau_tu_vao_doanh_nghiep_khac",
+    "norm_name": "Tiền thu từ việc bán các khoản đầu tư vào doanh nghiệp khác"
   },
   {
-    "stt": 263,
-    "ind_name": "Tiền trả các khoản đi vay",
-    "ind_code": "tien_tra_cac_khoan_di_vay"
+    "raw_name": "Tiền trả các khoản đi vay",
+    "old_ind_code": "tien_tra_cac_khoan_di_vay",
+    "norm_name": "Tiền trả các khoản đi vay"
   },
   {
-    "stt": 264,
-    "ind_name": "Tiền trả nợ gốc thuê tài chính",
-    "ind_code": "tien_tra_no_goc_thue_tai_chinh"
+    "raw_name": "Tiền trả nợ gốc thuê tài chính",
+    "old_ind_code": "tien_tra_no_goc_thue_tai_chinh",
+    "norm_name": "Tiền trả nợ gốc thuê tài chính"
   },
   {
-    "stt": 265,
-    "ind_name": "Tiền trả nợ gốc vay",
-    "ind_code": "tien_tra_no_goc_vay"
+    "raw_name": "Tiền trả nợ gốc vay",
+    "old_ind_code": "tien_tra_no_goc_vay",
+    "norm_name": "Tiền trả nợ gốc vay"
   },
   {
-    "stt": 266,
-    "ind_name": "Tiền và tương đương tiền",
-    "ind_code": "tien_va_tuong_duong_tien"
+    "raw_name": "Tiền và tương đương tiền",
+    "old_ind_code": "tien_va_tuong_duong_tien",
+    "norm_name": "Tiền và các khoản tương đương tiền"
   },
   {
-    "stt": 267,
-    "ind_name": "Tiền và tương đương tiền cuối kỳ",
-    "ind_code": "tien_va_tuong_duong_tien_cuoi_ky"
+    "raw_name": "Tiền và tương đương tiền cuối kỳ",
+    "old_ind_code": "tien_va_tuong_duong_tien_cuoi_ky",
+    "norm_name": "Tiền và các khoản tương đương tiền cuối kỳ"
   },
   {
-    "stt": 268,
-    "ind_name": "Tiền và tương đương tiền đầu kỳ",
-    "ind_code": "tien_va_tuong_duong_tien_dau_ky"
+    "raw_name": "Tiền và tương đương tiền đầu kỳ",
+    "old_ind_code": "tien_va_tuong_duong_tien_dau_ky",
+    "norm_name": "Tiền và các khoản tương đương tiền đầu kỳ"
   },
   {
-    "stt": 269,
-    "ind_name": "Tiền và tương đương tiền (đồng)",
-    "ind_code": "tien_va_tuong_duong_tien"
+    "raw_name": "Tiền và tương đương tiền (đồng)",
+    "old_ind_code": "tien_va_tuong_duong_tien",
+    "norm_name": "Tiền và các khoản tương đương tiền"
   },
   {
-    "stt": 270,
-    "ind_name": "Tổng cộng nguồn vốn",
-    "ind_code": "tong_nv"
+    "raw_name": "Tổng cộng nguồn vốn",
+    "old_ind_code": "tong_nv",
+    "norm_name": "Tổng cộng nguồn vốn"
   },
   {
-    "stt": 271,
-    "ind_name": "TỔNG CỘNG NGUỒN VỐN (đồng)",
-    "ind_code": "tong_nv"
+    "raw_name": "TỔNG CỘNG NGUỒN VỐN (đồng)",
+    "old_ind_code": "tong_nv",
+    "norm_name": "Tổng cộng nguồn vốn"
   },
   {
-    "stt": 272,
-    "ind_name": "Tổng cộng tài sản",
-    "ind_code": "tong_ts"
+    "raw_name": "Tổng cộng tài sản",
+    "old_ind_code": "tong_ts",
+    "norm_name": "Tổng cộng tài sản"
   },
   {
-    "stt": 273,
-    "ind_name": "TỔNG CỘNG TÀI SẢN (đồng)",
-    "ind_code": "tong_ts"
+    "raw_name": "TỔNG CỘNG TÀI SẢN (đồng)",
+    "old_ind_code": "tong_ts",
+    "norm_name": "Tổng cộng tài sản"
   },
   {
-    "stt": 274,
-    "ind_name": "Tổng thu nhập hoạt động",
-    "ind_code": "tong_tn_hd"
+    "raw_name": "Tổng thu nhập hoạt động",
+    "old_ind_code": "tong_tn_hd",
+    "norm_name": "Tổng thu nhập hoạt động"
   },
   {
-    "stt": 275,
-    "ind_name": "Total operating revenue",
-    "ind_code": "tong_tn_hd"
+    "raw_name": "Total operating revenue",
+    "old_ind_code": "tong_tn_hd",
+    "norm_name": "Tổng thu nhập hoạt động"
   },
   {
-    "stt": 276,
-    "ind_name": "Trading Securities",
-    "ind_code": "chung_khoan_kinh_doanh"
+    "raw_name": "Trading Securities",
+    "old_ind_code": "chung_khoan_kinh_doanh",
+    "norm_name": "Chứng khoán kinh doanh"
   },
   {
-    "stt": 277,
-    "ind_name": "Trading Securities, net",
-    "ind_code": "chung_khoan_kinh_doanh_rong"
+    "raw_name": "Trading Securities, net",
+    "old_ind_code": "chung_khoan_kinh_doanh_rong",
+    "norm_name": "Chứng khoán kinh doanh ròng"
   },
   {
-    "stt": 278,
-    "ind_name": "Trái phiếu chuyển đổi (đồng)",
-    "ind_code": "tp_chuyen_doi"
+    "raw_name": "Trái phiếu chuyển đổi (đồng)",
+    "old_ind_code": "tp_chuyen_doi",
+    "norm_name": "Trái phiếu chuyển đổi"
   },
   {
-    "stt": 279,
-    "ind_name": "Trả trước cho người bán",
-    "ind_code": "tra_truoc_cho_nguoi_ban"
+    "raw_name": "Trả trước cho người bán",
+    "old_ind_code": "tra_truoc_cho_nguoi_ban",
+    "norm_name": "Trả trước cho người bán"
   },
   {
-    "stt": 280,
-    "ind_name": "Trả trước cho người bán ngắn hạn (đồng)",
-    "ind_code": "tra_truoc_cho_nguoi_ban"
+    "raw_name": "Trả trước cho người bán ngắn hạn (đồng)",
+    "old_ind_code": "tra_truoc_cho_nguoi_ban",
+    "norm_name": "Trả trước cho người bán ngắn hạn"
   },
   {
-    "stt": 281,
-    "ind_name": "Trả trước dài hạn (đồng)",
-    "ind_code": "tra_truoc_dai_han"
+    "raw_name": "Trả trước dài hạn (đồng)",
+    "old_ind_code": "tra_truoc_dai_han",
+    "norm_name": "Trả trước dài hạn"
   },
   {
-    "stt": 282,
-    "ind_name": "Vay và nợ dài hạn",
-    "ind_code": "vay_va_no_dai_han"
+    "raw_name": "Vay và nợ dài hạn",
+    "old_ind_code": "vay_va_no_dai_han",
+    "norm_name": "Vay và nợ dài hạn"
   },
   {
-    "stt": 283,
-    "ind_name": "Vay và nợ ngắn hạn",
-    "ind_code": "vay_va_no_ngan_han"
+    "raw_name": "Vay và nợ ngắn hạn",
+    "old_ind_code": "vay_va_no_ngan_han",
+    "norm_name": "Vay và nợ ngắn hạn"
   },
   {
-    "stt": 284,
-    "ind_name": "Vay và nợ thuê tài chính dài hạn (đồng)",
-    "ind_code": "vay_va_no_thue_tai_chinh_dai_han"
+    "raw_name": "Vay và nợ thuê tài chính dài hạn (đồng)",
+    "old_ind_code": "vay_va_no_thue_tai_chinh_dai_han",
+    "norm_name": "Vay và nợ thuê tài chính dài hạn"
   },
   {
-    "stt": 285,
-    "ind_name": "Vay và nợ thuê tài chính ngắn hạn (đồng)",
-    "ind_code": "vay_va_no_thue_tai_chinh_ngan_han"
+    "raw_name": "Vay và nợ thuê tài chính ngắn hạn (đồng)",
+    "old_ind_code": "vay_va_no_thue_tai_chinh_ngan_han",
+    "norm_name": "Vay và nợ thuê tài chính ngắn hạn"
   },
   {
-    "stt": 286,
-    "ind_name": "Vốn chủ sở hữu",
-    "ind_code": "vcsh"
+    "raw_name": "Vốn chủ sở hữu",
+    "old_ind_code": "vcsh",
+    "norm_name": "Vốn chủ sở hữu"
   },
   {
-    "stt": 287,
-    "ind_name": "VỐN CHỦ SỞ HỮU (đồng)",
-    "ind_code": "vcsh"
+    "raw_name": "VỐN CHỦ SỞ HỮU (đồng)",
+    "old_ind_code": "vcsh",
+    "norm_name": "Vốn chủ sở hữu"
   },
   {
-    "stt": 288,
-    "ind_name": "Vốn của tổ chức tín dụng",
-    "ind_code": "von_cua_to_chuc_tin_dung"
+    "raw_name": "Vốn của tổ chức tín dụng",
+    "old_ind_code": "von_cua_to_chuc_tin_dung",
+    "norm_name": "Vốn của tổ chức tín dụng"
   },
   {
-    "stt": 289,
-    "ind_name": "Vốn góp của chủ sở hữu",
-    "ind_code": "von_gop_csh"
+    "raw_name": "Vốn góp của chủ sở hữu",
+    "old_ind_code": "von_gop_csh",
+    "norm_name": "Vốn góp của chủ sở hữu"
   },
   {
-    "stt": 290,
-    "ind_name": "Vốn góp của chủ sở hữu (đồng)",
-    "ind_code": "von_gop_csh"
+    "raw_name": "Vốn góp của chủ sở hữu (đồng)",
+    "old_ind_code": "von_gop_csh",
+    "norm_name": "Vốn góp của chủ sở hữu"
   },
   {
-    "stt": 291,
-    "ind_name": "Vốn Ngân sách nhà nước và quỹ khác",
-    "ind_code": "von_ngan_sach_nha_nuoc_va_quy_khac"
+    "raw_name": "Vốn Ngân sách nhà nước và quỹ khác",
+    "old_ind_code": "von_ngan_sach_nha_nuoc_va_quy_khac",
+    "norm_name": "Vốn Ngân sách nhà nước và quỹ khác"
   },
   {
-    "stt": 292,
-    "ind_name": "Vốn tài trợ, uỷ thác đầu tư của CP và các tổ chức TD khác",
-    "ind_code": "von_tai_tro_uy_thac_dau_tu_cua_cp_va_cac_to_chuc_td_khac"
+    "raw_name": "Vốn tài trợ, uỷ thác đầu tư của CP và các tổ chức TD khác",
+    "old_ind_code": "von_tai_tro_uy_thac_dau_tu_cua_cp_va_cac_to_chuc_td_khac",
+    "norm_name": "Vốn tài trợ, ủy thác đầu tư của Chính phủ và các tổ chức tín dụng khác"
   },
   {
-    "stt": 293,
-    "ind_name": "Vốn và các quỹ",
-    "ind_code": "von_va_quy"
+    "raw_name": "Vốn và các quỹ",
+    "old_ind_code": "von_va_quy",
+    "norm_name": "Vốn và các quỹ"
   },
   {
-    "stt": 294,
-    "ind_name": "Vốn và các quỹ (đồng)",
-    "ind_code": "von_va_quy"
+    "raw_name": "Vốn và các quỹ (đồng)",
+    "old_ind_code": "von_va_quy",
+    "norm_name": "Vốn và các quỹ"
   },
   {
-    "stt": 295,
-    "ind_name": "(+) Tăng, (-) giảm Thuế TNDN CTCK đã nộp",
-    "ind_code": "thue_tndn_da_nop"
+    "raw_name": "(+) Tăng, (-) giảm Thuế TNDN CTCK đã nộp",
+    "old_ind_code": "thue_tndn_da_nop",
+    "norm_name": "Tăng/giảm Thuế thu nhập doanh nghiệp công ty chứng khoán đã nộp"
   },
   {
-    "stt": 296,
-    "ind_name": "(+) Tăng, (-) giảm phải trả Tổ chức phát hành chứng khoán",
-    "ind_code": "tang_giam_phai_tra_to_chuc_phat_hanh_chung_khoan"
+    "raw_name": "(+) Tăng, (-) giảm phải trả Tổ chức phát hành chứng khoán",
+    "old_ind_code": "tang_giam_phai_tra_to_chuc_phat_hanh_chung_khoan",
+    "norm_name": "Tăng/giảm phải trả Tổ chức phát hành chứng khoán"
   },
   {
-    "stt": 297,
-    "ind_name": "(+) Tăng, (-) giảm phải trả cho người bán",
-    "ind_code": "phai_tra_nguoi_ban"
+    "raw_name": "(+) Tăng, (-) giảm phải trả cho người bán",
+    "old_ind_code": "phai_tra_nguoi_ban",
+    "norm_name": "Tăng/giảm phải trả cho người bán"
   },
   {
-    "stt": 298,
-    "ind_name": "(+) Tăng, (-) giảm phải trả, phải nộp khác",
-    "ind_code": "phai_tra_phai_nop_khac"
+    "raw_name": "(+) Tăng, (-) giảm phải trả, phải nộp khác",
+    "old_ind_code": "phai_tra_phai_nop_khac",
+    "norm_name": "Tăng/giảm phải trả, phải nộp khác"
   },
   {
-    "stt": 299,
-    "ind_name": "(+) Tăng, (-) giảm thuế và các khoản phải nộp Nhà nước",
-    "ind_code": "thue_va_cac_khoan_phai_nop_nha_nuoc"
+    "raw_name": "(+) Tăng, (-) giảm thuế và các khoản phải nộp Nhà nước",
+    "old_ind_code": "thue_va_cac_khoan_phai_nop_nha_nuoc",
+    "norm_name": "Tăng/giảm thuế và các khoản phải nộp Nhà nước"
   },
   {
-    "stt": 300,
-    "ind_name": "(- Lãi) hoặc (+ lỗ) chênh lệch tỷ giá hối đoái chưa thực hiện",
-    "ind_code": "lai_lo_chenh_lech_ty_gia_chua_thuc_hien"
+    "raw_name": "(- Lãi) hoặc (+ lỗ) chênh lệch tỷ giá hối đoái chưa thực hiện",
+    "old_ind_code": "lai_lo_chenh_lech_ty_gia_chua_thuc_hien",
+    "norm_name": "Lãi/lỗ chênh lệch tỷ giá hối đoái chưa thực hiện"
   },
   {
-    "stt": 301,
-    "ind_name": "(-) Tăng, (+) giảm các khoản phải thu các dịch vụ CTCK cung cấp",
-    "ind_code": "tang_giam_cac_khoan_phai_thu_cac_dich_vu_ctck_cung_cap"
+    "raw_name": "(-) Tăng, (+) giảm các khoản phải thu các dịch vụ CTCK cung cấp",
+    "old_ind_code": "tang_giam_cac_khoan_phai_thu_cac_dich_vu_ctck_cung_cap",
+    "norm_name": "Tăng/giảm các khoản phải thu các dịch vụ công ty chứng khoán cung cấp"
   },
   {
-    "stt": 302,
-    "ind_name": "(-) Tăng, (+) giảm các khoản phải thu khác",
-    "ind_code": "tang_giam_cac_khoan_phai_thu_khac"
+    "raw_name": "(-) Tăng, (+) giảm các khoản phải thu khác",
+    "old_ind_code": "tang_giam_cac_khoan_phai_thu_khac",
+    "norm_name": "Tăng/giảm các khoản phải thu khác"
   },
   {
-    "stt": 303,
-    "ind_name": "(-) Tăng, (+) giảm phải thu bán các tài sản tài chính",
-    "ind_code": "tang_giam_phai_thu_ban_cac_tai_san_tai_chinh"
+    "raw_name": "(-) Tăng, (+) giảm phải thu bán các tài sản tài chính",
+    "old_ind_code": "tang_giam_phai_thu_ban_cac_tai_san_tai_chinh",
+    "norm_name": "Tăng/giảm phải thu bán các tài sản tài chính"
   },
   {
-    "stt": 304,
-    "ind_name": "(-) Tăng, (+) giảm phải thu tiền lãi các tài sản tài chính",
-    "ind_code": "tang_giam_phai_thu_tien_lai_cac_tai_san_tai_chinh"
+    "raw_name": "(-) Tăng, (+) giảm phải thu tiền lãi các tài sản tài chính",
+    "old_ind_code": "tang_giam_phai_thu_tien_lai_cac_tai_san_tai_chinh",
+    "norm_name": "Tăng/giảm phải thu tiền lãi các tài sản tài chính"
   },
   {
-    "stt": 305,
-    "ind_name": "(Tăng)/Giảm các công cụ tài chính phái sinh và các tài sản tài chính khác",
-    "ind_code": "phai_sinh_va_ts_tc_khac"
+    "raw_name": "(Tăng)/Giảm các công cụ tài chính phái sinh và các tài sản tài chính khác",
+    "old_ind_code": "phai_sinh_va_ts_tc_khac",
+    "norm_name": "Tăng/giảm các công cụ tài chính phái sinh và các tài sản tài chính khác"
   },
   {
-    "stt": 306,
-    "ind_name": "(Tăng)/Giảm các khoản cho vay khách hàng",
-    "ind_code": "tang_giam_cho_vay_khach_hang"
+    "raw_name": "(Tăng)/Giảm các khoản cho vay khách hàng",
+    "old_ind_code": "tang_giam_cho_vay_khach_hang",
+    "norm_name": "Tăng/giảm các khoản cho vay khách hàng"
   },
   {
-    "stt": 307,
-    "ind_name": "(Tăng)/Giảm các khoản tiền, vàng gửi và cho vay các TCTD khác",
-    "ind_code": "tang_giam_tien_vang_gui_va_cho_vay_cac_tctd_khac"
+    "raw_name": "(Tăng)/Giảm các khoản tiền, vàng gửi và cho vay các TCTD khác",
+    "old_ind_code": "tang_giam_tien_vang_gui_va_cho_vay_cac_tctd_khac",
+    "norm_name": "Tăng/giảm các khoản tiền, vàng gửi và cho vay các tổ chức tín dụng khác"
   },
   {
-    "stt": 308,
-    "ind_name": "(Tăng)/Giảm các khoản về kinh doanh chứng khoán",
-    "ind_code": "tang_giam_kinh_doanh_chung_khoan"
+    "raw_name": "(Tăng)/Giảm các khoản về kinh doanh chứng khoán",
+    "old_ind_code": "tang_giam_kinh_doanh_chung_khoan",
+    "norm_name": "Tăng/giảm các khoản về kinh doanh chứng khoán"
   },
   {
-    "stt": 309,
-    "ind_name": "(Tăng)/Giảm khác về tài sản hoạt động",
-    "ind_code": "tang_giam_khac_ve_tai_san_hoat_dong"
+    "raw_name": "(Tăng)/Giảm khác về tài sản hoạt động",
+    "old_ind_code": "tang_giam_khac_ve_tai_san_hoat_dong",
+    "norm_name": "Tăng/giảm khác về tài sản hoạt động"
   },
   {
-    "stt": 310,
-    "ind_name": "(Tăng)/Giảm nguồn dự phòng để bù bắp tổn thất các khoản",
-    "ind_code": "tang_giam_nguon_du_phong_de_bu_dap_ton_that_cac_khoan"
+    "raw_name": "(Tăng)/Giảm nguồn dự phòng để bù bắp tổn thất các khoản",
+    "old_ind_code": "tang_giam_nguon_du_phong_de_bu_dap_ton_that_cac_khoan",
+    "norm_name": "Tăng/giảm nguồn dự phòng để bù bắp tổn thất các khoản"
   },
   {
-    "stt": 311,
-    "ind_name": "Bất động sản đầu tư",
-    "ind_code": "bat_dong_san_dau_tu"
+    "raw_name": "Bất động sản đầu tư",
+    "old_ind_code": "bat_dong_san_dau_tu",
+    "norm_name": "Bất động sản đầu tư"
   },
   {
-    "stt": 312,
-    "ind_name": "Bồi thường thuộc phần trách nhiệm giữ lại",
-    "ind_code": "boi_thuong_thuoc_phan_trach_nhiem_giu_lai"
+    "raw_name": "Bồi thường thuộc phần trách nhiệm giữ lại",
+    "old_ind_code": "boi_thuong_thuoc_phan_trach_nhiem_giu_lai",
+    "norm_name": "Bồi thường thuộc phần trách nhiệm giữ lại"
   },
   {
-    "stt": 313,
-    "ind_name": "CHI BÁN HÀNG",
-    "ind_code": "chi_phi_ban_hang"
+    "raw_name": "CHI BÁN HÀNG",
+    "old_ind_code": "chi_phi_ban_hang",
+    "norm_name": "Chi bán hàng"
   },
   {
-    "stt": 314,
-    "ind_name": "CHI PHÍ QUẢN LÝ CÔNG TY CHỨNG KHOÁN",
-    "ind_code": "chi_phi_quan_ly_cong_ty_chung_khoan"
+    "raw_name": "CHI PHÍ QUẢN LÝ CÔNG TY CHỨNG KHOÁN",
+    "old_ind_code": "chi_phi_quan_ly_cong_ty_chung_khoan",
+    "norm_name": "Chi phí quản lý công ty chứng khoán"
   },
   {
-    "stt": 315,
-    "ind_name": "CHI PHÍ THUẾ TNDN",
-    "ind_code": "thue_tndn"
+    "raw_name": "CHI PHÍ THUẾ TNDN",
+    "old_ind_code": "thue_tndn",
+    "norm_name": "Chi phí thuế thu nhập doanh nghiệp"
   },
   {
-    "stt": 316,
-    "ind_name": "Chi bồi thường Bảo hiểm gốc, trả tiền bảo hiểm",
-    "ind_code": "chi_boi_thuong_bao_hiem_goc_tra_tien_bao_hiem"
+    "raw_name": "Chi bồi thường Bảo hiểm gốc, trả tiền bảo hiểm",
+    "old_ind_code": "chi_boi_thuong_bao_hiem_goc_tra_tien_bao_hiem",
+    "norm_name": "Chi bồi thường Bảo hiểm gốc, trả tiền bảo hiểm"
   },
   {
-    "stt": 317,
-    "ind_name": "Chi bồi thường nhận tái bảo hiểm, trả tiền bảo hiểm",
-    "ind_code": "chi_boi_thuong_nhan_tai_bao_hiem_tra_tien_bao_hiem"
+    "raw_name": "Chi bồi thường nhận tái bảo hiểm, trả tiền bảo hiểm",
+    "old_ind_code": "chi_boi_thuong_nhan_tai_bao_hiem_tra_tien_bao_hiem",
+    "norm_name": "Chi bồi thường nhận tái bảo hiểm, trả tiền bảo hiểm"
   },
   {
-    "stt": 318,
-    "ind_name": "Chi bồi thường từ dự phòng dao động lớn",
-    "ind_code": "chi_boi_thuong_tu_du_phong_dao_dong_lon"
+    "raw_name": "Chi bồi thường từ dự phòng dao động lớn",
+    "old_ind_code": "chi_boi_thuong_tu_du_phong_dao_dong_lon",
+    "norm_name": "Chi bồi thường từ dự phòng dao động lớn"
   },
   {
-    "stt": 319,
-    "ind_name": "Chi hoa hồng",
-    "ind_code": "chi_hoa_hong"
+    "raw_name": "Chi hoa hồng",
+    "old_ind_code": "chi_hoa_hong",
+    "norm_name": "Chi hoa hồng"
   },
   {
-    "stt": 320,
-    "ind_name": "Chi hoạt động tài chính",
-    "ind_code": "chi_hoat_dong_tai_chinh"
+    "raw_name": "Chi hoạt động tài chính",
+    "old_ind_code": "chi_hoat_dong_tai_chinh",
+    "norm_name": "Chi hoạt động tài chính"
   },
   {
-    "stt": 321,
-    "ind_name": "Chi khác",
-    "ind_code": "chi_khac"
+    "raw_name": "Chi khác",
+    "old_ind_code": "chi_khac",
+    "norm_name": "Chi khác"
   },
   {
-    "stt": 322,
-    "ind_name": "Chi khác hoạt động kinh doanh bảo hiểm",
-    "ind_code": "chi_khac_hoat_dong_kinh_doanh_bao_hiem"
+    "raw_name": "Chi khác hoạt động kinh doanh bảo hiểm",
+    "old_ind_code": "chi_khac_hoat_dong_kinh_doanh_bao_hiem",
+    "norm_name": "Chi khác hoạt động kinh doanh bảo hiểm"
   },
   {
-    "stt": 323,
-    "ind_name": "Chi khác hoạt động kinh doanh bảo hiểm gốc",
-    "ind_code": "chi_khac_hoat_dong_kinh_doanh_bao_hiem_goc"
+    "raw_name": "Chi khác hoạt động kinh doanh bảo hiểm gốc",
+    "old_ind_code": "chi_khac_hoat_dong_kinh_doanh_bao_hiem_goc",
+    "norm_name": "Chi khác hoạt động kinh doanh bảo hiểm gốc"
   },
   {
-    "stt": 324,
-    "ind_name": "Chi phí Lãi vay",
-    "ind_code": "cp_lai_vay"
+    "raw_name": "Chi phí Lãi vay",
+    "old_ind_code": "cp_lai_vay",
+    "norm_name": "Chi phí Lãi vay"
   },
   {
-    "stt": 325,
-    "ind_name": "Chi phí bán hàng",
-    "ind_code": "chi_phi_ban_hang"
+    "raw_name": "Chi phí bán hàng",
+    "old_ind_code": "chi_phi_ban_hang",
+    "norm_name": "Chi phí bán hàng"
   },
   {
-    "stt": 326,
-    "ind_name": "Chi phí dự phòng rủi ro tín dụng",
-    "ind_code": "chi_phi_du_phong_rui_ro_tin_dung"
+    "raw_name": "Chi phí dự phòng rủi ro tín dụng",
+    "old_ind_code": "chi_phi_du_phong_rui_ro_tin_dung",
+    "norm_name": "Chi phí dự phòng rủi ro tín dụng"
   },
   {
-    "stt": 327,
-    "ind_name": "Chi phí hoạt động",
-    "ind_code": "chi_phi_hoat_dong"
+    "raw_name": "Chi phí hoạt động",
+    "old_ind_code": "chi_phi_hoat_dong",
+    "norm_name": "Chi phí hoạt động"
   },
   {
-    "stt": 328,
-    "ind_name": "Chi phí hoạt động bảo lãnh, đại lý phát hành chứng khoán",
-    "ind_code": "chi_phi_hoat_dong_bao_lanh_dai_ly_phat_hanh_chung_khoan"
+    "raw_name": "Chi phí hoạt động bảo lãnh, đại lý phát hành chứng khoán",
+    "old_ind_code": "chi_phi_hoat_dong_bao_lanh_dai_ly_phat_hanh_chung_khoan",
+    "norm_name": "Chi phí hoạt động bảo lãnh, đại lý phát hành chứng khoán"
   },
   {
-    "stt": 329,
-    "ind_name": "Chi phí hoạt động dịch vụ",
-    "ind_code": "cp_dv"
+    "raw_name": "Chi phí hoạt động dịch vụ",
+    "old_ind_code": "cp_dv",
+    "norm_name": "Chi phí hoạt động dịch vụ"
   },
   {
-    "stt": 330,
-    "ind_name": "Chi phí hoạt động khác",
-    "ind_code": "chi_phi_hoat_dong_khac"
+    "raw_name": "Chi phí hoạt động khác",
+    "old_ind_code": "chi_phi_hoat_dong_khac",
+    "norm_name": "Chi phí hoạt động khác"
   },
   {
-    "stt": 331,
-    "ind_name": "Chi phí hoạt động tự doanh",
-    "ind_code": "chi_phi_hoat_dong_tu_doanh"
+    "raw_name": "Chi phí hoạt động tự doanh",
+    "old_ind_code": "chi_phi_hoat_dong_tu_doanh",
+    "norm_name": "Chi phí hoạt động tự doanh"
   },
   {
-    "stt": 332,
-    "ind_name": "Chi phí hoạt động đấu giá, ủy thác",
-    "ind_code": "chi_phi_hoat_dong_dau_gia_uy_thac"
+    "raw_name": "Chi phí hoạt động đấu giá, ủy thác",
+    "old_ind_code": "chi_phi_hoat_dong_dau_gia_uy_thac",
+    "norm_name": "Chi phí hoạt động đấu giá, ủy thác"
   },
   {
-    "stt": 333,
-    "ind_name": "Chi phí khác",
-    "ind_code": "chi_phi_khac"
+    "raw_name": "Chi phí khác",
+    "old_ind_code": "chi_phi_khac",
+    "norm_name": "Chi phí khác"
   },
   {
-    "stt": 334,
-    "ind_name": "Chi phí lãi vay",
-    "ind_code": "cp_lai_vay"
+    "raw_name": "Chi phí lãi vay",
+    "old_ind_code": "cp_lai_vay",
+    "norm_name": "Chi phí lãi vay"
   },
   {
-    "stt": 335,
-    "ind_name": "Chi phí lãi vay, lỗ từ các khoản cho vay và phải thu",
-    "ind_code": "chi_phi_lai_vay_lo_tu_cac_khoan_cho_vay_va_phai_thu"
+    "raw_name": "Chi phí lãi vay, lỗ từ các khoản cho vay và phải thu",
+    "old_ind_code": "chi_phi_lai_vay_lo_tu_cac_khoan_cho_vay_va_phai_thu",
+    "norm_name": "Chi phí lãi vay, lỗ từ các khoản cho vay và phải thu"
   },
   {
-    "stt": 336,
-    "ind_name": "Chi phí lãi và các chi phí tương tự",
-    "ind_code": "chi_phi_lai_va_cac_khoan_tuong_tu"
+    "raw_name": "Chi phí lãi và các chi phí tương tự",
+    "old_ind_code": "chi_phi_lai_va_cac_khoan_tuong_tu",
+    "norm_name": "Chi phí lãi và các chi phí tương tự"
   },
   {
-    "stt": 337,
-    "ind_name": "Chi phí lãi và các chi phí tương tự đã trả",
-    "ind_code": "lai_vay_da_tra"
+    "raw_name": "Chi phí lãi và các chi phí tương tự đã trả",
+    "old_ind_code": "lai_vay_da_tra",
+    "norm_name": "Chi phí lãi và các chi phí tương tự đã trả"
   },
   {
-    "stt": 338,
-    "ind_name": "Chi phí lưu ký chứng khoán",
-    "ind_code": "chi_phi_luu_ky_chung_khoan"
+    "raw_name": "Chi phí lưu ký chứng khoán",
+    "old_ind_code": "chi_phi_luu_ky_chung_khoan",
+    "norm_name": "Chi phí lưu ký chứng khoán"
   },
   {
-    "stt": 339,
-    "ind_name": "Chi phí môi giới chứng khoán",
-    "ind_code": "chi_phi_moi_gioi_chung_khoan"
+    "raw_name": "Chi phí môi giới chứng khoán",
+    "old_ind_code": "chi_phi_moi_gioi_chung_khoan",
+    "norm_name": "Chi phí môi giới chứng khoán"
   },
   {
-    "stt": 340,
-    "ind_name": "Chi phí phải trả",
-    "ind_code": "chi_phi_phai_tra"
+    "raw_name": "Chi phí phải trả",
+    "old_ind_code": "chi_phi_phai_tra",
+    "norm_name": "Chi phí phải trả"
   },
   {
-    "stt": 341,
-    "ind_name": "Chi phí phải trả dài hạn",
-    "ind_code": "chi_phi_phai_tra_dai_han"
+    "raw_name": "Chi phí phải trả dài hạn",
+    "old_ind_code": "chi_phi_phai_tra_dai_han",
+    "norm_name": "Chi phí phải trả dài hạn"
   },
   {
-    "stt": 342,
-    "ind_name": "Chi phí phải trả ngắn hạn",
-    "ind_code": "chi_phi_phai_tra_ngan_han"
+    "raw_name": "Chi phí phải trả ngắn hạn",
+    "old_ind_code": "chi_phi_phai_tra_ngan_han",
+    "norm_name": "Chi phí phải trả ngắn hạn"
   },
   {
-    "stt": 343,
-    "ind_name": "Chi phí phải trả, chi phí trả trước",
-    "ind_code": "chi_phi_phai_tra_va_chi_phi_tra_truoc"
+    "raw_name": "Chi phí phải trả, chi phí trả trước",
+    "old_ind_code": "chi_phi_phai_tra_va_chi_phi_tra_truoc",
+    "norm_name": "Chi phí phải trả, chi phí trả trước"
   },
   {
-    "stt": 344,
-    "ind_name": "Chi phí quản lý doanh nghiệp",
-    "ind_code": "cp_qldn"
+    "raw_name": "Chi phí quản lý doanh nghiệp",
+    "old_ind_code": "cp_qldn",
+    "norm_name": "Chi phí quản lý doanh nghiệp"
   },
   {
-    "stt": 345,
-    "ind_name": "Chi phí sản xuất, kinh doanh dở dang dài hạn",
-    "ind_code": "chi_phi_san_xuat_kinh_doanh_do_dang_dai_han"
+    "raw_name": "Chi phí sản xuất, kinh doanh dở dang dài hạn",
+    "old_ind_code": "chi_phi_san_xuat_kinh_doanh_do_dang_dai_han",
+    "norm_name": "Chi phí sản xuất, kinh doanh dở dang dài hạn"
   },
   {
-    "stt": 346,
-    "ind_name": "Chi phí thuế TNDN",
-    "ind_code": "thue_tndn"
+    "raw_name": "Chi phí thuế TNDN",
+    "old_ind_code": "thue_tndn",
+    "norm_name": "Chi phí thuế thu nhập doanh nghiệp"
   },
   {
-    "stt": 347,
-    "ind_name": "Chi phí thuế TNDN (16)+(17)",
-    "ind_code": "thue_tndn"
+    "raw_name": "Chi phí thuế TNDN (16)+(17)",
+    "old_ind_code": "thue_tndn",
+    "norm_name": "Chi phí thuế thu nhập doanh nghiệp +"
   },
   {
-    "stt": 348,
-    "ind_name": "Chi phí thuế TNDN giữ lại",
-    "ind_code": "chi_phi_thue_tndn_giu_lai"
+    "raw_name": "Chi phí thuế TNDN giữ lại",
+    "old_ind_code": "chi_phi_thue_tndn_giu_lai",
+    "norm_name": "Chi phí thuế thu nhập doanh nghiệp giữ lại"
   },
   {
-    "stt": 349,
-    "ind_name": "Chi phí thuế TNDN hiện hành",
-    "ind_code": "thue_tndn_hh"
+    "raw_name": "Chi phí thuế TNDN hiện hành",
+    "old_ind_code": "thue_tndn_hh",
+    "norm_name": "Chi phí thuế thu nhập doanh nghiệp hiện hành"
   },
   {
-    "stt": 350,
-    "ind_name": "Chi phí thuế TNDN hoãn lại",
-    "ind_code": "thue_tndn_hl"
+    "raw_name": "Chi phí thuế TNDN hoãn lại",
+    "old_ind_code": "thue_tndn_hl",
+    "norm_name": "Chi phí thuế thu nhập doanh nghiệp hoãn lại"
   },
   {
-    "stt": 351,
-    "ind_name": "Chi phí thuế thu nhập hiện hành",
-    "ind_code": "thue_tndn_hh"
+    "raw_name": "Chi phí thuế thu nhập hiện hành",
+    "old_ind_code": "thue_tndn_hh",
+    "norm_name": "Chi phí thuế thu nhập hiện hành"
   },
   {
-    "stt": 352,
-    "ind_name": "Chi phí trả trước dài hạn",
-    "ind_code": "chi_phi_tra_truoc_dai_han"
+    "raw_name": "Chi phí trả trước dài hạn",
+    "old_ind_code": "chi_phi_tra_truoc_dai_han",
+    "norm_name": "Chi phí trả trước dài hạn"
   },
   {
-    "stt": 353,
-    "ind_name": "Chi phí trả trước ngắn hạn",
-    "ind_code": "chi_phi_tra_truoc_ngan_han"
+    "raw_name": "Chi phí trả trước ngắn hạn",
+    "old_ind_code": "chi_phi_tra_truoc_ngan_han",
+    "norm_name": "Chi phí trả trước ngắn hạn"
   },
   {
-    "stt": 354,
-    "ind_name": "Chi phí tài chính",
-    "ind_code": "chi_phi_tai_chinh"
+    "raw_name": "Chi phí tài chính",
+    "old_ind_code": "chi_phi_tai_chinh",
+    "norm_name": "Chi phí tài chính"
   },
   {
-    "stt": 355,
-    "ind_name": "Chi phí tư vấn",
-    "ind_code": "chi_phi_tu_van"
+    "raw_name": "Chi phí tư vấn",
+    "old_ind_code": "chi_phi_tu_van",
+    "norm_name": "Chi phí tư vấn"
   },
   {
-    "stt": 356,
-    "ind_name": "Chi phí xây dựng cơ bản dở dang",
-    "ind_code": "chi_phi_xay_dung_co_ban_do_dang"
+    "raw_name": "Chi phí xây dựng cơ bản dở dang",
+    "old_ind_code": "chi_phi_xay_dung_co_ban_do_dang",
+    "norm_name": "Chi phí xây dựng cơ bản dở dang"
   },
   {
-    "stt": 357,
-    "ind_name": "Chi phí đầu tư khác",
-    "ind_code": "chi_phi_dau_tu_khac"
+    "raw_name": "Chi phí đầu tư khác",
+    "old_ind_code": "chi_phi_dau_tu_khac",
+    "norm_name": "Chi phí đầu tư khác"
   },
   {
-    "stt": 358,
-    "ind_name": "Chi từ các quỹ của TCTD",
-    "ind_code": "chi_tu_cac_quy_cua_tctd"
+    "raw_name": "Chi từ các quỹ của TCTD",
+    "old_ind_code": "chi_tu_cac_quy_cua_tctd",
+    "norm_name": "Chi từ các quỹ của tổ chức tín dụng"
   },
   {
-    "stt": 359,
-    "ind_name": "Chi đầu tư ngắn hạn",
-    "ind_code": "chi_dau_tu_ngan_han"
+    "raw_name": "Chi đầu tư ngắn hạn",
+    "old_ind_code": "chi_dau_tu_ngan_han",
+    "norm_name": "Chi đầu tư ngắn hạn"
   },
   {
-    "stt": 360,
-    "ind_name": "Cho vay các TCTD khác",
-    "ind_code": "cho_vay_cac_tctd_khac"
+    "raw_name": "Cho vay các TCTD khác",
+    "old_ind_code": "cho_vay_cac_tctd_khac",
+    "norm_name": "Cho vay các tổ chức tín dụng khác"
   },
   {
-    "stt": 361,
-    "ind_name": "Cho vay khách hàng",
-    "ind_code": "cho_vay_khach_hang"
+    "raw_name": "Cho vay khách hàng",
+    "old_ind_code": "cho_vay_khach_hang",
+    "norm_name": "Cho vay khách hàng"
   },
   {
-    "stt": 362,
-    "ind_name": "Chênh lệch giảm đánh giá lại các TSTC thông qua lãi/lỗ",
-    "ind_code": "chenh_lech_giam_danh_gia_lai_cac_tstc_thong_qua_lai_lo"
+    "raw_name": "Chênh lệch giảm đánh giá lại các TSTC thông qua lãi/lỗ",
+    "old_ind_code": "chenh_lech_giam_danh_gia_lai_cac_tstc_thong_qua_lai_lo",
+    "norm_name": "Chênh lệch giảm đánh giá lại các tài sản tài chính thông qua lãi/lỗ"
   },
   {
-    "stt": 363,
-    "ind_name": "Chênh lệch lãi tỷ giá hối đoái đã và chưa thực hiện",
-    "ind_code": "chenh_lech_lai_ty_gia_hoi_doai_da_va_chua_thuc_hien"
+    "raw_name": "Chênh lệch lãi tỷ giá hối đoái đã và chưa thực hiện",
+    "old_ind_code": "chenh_lech_lai_ty_gia_hoi_doai_da_va_chua_thuc_hien",
+    "norm_name": "Chênh lệch lãi tỷ giá hối đoái đã và chưa thực hiện"
   },
   {
-    "stt": 364,
-    "ind_name": "Chênh lệch lỗ tỷ giá hối đoái đã và chưa thực hiện",
-    "ind_code": "chenh_lech_lo_ty_gia_hoi_doai_da_va_chua_thuc_hien"
+    "raw_name": "Chênh lệch lỗ tỷ giá hối đoái đã và chưa thực hiện",
+    "old_ind_code": "chenh_lech_lo_ty_gia_hoi_doai_da_va_chua_thuc_hien",
+    "norm_name": "Chênh lệch lỗ tỷ giá hối đoái đã và chưa thực hiện"
   },
   {
-    "stt": 365,
-    "ind_name": "Chênh lệch số tiền thực thu/ thực chi từ hoạt động kinh doanh (ngoại tệ, vàng bạc, chứng khoán)",
-    "ind_code": "chenh_lech_so_tien_thuc_thu_thuc_chi_tu_hoat_dong_kinh_doanh_ngoai_te_vang_bac_chung_khoan"
+    "raw_name": "Chênh lệch số tiền thực thu/ thực chi từ hoạt động kinh doanh (ngoại tệ, vàng bạc, chứng khoán)",
+    "old_ind_code": "chenh_lech_so_tien_thuc_thu_thuc_chi_tu_hoat_dong_kinh_doanh_ngoai_te_vang_bac_chung_khoan",
+    "norm_name": "Chênh lệch số tiền thực thu/thực chi từ hoạt động kinh doanh (ngoại tệ, vàng bạc, chứng khoán)"
   },
   {
-    "stt": 366,
-    "ind_name": "Chênh lệch tăng đánh giá lại các TSTC thông qua lãi/lỗ",
-    "ind_code": "chenh_lech_tang_danh_gia_lai_cac_tstc_thong_qua_lai_lo"
+    "raw_name": "Chênh lệch tăng đánh giá lại các TSTC thông qua lãi/lỗ",
+    "old_ind_code": "chenh_lech_tang_danh_gia_lai_cac_tstc_thong_qua_lai_lo",
+    "norm_name": "Chênh lệch tăng đánh giá lại các tài sản tài chính thông qua lãi/lỗ"
   },
   {
-    "stt": 367,
-    "ind_name": "Chênh lệch tỷ giá hối đoái",
-    "ind_code": "cl_tygia"
+    "raw_name": "Chênh lệch tỷ giá hối đoái",
+    "old_ind_code": "cl_tygia",
+    "norm_name": "Chênh lệch tỷ giá hối đoái"
   },
   {
-    "stt": 368,
-    "ind_name": "Chênh lệch đánh giá lại tài sản",
-    "ind_code": "chenh_lech_danh_gia_lai_tai_san"
+    "raw_name": "Chênh lệch đánh giá lại tài sản",
+    "old_ind_code": "chenh_lech_danh_gia_lai_tai_san",
+    "norm_name": "Chênh lệch đánh giá lại tài sản"
   },
   {
-    "stt": 369,
-    "ind_name": "Chênh lệch đánh giá tài sản theo giá trị hợp lý",
-    "ind_code": "chenh_lech_danh_gia_tai_san_theo_gia_tri_hop_ly"
+    "raw_name": "Chênh lệch đánh giá tài sản theo giá trị hợp lý",
+    "old_ind_code": "chenh_lech_danh_gia_tai_san_theo_gia_tri_hop_ly",
+    "norm_name": "Chênh lệch đánh giá tài sản theo giá trị hợp lý"
   },
   {
-    "stt": 370,
-    "ind_name": "Chứng khoán kinh doanh",
-    "ind_code": "chung_khoan_kinh_doanh"
+    "raw_name": "Chứng khoán kinh doanh",
+    "old_ind_code": "chung_khoan_kinh_doanh",
+    "norm_name": "Chứng khoán kinh doanh"
   },
   {
-    "stt": 371,
-    "ind_name": "Chứng khoán đầu tư",
-    "ind_code": "chung_khoan_dau_tu"
+    "raw_name": "Chứng khoán đầu tư",
+    "old_ind_code": "chung_khoan_dau_tu",
+    "norm_name": "Chứng khoán đầu tư"
   },
   {
-    "stt": 372,
-    "ind_name": "Chứng khoán đầu tư giữ đến ngày đáo hạn",
-    "ind_code": "chung_khoan_dau_tu_giu_den_ngay_dao_han"
+    "raw_name": "Chứng khoán đầu tư giữ đến ngày đáo hạn",
+    "old_ind_code": "chung_khoan_dau_tu_giu_den_ngay_dao_han",
+    "norm_name": "Chứng khoán đầu tư giữ đến ngày đáo hạn"
   },
   {
-    "stt": 373,
-    "ind_name": "Chứng khoán đầu tư sẵn sàng để bán",
-    "ind_code": "chung_khoan_dau_tu_san_sang_de_ban"
+    "raw_name": "Chứng khoán đầu tư sẵn sàng để bán",
+    "old_ind_code": "chung_khoan_dau_tu_san_sang_de_ban",
+    "norm_name": "Chứng khoán đầu tư sẵn sàng để bán"
   },
   {
-    "stt": 374,
-    "ind_name": "Các  khoản đầu tư  giữ đến ngày đáo hạn (HTM)",
-    "ind_code": "cac_khoan_dau_tu_giu_den_ngay_dao_han_htm"
+    "raw_name": "Các  khoản đầu tư  giữ đến ngày đáo hạn (HTM)",
+    "old_ind_code": "cac_khoan_dau_tu_giu_den_ngay_dao_han_htm",
+    "norm_name": "Các khoản đầu tư giữ đến ngày đáo hạn (HTM)"
   },
   {
-    "stt": 375,
-    "ind_name": "Các Quỹ khác thuộc vốn chủ sở hữu",
-    "ind_code": "quy_khac"
+    "raw_name": "Các Quỹ khác thuộc vốn chủ sở hữu",
+    "old_ind_code": "quy_khac",
+    "norm_name": "Các Quỹ khác thuộc vốn chủ sở hữu"
   },
   {
-    "stt": 376,
-    "ind_name": "Các công cụ tài chính phái sinh và các khoản nợ tài chính khác",
-    "ind_code": "phai_sinh_va_no_tc_khac"
+    "raw_name": "Các công cụ tài chính phái sinh và các khoản nợ tài chính khác",
+    "old_ind_code": "phai_sinh_va_no_tc_khac",
+    "norm_name": "Các công cụ tài chính phái sinh và các khoản nợ tài chính khác"
   },
   {
-    "stt": 377,
-    "ind_name": "Các công cụ tài chính phái sinh và các tài sản tài chính khác",
-    "ind_code": "phai_sinh_va_ts_tc_khac"
+    "raw_name": "Các công cụ tài chính phái sinh và các tài sản tài chính khác",
+    "old_ind_code": "phai_sinh_va_ts_tc_khac",
+    "norm_name": "Các công cụ tài chính phái sinh và các tài sản tài chính khác"
   },
   {
-    "stt": 378,
-    "ind_name": "Các khoản chi trực tiếp từ lợi nhuận",
-    "ind_code": "cac_khoan_chi_truc_tiep_tu_loi_nhuan"
+    "raw_name": "Các khoản chi trực tiếp từ lợi nhuận",
+    "old_ind_code": "cac_khoan_chi_truc_tiep_tu_loi_nhuan",
+    "norm_name": "Các khoản chi trực tiếp từ lợi nhuận"
   },
   {
-    "stt": 379,
-    "ind_name": "Các khoản cho vay",
-    "ind_code": "cac_khoan_cho_vay"
+    "raw_name": "Các khoản cho vay",
+    "old_ind_code": "cac_khoan_cho_vay",
+    "norm_name": "Các khoản cho vay"
   },
   {
-    "stt": 380,
-    "ind_name": "Các khoản dự phòng",
-    "ind_code": "cac_khoan_du_phong"
+    "raw_name": "Các khoản dự phòng",
+    "old_ind_code": "cac_khoan_du_phong",
+    "norm_name": "Các khoản dự phòng"
   },
   {
-    "stt": 381,
-    "ind_name": "Các khoản dự phòng rủi ro cho các tài sản có nội bảng khác",
-    "ind_code": "cac_khoan_du_phong_rui_ro_cho_cac_tai_san_co_noi_bang_khac"
+    "raw_name": "Các khoản dự phòng rủi ro cho các tài sản có nội bảng khác",
+    "old_ind_code": "cac_khoan_du_phong_rui_ro_cho_cac_tai_san_co_noi_bang_khac",
+    "norm_name": "Các khoản dự phòng rủi ro cho các tài sản có nội bảng khác"
   },
   {
-    "stt": 382,
-    "ind_name": "Các khoản giảm trừ",
-    "ind_code": "cac_khoan_giam_tru"
+    "raw_name": "Các khoản giảm trừ",
+    "old_ind_code": "cac_khoan_giam_tru",
+    "norm_name": "Các khoản giảm trừ"
   },
   {
-    "stt": 383,
-    "ind_name": "Các khoản giảm trừ doanh thu",
-    "ind_code": "cac_khoan_giam_tru_doanh_thu"
+    "raw_name": "Các khoản giảm trừ doanh thu",
+    "old_ind_code": "cac_khoan_giam_tru_doanh_thu",
+    "norm_name": "Các khoản giảm trừ doanh thu"
   },
   {
-    "stt": 384,
-    "ind_name": "Các khoản ký quỹ, ký cược dài hạn",
-    "ind_code": "cac_khoan_ky_quy_ky_cuoc_dai_han"
+    "raw_name": "Các khoản ký quỹ, ký cược dài hạn",
+    "old_ind_code": "cac_khoan_ky_quy_ky_cuoc_dai_han",
+    "norm_name": "Các khoản ký quỹ, ký cược dài hạn"
   },
   {
-    "stt": 385,
-    "ind_name": "Các khoản lãi, phí phải thu",
-    "ind_code": "cac_khoan_lai_phi_phai_thu"
+    "raw_name": "Các khoản lãi, phí phải thu",
+    "old_ind_code": "cac_khoan_lai_phi_phai_thu",
+    "norm_name": "Các khoản lãi, phí phải thu"
   },
   {
-    "stt": 386,
-    "ind_name": "Các khoản lãi, phí phải trả",
-    "ind_code": "cac_khoan_lai_phi_phai_tra"
+    "raw_name": "Các khoản lãi, phí phải trả",
+    "old_ind_code": "cac_khoan_lai_phi_phai_tra",
+    "norm_name": "Các khoản lãi, phí phải trả"
   },
   {
-    "stt": 387,
-    "ind_name": "Các khoản nợ chính phủ và NHNN",
-    "ind_code": "cac_khoan_no_chinh_phu_va_nhnn"
+    "raw_name": "Các khoản nợ chính phủ và NHNN",
+    "old_ind_code": "cac_khoan_no_chinh_phu_va_nhnn",
+    "norm_name": "Các khoản nợ Chính phủ và Ngân hàng Nhà nước"
   },
   {
-    "stt": 388,
-    "ind_name": "Các khoản nợ khác",
-    "ind_code": "cac_khoan_no_khac"
+    "raw_name": "Các khoản nợ khác",
+    "old_ind_code": "cac_khoan_no_khac",
+    "norm_name": "Các khoản nợ khác"
   },
   {
-    "stt": 389,
-    "ind_name": "Các khoản phải thu",
-    "ind_code": "cac_khoan_phai_thu"
+    "raw_name": "Các khoản phải thu",
+    "old_ind_code": "cac_khoan_phai_thu",
+    "norm_name": "Các khoản phải thu"
   },
   {
-    "stt": 390,
-    "ind_name": "Các khoản phải thu dài hạn",
-    "ind_code": "cac_khoan_phai_thu_dai_han"
+    "raw_name": "Các khoản phải thu dài hạn",
+    "old_ind_code": "cac_khoan_phai_thu_dai_han",
+    "norm_name": "Các khoản phải thu dài hạn"
   },
   {
-    "stt": 391,
-    "ind_name": "Các khoản phải thu khác",
-    "ind_code": "cac_khoan_phai_thu_khac"
+    "raw_name": "Các khoản phải thu khác",
+    "old_ind_code": "cac_khoan_phai_thu_khac",
+    "norm_name": "Các khoản phải thu khác"
   },
   {
-    "stt": 392,
-    "ind_name": "Các khoản phải thu ngắn hạn",
-    "ind_code": "cac_khoan_phai_thu"
+    "raw_name": "Các khoản phải thu ngắn hạn",
+    "old_ind_code": "cac_khoan_phai_thu",
+    "norm_name": "Các khoản phải thu ngắn hạn"
   },
   {
-    "stt": 393,
-    "ind_name": "Các khoản phải trả và công nợ khác",
-    "ind_code": "cac_khoan_phai_tra_va_cong_no_khac"
+    "raw_name": "Các khoản phải trả và công nợ khác",
+    "old_ind_code": "cac_khoan_phai_tra_va_cong_no_khac",
+    "norm_name": "Các khoản phải trả và công nợ khác"
   },
   {
-    "stt": 394,
-    "ind_name": "Các khoản phải trả, phải nộp khác dài hạn",
-    "ind_code": "cac_khoan_phai_tra_phai_nop_khac_dai_han"
+    "raw_name": "Các khoản phải trả, phải nộp khác dài hạn",
+    "old_ind_code": "cac_khoan_phai_tra_phai_nop_khac_dai_han",
+    "norm_name": "Các khoản phải trả, phải nộp khác dài hạn"
   },
   {
-    "stt": 395,
-    "ind_name": "Các khoản phải trả, phải nộp khác ngắn hạn",
-    "ind_code": "cac_khoan_phai_tra_phai_nop_khac_ngan_han"
+    "raw_name": "Các khoản phải trả, phải nộp khác ngắn hạn",
+    "old_ind_code": "cac_khoan_phai_tra_phai_nop_khac_ngan_han",
+    "norm_name": "Các khoản phải trả, phải nộp khác ngắn hạn"
   },
   {
-    "stt": 396,
-    "ind_name": "Các khoản phải trả, phải nộp ngắn hạn khác",
-    "ind_code": "cac_khoan_phai_tra_phai_nop_ngan_han_khac"
+    "raw_name": "Các khoản phải trả, phải nộp ngắn hạn khác",
+    "old_ind_code": "cac_khoan_phai_tra_phai_nop_ngan_han_khac",
+    "norm_name": "Các khoản phải trả, phải nộp ngắn hạn khác"
   },
   {
-    "stt": 397,
-    "ind_name": "Các khoản trích nộp phúc lợi nhân viên",
-    "ind_code": "cac_khoan_trich_nop_phuc_loi_nhan_vien"
+    "raw_name": "Các khoản trích nộp phúc lợi nhân viên",
+    "old_ind_code": "cac_khoan_trich_nop_phuc_loi_nhan_vien",
+    "norm_name": "Các khoản trích nộp phúc lợi nhân viên"
   },
   {
-    "stt": 398,
-    "ind_name": "Các khoản tương đương tiền",
-    "ind_code": "cac_khoan_tuong_duong_tien"
+    "raw_name": "Các khoản tương đương tiền",
+    "old_ind_code": "cac_khoan_tuong_duong_tien",
+    "norm_name": "Các khoản tương đương tiền"
   },
   {
-    "stt": 399,
-    "ind_name": "Các khoản điều chỉnh khác",
-    "ind_code": "cac_khoan_dieu_chinh_khac"
+    "raw_name": "Các khoản điều chỉnh khác",
+    "old_ind_code": "cac_khoan_dieu_chinh_khac",
+    "norm_name": "Các khoản điều chỉnh khác"
   },
   {
-    "stt": 400,
-    "ind_name": "Các khoản đầu tư",
-    "ind_code": "cac_khoan_dau_tu"
+    "raw_name": "Các khoản đầu tư",
+    "old_ind_code": "cac_khoan_dau_tu",
+    "norm_name": "Các khoản đầu tư"
   },
   {
-    "stt": 401,
-    "ind_name": "Các khoản đầu tư nắm giữ đến ngày đáo hạn",
-    "ind_code": "chung_khoan_dau_tu_giu_den_ngay_dao_han"
+    "raw_name": "Các khoản đầu tư nắm giữ đến ngày đáo hạn",
+    "old_ind_code": "chung_khoan_dau_tu_giu_den_ngay_dao_han",
+    "norm_name": "Các khoản đầu tư nắm giữ đến ngày đáo hạn"
   },
   {
-    "stt": 402,
-    "ind_name": "Các khoản đầu tư tài chính dài hạn",
-    "ind_code": "dt_tc_dh"
+    "raw_name": "Các khoản đầu tư tài chính dài hạn",
+    "old_ind_code": "dt_tc_dh",
+    "norm_name": "Các khoản đầu tư tài chính dài hạn"
   },
   {
-    "stt": 403,
-    "ind_name": "Các khoản đầu tư tài chính ngắn hạn",
-    "ind_code": "dau_tu_tai_chinh_ngan_han"
+    "raw_name": "Các khoản đầu tư tài chính ngắn hạn",
+    "old_ind_code": "dau_tu_tai_chinh_ngan_han",
+    "norm_name": "Các khoản đầu tư tài chính ngắn hạn"
   },
   {
-    "stt": 404,
-    "ind_name": "Các tài sản tài chính ghi nhận thông qua lãi lỗ (FVTPL)",
-    "ind_code": "cac_tai_san_tai_chinh_ghi_nhan_thong_qua_lai_lo_fvtpl"
+    "raw_name": "Các tài sản tài chính ghi nhận thông qua lãi lỗ (FVTPL)",
+    "old_ind_code": "cac_tai_san_tai_chinh_ghi_nhan_thong_qua_lai_lo_fvtpl",
+    "norm_name": "Các tài sản tài chính ghi nhận thông qua lãi/lỗ (FVTPL)"
   },
   {
-    "stt": 405,
-    "ind_name": "Các tài sản tài chính sẵn sàng để bán (AFS)",
-    "ind_code": "chung_khoan_dau_tu_san_sang_de_ban"
+    "raw_name": "Các tài sản tài chính sẵn sàng để bán (AFS)",
+    "old_ind_code": "chung_khoan_dau_tu_san_sang_de_ban",
+    "norm_name": "Các tài sản tài chính sẵn sàng để bán (AFS)"
   },
   {
-    "stt": 406,
-    "ind_name": "Cầm cố, ký quỹ, ký cược dài hạn khác",
-    "ind_code": "cam_co_ky_quy_ky_cuoc_dai_han_khac"
+    "raw_name": "Cầm cố, ký quỹ, ký cược dài hạn khác",
+    "old_ind_code": "cam_co_ky_quy_ky_cuoc_dai_han_khac",
+    "norm_name": "Cầm cố, ký quỹ, ký cược dài hạn khác"
   },
   {
-    "stt": 407,
-    "ind_name": "Cầm cố, thế chấp, ký quỹ, ký cược dài hạn",
-    "ind_code": "cam_co_the_chap_ky_quy_ky_cuoc_dai_han"
+    "raw_name": "Cầm cố, thế chấp, ký quỹ, ký cược dài hạn",
+    "old_ind_code": "cam_co_the_chap_ky_quy_ky_cuoc_dai_han",
+    "norm_name": "Cầm cố, thế chấp, ký quỹ, ký cược dài hạn"
   },
   {
-    "stt": 408,
-    "ind_name": "Cầm cố, thế chấp, ký quỹ, ký cược ngắn hạn",
-    "ind_code": "cam_co_the_chap_ky_quy_ky_cuoc_ngan_han"
+    "raw_name": "Cầm cố, thế chấp, ký quỹ, ký cược ngắn hạn",
+    "old_ind_code": "cam_co_the_chap_ky_quy_ky_cuoc_ngan_han",
+    "norm_name": "Cầm cố, thế chấp, ký quỹ, ký cược ngắn hạn"
   },
   {
-    "stt": 409,
-    "ind_name": "Cổ phiếu phổ thông",
-    "ind_code": "cp_pho_thong"
+    "raw_name": "Cổ phiếu phổ thông",
+    "old_ind_code": "cp_pho_thong",
+    "norm_name": "Cổ phiếu phổ thông"
   },
   {
-    "stt": 410,
-    "ind_name": "Cổ phiếu quỹ",
-    "ind_code": "co_phieu_quy"
+    "raw_name": "Cổ phiếu quỹ",
+    "old_ind_code": "co_phieu_quy",
+    "norm_name": "Cổ phiếu quỹ"
   },
   {
-    "stt": 411,
-    "ind_name": "Cổ tức trả cho cổ đông, lợi nhuận đã chia",
-    "ind_code": "co_tuc_tra_cho_co_dong_loi_nhuan_da_chia"
+    "raw_name": "Cổ tức trả cho cổ đông, lợi nhuận đã chia",
+    "old_ind_code": "co_tuc_tra_cho_co_dong_loi_nhuan_da_chia",
+    "norm_name": "Cổ tức trả cho cổ đông, lợi nhuận đã chia"
   },
   {
-    "stt": 412,
-    "ind_name": "Cổ tức đã nhận",
-    "ind_code": "co_tuc_da_nhan"
+    "raw_name": "Cổ tức đã nhận",
+    "old_ind_code": "co_tuc_da_nhan",
+    "norm_name": "Cổ tức đã nhận"
   },
   {
-    "stt": 413,
-    "ind_name": "Cổ tức, lợi nhuận đã trả cho chủ sở hữu",
-    "ind_code": "co_tuc_loi_nhuan_da_tra_cho_chu_so_huu"
+    "raw_name": "Cổ tức, lợi nhuận đã trả cho chủ sở hữu",
+    "old_ind_code": "co_tuc_loi_nhuan_da_tra_cho_chu_so_huu",
+    "norm_name": "Cổ tức, lợi nhuận đã trả cho chủ sở hữu"
   },
   {
-    "stt": 414,
-    "ind_name": "Cổ tức, tiền lãi phát sinh từ tài sản tài chính PVTPL",
-    "ind_code": "co_tuc_tien_lai_phat_sinh_tu_tai_san_tai_chinh_pvtpl"
+    "raw_name": "Cổ tức, tiền lãi phát sinh từ tài sản tài chính PVTPL",
+    "old_ind_code": "co_tuc_tien_lai_phat_sinh_tu_tai_san_tai_chinh_pvtpl",
+    "norm_name": "Cổ tức, tiền lãi phát sinh từ tài sản tài chính PVTPL"
   },
   {
-    "stt": 415,
-    "ind_name": "Cộng chi phí hoạt động",
-    "ind_code": "tong_chi_phi_hoat_dong"
+    "raw_name": "Cộng chi phí hoạt động",
+    "old_ind_code": "tong_chi_phi_hoat_dong",
+    "norm_name": "Cộng chi phí hoạt động"
   },
   {
-    "stt": 416,
-    "ind_name": "Cộng chi phí tài chính",
-    "ind_code": "chi_phi_tai_chinh"
+    "raw_name": "Cộng chi phí tài chính",
+    "old_ind_code": "chi_phi_tai_chinh",
+    "norm_name": "Cộng chi phí tài chính"
   },
   {
-    "stt": 417,
-    "ind_name": "Cộng doanh thu hoạt động",
-    "ind_code": "tong_tn_hd"
+    "raw_name": "Cộng doanh thu hoạt động",
+    "old_ind_code": "tong_tn_hd",
+    "norm_name": "Cộng doanh thu hoạt động"
   },
   {
-    "stt": 418,
-    "ind_name": "Cộng doanh thu hoạt động tài chính",
-    "ind_code": "dt_tc"
+    "raw_name": "Cộng doanh thu hoạt động tài chính",
+    "old_ind_code": "dt_tc",
+    "norm_name": "Cộng doanh thu hoạt động tài chính"
   },
   {
-    "stt": 419,
-    "ind_name": "Cộng kết quả hoạt động khác",
-    "ind_code": "ket_qua_hoat_dong_khac"
+    "raw_name": "Cộng kết quả hoạt động khác",
+    "old_ind_code": "ket_qua_hoat_dong_khac",
+    "norm_name": "Cộng kết quả hoạt động khác"
   },
   {
-    "stt": 420,
-    "ind_name": "Doanh thu bảo lãnh, đại lý phát hành chứng khoán",
-    "ind_code": "doanh_thu_bao_lanh_dai_ly_phat_hanh_chung_khoan"
+    "raw_name": "Doanh thu bảo lãnh, đại lý phát hành chứng khoán",
+    "old_ind_code": "doanh_thu_bao_lanh_dai_ly_phat_hanh_chung_khoan",
+    "norm_name": "Doanh thu bảo lãnh, đại lý phát hành chứng khoán"
   },
   {
-    "stt": 421,
-    "ind_name": "Doanh thu chưa thực hiện dài hạn",
-    "ind_code": "doanh_thu_chua_thuc_hien_dai_han"
+    "raw_name": "Doanh thu chưa thực hiện dài hạn",
+    "old_ind_code": "doanh_thu_chua_thuc_hien_dai_han",
+    "norm_name": "Doanh thu chưa thực hiện dài hạn"
   },
   {
-    "stt": 422,
-    "ind_name": "Doanh thu chưa thực hiện ngắn hạn",
-    "ind_code": "doanh_thu_chua_thuc_hien_ngan_han"
+    "raw_name": "Doanh thu chưa thực hiện ngắn hạn",
+    "old_ind_code": "doanh_thu_chua_thuc_hien_ngan_han",
+    "norm_name": "Doanh thu chưa thực hiện ngắn hạn"
   },
   {
-    "stt": 423,
-    "ind_name": "Doanh thu hoạt động nhận ủy thác, đấu giá",
-    "ind_code": "doanh_thu_hoat_dong_nhan_uy_thac_dau_gia"
+    "raw_name": "Doanh thu hoạt động nhận ủy thác, đấu giá",
+    "old_ind_code": "doanh_thu_hoat_dong_nhan_uy_thac_dau_gia",
+    "norm_name": "Doanh thu hoạt động nhận ủy thác, đấu giá"
   },
   {
-    "stt": 424,
-    "ind_name": "Doanh thu hoạt động tài chính",
-    "ind_code": "dt_tc"
+    "raw_name": "Doanh thu hoạt động tài chính",
+    "old_ind_code": "dt_tc",
+    "norm_name": "Doanh thu hoạt động tài chính"
   },
   {
-    "stt": 425,
-    "ind_name": "Doanh thu khác về đầu tư",
-    "ind_code": "doanh_thu_khac_ve_dau_tu"
+    "raw_name": "Doanh thu khác về đầu tư",
+    "old_ind_code": "doanh_thu_khac_ve_dau_tu",
+    "norm_name": "Doanh thu khác về đầu tư"
   },
   {
-    "stt": 426,
-    "ind_name": "Doanh thu lưu ký chứng khoán",
-    "ind_code": "doanh_thu_luu_ky_chung_khoan"
+    "raw_name": "Doanh thu lưu ký chứng khoán",
+    "old_ind_code": "doanh_thu_luu_ky_chung_khoan",
+    "norm_name": "Doanh thu lưu ký chứng khoán"
   },
   {
-    "stt": 427,
-    "ind_name": "Doanh thu môi giới chứng khoán",
-    "ind_code": "doanh_thu_moi_gioi_chung_khoan"
+    "raw_name": "Doanh thu môi giới chứng khoán",
+    "old_ind_code": "doanh_thu_moi_gioi_chung_khoan",
+    "norm_name": "Doanh thu môi giới chứng khoán"
   },
   {
-    "stt": 428,
-    "ind_name": "Doanh thu thuần (1)-(2)",
-    "ind_code": "doanh_thu_thuan"
+    "raw_name": "Doanh thu thuần (1)-(2)",
+    "old_ind_code": "doanh_thu_thuan",
+    "norm_name": "Doanh thu thuần -"
   },
   {
-    "stt": 429,
-    "ind_name": "Doanh thu thuần hoạt động kinh doanh bảo hiểm",
-    "ind_code": "doanh_thu_thuan"
+    "raw_name": "Doanh thu thuần hoạt động kinh doanh bảo hiểm",
+    "old_ind_code": "doanh_thu_thuan",
+    "norm_name": "Doanh thu thuần hoạt động kinh doanh bảo hiểm"
   },
   {
-    "stt": 430,
-    "ind_name": "Doanh thu tư vấn",
-    "ind_code": "doanh_thu_tu_van"
+    "raw_name": "Doanh thu tư vấn",
+    "old_ind_code": "doanh_thu_tu_van",
+    "norm_name": "Doanh thu tư vấn"
   },
   {
-    "stt": 431,
-    "ind_name": "Doanh thu, dự thu cổ tức, lãi tiền gửi không cố định phát sinh trong kỳ",
-    "ind_code": "doanh_thu_du_thu_co_tuc_lai_tien_gui_khong_co_dinh_phat_sinh_trong_ky"
+    "raw_name": "Doanh thu, dự thu cổ tức, lãi tiền gửi không cố định phát sinh trong kỳ",
+    "old_ind_code": "doanh_thu_du_thu_co_tuc_lai_tien_gui_khong_co_dinh_phat_sinh_trong_ky",
+    "norm_name": "Doanh thu, dự thu cổ tức, lãi tiền gửi không cố định phát sinh trong kỳ"
   },
   {
-    "stt": 432,
-    "ind_name": "Dự phòng bảo đảm cân đối",
-    "ind_code": "du_phong_bao_dam_can_doi"
+    "raw_name": "Dự phòng bảo đảm cân đối",
+    "old_ind_code": "du_phong_bao_dam_can_doi",
+    "norm_name": "Dự phòng bảo đảm cân đối"
   },
   {
-    "stt": 433,
-    "ind_name": "Dự phòng bồi thường",
-    "ind_code": "du_phong_boi_thuong"
+    "raw_name": "Dự phòng bồi thường",
+    "old_ind_code": "du_phong_boi_thuong",
+    "norm_name": "Dự phòng bồi thường"
   },
   {
-    "stt": 434,
-    "ind_name": "Dự phòng bồi thường thiệt hại cho nhà đầu tư",
-    "ind_code": "du_phong_boi_thuong_thiet_hai_cho_nha_dau_tu"
+    "raw_name": "Dự phòng bồi thường thiệt hại cho nhà đầu tư",
+    "old_ind_code": "du_phong_boi_thuong_thiet_hai_cho_nha_dau_tu",
+    "norm_name": "Dự phòng bồi thường thiệt hại cho nhà đầu tư"
   },
   {
-    "stt": 435,
-    "ind_name": "Dự phòng chia lãi",
-    "ind_code": "du_phong_chia_lai"
+    "raw_name": "Dự phòng chia lãi",
+    "old_ind_code": "du_phong_chia_lai",
+    "norm_name": "Dự phòng chia lãi"
   },
   {
-    "stt": 436,
-    "ind_name": "Dự phòng các khoản phải thu khó đòi (*)",
-    "ind_code": "du_phong_cac_khoan_phai_thu_kho_doi"
+    "raw_name": "Dự phòng các khoản phải thu khó đòi (*)",
+    "old_ind_code": "du_phong_cac_khoan_phai_thu_kho_doi",
+    "norm_name": "Dự phòng các khoản phải thu khó đòi"
   },
   {
-    "stt": 437,
-    "ind_name": "Dự phòng dao động lớn",
-    "ind_code": "du_phong_dao_dong_lon"
+    "raw_name": "Dự phòng dao động lớn",
+    "old_ind_code": "du_phong_dao_dong_lon",
+    "norm_name": "Dự phòng dao động lớn"
   },
   {
-    "stt": 438,
-    "ind_name": "Dự phòng giảm giá chứng khoán kinh doanh",
-    "ind_code": "du_phong_giam_gia_chung_khoan_kinh_doanh"
+    "raw_name": "Dự phòng giảm giá chứng khoán kinh doanh",
+    "old_ind_code": "du_phong_giam_gia_chung_khoan_kinh_doanh",
+    "norm_name": "Dự phòng giảm giá chứng khoán kinh doanh"
   },
   {
-    "stt": 439,
-    "ind_name": "Dự phòng giảm giá chứng khoán đầu tư",
-    "ind_code": "du_phong_giam_gia_chung_khoan_dau_tu"
+    "raw_name": "Dự phòng giảm giá chứng khoán đầu tư",
+    "old_ind_code": "du_phong_giam_gia_chung_khoan_dau_tu",
+    "norm_name": "Dự phòng giảm giá chứng khoán đầu tư"
   },
   {
-    "stt": 440,
-    "ind_name": "Dự phòng giảm giá chứng khoán đầu tư ngắn hạn (*)",
-    "ind_code": "du_phong_giam_gia_chung_khoan_dau_tu"
+    "raw_name": "Dự phòng giảm giá chứng khoán đầu tư ngắn hạn (*)",
+    "old_ind_code": "du_phong_giam_gia_chung_khoan_dau_tu",
+    "norm_name": "Dự phòng giảm giá chứng khoán đầu tư ngắn hạn"
   },
   {
-    "stt": 441,
-    "ind_name": "Dự phòng giảm giá hàng tồn kho",
-    "ind_code": "du_phong_giam_gia_hang_ton_kho"
+    "raw_name": "Dự phòng giảm giá hàng tồn kho",
+    "old_ind_code": "du_phong_giam_gia_hang_ton_kho",
+    "norm_name": "Dự phòng giảm giá hàng tồn kho"
   },
   {
-    "stt": 442,
-    "ind_name": "Dự phòng giảm giá đầu tư dài hạn",
-    "ind_code": "du_phong_giam_gia_dau_tu_dai_han"
+    "raw_name": "Dự phòng giảm giá đầu tư dài hạn",
+    "old_ind_code": "du_phong_giam_gia_dau_tu_dai_han",
+    "norm_name": "Dự phòng giảm giá đầu tư dài hạn"
   },
   {
-    "stt": 443,
-    "ind_name": "Dự phòng giảm giá đầu tư tài chính dài hạn",
-    "ind_code": "du_phong_giam_gia_dau_tu_dai_han"
+    "raw_name": "Dự phòng giảm giá đầu tư tài chính dài hạn",
+    "old_ind_code": "du_phong_giam_gia_dau_tu_dai_han",
+    "norm_name": "Dự phòng giảm giá đầu tư tài chính dài hạn"
   },
   {
-    "stt": 444,
-    "ind_name": "Dự phòng nghiệp vụ",
-    "ind_code": "du_phong_nghiep_vu"
+    "raw_name": "Dự phòng nghiệp vụ",
+    "old_ind_code": "du_phong_nghiep_vu",
+    "norm_name": "Dự phòng nghiệp vụ"
   },
   {
-    "stt": 445,
-    "ind_name": "Dự phòng phí",
-    "ind_code": "du_phong_phi"
+    "raw_name": "Dự phòng phí",
+    "old_ind_code": "du_phong_phi",
+    "norm_name": "Dự phòng phí"
   },
   {
-    "stt": 446,
-    "ind_name": "Dự phòng phải thu dài hạn khó đòi",
-    "ind_code": "du_phong_phai_thu_dai_han_kho_doi"
+    "raw_name": "Dự phòng phải thu dài hạn khó đòi",
+    "old_ind_code": "du_phong_phai_thu_dai_han_kho_doi",
+    "norm_name": "Dự phòng phải thu dài hạn khó đòi"
   },
   {
-    "stt": 447,
-    "ind_name": "Dự phòng phải thu ngắn hạn khó đòi",
-    "ind_code": "du_phong_phai_thu_ngan_han_kho_doi"
+    "raw_name": "Dự phòng phải thu ngắn hạn khó đòi",
+    "old_ind_code": "du_phong_phai_thu_ngan_han_kho_doi",
+    "norm_name": "Dự phòng phải thu ngắn hạn khó đòi"
   },
   {
-    "stt": 448,
-    "ind_name": "Dự phòng phải trả dài hạn",
-    "ind_code": "du_phong_phai_tra_dai_han"
+    "raw_name": "Dự phòng phải trả dài hạn",
+    "old_ind_code": "du_phong_phai_tra_dai_han",
+    "norm_name": "Dự phòng phải trả dài hạn"
   },
   {
-    "stt": 449,
-    "ind_name": "Dự phòng phải trả ngắn hạn",
-    "ind_code": "du_phong_phai_tra_ngan_han"
+    "raw_name": "Dự phòng phải trả ngắn hạn",
+    "old_ind_code": "du_phong_phai_tra_ngan_han",
+    "norm_name": "Dự phòng phải trả ngắn hạn"
   },
   {
-    "stt": 450,
-    "ind_name": "Dự phòng rủi  ro cho vay khách hàng",
-    "ind_code": "du_phong_rui_ro_cho_vay_khach_hang"
+    "raw_name": "Dự phòng rủi  ro cho vay khách hàng",
+    "old_ind_code": "du_phong_rui_ro_cho_vay_khach_hang",
+    "norm_name": "Dự phòng rủi ro cho vay khách hàng"
   },
   {
-    "stt": 451,
-    "ind_name": "Dự phòng rủi ro cho vay các TCTD khác",
-    "ind_code": "du_phong_rui_ro_cho_vay_cac_tctd_khac"
+    "raw_name": "Dự phòng rủi ro cho vay các TCTD khác",
+    "old_ind_code": "du_phong_rui_ro_cho_vay_cac_tctd_khac",
+    "norm_name": "Dự phòng rủi ro cho vay các tổ chức tín dụng khác"
   },
   {
-    "stt": 452,
-    "ind_name": "Dự phòng rủi ro khác",
-    "ind_code": "du_phong_rui_ro_khac"
+    "raw_name": "Dự phòng rủi ro khác",
+    "old_ind_code": "du_phong_rui_ro_khac",
+    "norm_name": "Dự phòng rủi ro khác"
   },
   {
-    "stt": 453,
-    "ind_name": "Dự phòng suy giảm giá trị các khoản phải thu (*)",
-    "ind_code": "du_phong_suy_giam_gia_tri_cac_khoan_phai_thu"
+    "raw_name": "Dự phòng suy giảm giá trị các khoản phải thu (*)",
+    "old_ind_code": "du_phong_suy_giam_gia_tri_cac_khoan_phai_thu",
+    "norm_name": "Dự phòng suy giảm giá trị các khoản phải thu"
   },
   {
-    "stt": 454,
-    "ind_name": "Dự phòng suy giảm giá trị các tài sản tài chính và tài sản thế chấp",
-    "ind_code": "du_phong_suy_giam_gia_tri_cac_tai_san_tai_chinh_va_tai_san_the_chap"
+    "raw_name": "Dự phòng suy giảm giá trị các tài sản tài chính và tài sản thế chấp",
+    "old_ind_code": "du_phong_suy_giam_gia_tri_cac_tai_san_tai_chinh_va_tai_san_the_chap",
+    "norm_name": "Dự phòng suy giảm giá trị các tài sản tài chính và tài sản thế chấp"
   },
   {
-    "stt": 455,
-    "ind_name": "Dự phòng suy giảm giá trị tài sản dài hạn",
-    "ind_code": "du_phong_suy_giam_gia_tri_tai_san_dai_han"
+    "raw_name": "Dự phòng suy giảm giá trị tài sản dài hạn",
+    "old_ind_code": "du_phong_suy_giam_gia_tri_tai_san_dai_han",
+    "norm_name": "Dự phòng suy giảm giá trị tài sản dài hạn"
   },
   {
-    "stt": 456,
-    "ind_name": "Dự phòng suy giảm giá trị tài sản ngắn hạn khác",
-    "ind_code": "du_phong_suy_giam_gia_tri_tai_san_ngan_han_khac"
+    "raw_name": "Dự phòng suy giảm giá trị tài sản ngắn hạn khác",
+    "old_ind_code": "du_phong_suy_giam_gia_tri_tai_san_ngan_han_khac",
+    "norm_name": "Dự phòng suy giảm giá trị tài sản ngắn hạn khác"
   },
   {
-    "stt": 457,
-    "ind_name": "Dự phòng thuế nhà thầu nước ngoài",
-    "ind_code": "du_phong_thue_nha_thau_nuoc_ngoai"
+    "raw_name": "Dự phòng thuế nhà thầu nước ngoài",
+    "old_ind_code": "du_phong_thue_nha_thau_nuoc_ngoai",
+    "norm_name": "Dự phòng thuế nhà thầu nước ngoài"
   },
   {
-    "stt": 458,
-    "ind_name": "Dự phòng toán học",
-    "ind_code": "du_phong_toan_hoc"
+    "raw_name": "Dự phòng toán học",
+    "old_ind_code": "du_phong_toan_hoc",
+    "norm_name": "Dự phòng toán học"
   },
   {
-    "stt": 459,
-    "ind_name": "Dự phòng trợ cấp mất việc làm",
-    "ind_code": "du_phong_tro_cap_mat_viec_lam"
+    "raw_name": "Dự phòng trợ cấp mất việc làm",
+    "old_ind_code": "du_phong_tro_cap_mat_viec_lam",
+    "norm_name": "Dự phòng trợ cấp mất việc làm"
   },
   {
-    "stt": 460,
-    "ind_name": "Dự thu cổ tức, tiền lãi chưa đến ngày nhận",
-    "ind_code": "du_thu_co_tuc_tien_lai_chua_den_ngay_nhan"
+    "raw_name": "Dự thu cổ tức, tiền lãi chưa đến ngày nhận",
+    "old_ind_code": "du_thu_co_tuc_tien_lai_chua_den_ngay_nhan",
+    "norm_name": "Dự thu cổ tức, tiền lãi chưa đến ngày nhận"
   },
   {
-    "stt": 461,
-    "ind_name": "Dự thu tiền lãi",
-    "ind_code": "du_thu_tien_lai"
+    "raw_name": "Dự thu tiền lãi",
+    "old_ind_code": "du_thu_tien_lai",
+    "norm_name": "Dự thu tiền lãi"
   },
   {
-    "stt": 462,
-    "ind_name": "Giao dịch mua bán lại trái phiếu chính phủ",
-    "ind_code": "giao_dich_mua_ban_lai_trai_phieu_chinh_phu"
+    "raw_name": "Giao dịch mua bán lại trái phiếu chính phủ",
+    "old_ind_code": "giao_dich_mua_ban_lai_trai_phieu_chinh_phu",
+    "norm_name": "Giao dịch mua bán lại trái phiếu chính phủ"
   },
   {
-    "stt": 463,
-    "ind_name": "Giá trị hao mòn lũy kế",
-    "ind_code": "gia_tri_hao_mon_luy_ke"
+    "raw_name": "Giá trị hao mòn lũy kế",
+    "old_ind_code": "gia_tri_hao_mon_luy_ke",
+    "norm_name": "Giá trị hao mòn lũy kế"
   },
   {
-    "stt": 464,
-    "ind_name": "Giá vốn hàng bán",
-    "ind_code": "gia_von_hang_ban"
+    "raw_name": "Giá vốn hàng bán",
+    "old_ind_code": "gia_von_hang_ban",
+    "norm_name": "Giá vốn hàng bán"
   },
   {
-    "stt": 465,
-    "ind_name": "Giảm các doanh thu phi tiền tệ",
-    "ind_code": "giam_cac_doanh_thu_phi_tien_te"
+    "raw_name": "Giảm các doanh thu phi tiền tệ",
+    "old_ind_code": "giam_cac_doanh_thu_phi_tien_te",
+    "norm_name": "Giảm các doanh thu phi tiền tệ"
   },
   {
-    "stt": 466,
-    "ind_name": "Giảm phí bảo hiểm",
-    "ind_code": "giam_phi_bao_hiem"
+    "raw_name": "Giảm phí bảo hiểm",
+    "old_ind_code": "giam_phi_bao_hiem",
+    "norm_name": "Giảm phí bảo hiểm"
   },
   {
-    "stt": 467,
-    "ind_name": "Góp vốn liên doanh",
-    "ind_code": "dau_tu_vao_cong_ty_lien_doanh"
+    "raw_name": "Góp vốn liên doanh",
+    "old_ind_code": "dau_tu_vao_cong_ty_lien_doanh",
+    "norm_name": "Góp vốn liên doanh"
   },
   {
-    "stt": 468,
-    "ind_name": "Góp vốn đầu tư dài hạn",
-    "ind_code": "gop_von_dau_tu_dai_han"
+    "raw_name": "Góp vốn đầu tư dài hạn",
+    "old_ind_code": "gop_von_dau_tu_dai_han",
+    "norm_name": "Góp vốn đầu tư dài hạn"
   },
   {
-    "stt": 469,
-    "ind_name": "Hoàn phí bảo hiểm",
-    "ind_code": "hoan_phi_bao_hiem"
+    "raw_name": "Hoàn phí bảo hiểm",
+    "old_ind_code": "hoan_phi_bao_hiem",
+    "norm_name": "Hoàn phí bảo hiểm"
   },
   {
-    "stt": 470,
-    "ind_name": "Hàng tồn kho",
-    "ind_code": "hang_ton_kho"
+    "raw_name": "Hàng tồn kho",
+    "old_ind_code": "hang_ton_kho",
+    "norm_name": "Hàng tồn kho"
   },
   {
-    "stt": 471,
-    "ind_name": "Khấu hao TSCĐ",
-    "ind_code": "khau_hao_tscd"
+    "raw_name": "Khấu hao TSCĐ",
+    "old_ind_code": "khau_hao_tscd",
+    "norm_name": "Khấu hao tài sản cố định"
   },
   {
-    "stt": 472,
-    "ind_name": "Khấu hao tài sản cố định",
-    "ind_code": "khau_hao_tscd"
+    "raw_name": "Khấu hao tài sản cố định",
+    "old_ind_code": "khau_hao_tscd",
+    "norm_name": "Khấu hao tài sản cố định"
   },
   {
-    "stt": 473,
-    "ind_name": "KẾT QUẢ HOẠT ĐỘNG",
-    "ind_code": "ket_qua_hoat_dong"
+    "raw_name": "KẾT QUẢ HOẠT ĐỘNG",
+    "old_ind_code": "ket_qua_hoat_dong",
+    "norm_name": "Kết quả hoạt động"
   },
   {
-    "stt": 474,
-    "ind_name": "LNST chưa phân phối kỳ này",
-    "ind_code": "lnst_chua_pp"
+    "raw_name": "LNST chưa phân phối kỳ này",
+    "old_ind_code": "lnst_chua_pp",
+    "norm_name": "Lợi nhuận sau thuế chưa phân phối kỳ này"
   },
   {
-    "stt": 475,
-    "ind_name": "LNST chưa phân phối lũy kế đến cuối kỳ trước",
-    "ind_code": "lnst_chua_pp"
+    "raw_name": "LNST chưa phân phối lũy kế đến cuối kỳ trước",
+    "old_ind_code": "lnst_chua_pp",
+    "norm_name": "Lợi nhuận sau thuế chưa phân phối lũy kế đến cuối kỳ trước"
   },
   {
-    "stt": 476,
-    "ind_name": "LNST sau khi điều chỉnh Lợi ích của CĐTS và Cổ tức ưu đãi",
-    "ind_code": "lnst_sau_khi_dieu_chinh_loi_ich_cua_cdts_va_co_tuc_uu_dai"
+    "raw_name": "LNST sau khi điều chỉnh Lợi ích của CĐTS và Cổ tức ưu đãi",
+    "old_ind_code": "lnst_sau_khi_dieu_chinh_loi_ich_cua_cdts_va_co_tuc_uu_dai",
+    "norm_name": "Lợi nhuận sau khi điều chỉnh lợi ích của cổ đông thiểu số và cổ tức ưu đãi"
   },
   {
-    "stt": 477,
-    "ind_name": "Lãi bán các tài sản tài chính",
-    "ind_code": "lai_ban_cac_tai_san_tai_chinh"
+    "raw_name": "Lãi bán các tài sản tài chính",
+    "old_ind_code": "lai_ban_cac_tai_san_tai_chinh",
+    "norm_name": "Lãi bán các tài sản tài chính"
   },
   {
-    "stt": 478,
-    "ind_name": "Lãi bán, thanh lý các khoản đầu tư vào công ty con, liên kết, liên doanh",
-    "ind_code": "lai_ban_thanh_ly_cac_khoan_dau_tu_vao_cong_ty_con_lien_ket_lien_doanh"
+    "raw_name": "Lãi bán, thanh lý các khoản đầu tư vào công ty con, liên kết, liên doanh",
+    "old_ind_code": "lai_ban_thanh_ly_cac_khoan_dau_tu_vao_cong_ty_con_lien_ket_lien_doanh",
+    "norm_name": "Lãi bán, thanh lý các khoản đầu tư vào công ty con, liên kết, liên doanh"
   },
   {
-    "stt": 479,
-    "ind_name": "Lãi cơ bản trên cổ phiếu (Đồng/1 cổ phiếu)",
-    "ind_code": "lai_co_ban_tren_co_phieu"
+    "raw_name": "Lãi cơ bản trên cổ phiếu (Đồng/1 cổ phiếu)",
+    "old_ind_code": "lai_co_ban_tren_co_phieu",
+    "norm_name": "Lãi cơ bản trên cổ phiếu"
   },
   {
-    "stt": 480,
-    "ind_name": "Lãi lỗ từ hoạt động đầu tư",
-    "ind_code": "lai_lo_tu_hoat_dong_dau_tu"
+    "raw_name": "Lãi lỗ từ hoạt động đầu tư",
+    "old_ind_code": "lai_lo_tu_hoat_dong_dau_tu",
+    "norm_name": "Lãi lỗ từ hoạt động đầu tư"
   },
   {
-    "stt": 481,
-    "ind_name": "Lãi tiền gửi",
-    "ind_code": "lai_tien_gui"
+    "raw_name": "Lãi tiền gửi",
+    "old_ind_code": "lai_tien_gui",
+    "norm_name": "Lãi tiền gửi"
   },
   {
-    "stt": 482,
-    "ind_name": "Lãi tiền gửi đã thu",
-    "ind_code": "lai_tien_gui_da_thu"
+    "raw_name": "Lãi tiền gửi đã thu",
+    "old_ind_code": "lai_tien_gui_da_thu",
+    "norm_name": "Lãi tiền gửi đã thu"
   },
   {
-    "stt": 483,
-    "ind_name": "Lãi từ các khoản cho vay và phải thu",
-    "ind_code": "lai_tu_cac_khoan_cho_vay_va_phai_thu"
+    "raw_name": "Lãi từ các khoản cho vay và phải thu",
+    "old_ind_code": "lai_tu_cac_khoan_cho_vay_va_phai_thu",
+    "norm_name": "Lãi từ các khoản cho vay và phải thu"
   },
   {
-    "stt": 484,
-    "ind_name": "Lãi từ các khoản đầu tư nắm giữ đến ngày đáo hạn (HTM)",
-    "ind_code": "chung_khoan_dau_tu_giu_den_ngay_dao_han"
+    "raw_name": "Lãi từ các khoản đầu tư nắm giữ đến ngày đáo hạn (HTM)",
+    "old_ind_code": "chung_khoan_dau_tu_giu_den_ngay_dao_han",
+    "norm_name": "Lãi từ các khoản đầu tư nắm giữ đến ngày đáo hạn (HTM)"
   },
   {
-    "stt": 485,
-    "ind_name": "Lãi từ các tài sản tài chính ghi nhận thông qua lãi/lỗ (FVTPL)",
-    "ind_code": "lai_tu_cac_tai_san_tai_chinh_ghi_nhan_thong_qua_lai_lo_fvtpl"
+    "raw_name": "Lãi từ các tài sản tài chính ghi nhận thông qua lãi/lỗ (FVTPL)",
+    "old_ind_code": "lai_tu_cac_tai_san_tai_chinh_ghi_nhan_thong_qua_lai_lo_fvtpl",
+    "norm_name": "Lãi từ các tài sản tài chính ghi nhận thông qua lãi/lỗ (FVTPL)"
   },
   {
-    "stt": 486,
-    "ind_name": "Lãi từ các tài sản tài chính sẵn sàng để bán (AFS)",
-    "ind_code": "chung_khoan_dau_tu_san_sang_de_ban"
+    "raw_name": "Lãi từ các tài sản tài chính sẵn sàng để bán (AFS)",
+    "old_ind_code": "chung_khoan_dau_tu_san_sang_de_ban",
+    "norm_name": "Lãi từ các tài sản tài chính sẵn sàng để bán (AFS)"
   },
   {
-    "stt": 487,
-    "ind_name": "Lãi từ thanh lý các tài sản tài chính sẵn sàng để bán",
-    "ind_code": "chung_khoan_dau_tu_san_sang_de_ban"
+    "raw_name": "Lãi từ thanh lý các tài sản tài chính sẵn sàng để bán",
+    "old_ind_code": "chung_khoan_dau_tu_san_sang_de_ban",
+    "norm_name": "Lãi từ thanh lý các tài sản tài chính sẵn sàng để bán"
   },
   {
-    "stt": 488,
-    "ind_name": "Lãi đánh giá giá trị các tài sản tài chính ghi nhận thông qua kết quả kinh doanh",
-    "ind_code": "lai_danh_gia_gia_tri_cac_tai_san_tai_chinh_ghi_nhan_thong_qua_ket_qua_kinh_doanh"
+    "raw_name": "Lãi đánh giá giá trị các tài sản tài chính ghi nhận thông qua kết quả kinh doanh",
+    "old_ind_code": "lai_danh_gia_gia_tri_cac_tai_san_tai_chinh_ghi_nhan_thong_qua_ket_qua_kinh_doanh",
+    "norm_name": "Lãi đánh giá giá trị các tài sản tài chính ghi nhận thông qua kết quả kinh doanh"
   },
   {
-    "stt": 489,
-    "ind_name": "Lãi, lỗ chênh lệch tỷ giá hối đoái",
-    "ind_code": "lai_lo_chenh_lech_ty_gia_hoi_doai"
+    "raw_name": "Lãi, lỗ chênh lệch tỷ giá hối đoái",
+    "old_ind_code": "lai_lo_chenh_lech_ty_gia_hoi_doai",
+    "norm_name": "Lãi/lỗ chênh lệch tỷ giá hối đoái"
   },
   {
-    "stt": 490,
-    "ind_name": "Lãi, lỗ chênh lệch tỷ giá hối đoái chưa thực hiện",
-    "ind_code": "lai_lo_chenh_lech_ty_gia_hoi_doai_chua_thuc_hien"
+    "raw_name": "Lãi, lỗ chênh lệch tỷ giá hối đoái chưa thực hiện",
+    "old_ind_code": "lai_lo_chenh_lech_ty_gia_hoi_doai_chua_thuc_hien",
+    "norm_name": "Lãi/lỗ chênh lệch tỷ giá hối đoái chưa thực hiện"
   },
   {
-    "stt": 491,
-    "ind_name": "Lãi, lỗ từ hoạt động đầu tư",
-    "ind_code": "lai_lo_tu_hoat_dong_dau_tu"
+    "raw_name": "Lãi, lỗ từ hoạt động đầu tư",
+    "old_ind_code": "lai_lo_tu_hoat_dong_dau_tu",
+    "norm_name": "Lãi/lỗ từ hoạt động đầu tư"
   },
   {
-    "stt": 492,
-    "ind_name": "Lãi, lỗ từ hoạt động đầu tư (đầu tư công ty con, liên doanh, liên kết)",
-    "ind_code": "lai_lo_tu_hoat_dong_dau_tu_dau_tu_cong_ty_con_lien_doanh_lien_ket"
+    "raw_name": "Lãi, lỗ từ hoạt động đầu tư (đầu tư công ty con, liên doanh, liên kết)",
+    "old_ind_code": "lai_lo_tu_hoat_dong_dau_tu_dau_tu_cong_ty_con_lien_doanh_lien_ket",
+    "norm_name": "Lãi/lỗ từ hoạt động đầu tư (đầu tư công ty con, liên doanh, liên kết)"
   },
   {
-    "stt": 493,
-    "ind_name": "Lãi, lỗ từ thanh lý TSCĐ",
-    "ind_code": "lai_lo_tu_thanh_ly_tscd"
+    "raw_name": "Lãi, lỗ từ thanh lý TSCĐ",
+    "old_ind_code": "lai_lo_tu_thanh_ly_tscd",
+    "norm_name": "Lãi/lỗ từ thanh lý tài sản cố định"
   },
   {
-    "stt": 494,
-    "ind_name": "Lãi, lỗ đánh giá công cụ phái sinh",
-    "ind_code": "lai_lo_danh_gia_cong_cu_phai_sinh"
+    "raw_name": "Lãi, lỗ đánh giá công cụ phái sinh",
+    "old_ind_code": "lai_lo_danh_gia_cong_cu_phai_sinh",
+    "norm_name": "Lãi/lỗ đánh giá công cụ phái sinh"
   },
   {
-    "stt": 495,
-    "ind_name": "Lãi/(Lỗ) từ đánh giá lại các các khoản đầu tư giữ đến ngày đáo hạn",
-    "ind_code": "chung_khoan_dau_tu_giu_den_ngay_dao_han"
+    "raw_name": "Lãi/(Lỗ) từ đánh giá lại các các khoản đầu tư giữ đến ngày đáo hạn",
+    "old_ind_code": "chung_khoan_dau_tu_giu_den_ngay_dao_han",
+    "norm_name": "Lãi/lỗ từ đánh giá lại các các khoản đầu tư giữ đến ngày đáo hạn"
   },
   {
-    "stt": 496,
-    "ind_name": "Lãi/(Lỗ) từ đánh giá lại các tài sản tài chính sẵn sàng để bán",
-    "ind_code": "chung_khoan_dau_tu_san_sang_de_ban"
+    "raw_name": "Lãi/(Lỗ) từ đánh giá lại các tài sản tài chính sẵn sàng để bán",
+    "old_ind_code": "chung_khoan_dau_tu_san_sang_de_ban",
+    "norm_name": "Lãi/lỗ từ đánh giá lại các tài sản tài chính sẵn sàng để bán"
   },
   {
-    "stt": 497,
-    "ind_name": "Lãi/(lỗ) chênh lệch tỷ giá của hoạt động tại nước ngoài",
-    "ind_code": "lai_lo_chenh_lech_ty_gia_cua_hoat_dong_tai_nuoc_ngoai"
+    "raw_name": "Lãi/(lỗ) chênh lệch tỷ giá của hoạt động tại nước ngoài",
+    "old_ind_code": "lai_lo_chenh_lech_ty_gia_cua_hoat_dong_tai_nuoc_ngoai",
+    "norm_name": "Lãi/lỗ chênh lệch tỷ giá của hoạt động tại nước ngoài"
   },
   {
-    "stt": 498,
-    "ind_name": "Lãi/Lỗ thuần từ hoạt động dịch vụ",
-    "ind_code": "tn_dv"
+    "raw_name": "Lãi/Lỗ thuần từ hoạt động dịch vụ",
+    "old_ind_code": "tn_dv",
+    "norm_name": "Lãi/lỗ thuần từ hoạt động dịch vụ"
   },
   {
-    "stt": 499,
-    "ind_name": "Lãi/Lỗ thuần từ hoạt động khác",
-    "ind_code": "lai_lo_thuan_tu_hoat_dong_khac"
+    "raw_name": "Lãi/Lỗ thuần từ hoạt động khác",
+    "old_ind_code": "lai_lo_thuan_tu_hoat_dong_khac",
+    "norm_name": "Lãi/lỗ thuần từ hoạt động khác"
   },
   {
-    "stt": 500,
-    "ind_name": "Lãi/Lỗ thuần từ hoạt động kinh doanh ngoại hối",
-    "ind_code": "lai_lo_thuan_tu_hoat_dong_kinh_doanh_ngoai_hoi"
+    "raw_name": "Lãi/Lỗ thuần từ hoạt động kinh doanh ngoại hối",
+    "old_ind_code": "lai_lo_thuan_tu_hoat_dong_kinh_doanh_ngoai_hoi",
+    "norm_name": "Lãi/lỗ thuần từ hoạt động kinh doanh ngoại hối"
   },
   {
-    "stt": 501,
-    "ind_name": "Lãi/Lỗ thuần từ mua bán chứng khoán kinh doanh",
-    "ind_code": "lai_lo_thuan_tu_mua_ban_chung_khoan_kinh_doanh"
+    "raw_name": "Lãi/Lỗ thuần từ mua bán chứng khoán kinh doanh",
+    "old_ind_code": "lai_lo_thuan_tu_mua_ban_chung_khoan_kinh_doanh",
+    "norm_name": "Lãi/lỗ thuần từ mua bán chứng khoán kinh doanh"
   },
   {
-    "stt": 502,
-    "ind_name": "Lãi/Lỗ thuần từ mua bán chứng khoán đầu tư",
-    "ind_code": "lai_lo_thuan_tu_mua_ban_chung_khoan_dau_tu"
+    "raw_name": "Lãi/Lỗ thuần từ mua bán chứng khoán đầu tư",
+    "old_ind_code": "lai_lo_thuan_tu_mua_ban_chung_khoan_dau_tu",
+    "norm_name": "Lãi/lỗ thuần từ mua bán chứng khoán đầu tư"
   },
   {
-    "stt": 503,
-    "ind_name": "Lưu chuyển tiền thuần trong kỳ",
-    "ind_code": "luu_chuyen_tien_thuan_trong_ky"
+    "raw_name": "Lưu chuyển tiền thuần trong kỳ",
+    "old_ind_code": "luu_chuyen_tien_thuan_trong_ky",
+    "norm_name": "Lưu chuyển tiền thuần trong kỳ"
   },
   {
-    "stt": 504,
-    "ind_name": "Lưu chuyển tiền thuần từ hoạt động kinh doanh",
-    "ind_code": "luu_chuyen_tien_thuan_tu_hdkd"
+    "raw_name": "Lưu chuyển tiền thuần từ hoạt động kinh doanh",
+    "old_ind_code": "luu_chuyen_tien_thuan_tu_hdkd",
+    "norm_name": "Lưu chuyển tiền thuần từ hoạt động kinh doanh"
   },
   {
-    "stt": 505,
-    "ind_name": "Lưu chuyển tiền thuần từ hoạt động kinh doanh trước những thay đổi về tài sản và vốn lưu động",
-    "ind_code": "luu_chuyen_tien_thuan_tu_hdkd_truoc_thay_doi_vld"
+    "raw_name": "Lưu chuyển tiền thuần từ hoạt động kinh doanh trước những thay đổi về tài sản và vốn lưu động",
+    "old_ind_code": "luu_chuyen_tien_thuan_tu_hdkd_truoc_thay_doi_vld",
+    "norm_name": "Lưu chuyển tiền thuần từ hoạt động kinh doanh trước những thay đổi về tài sản và vốn lưu động"
   },
   {
-    "stt": 506,
-    "ind_name": "Lưu chuyển tiền thuần từ hoạt động tài chính",
-    "ind_code": "luu_chuyen_tien_thuan_tu_hd_tai_chinh"
+    "raw_name": "Lưu chuyển tiền thuần từ hoạt động tài chính",
+    "old_ind_code": "luu_chuyen_tien_thuan_tu_hd_tai_chinh",
+    "norm_name": "Lưu chuyển tiền thuần từ hoạt động tài chính"
   },
   {
-    "stt": 507,
-    "ind_name": "Lưu chuyển tiền thuần từ hoạt động đầu tư",
-    "ind_code": "lctt_thuan_hd_dt"
+    "raw_name": "Lưu chuyển tiền thuần từ hoạt động đầu tư",
+    "old_ind_code": "lctt_thuan_hd_dt",
+    "norm_name": "Lưu chuyển tiền thuần từ hoạt động đầu tư"
   },
   {
-    "stt": 508,
-    "ind_name": "Lưu chuyển tiền từ hoạt động tài chính",
-    "ind_code": "luu_chuyen_tien_tu_hoat_dong_tai_chinh"
+    "raw_name": "Lưu chuyển tiền từ hoạt động tài chính",
+    "old_ind_code": "luu_chuyen_tien_tu_hoat_dong_tai_chinh",
+    "norm_name": "Lưu chuyển tiền từ hoạt động tài chính"
   },
   {
-    "stt": 509,
-    "ind_name": "Lỗ bán các tài sản tài chính",
-    "ind_code": "lo_ban_cac_tai_san_tai_chinh"
+    "raw_name": "Lỗ bán các tài sản tài chính",
+    "old_ind_code": "lo_ban_cac_tai_san_tai_chinh",
+    "norm_name": "Lỗ bán các tài sản tài chính"
   },
   {
-    "stt": 510,
-    "ind_name": "Lỗ bán các tài sản tài chính sẵn sàng để bán (AFS)",
-    "ind_code": "chung_khoan_dau_tu_san_sang_de_ban"
+    "raw_name": "Lỗ bán các tài sản tài chính sẵn sàng để bán (AFS)",
+    "old_ind_code": "chung_khoan_dau_tu_san_sang_de_ban",
+    "norm_name": "Lỗ bán các tài sản tài chính sẵn sàng để bán (AFS)"
   },
   {
-    "stt": 511,
-    "ind_name": "Lỗ bán, thanh lý các khoản đầu tư vào công ty con, liên kết, liên doanh",
-    "ind_code": "lo_ban_thanh_ly_cac_khoan_dau_tu_vao_cong_ty_con_lien_ket_lien_doanh"
+    "raw_name": "Lỗ bán, thanh lý các khoản đầu tư vào công ty con, liên kết, liên doanh",
+    "old_ind_code": "lo_ban_thanh_ly_cac_khoan_dau_tu_vao_cong_ty_con_lien_ket_lien_doanh",
+    "norm_name": "Lỗ bán, thanh lý các khoản đầu tư vào công ty con, liên kết, liên doanh"
   },
   {
-    "stt": 512,
-    "ind_name": "Lỗ các khoản đầu tư nắm giữ đến ngày đáo hạn (HTM)",
-    "ind_code": "chung_khoan_dau_tu_giu_den_ngay_dao_han"
+    "raw_name": "Lỗ các khoản đầu tư nắm giữ đến ngày đáo hạn (HTM)",
+    "old_ind_code": "chung_khoan_dau_tu_giu_den_ngay_dao_han",
+    "norm_name": "Lỗ các khoản đầu tư nắm giữ đến ngày đáo hạn (HTM)"
   },
   {
-    "stt": 513,
-    "ind_name": "Lỗ các tài sản tài chính ghi nhận thông qua lãi/lỗ (FVTPL)",
-    "ind_code": "lo_cac_tai_san_tai_chinh_ghi_nhan_thong_qua_lai_lo_fvtpl"
+    "raw_name": "Lỗ các tài sản tài chính ghi nhận thông qua lãi/lỗ (FVTPL)",
+    "old_ind_code": "lo_cac_tai_san_tai_chinh_ghi_nhan_thong_qua_lai_lo_fvtpl",
+    "norm_name": "Lỗ các tài sản tài chính ghi nhận thông qua lãi/lỗ (FVTPL)"
   },
   {
-    "stt": 514,
-    "ind_name": "Lỗ từ thanh lý các tài sản tài chính sẵn sàng để bán",
-    "ind_code": "chung_khoan_dau_tu_san_sang_de_ban"
+    "raw_name": "Lỗ từ thanh lý các tài sản tài chính sẵn sàng để bán",
+    "old_ind_code": "chung_khoan_dau_tu_san_sang_de_ban",
+    "norm_name": "Lỗ từ thanh lý các tài sản tài chính sẵn sàng để bán"
   },
   {
-    "stt": 515,
-    "ind_name": "Lỗ đánh giá giá trị các công cụ tài chính phái sinh",
-    "ind_code": "lo_danh_gia_gia_tri_cac_cong_cu_tai_chinh_phai_sinh"
+    "raw_name": "Lỗ đánh giá giá trị các công cụ tài chính phái sinh",
+    "old_ind_code": "lo_danh_gia_gia_tri_cac_cong_cu_tai_chinh_phai_sinh",
+    "norm_name": "Lỗ đánh giá giá trị các công cụ tài chính phái sinh"
   },
   {
-    "stt": 516,
-    "ind_name": "Lỗ đánh giá giá trị các công cụ tài chính phái sinh cho mục đích phòng ngừa rủi ro",
-    "ind_code": "lo_danh_gia_gia_tri_cac_cong_cu_tai_chinh_phai_sinh_cho_muc_dich_phong_ngua_rui_ro"
+    "raw_name": "Lỗ đánh giá giá trị các công cụ tài chính phái sinh cho mục đích phòng ngừa rủi ro",
+    "old_ind_code": "lo_danh_gia_gia_tri_cac_cong_cu_tai_chinh_phai_sinh_cho_muc_dich_phong_ngua_rui_ro",
+    "norm_name": "Lỗ đánh giá giá trị các công cụ tài chính phái sinh cho mục đích phòng ngừa rủi ro"
   },
   {
-    "stt": 517,
-    "ind_name": "Lỗ đánh giá giá trị các công nợ tài chính ghi nhận thông qua kết quả kinh doanh",
-    "ind_code": "lo_danh_gia_gia_tri_cac_cong_no_tai_chinh_ghi_nhan_thong_qua_ket_qua_kinh_doanh"
+    "raw_name": "Lỗ đánh giá giá trị các công nợ tài chính ghi nhận thông qua kết quả kinh doanh",
+    "old_ind_code": "lo_danh_gia_gia_tri_cac_cong_no_tai_chinh_ghi_nhan_thong_qua_ket_qua_kinh_doanh",
+    "norm_name": "Lỗ đánh giá giá trị các công nợ tài chính ghi nhận thông qua kết quả kinh doanh"
   },
   {
-    "stt": 518,
-    "ind_name": "Lỗ đánh giá giá trị các tài sản tài chính ghi nhận thông qua kết quả kinh doanh",
-    "ind_code": "lo_danh_gia_gia_tri_cac_tai_san_tai_chinh_ghi_nhan_thong_qua_ket_qua_kinh_doanh"
+    "raw_name": "Lỗ đánh giá giá trị các tài sản tài chính ghi nhận thông qua kết quả kinh doanh",
+    "old_ind_code": "lo_danh_gia_gia_tri_cac_tai_san_tai_chinh_ghi_nhan_thong_qua_ket_qua_kinh_doanh",
+    "norm_name": "Lỗ đánh giá giá trị các tài sản tài chính ghi nhận thông qua kết quả kinh doanh"
   },
   {
-    "stt": 519,
-    "ind_name": "LỢI NHUẬN KẾ TOÁN SAU THUẾ TNDN",
-    "ind_code": "loi_nhuan_ke_toan_sau_thue_tndn"
+    "raw_name": "LỢI NHUẬN KẾ TOÁN SAU THUẾ TNDN",
+    "old_ind_code": "loi_nhuan_ke_toan_sau_thue_tndn",
+    "norm_name": "Lợi nhuận kế toán sau thuế thu nhập doanh nghiệp"
   },
   {
-    "stt": 520,
-    "ind_name": "LỢI NHUẬN ĐÃ PHÂN PHỐI CHO NHÀ ĐẦU TƯ",
-    "ind_code": "loi_nhuan_da_phan_phoi_cho_nha_dau_tu"
+    "raw_name": "LỢI NHUẬN ĐÃ PHÂN PHỐI CHO NHÀ ĐẦU TƯ",
+    "old_ind_code": "loi_nhuan_da_phan_phoi_cho_nha_dau_tu",
+    "norm_name": "Lợi nhuận đã phân phối cho nhà đầu tư"
   },
   {
-    "stt": 521,
-    "ind_name": "LỢI ÍCH CỔ ĐÔNG THIỂU SỐ",
-    "ind_code": "loi_ich_cd_ts"
+    "raw_name": "LỢI ÍCH CỔ ĐÔNG THIỂU SỐ",
+    "old_ind_code": "loi_ich_cd_ts",
+    "norm_name": "Lợi ích của cổ đông không kiểm soát"
   },
   {
-    "stt": 522,
-    "ind_name": "Lợi nhuận chưa phân phối",
-    "ind_code": "lnst_chua_pp"
+    "raw_name": "Lợi nhuận chưa phân phối",
+    "old_ind_code": "lnst_chua_pp",
+    "norm_name": "Lợi nhuận chưa phân phối"
   },
   {
-    "stt": 523,
-    "ind_name": "Lợi nhuận chưa phân phối/Lỗ lũy kế",
-    "ind_code": "loi_nhuan_chua_phan_phoi_lo_luy_ke"
+    "raw_name": "Lợi nhuận chưa phân phối/Lỗ lũy kế",
+    "old_ind_code": "loi_nhuan_chua_phan_phoi_lo_luy_ke",
+    "norm_name": "Lợi nhuận chưa phân phối/Lỗ lũy kế"
   },
   {
-    "stt": 524,
-    "ind_name": "Lợi nhuận chưa thực hiện",
-    "ind_code": "loi_nhuan_chua_thuc_hien"
+    "raw_name": "Lợi nhuận chưa thực hiện",
+    "old_ind_code": "loi_nhuan_chua_thuc_hien",
+    "norm_name": "Lợi nhuận chưa thực hiện"
   },
   {
-    "stt": 525,
-    "ind_name": "Lợi nhuận chịu thuế thu nhập doanh nghiệp",
-    "ind_code": "loi_nhuan_chiu_thue_thu_nhap_doanh_nghiep"
+    "raw_name": "Lợi nhuận chịu thuế thu nhập doanh nghiệp",
+    "old_ind_code": "loi_nhuan_chiu_thue_thu_nhap_doanh_nghiep",
+    "norm_name": "Lợi nhuận chịu thuế thu nhập doanh nghiệp"
   },
   {
-    "stt": 526,
-    "ind_name": "Lợi nhuận gộp (3)-(4)",
-    "ind_code": "ln_gop"
+    "raw_name": "Lợi nhuận gộp (3)-(4)",
+    "old_ind_code": "ln_gop",
+    "norm_name": "Lợi nhuận gộp -"
   },
   {
-    "stt": 527,
-    "ind_name": "Lợi nhuận gộp hoạt động kinh doanh bảo hiểm",
-    "ind_code": "ln_gop"
+    "raw_name": "Lợi nhuận gộp hoạt động kinh doanh bảo hiểm",
+    "old_ind_code": "ln_gop",
+    "norm_name": "Lợi nhuận gộp hoạt động kinh doanh bảo hiểm"
   },
   {
-    "stt": 528,
-    "ind_name": "Lợi nhuận hoạt động khác",
-    "ind_code": "loi_nhuan_hoat_dong_khac"
+    "raw_name": "Lợi nhuận hoạt động khác",
+    "old_ind_code": "loi_nhuan_hoat_dong_khac",
+    "norm_name": "Lợi nhuận hoạt động khác"
   },
   {
-    "stt": 529,
-    "ind_name": "Lợi nhuận hoạt động tài chính",
-    "ind_code": "loi_nhuan_hoat_dong_tai_chinh"
+    "raw_name": "Lợi nhuận hoạt động tài chính",
+    "old_ind_code": "loi_nhuan_hoat_dong_tai_chinh",
+    "norm_name": "Lợi nhuận hoạt động tài chính"
   },
   {
-    "stt": 530,
-    "ind_name": "Lợi nhuận khác (12)-(13)",
-    "ind_code": "loi_nhuan_khac_12_13"
+    "raw_name": "Lợi nhuận khác (12)-(13)",
+    "old_ind_code": "loi_nhuan_khac_12_13",
+    "norm_name": "Lợi nhuận khác -"
   },
   {
-    "stt": 531,
-    "ind_name": "Lợi nhuận sau thuế chưa phân phối",
-    "ind_code": "lnst_chua_pp"
+    "raw_name": "Lợi nhuận sau thuế chưa phân phối",
+    "old_ind_code": "lnst_chua_pp",
+    "norm_name": "Lợi nhuận sau thuế chưa phân phối"
   },
   {
-    "stt": 532,
-    "ind_name": "Lợi nhuận sau thuế của cổ đông công ty mẹ",
-    "ind_code": "loi_nhuan_sau_thue_cua_co_dong_cong_ty_me"
+    "raw_name": "Lợi nhuận sau thuế của cổ đông công ty mẹ",
+    "old_ind_code": "loi_nhuan_sau_thue_cua_co_dong_cong_ty_me",
+    "norm_name": "Lợi nhuận sau thuế của cổ đông công ty mẹ"
   },
   {
-    "stt": 533,
-    "ind_name": "Lợi nhuận sau thuế của cổ đông của công ty mẹ (19)-(20)",
-    "ind_code": "loi_nhuan_sau_thue_cua_co_dong_cong_ty_me"
+    "raw_name": "Lợi nhuận sau thuế của cổ đông của công ty mẹ (19)-(20)",
+    "old_ind_code": "loi_nhuan_sau_thue_cua_co_dong_cong_ty_me",
+    "norm_name": "Lợi nhuận sau thuế của cổ đông của công ty mẹ -"
   },
   {
-    "stt": 534,
-    "ind_name": "Lợi nhuận sau thuế của cổ đông không kiểm soát",
-    "ind_code": "loi_nhuan_sau_thue_cua_co_dong_khong_kiem_soat"
+    "raw_name": "Lợi nhuận sau thuế của cổ đông không kiểm soát",
+    "old_ind_code": "loi_nhuan_sau_thue_cua_co_dong_khong_kiem_soat",
+    "norm_name": "Lợi nhuận sau thuế của cổ đông không kiểm soát"
   },
   {
-    "stt": 535,
-    "ind_name": "Lợi nhuận sau thuế phân bổ cho chủ sở hữu",
-    "ind_code": "loi_nhuan_sau_thue_phan_bo_cho_chu_so_huu"
+    "raw_name": "Lợi nhuận sau thuế phân bổ cho chủ sở hữu",
+    "old_ind_code": "loi_nhuan_sau_thue_phan_bo_cho_chu_so_huu",
+    "norm_name": "Lợi nhuận sau thuế của chủ sở hữu"
   },
   {
-    "stt": 536,
-    "ind_name": "Lợi nhuận sau thuế thu nhập doanh nghiệp",
-    "ind_code": "loi_nhuan_sau_thue_thu_nhap_dn"
+    "raw_name": "Lợi nhuận sau thuế thu nhập doanh nghiệp",
+    "old_ind_code": "loi_nhuan_sau_thue_thu_nhap_dn",
+    "norm_name": "Lợi nhuận sau thuế thu nhập doanh nghiệp"
   },
   {
-    "stt": 537,
-    "ind_name": "Lợi nhuận sau thuế thu nhập doanh nghiệp (15)-(18)",
-    "ind_code": "loi_nhuan_sau_thue_thu_nhap_dn"
+    "raw_name": "Lợi nhuận sau thuế thu nhập doanh nghiệp (15)-(18)",
+    "old_ind_code": "loi_nhuan_sau_thue_thu_nhap_dn",
+    "norm_name": "Lợi nhuận sau thuế thu nhập doanh nghiệp -"
   },
   {
-    "stt": 538,
-    "ind_name": "Lợi nhuận sau thuế trích các Quỹ dự trữ điều lệ, Quỹ Dự phòng tài chính và rủi ro nghề nghiệp theo quy định của Điều lệ Công ty là %)",
-    "ind_code": "loi_nhuan_sau_thue_trich_cac_quy_du_tru_dieu_le_quy_du_phong_tai_chinh_va_rui_ro_nghe_nghiep_theo_quy_dinh_cua_dieu_le_c"
+    "raw_name": "Lợi nhuận sau thuế trích các Quỹ dự trữ điều lệ, Quỹ Dự phòng tài chính và rủi ro nghề nghiệp theo quy định của Điều lệ Công ty là %)",
+    "old_ind_code": "loi_nhuan_sau_thue_trich_cac_quy_du_tru_dieu_le_quy_du_phong_tai_chinh_va_rui_ro_nghe_nghiep_theo_quy_dinh_cua_dieu_le_c",
+    "norm_name": "Lợi nhuận sau thuế trích các Quỹ dự trữ điều lệ, Quỹ Dự phòng tài chính và rủi ro nghề nghiệp theo quy định của Điều lệ Công ty là %)"
   },
   {
-    "stt": 539,
-    "ind_name": "Lợi nhuận thuần hoạt động kinh doanh bảo hiểm",
-    "ind_code": "loi_nhuan_thuan_hoat_dong_kinh_doanh_bao_hiem"
+    "raw_name": "Lợi nhuận thuần hoạt động kinh doanh bảo hiểm",
+    "old_ind_code": "loi_nhuan_thuan_hoat_dong_kinh_doanh_bao_hiem",
+    "norm_name": "Lợi nhuận thuần hoạt động kinh doanh bảo hiểm"
   },
   {
-    "stt": 540,
-    "ind_name": "Lợi nhuận thuần phân bổ cho lợi ích của cổ đông không kiểm soát",
-    "ind_code": "loi_ich_cd_ts"
+    "raw_name": "Lợi nhuận thuần phân bổ cho lợi ích của cổ đông không kiểm soát",
+    "old_ind_code": "loi_ich_cd_ts",
+    "norm_name": "Lợi nhuận thuần phân bổ cho lợi ích của cổ đông không kiểm soát"
   },
   {
-    "stt": 541,
-    "ind_name": "Lợi nhuận thuần từ hoạt động kinh doanh (5)+(6)-(7)+(8)-(9)-(10)",
-    "ind_code": "loi_nhuan_thuan_tu_hoat_dong_kinh_doanh_5_6_7_8_9_10"
+    "raw_name": "Lợi nhuận thuần từ hoạt động kinh doanh (5)+(6)-(7)+(8)-(9)-(10)",
+    "old_ind_code": "loi_nhuan_thuan_tu_hoat_dong_kinh_doanh_5_6_7_8_9_10",
+    "norm_name": "Lợi nhuận thuần từ hoạt động kinh doanh + - + - -"
   },
   {
-    "stt": 542,
-    "ind_name": "Lợi nhuận thuần từ đầu tư vào công ty liên kết",
-    "ind_code": "loi_nhuan_thuan_tu_dau_tu_vao_cong_ty_lien_ket"
+    "raw_name": "Lợi nhuận thuần từ đầu tư vào công ty liên kết",
+    "old_ind_code": "loi_nhuan_thuan_tu_dau_tu_vao_cong_ty_lien_ket",
+    "norm_name": "Lợi nhuận thuần từ đầu tư vào công ty liên kết"
   },
   {
-    "stt": 543,
-    "ind_name": "Lợi nhuận trước Thuế Thu nhập doanh nghiệp",
-    "ind_code": "lntt"
+    "raw_name": "Lợi nhuận trước Thuế Thu nhập doanh nghiệp",
+    "old_ind_code": "lntt",
+    "norm_name": "Lợi nhuận trước Thuế Thu nhập doanh nghiệp"
   },
   {
-    "stt": 544,
-    "ind_name": "Lợi nhuận trước thuế",
-    "ind_code": "lntt"
+    "raw_name": "Lợi nhuận trước thuế",
+    "old_ind_code": "lntt",
+    "norm_name": "Lợi nhuận trước thuế"
   },
   {
-    "stt": 545,
-    "ind_name": "Lợi nhuận từ HDKD trước chi phí dự phòng rủi ro tín dụng",
-    "ind_code": "ln_tu_hdkd_truoc_cf_du_phong"
+    "raw_name": "Lợi nhuận từ HDKD trước chi phí dự phòng rủi ro tín dụng",
+    "old_ind_code": "ln_tu_hdkd_truoc_cf_du_phong",
+    "norm_name": "Lợi nhuận từ hoạt động kinh doanh trước chi phí dự phòng rủi ro tín dụng"
   },
   {
-    "stt": 546,
-    "ind_name": "Lợi nhuận từ hoạt động kinh doanh trước thay đổi vốn lưu động",
-    "ind_code": "loi_nhuan_tu_hdkd_truoc_thay_doi_von_luu_dong"
+    "raw_name": "Lợi nhuận từ hoạt động kinh doanh trước thay đổi vốn lưu động",
+    "old_ind_code": "loi_nhuan_tu_hdkd_truoc_thay_doi_von_luu_dong",
+    "norm_name": "Lợi nhuận từ hoạt động kinh doanh trước thay đổi vốn lưu động"
   },
   {
-    "stt": 547,
-    "ind_name": "Lợi nhuận đã phân phối cho Nhà đầu tư trong năm",
-    "ind_code": "loi_nhuan_da_phan_phoi_cho_nha_dau_tu_trong_nam"
+    "raw_name": "Lợi nhuận đã phân phối cho Nhà đầu tư trong năm",
+    "old_ind_code": "loi_nhuan_da_phan_phoi_cho_nha_dau_tu_trong_nam",
+    "norm_name": "Lợi nhuận đã phân phối cho Nhà đầu tư trong năm"
   },
   {
-    "stt": 548,
-    "ind_name": "Lợi nhuận đã thực hiện",
-    "ind_code": "loi_nhuan_da_thuc_hien"
+    "raw_name": "Lợi nhuận đã thực hiện",
+    "old_ind_code": "loi_nhuan_da_thuc_hien",
+    "norm_name": "Lợi nhuận đã thực hiện"
   },
   {
-    "stt": 549,
-    "ind_name": "Lợi thế thương mại",
-    "ind_code": "loi_the_tm"
+    "raw_name": "Lợi thế thương mại",
+    "old_ind_code": "loi_the_tm",
+    "norm_name": "Lợi thế thương mại"
   },
   {
-    "stt": 550,
-    "ind_name": "Lợi ích cổ đông thiểu số",
-    "ind_code": "loi_ich_cd_ts"
+    "raw_name": "Lợi ích cổ đông thiểu số",
+    "old_ind_code": "loi_ich_cd_ts",
+    "norm_name": "Lợi ích của cổ đông không kiểm soát"
   },
   {
-    "stt": 551,
-    "ind_name": "Lợi ích của cổ đông không kiểm soát",
-    "ind_code": "loi_ich_cd_ts"
+    "raw_name": "Lợi ích của cổ đông không kiểm soát",
+    "old_ind_code": "loi_ich_cd_ts",
+    "norm_name": "Lợi ích của cổ đông không kiểm soát"
   },
   {
-    "stt": 552,
-    "ind_name": "Lợi ích của cổ đông không nắm quyền kiểm soát",
-    "ind_code": "loi_ich_cd_ts"
+    "raw_name": "Lợi ích của cổ đông không nắm quyền kiểm soát",
+    "old_ind_code": "loi_ich_cd_ts",
+    "norm_name": "Lợi ích của cổ đông không kiểm soát"
   },
   {
-    "stt": 553,
-    "ind_name": "Lợi ích của cổ đông thiểu số và cổ tức ưu đãi",
-    "ind_code": "loi_ich_cd_ts"
+    "raw_name": "Lợi ích của cổ đông thiểu số và cổ tức ưu đãi",
+    "old_ind_code": "loi_ich_cd_ts",
+    "norm_name": "Lợi ích của cổ đông thiểu số và cổ tức ưu đãi"
   },
   {
-    "stt": 554,
-    "ind_name": "Mua sắm TSCĐ",
-    "ind_code": "mua_sam_tscd"
+    "raw_name": "Mua sắm TSCĐ",
+    "old_ind_code": "mua_sam_tscd",
+    "norm_name": "Mua sắm tài sản cố định"
   },
   {
-    "stt": 555,
-    "ind_name": "Mua sắm bất động sản đầu tư",
-    "ind_code": "bat_dong_san_dau_tu"
+    "raw_name": "Mua sắm bất động sản đầu tư",
+    "old_ind_code": "bat_dong_san_dau_tu",
+    "norm_name": "Mua sắm bất động sản đầu tư"
   },
   {
-    "stt": 556,
-    "ind_name": "NGUỒN VỐN CHỦ SỞ HỮU",
-    "ind_code": "vcsh"
+    "raw_name": "NGUỒN VỐN CHỦ SỞ HỮU",
+    "old_ind_code": "vcsh",
+    "norm_name": "Nguồn vốn chủ sở hữu"
   },
   {
-    "stt": 557,
-    "ind_name": "Nguyên giá",
-    "ind_code": "nguyen_gia"
+    "raw_name": "Nguyên giá",
+    "old_ind_code": "nguyen_gia",
+    "norm_name": "Nguyên giá"
   },
   {
-    "stt": 558,
-    "ind_name": "Nguồn kinh phí",
-    "ind_code": "nguon_kinh_phi"
+    "raw_name": "Nguồn kinh phí",
+    "old_ind_code": "nguon_kinh_phi",
+    "norm_name": "Nguồn kinh phí"
   },
   {
-    "stt": 559,
-    "ind_name": "Nguồn kinh phí và quỹ khác",
-    "ind_code": "nguon_kinh_phi_va_quy_khac"
+    "raw_name": "Nguồn kinh phí và quỹ khác",
+    "old_ind_code": "nguon_kinh_phi_va_quy_khac",
+    "norm_name": "Nguồn kinh phí và quỹ khác"
   },
   {
-    "stt": 560,
-    "ind_name": "Nguồn kinh phí đã hình thành tài sản cố định",
-    "ind_code": "nguon_kinh_phi_da_hinh_thanh_tai_san_co_dinh"
+    "raw_name": "Nguồn kinh phí đã hình thành tài sản cố định",
+    "old_ind_code": "nguon_kinh_phi_da_hinh_thanh_tai_san_co_dinh",
+    "norm_name": "Nguồn kinh phí đã hình thành tài sản cố định"
   },
   {
-    "stt": 561,
-    "ind_name": "Nguồn kinh phí, quỹ khác",
-    "ind_code": "nguon_kinh_phi_quy_khac"
+    "raw_name": "Nguồn kinh phí, quỹ khác",
+    "old_ind_code": "nguon_kinh_phi_quy_khac",
+    "norm_name": "Nguồn kinh phí, quỹ khác"
   },
   {
-    "stt": 562,
-    "ind_name": "Nguồn vốn chủ sở hữu",
-    "ind_code": "vcsh"
+    "raw_name": "Nguồn vốn chủ sở hữu",
+    "old_ind_code": "vcsh",
+    "norm_name": "Nguồn vốn chủ sở hữu"
   },
   {
-    "stt": 563,
-    "ind_name": "Nguồn vốn đầu tư xây dựng cơ bản",
-    "ind_code": "nguon_von_dau_tu_xay_dung_co_ban"
+    "raw_name": "Nguồn vốn đầu tư xây dựng cơ bản",
+    "old_ind_code": "nguon_von_dau_tu_xay_dung_co_ban",
+    "norm_name": "Nguồn vốn đầu tư xây dựng cơ bản"
   },
   {
-    "stt": 564,
-    "ind_name": "Người mua trả tiền trước",
-    "ind_code": "nguoi_mua_tra_tien_truoc"
+    "raw_name": "Người mua trả tiền trước",
+    "old_ind_code": "nguoi_mua_tra_tien_truoc",
+    "norm_name": "Người mua trả tiền trước"
   },
   {
-    "stt": 565,
-    "ind_name": "Nhận ký quỹ, ký cược dài hạn",
-    "ind_code": "nhan_ky_quy_ky_cuoc_dai_han"
+    "raw_name": "Nhận ký quỹ, ký cược dài hạn",
+    "old_ind_code": "nhan_ky_quy_ky_cuoc_dai_han",
+    "norm_name": "Nhận ký quỹ, ký cược dài hạn"
   },
   {
-    "stt": 566,
-    "ind_name": "Nhận ký quỹ, ký cược ngắn hạn",
-    "ind_code": "nhan_ky_quy_ky_cuoc_ngan_han"
+    "raw_name": "Nhận ký quỹ, ký cược ngắn hạn",
+    "old_ind_code": "nhan_ky_quy_ky_cuoc_ngan_han",
+    "norm_name": "Nhận ký quỹ, ký cược ngắn hạn"
   },
   {
-    "stt": 567,
-    "ind_name": "NỢ PHẢI TRẢ",
-    "ind_code": "no_phai_tra"
+    "raw_name": "NỢ PHẢI TRẢ",
+    "old_ind_code": "no_phai_tra",
+    "norm_name": "Nợ phải trả"
   },
   {
-    "stt": 568,
-    "ind_name": "Nợ dài hạn",
-    "ind_code": "no_dai_han"
+    "raw_name": "Nợ dài hạn",
+    "old_ind_code": "no_dai_han",
+    "norm_name": "Nợ dài hạn"
   },
   {
-    "stt": 569,
-    "ind_name": "Nợ khác",
-    "ind_code": "no_khac"
+    "raw_name": "Nợ khác",
+    "old_ind_code": "no_khac",
+    "norm_name": "Nợ khác"
   },
   {
-    "stt": 570,
-    "ind_name": "Nợ ngắn hạn",
-    "ind_code": "no_ngan_han"
+    "raw_name": "Nợ ngắn hạn",
+    "old_ind_code": "no_ngan_han",
+    "norm_name": "Nợ ngắn hạn"
   },
   {
-    "stt": 571,
-    "ind_name": "Nợ phải trả",
-    "ind_code": "no_phai_tra"
+    "raw_name": "Nợ phải trả",
+    "old_ind_code": "no_phai_tra",
+    "norm_name": "Nợ phải trả"
   },
   {
-    "stt": 572,
-    "ind_name": "Nợ phải trả dài hạn",
-    "ind_code": "no_dai_han"
+    "raw_name": "Nợ phải trả dài hạn",
+    "old_ind_code": "no_dai_han",
+    "norm_name": "Nợ phải trả dài hạn"
   },
   {
-    "stt": 573,
-    "ind_name": "Nợ phải trả ngắn hạn",
-    "ind_code": "no_ngan_han"
+    "raw_name": "Nợ phải trả ngắn hạn",
+    "old_ind_code": "no_ngan_han",
+    "norm_name": "Nợ phải trả ngắn hạn"
   },
   {
-    "stt": 574,
-    "ind_name": "Nợ thuê tài sản tài chính dài hạn",
-    "ind_code": "no_thue_tai_san_tai_chinh_dai_han"
+    "raw_name": "Nợ thuê tài sản tài chính dài hạn",
+    "old_ind_code": "no_thue_tai_san_tai_chinh_dai_han",
+    "norm_name": "Nợ thuê tài sản tài chính dài hạn"
   },
   {
-    "stt": 575,
-    "ind_name": "Nợ thuê tài sản tài chính ngắn hạn",
-    "ind_code": "no_thue_tai_san_tai_chinh_ngan_han"
+    "raw_name": "Nợ thuê tài sản tài chính ngắn hạn",
+    "old_ind_code": "no_thue_tai_san_tai_chinh_ngan_han",
+    "norm_name": "Nợ thuê tài sản tài chính ngắn hạn"
   },
   {
-    "stt": 576,
-    "ind_name": "Phát hành giấy tờ có giá",
-    "ind_code": "phat_hanh_giay_to_co_gia"
+    "raw_name": "Phát hành giấy tờ có giá",
+    "old_ind_code": "phat_hanh_giay_to_co_gia",
+    "norm_name": "Phát hành giấy tờ có giá"
   },
   {
-    "stt": 577,
-    "ind_name": "Phí nhượng tái bảo hiểm",
-    "ind_code": "phi_nhuong_tai_bao_hiem"
+    "raw_name": "Phí nhượng tái bảo hiểm",
+    "old_ind_code": "phi_nhuong_tai_bao_hiem",
+    "norm_name": "Phí nhượng tái bảo hiểm"
   },
   {
-    "stt": 578,
-    "ind_name": "Phải thu bán các tài sản tài chính",
-    "ind_code": "phai_thu_ban_cac_tai_san_tai_chinh"
+    "raw_name": "Phải thu bán các tài sản tài chính",
+    "old_ind_code": "phai_thu_ban_cac_tai_san_tai_chinh",
+    "norm_name": "Phải thu bán các tài sản tài chính"
   },
   {
-    "stt": 579,
-    "ind_name": "Phải thu các dịch vụ CTCK cung cấp",
-    "ind_code": "phai_thu_cac_dich_vu_ctck_cung_cap"
+    "raw_name": "Phải thu các dịch vụ CTCK cung cấp",
+    "old_ind_code": "phai_thu_cac_dich_vu_ctck_cung_cap",
+    "norm_name": "Phải thu các dịch vụ công ty chứng khoán cung cấp"
   },
   {
-    "stt": 580,
-    "ind_name": "Phải thu cổ tức, tiền lãi đến ngày nhận",
-    "ind_code": "phai_thu_co_tuc_tien_lai_den_ngay_nhan"
+    "raw_name": "Phải thu cổ tức, tiền lãi đến ngày nhận",
+    "old_ind_code": "phai_thu_co_tuc_tien_lai_den_ngay_nhan",
+    "norm_name": "Phải thu cổ tức, tiền lãi đến ngày nhận"
   },
   {
-    "stt": 581,
-    "ind_name": "Phải thu của khách hàng",
-    "ind_code": "phai_thu_cua_khach_hang"
+    "raw_name": "Phải thu của khách hàng",
+    "old_ind_code": "phai_thu_cua_khach_hang",
+    "norm_name": "Phải thu của khách hàng"
   },
   {
-    "stt": 582,
-    "ind_name": "Phải thu dài hạn của khách hàng",
-    "ind_code": "phai_thu_dai_han_cua_khach_hang"
+    "raw_name": "Phải thu dài hạn của khách hàng",
+    "old_ind_code": "phai_thu_dai_han_cua_khach_hang",
+    "norm_name": "Phải thu dài hạn của khách hàng"
   },
   {
-    "stt": 583,
-    "ind_name": "Phải thu dài hạn khác",
-    "ind_code": "phai_thu_dai_han_khac"
+    "raw_name": "Phải thu dài hạn khác",
+    "old_ind_code": "phai_thu_dai_han_khac",
+    "norm_name": "Phải thu dài hạn khác"
   },
   {
-    "stt": 584,
-    "ind_name": "Phải thu dài hạn nội bộ",
-    "ind_code": "phai_thu_dai_han_noi_bo"
+    "raw_name": "Phải thu dài hạn nội bộ",
+    "old_ind_code": "phai_thu_dai_han_noi_bo",
+    "norm_name": "Phải thu dài hạn nội bộ"
   },
   {
-    "stt": 585,
-    "ind_name": "Phải thu ngắn hạn của khách hàng",
-    "ind_code": "phai_thu_cua_khach_hang"
+    "raw_name": "Phải thu ngắn hạn của khách hàng",
+    "old_ind_code": "phai_thu_cua_khach_hang",
+    "norm_name": "Phải thu ngắn hạn của khách hàng"
   },
   {
-    "stt": 586,
-    "ind_name": "Phải thu ngắn hạn khác",
-    "ind_code": "phai_thu_ngan_han_khac"
+    "raw_name": "Phải thu ngắn hạn khác",
+    "old_ind_code": "phai_thu_ngan_han_khac",
+    "norm_name": "Phải thu ngắn hạn khác"
   },
   {
-    "stt": 587,
-    "ind_name": "Phải thu nội bộ",
-    "ind_code": "phai_thu_noi_bo"
+    "raw_name": "Phải thu nội bộ",
+    "old_ind_code": "phai_thu_noi_bo",
+    "norm_name": "Phải thu nội bộ"
   },
   {
-    "stt": 588,
-    "ind_name": "Phải thu nội bộ ngắn hạn",
-    "ind_code": "phai_thu_noi_bo_ngan_han"
+    "raw_name": "Phải thu nội bộ ngắn hạn",
+    "old_ind_code": "phai_thu_noi_bo_ngan_han",
+    "norm_name": "Phải thu nội bộ ngắn hạn"
   },
   {
-    "stt": 589,
-    "ind_name": "Phải thu theo tiến độ hợp đồng xây dựng",
-    "ind_code": "phai_thu_theo_tien_do_hop_dong_xay_dung"
+    "raw_name": "Phải thu theo tiến độ hợp đồng xây dựng",
+    "old_ind_code": "phai_thu_theo_tien_do_hop_dong_xay_dung",
+    "norm_name": "Phải thu theo tiến độ hợp đồng xây dựng"
   },
   {
-    "stt": 590,
-    "ind_name": "Phải thu và dự thu cổ tức, tiền lãi các tài sản tài chính",
-    "ind_code": "phai_thu_va_du_thu_co_tuc_tien_lai_cac_tai_san_tai_chinh"
+    "raw_name": "Phải thu và dự thu cổ tức, tiền lãi các tài sản tài chính",
+    "old_ind_code": "phai_thu_va_du_thu_co_tuc_tien_lai_cac_tai_san_tai_chinh",
+    "norm_name": "Phải thu và dự thu cổ tức, tiền lãi các tài sản tài chính"
   },
   {
-    "stt": 591,
-    "ind_name": "Phải thu về cho vay dài hạn",
-    "ind_code": "phai_thu_ve_cho_vay_dai_han"
+    "raw_name": "Phải thu về cho vay dài hạn",
+    "old_ind_code": "phai_thu_ve_cho_vay_dai_han",
+    "norm_name": "Phải thu về cho vay dài hạn"
   },
   {
-    "stt": 592,
-    "ind_name": "Phải thu về cho vay ngắn hạn",
-    "ind_code": "phai_thu_ve_cho_vay_ngan_han"
+    "raw_name": "Phải thu về cho vay ngắn hạn",
+    "old_ind_code": "phai_thu_ve_cho_vay_ngan_han",
+    "norm_name": "Phải thu về cho vay ngắn hạn"
   },
   {
-    "stt": 593,
-    "ind_name": "Phải trả dài hạn khác",
-    "ind_code": "phai_tra_dai_han_khac"
+    "raw_name": "Phải trả dài hạn khác",
+    "old_ind_code": "phai_tra_dai_han_khac",
+    "norm_name": "Phải trả dài hạn khác"
   },
   {
-    "stt": 594,
-    "ind_name": "Phải trả hoạt động giao dịch chứng khoán",
-    "ind_code": "phai_tra_hoat_dong_giao_dich_chung_khoan"
+    "raw_name": "Phải trả hoạt động giao dịch chứng khoán",
+    "old_ind_code": "phai_tra_hoat_dong_giao_dich_chung_khoan",
+    "norm_name": "Phải trả hoạt động giao dịch chứng khoán"
   },
   {
-    "stt": 595,
-    "ind_name": "Phải trả người bán",
-    "ind_code": "phai_tra_nguoi_ban"
+    "raw_name": "Phải trả người bán",
+    "old_ind_code": "phai_tra_nguoi_ban",
+    "norm_name": "Phải trả người bán"
   },
   {
-    "stt": 596,
-    "ind_name": "Phải trả người bán dài hạn",
-    "ind_code": "phai_tra_nguoi_ban_dai_han"
+    "raw_name": "Phải trả người bán dài hạn",
+    "old_ind_code": "phai_tra_nguoi_ban_dai_han",
+    "norm_name": "Phải trả người bán dài hạn"
   },
   {
-    "stt": 597,
-    "ind_name": "Phải trả người bán ngắn hạn",
-    "ind_code": "phai_tra_nguoi_ban"
+    "raw_name": "Phải trả người bán ngắn hạn",
+    "old_ind_code": "phai_tra_nguoi_ban",
+    "norm_name": "Phải trả người bán ngắn hạn"
   },
   {
-    "stt": 598,
-    "ind_name": "Phải trả người lao động",
-    "ind_code": "phai_tra_nguoi_lao_dong"
+    "raw_name": "Phải trả người lao động",
+    "old_ind_code": "phai_tra_nguoi_lao_dong",
+    "norm_name": "Phải trả người lao động"
   },
   {
-    "stt": 599,
-    "ind_name": "Phải trả ngắn hạn khác",
-    "ind_code": "phai_tra_ngan_han_khac"
+    "raw_name": "Phải trả ngắn hạn khác",
+    "old_ind_code": "phai_tra_ngan_han_khac",
+    "norm_name": "Phải trả ngắn hạn khác"
   },
   {
-    "stt": 600,
-    "ind_name": "Phải trả nội bộ dài hạn",
-    "ind_code": "phai_tra_noi_bo_dai_han"
+    "raw_name": "Phải trả nội bộ dài hạn",
+    "old_ind_code": "phai_tra_noi_bo_dai_han",
+    "norm_name": "Phải trả nội bộ dài hạn"
   },
   {
-    "stt": 601,
-    "ind_name": "Phải trả nội bộ ngắn hạn",
-    "ind_code": "phai_tra_noi_bo_ngan_han"
+    "raw_name": "Phải trả nội bộ ngắn hạn",
+    "old_ind_code": "phai_tra_noi_bo_ngan_han",
+    "norm_name": "Phải trả nội bộ ngắn hạn"
   },
   {
-    "stt": 602,
-    "ind_name": "Phải trả nội bộ về vốn kinh doanh",
-    "ind_code": "phai_tra_noi_bo_ve_von_kinh_doanh"
+    "raw_name": "Phải trả nội bộ về vốn kinh doanh",
+    "old_ind_code": "phai_tra_noi_bo_ve_von_kinh_doanh",
+    "norm_name": "Phải trả nội bộ về vốn kinh doanh"
   },
   {
-    "stt": 603,
-    "ind_name": "Phải trả theo tiến độ kế hoạch hợp đồng xây dựng",
-    "ind_code": "phai_tra_theo_tien_do_ke_hoach_hop_dong_xay_dung"
+    "raw_name": "Phải trả theo tiến độ kế hoạch hợp đồng xây dựng",
+    "old_ind_code": "phai_tra_theo_tien_do_ke_hoach_hop_dong_xay_dung",
+    "norm_name": "Phải trả theo tiến độ kế hoạch hợp đồng xây dựng"
   },
   {
-    "stt": 604,
-    "ind_name": "Phải trả về lỗi giao dịch các tài sản tài chính",
-    "ind_code": "phai_tra_ve_loi_giao_dich_cac_tai_san_tai_chinh"
+    "raw_name": "Phải trả về lỗi giao dịch các tài sản tài chính",
+    "old_ind_code": "phai_tra_ve_loi_giao_dich_cac_tai_san_tai_chinh",
+    "norm_name": "Phải trả về lỗi giao dịch các tài sản tài chính"
   },
   {
-    "stt": 605,
-    "ind_name": "Phần lợi nhuận hoặc lỗ trong công ty liên kết liên doanh",
-    "ind_code": "phan_loi_nhuan_hoac_lo_trong_cong_ty_lien_ket_lien_doanh"
+    "raw_name": "Phần lợi nhuận hoặc lỗ trong công ty liên kết liên doanh",
+    "old_ind_code": "phan_loi_nhuan_hoac_lo_trong_cong_ty_lien_ket_lien_doanh",
+    "norm_name": "Phần lợi nhuận hoặc lỗ trong công ty liên kết liên doanh"
   },
   {
-    "stt": 606,
-    "ind_name": "Quyền chọn chuyển đổi trái phiếu",
-    "ind_code": "quyen_chon_chuyen_doi_trai_phieu"
+    "raw_name": "Quyền chọn chuyển đổi trái phiếu",
+    "old_ind_code": "quyen_chon_chuyen_doi_trai_phieu",
+    "norm_name": "Quyền chọn chuyển đổi trái phiếu"
   },
   {
-    "stt": 607,
-    "ind_name": "Quỹ bình ổn giá",
-    "ind_code": "quy_binh_on_gia"
+    "raw_name": "Quỹ bình ổn giá",
+    "old_ind_code": "quy_binh_on_gia",
+    "norm_name": "Quỹ bình ổn giá"
   },
   {
-    "stt": 608,
-    "ind_name": "Quỹ của TCTD",
-    "ind_code": "quy_cua_to_chuc_tin_dung"
+    "raw_name": "Quỹ của TCTD",
+    "old_ind_code": "quy_cua_to_chuc_tin_dung",
+    "norm_name": "Quỹ của tổ chức tín dụng"
   },
   {
-    "stt": 609,
-    "ind_name": "Quỹ dự phòng trợ cấp mất việc làm",
-    "ind_code": "quy_du_phong_tro_cap_mat_viec_lam"
+    "raw_name": "Quỹ dự phòng trợ cấp mất việc làm",
+    "old_ind_code": "quy_du_phong_tro_cap_mat_viec_lam",
+    "norm_name": "Quỹ dự phòng trợ cấp mất việc làm"
   },
   {
-    "stt": 610,
-    "ind_name": "Quỹ dự phòng tài chính",
-    "ind_code": "quy_du_phong_tai_chinh"
+    "raw_name": "Quỹ dự phòng tài chính",
+    "old_ind_code": "quy_du_phong_tai_chinh",
+    "norm_name": "Quỹ dự phòng tài chính"
   },
   {
-    "stt": 611,
-    "ind_name": "Quỹ dự phòng tài chính và rủi ro nghề nghiệp",
-    "ind_code": "quy_du_phong_tai_chinh_va_rui_ro_nghe_nghiep"
+    "raw_name": "Quỹ dự phòng tài chính và rủi ro nghề nghiệp",
+    "old_ind_code": "quy_du_phong_tai_chinh_va_rui_ro_nghe_nghiep",
+    "norm_name": "Quỹ dự phòng tài chính và rủi ro nghề nghiệp"
   },
   {
-    "stt": 612,
-    "ind_name": "Quỹ dự trữ bắt buộc",
-    "ind_code": "quy_du_tru_bat_buoc"
+    "raw_name": "Quỹ dự trữ bắt buộc",
+    "old_ind_code": "quy_du_tru_bat_buoc",
+    "norm_name": "Quỹ dự trữ bắt buộc"
   },
   {
-    "stt": 613,
-    "ind_name": "Quỹ dự trữ điều lệ",
-    "ind_code": "quy_du_tru_dieu_le"
+    "raw_name": "Quỹ dự trữ điều lệ",
+    "old_ind_code": "quy_du_tru_dieu_le",
+    "norm_name": "Quỹ dự trữ điều lệ"
   },
   {
-    "stt": 614,
-    "ind_name": "Quỹ hỗ trợ sắp xếp doanh nghiệp",
-    "ind_code": "quy_ho_tro_sap_xep_doanh_nghiep"
+    "raw_name": "Quỹ hỗ trợ sắp xếp doanh nghiệp",
+    "old_ind_code": "quy_ho_tro_sap_xep_doanh_nghiep",
+    "norm_name": "Quỹ hỗ trợ sắp xếp doanh nghiệp"
   },
   {
-    "stt": 615,
-    "ind_name": "Quỹ khen thưởng phúc lợi",
-    "ind_code": "quy_khen_thuong_phuc_loi"
+    "raw_name": "Quỹ khen thưởng phúc lợi",
+    "old_ind_code": "quy_khen_thuong_phuc_loi",
+    "norm_name": "Quỹ khen thưởng phúc lợi"
   },
   {
-    "stt": 616,
-    "ind_name": "Quỹ khác thuộc vốn chủ sở hữu",
-    "ind_code": "quy_khac"
+    "raw_name": "Quỹ khác thuộc vốn chủ sở hữu",
+    "old_ind_code": "quy_khac",
+    "norm_name": "Quỹ khác thuộc vốn chủ sở hữu"
   },
   {
-    "stt": 617,
-    "ind_name": "Quỹ phát triển khoa học và công nghệ",
-    "ind_code": "quy_phat_trien_khoa_hoc_va_cong_nghe"
+    "raw_name": "Quỹ phát triển khoa học và công nghệ",
+    "old_ind_code": "quy_phat_trien_khoa_hoc_va_cong_nghe",
+    "norm_name": "Quỹ phát triển khoa học và công nghệ"
   },
   {
-    "stt": 618,
-    "ind_name": "Quỹ đầu tư phát triển",
-    "ind_code": "quy_dtpt"
+    "raw_name": "Quỹ đầu tư phát triển",
+    "old_ind_code": "quy_dtpt",
+    "norm_name": "Quỹ đầu tư phát triển"
   },
   {
-    "stt": 619,
-    "ind_name": "Suy giảm giá trị của các tài sản tài chính sẵn sàng để bán",
-    "ind_code": "chung_khoan_dau_tu_san_sang_de_ban"
+    "raw_name": "Suy giảm giá trị của các tài sản tài chính sẵn sàng để bán",
+    "old_ind_code": "chung_khoan_dau_tu_san_sang_de_ban",
+    "norm_name": "Suy giảm giá trị của các tài sản tài chính sẵn sàng để bán"
   },
   {
-    "stt": 620,
-    "ind_name": "Số lượng cổ phiếu đang lưu hành",
-    "ind_code": "so_luong_co_phieu_dang_luu_hanh"
+    "raw_name": "Số lượng cổ phiếu đang lưu hành",
+    "old_ind_code": "so_luong_co_phieu_dang_luu_hanh",
+    "norm_name": "Số lượng cổ phiếu đang lưu hành"
   },
   {
-    "stt": 621,
-    "ind_name": "Số trích dự phòng dao động lớn trong năm",
-    "ind_code": "so_trich_du_phong_dao_dong_lon_trong_nam"
+    "raw_name": "Số trích dự phòng dao động lớn trong năm",
+    "old_ind_code": "so_trich_du_phong_dao_dong_lon_trong_nam",
+    "norm_name": "Số trích dự phòng dao động lớn trong năm"
   },
   {
-    "stt": 622,
-    "ind_name": "THU NHẬP (LỖ) TOÀN DIỆN KHÁC SAU THUẾ TNDN",
-    "ind_code": "thu_nhap_lo_toan_dien_khac_sau_thue_tndn"
+    "raw_name": "THU NHẬP (LỖ) TOÀN DIỆN KHÁC SAU THUẾ TNDN",
+    "old_ind_code": "thu_nhap_lo_toan_dien_khac_sau_thue_tndn",
+    "norm_name": "Thu nhập (lỗ) toàn diện khác sau thuế thu nhập doanh nghiệp"
   },
   {
-    "stt": 623,
-    "ind_name": "THU NHẬP THUẦN TRÊN CỔ PHIẾU PHỔ THÔNG",
-    "ind_code": "cp_pho_thong"
+    "raw_name": "THU NHẬP THUẦN TRÊN CỔ PHIẾU PHỔ THÔNG",
+    "old_ind_code": "cp_pho_thong",
+    "norm_name": "Thu nhập thuần trên cổ phiếu phổ thông"
   },
   {
-    "stt": 624,
-    "ind_name": "Thay đổi tài sản và nợ phải trả hoạt động",
-    "ind_code": "thay_doi_tai_san_va_no_phai_tra_hoat_dong"
+    "raw_name": "Thay đổi tài sản và nợ phải trả hoạt động",
+    "old_ind_code": "thay_doi_tai_san_va_no_phai_tra_hoat_dong",
+    "norm_name": "Thay đổi tài sản và nợ phải trả hoạt động"
   },
   {
-    "stt": 625,
-    "ind_name": "Thu bồi thường nhượng tái bảo hiểm",
-    "ind_code": "thu_boi_thuong_nhuong_tai_bao_hiem"
+    "raw_name": "Thu bồi thường nhượng tái bảo hiểm",
+    "old_ind_code": "thu_boi_thuong_nhuong_tai_bao_hiem",
+    "norm_name": "Thu bồi thường nhượng tái bảo hiểm"
   },
   {
-    "stt": 626,
-    "ind_name": "Thu hoa hồng nhượng tái bảo hiểm",
-    "ind_code": "thu_hoa_hong_nhuong_tai_bao_hiem"
+    "raw_name": "Thu hoa hồng nhượng tái bảo hiểm",
+    "old_ind_code": "thu_hoa_hong_nhuong_tai_bao_hiem",
+    "norm_name": "Thu hoa hồng nhượng tái bảo hiểm"
   },
   {
-    "stt": 627,
-    "ind_name": "Thu hàng đã xử lý bồi thường 100%",
-    "ind_code": "thu_hang_da_xu_ly_boi_thuong_100"
+    "raw_name": "Thu hàng đã xử lý bồi thường 100%",
+    "old_ind_code": "thu_hang_da_xu_ly_boi_thuong_100",
+    "norm_name": "Thu hàng đã xử lý bồi thường 100%"
   },
   {
-    "stt": 628,
-    "ind_name": "Thu khác (Giám định, đại lý...)",
-    "ind_code": "thu_khac_giam_dinh_dai_ly"
+    "raw_name": "Thu khác (Giám định, đại lý...)",
+    "old_ind_code": "thu_khac_giam_dinh_dai_ly",
+    "norm_name": "Thu khác (Giám định, đại lý...)"
   },
   {
-    "stt": 629,
-    "ind_name": "Thu khác hoạt động kinh doanh bảo hiểm",
-    "ind_code": "thu_khac_hoat_dong_kinh_doanh_bao_hiem"
+    "raw_name": "Thu khác hoạt động kinh doanh bảo hiểm",
+    "old_ind_code": "thu_khac_hoat_dong_kinh_doanh_bao_hiem",
+    "norm_name": "Thu khác hoạt động kinh doanh bảo hiểm"
   },
   {
-    "stt": 630,
-    "ind_name": "Thu nhập hoạt động khác",
-    "ind_code": "thu_nhap_khac"
+    "raw_name": "Thu nhập hoạt động khác",
+    "old_ind_code": "thu_nhap_khac",
+    "norm_name": "Thu nhập hoạt động khác"
   },
   {
-    "stt": 631,
-    "ind_name": "Thu nhập khác",
-    "ind_code": "thu_nhap_khac"
+    "raw_name": "Thu nhập khác",
+    "old_ind_code": "thu_nhap_khac",
+    "norm_name": "Thu nhập khác"
   },
   {
-    "stt": 632,
-    "ind_name": "Thu nhập lãi",
-    "ind_code": "thu_nhap_lai"
+    "raw_name": "Thu nhập lãi",
+    "old_ind_code": "thu_nhap_lai",
+    "norm_name": "Thu nhập lãi"
   },
   {
-    "stt": 633,
-    "ind_name": "Thu nhập lãi thuần",
-    "ind_code": "tn_lai_thuan"
+    "raw_name": "Thu nhập lãi thuần",
+    "old_ind_code": "tn_lai_thuan",
+    "norm_name": "Thu nhập lãi thuần"
   },
   {
-    "stt": 634,
-    "ind_name": "Thu nhập lãi và các khoản thu nhập tương tự nhận được",
-    "ind_code": "thu_nhap_lai_va_cac_khoan_tuong_tu"
+    "raw_name": "Thu nhập lãi và các khoản thu nhập tương tự nhận được",
+    "old_ind_code": "thu_nhap_lai_va_cac_khoan_tuong_tu",
+    "norm_name": "Thu nhập lãi và các khoản thu nhập tương tự nhận được"
   },
   {
-    "stt": 635,
-    "ind_name": "Thu nhập pha loãng trên cổ phiếu (Đồng/1 cổ phiếu)",
-    "ind_code": "thu_nhap_pha_loang_tren_co_phieu_dong_1_co_phieu"
+    "raw_name": "Thu nhập pha loãng trên cổ phiếu (Đồng/1 cổ phiếu)",
+    "old_ind_code": "thu_nhap_pha_loang_tren_co_phieu_dong_1_co_phieu",
+    "norm_name": "Thu nhập pha loãng trên cổ phiếu"
   },
   {
-    "stt": 636,
-    "ind_name": "Thu nhập toàn diện phân bổ cho chủ sở hữu",
-    "ind_code": "thu_nhap_toan_dien_phan_bo_cho_chu_so_huu"
+    "raw_name": "Thu nhập toàn diện phân bổ cho chủ sở hữu",
+    "old_ind_code": "thu_nhap_toan_dien_phan_bo_cho_chu_so_huu",
+    "norm_name": "Thu nhập toàn diện phân bổ cho chủ sở hữu"
   },
   {
-    "stt": 637,
-    "ind_name": "Thu nhập toàn diện phân bổ cho cổ đông không nắm quyền kiểm soát",
-    "ind_code": "thu_nhap_toan_dien_phan_bo_cho_co_dong_khong_nam_quyen_kiem_soat"
+    "raw_name": "Thu nhập toàn diện phân bổ cho cổ đông không nắm quyền kiểm soát",
+    "old_ind_code": "thu_nhap_toan_dien_phan_bo_cho_co_dong_khong_nam_quyen_kiem_soat",
+    "norm_name": "Thu nhập toàn diện phân bổ cho cổ đông không nắm quyền kiểm soát"
   },
   {
-    "stt": 638,
-    "ind_name": "Thu nhập trên 1 cổ phiếu (EPS điều chỉnh)",
-    "ind_code": "thu_nhap_tren_1_co_phieu_eps_dieu_chinh"
+    "raw_name": "Thu nhập trên 1 cổ phiếu (EPS điều chỉnh)",
+    "old_ind_code": "thu_nhap_tren_1_co_phieu_eps_dieu_chinh",
+    "norm_name": "Thu nhập trên 1 cổ phiếu (EPS điều chỉnh)"
   },
   {
-    "stt": 639,
-    "ind_name": "Thu nhập từ hoạt động dịch vụ",
-    "ind_code": "tn_dv"
+    "raw_name": "Thu nhập từ hoạt động dịch vụ",
+    "old_ind_code": "tn_dv",
+    "norm_name": "Thu nhập từ hoạt động dịch vụ"
   },
   {
-    "stt": 640,
-    "ind_name": "Thu nhập từ hoạt động dịch vụ nhận được",
-    "ind_code": "tn_dv"
+    "raw_name": "Thu nhập từ hoạt động dịch vụ nhận được",
+    "old_ind_code": "tn_dv",
+    "norm_name": "Thu nhập từ hoạt động dịch vụ nhận được"
   },
   {
-    "stt": 641,
-    "ind_name": "Thu nhập từ hoạt động góp vốn mua cổ phần",
-    "ind_code": "thu_nhap_tu_hoat_dong_gop_von_mua_co_phan"
+    "raw_name": "Thu nhập từ hoạt động góp vốn mua cổ phần",
+    "old_ind_code": "thu_nhap_tu_hoat_dong_gop_von_mua_co_phan",
+    "norm_name": "Thu nhập từ hoạt động góp vốn mua cổ phần"
   },
   {
-    "stt": 642,
-    "ind_name": "Thu nhập từ hoạt động khác",
-    "ind_code": "thu_nhap_tu_hoat_dong_khac"
+    "raw_name": "Thu nhập từ hoạt động khác",
+    "old_ind_code": "thu_nhap_tu_hoat_dong_khac",
+    "norm_name": "Thu nhập từ hoạt động khác"
   },
   {
-    "stt": 643,
-    "ind_name": "Thu nhập từ lãi và các khoản thu nhập tương tự",
-    "ind_code": "thu_nhap_lai_va_cac_khoan_tuong_tu"
+    "raw_name": "Thu nhập từ lãi và các khoản thu nhập tương tự",
+    "old_ind_code": "thu_nhap_lai_va_cac_khoan_tuong_tu",
+    "norm_name": "Thu nhập từ lãi và các khoản thu nhập tương tự"
   },
   {
-    "stt": 644,
-    "ind_name": "Thu phí bảo hiểm gốc",
-    "ind_code": "thu_phi_bao_hiem_goc"
+    "raw_name": "Thu phí bảo hiểm gốc",
+    "old_ind_code": "thu_phi_bao_hiem_goc",
+    "norm_name": "Thu phí bảo hiểm gốc"
   },
   {
-    "stt": 645,
-    "ind_name": "Thu phí nhận tái bảo hiểm",
-    "ind_code": "thu_phi_nhan_tai_bao_hiem"
+    "raw_name": "Thu phí nhận tái bảo hiểm",
+    "old_ind_code": "thu_phi_nhan_tai_bao_hiem",
+    "norm_name": "Thu phí nhận tái bảo hiểm"
   },
   {
-    "stt": 646,
-    "ind_name": "Thu đòi người thứ ba bồi hoàn",
-    "ind_code": "thu_doi_nguoi_thu_ba_boi_hoan"
+    "raw_name": "Thu đòi người thứ ba bồi hoàn",
+    "old_ind_code": "thu_doi_nguoi_thu_ba_boi_hoan",
+    "norm_name": "Thu đòi người thứ ba bồi hoàn"
   },
   {
-    "stt": 647,
-    "ind_name": "Thuế TNDN hoãn lại phải trả",
-    "ind_code": "thue_tndn_hl"
+    "raw_name": "Thuế TNDN hoãn lại phải trả",
+    "old_ind_code": "thue_tndn_hl",
+    "norm_name": "Thuế thu nhập doanh nghiệp hoãn lại phải trả"
   },
   {
-    "stt": 648,
-    "ind_name": "Thuế giá trị gia tăng được khấu trừ",
-    "ind_code": "thue_gia_tri_gia_tang_duoc_khau_tru"
+    "raw_name": "Thuế giá trị gia tăng được khấu trừ",
+    "old_ind_code": "thue_gia_tri_gia_tang_duoc_khau_tru",
+    "norm_name": "Thuế giá trị gia tăng được khấu trừ"
   },
   {
-    "stt": 649,
-    "ind_name": "Thuế thu nhập doanh nghiệp phải nộp",
-    "ind_code": "thue_thu_nhap_doanh_nghiep_phai_nop"
+    "raw_name": "Thuế thu nhập doanh nghiệp phải nộp",
+    "old_ind_code": "thue_thu_nhap_doanh_nghiep_phai_nop",
+    "norm_name": "Thuế thu nhập doanh nghiệp phải nộp"
   },
   {
-    "stt": 650,
-    "ind_name": "Thuế thu nhập doanh nghiệp đã nộp",
-    "ind_code": "thue_tndn_da_nop"
+    "raw_name": "Thuế thu nhập doanh nghiệp đã nộp",
+    "old_ind_code": "thue_tndn_da_nop",
+    "norm_name": "Thuế thu nhập doanh nghiệp đã nộp"
   },
   {
-    "stt": 651,
-    "ind_name": "Thuế thu nhập hoãn lại phải trả",
-    "ind_code": "thue_thu_nhap_hoan_lai_phai_tra"
+    "raw_name": "Thuế thu nhập hoãn lại phải trả",
+    "old_ind_code": "thue_thu_nhap_hoan_lai_phai_tra",
+    "norm_name": "Thuế thu nhập hoãn lại phải trả"
   },
   {
-    "stt": 652,
-    "ind_name": "Thuế và các khoản phải nộp nhà nước",
-    "ind_code": "thue_va_cac_khoan_phai_nop_nha_nuoc"
+    "raw_name": "Thuế và các khoản phải nộp nhà nước",
+    "old_ind_code": "thue_va_cac_khoan_phai_nop_nha_nuoc",
+    "norm_name": "Thuế và các khoản phải nộp nhà nước"
   },
   {
-    "stt": 653,
-    "ind_name": "Thuế và các khoản phải thu Nhà nước",
-    "ind_code": "thue_va_cac_khoan_phai_thu_nha_nuoc"
+    "raw_name": "Thuế và các khoản phải thu Nhà nước",
+    "old_ind_code": "thue_va_cac_khoan_phai_thu_nha_nuoc",
+    "norm_name": "Thuế và các khoản phải thu Nhà nước"
   },
   {
-    "stt": 654,
-    "ind_name": "Thặng dư vốn cổ phần",
-    "ind_code": "thang_du_von_co_phan"
+    "raw_name": "Thặng dư vốn cổ phần",
+    "old_ind_code": "thang_du_von_co_phan",
+    "norm_name": "Thặng dư vốn cổ phần"
   },
   {
-    "stt": 655,
-    "ind_name": "Tiền",
-    "ind_code": "tien"
+    "raw_name": "Tiền",
+    "old_ind_code": "tien",
+    "norm_name": "Tiền"
   },
   {
-    "stt": 656,
-    "ind_name": "Tiền chi cho vay, mua các công cụ nợ của các đơn vị khác",
-    "ind_code": "tien_chi_cho_vay_mua_cac_cong_cu_no_cua_cac_don_vi_khac"
+    "raw_name": "Tiền chi cho vay, mua các công cụ nợ của các đơn vị khác",
+    "old_ind_code": "tien_chi_cho_vay_mua_cac_cong_cu_no_cua_cac_don_vi_khac",
+    "norm_name": "Tiền chi cho vay, mua các công cụ nợ của các đơn vị khác"
   },
   {
-    "stt": 657,
-    "ind_name": "Tiền chi cho vay, mua các công cụ nợ của đơn vị khác",
-    "ind_code": "tien_chi_cho_vay_mua_cac_cong_cu_no_cua_don_vi_khac"
+    "raw_name": "Tiền chi cho vay, mua các công cụ nợ của đơn vị khác",
+    "old_ind_code": "tien_chi_cho_vay_mua_cac_cong_cu_no_cua_don_vi_khac",
+    "norm_name": "Tiền chi cho vay, mua các công cụ nợ của đơn vị khác"
   },
   {
-    "stt": 658,
-    "ind_name": "Tiền chi khác cho hoạt động kinh doanh",
-    "ind_code": "tien_chi_khac_tu_cac_hoat_dong_kinh_doanh"
+    "raw_name": "Tiền chi khác cho hoạt động kinh doanh",
+    "old_ind_code": "tien_chi_khac_tu_cac_hoat_dong_kinh_doanh",
+    "norm_name": "Tiền chi khác cho hoạt động kinh doanh"
   },
   {
-    "stt": 659,
-    "ind_name": "Tiền chi khác từ hoạt động kinh doanh",
-    "ind_code": "tien_chi_khac_tu_cac_hoat_dong_kinh_doanh"
+    "raw_name": "Tiền chi khác từ hoạt động kinh doanh",
+    "old_ind_code": "tien_chi_khac_tu_cac_hoat_dong_kinh_doanh",
+    "norm_name": "Tiền chi khác từ hoạt động kinh doanh"
   },
   {
-    "stt": 660,
-    "ind_name": "Tiền chi khác từ hoạt động tài chính",
-    "ind_code": "tien_chi_khac_tu_hoat_dong_tai_chinh"
+    "raw_name": "Tiền chi khác từ hoạt động tài chính",
+    "old_ind_code": "tien_chi_khac_tu_hoat_dong_tai_chinh",
+    "norm_name": "Tiền chi khác từ hoạt động tài chính"
   },
   {
-    "stt": 661,
-    "ind_name": "Tiền chi mua lại phần vốn góp của các cổ đông thiểu số",
-    "ind_code": "tien_chi_mua_lai_phan_von_gop_cua_cac_co_dong_thieu_so"
+    "raw_name": "Tiền chi mua lại phần vốn góp của các cổ đông thiểu số",
+    "old_ind_code": "tien_chi_mua_lai_phan_von_gop_cua_cac_co_dong_thieu_so",
+    "norm_name": "Tiền chi mua lại phần vốn góp của các cổ đông thiểu số"
   },
   {
-    "stt": 662,
-    "ind_name": "Tiền chi nộp Quỹ Hỗ trợ thanh toán",
-    "ind_code": "tien_chi_nop_quy_ho_tro_thanh_toan"
+    "raw_name": "Tiền chi nộp Quỹ Hỗ trợ thanh toán",
+    "old_ind_code": "tien_chi_nop_quy_ho_tro_thanh_toan",
+    "norm_name": "Tiền chi nộp Quỹ Hỗ trợ thanh toán"
   },
   {
-    "stt": 663,
-    "ind_name": "Tiền chi nộp thuế giá trị gia tăng",
-    "ind_code": "tien_chi_nop_thue_gia_tri_gia_tang"
+    "raw_name": "Tiền chi nộp thuế giá trị gia tăng",
+    "old_ind_code": "tien_chi_nop_thue_gia_tri_gia_tang",
+    "norm_name": "Tiền chi nộp thuế giá trị gia tăng"
   },
   {
-    "stt": 664,
-    "ind_name": "Tiền chi nộp thuế liên quan đến hoạt động CTCK",
-    "ind_code": "tien_chi_nop_thue_lien_quan_den_hoat_dong_ctck"
+    "raw_name": "Tiền chi nộp thuế liên quan đến hoạt động CTCK",
+    "old_ind_code": "tien_chi_nop_thue_lien_quan_den_hoat_dong_ctck",
+    "norm_name": "Tiền chi nộp thuế liên quan đến hoạt động công ty chứng khoán"
   },
   {
-    "stt": 665,
-    "ind_name": "Tiền chi nộp thuế thu nhập doanh nghiệp",
-    "ind_code": "tien_chi_nop_thue_thu_nhap_doanh_nghiep"
+    "raw_name": "Tiền chi nộp thuế thu nhập doanh nghiệp",
+    "old_ind_code": "tien_chi_nop_thue_thu_nhap_doanh_nghiep",
+    "norm_name": "Tiền chi nộp thuế thu nhập doanh nghiệp"
   },
   {
-    "stt": 666,
-    "ind_name": "Tiền chi thanh toán các chi phí cho hoạt động mua, bán các tài sản tài chính (chi phí giao dịch, phí chuyển tiền)",
-    "ind_code": "tien_chi_thanh_toan_cac_chi_phi_cho_hoat_dong_mua_ban_cac_tai_san_tai_chinh_chi_phi_giao_dich_phi_chuyen_tien"
+    "raw_name": "Tiền chi thanh toán các chi phí cho hoạt động mua, bán các tài sản tài chính (chi phí giao dịch, phí chuyển tiền)",
+    "old_ind_code": "tien_chi_thanh_toan_cac_chi_phi_cho_hoat_dong_mua_ban_cac_tai_san_tai_chinh_chi_phi_giao_dich_phi_chuyen_tien",
+    "norm_name": "Tiền chi thanh toán các chi phí cho hoạt động mua, bán các tài sản tài chính (chi phí giao dịch, phí chuyển tiền)"
   },
   {
-    "stt": 667,
-    "ind_name": "Tiền chi thanh toán giấy tờ có giá dài hạn có đủ điều kiện tính vào  vốn tự có và các khoản vốn vay dài hạn khác",
-    "ind_code": "tien_chi_thanh_toan_giay_to_co_gia_dai_han_co_du_dieu_kien_tinh_vao_von_tu_co_va_cac_khoan_von_vay_dai_han_khac"
+    "raw_name": "Tiền chi thanh toán giấy tờ có giá dài hạn có đủ điều kiện tính vào  vốn tự có và các khoản vốn vay dài hạn khác",
+    "old_ind_code": "tien_chi_thanh_toan_giay_to_co_gia_dai_han_co_du_dieu_kien_tinh_vao_von_tu_co_va_cac_khoan_von_vay_dai_han_khac",
+    "norm_name": "Tiền chi thanh toán giấy tờ có giá dài hạn có đủ điều kiện tính vào vốn tự có và các khoản vốn vay dài hạn khác"
   },
   {
-    "stt": 668,
-    "ind_name": "Tiền chi trả Tổ chức cung cấp dịch vụ cho CTCK",
-    "ind_code": "tien_chi_tra_to_chuc_cung_cap_dich_vu_cho_ctck"
+    "raw_name": "Tiền chi trả Tổ chức cung cấp dịch vụ cho CTCK",
+    "old_ind_code": "tien_chi_tra_to_chuc_cung_cap_dich_vu_cho_ctck",
+    "norm_name": "Tiền chi trả Tổ chức cung cấp dịch vụ cho công ty chứng khoán"
   },
   {
-    "stt": 669,
-    "ind_name": "Tiền chi trả cho người cung cấp hàng hóa và dịch vụ",
-    "ind_code": "tien_chi_tra_cho_nguoi_cung_cap_hang_hoa_va_dich_vu"
+    "raw_name": "Tiền chi trả cho người cung cấp hàng hóa và dịch vụ",
+    "old_ind_code": "tien_chi_tra_cho_nguoi_cung_cap_hang_hoa_va_dich_vu",
+    "norm_name": "Tiền chi trả cho người cung cấp hàng hóa và dịch vụ"
   },
   {
-    "stt": 670,
-    "ind_name": "Tiền chi trả cho người lao động",
-    "ind_code": "tien_chi_tra_cho_nguoi_lao_dong"
+    "raw_name": "Tiền chi trả cho người lao động",
+    "old_ind_code": "tien_chi_tra_cho_nguoi_lao_dong",
+    "norm_name": "Tiền chi trả cho người lao động"
   },
   {
-    "stt": 671,
-    "ind_name": "Tiền chi trả cho nhân viên và hoạt động quản lý, công vụ",
-    "ind_code": "tien_chi_tra_cho_nhan_vien_va_hoat_dong_quan_ly_cong_vu"
+    "raw_name": "Tiền chi trả cho nhân viên và hoạt động quản lý, công vụ",
+    "old_ind_code": "tien_chi_tra_cho_nhan_vien_va_hoat_dong_quan_ly_cong_vu",
+    "norm_name": "Tiền chi trả cho nhân viên và hoạt động quản lý, công vụ"
   },
   {
-    "stt": 672,
-    "ind_name": "Tiền chi trả gốc nợ vay khác",
-    "ind_code": "tien_chi_tra_goc_no_vay_khac"
+    "raw_name": "Tiền chi trả gốc nợ vay khác",
+    "old_ind_code": "tien_chi_tra_goc_no_vay_khac",
+    "norm_name": "Tiền chi trả gốc nợ vay khác"
   },
   {
-    "stt": 673,
-    "ind_name": "Tiền chi trả lãi vay",
-    "ind_code": "lai_vay_da_tra"
+    "raw_name": "Tiền chi trả lãi vay",
+    "old_ind_code": "lai_vay_da_tra",
+    "norm_name": "Tiền chi trả lãi vay"
   },
   {
-    "stt": 674,
-    "ind_name": "Tiền chi trả lãi vay cho hoạt động của CTCK",
-    "ind_code": "lai_vay_da_tra"
+    "raw_name": "Tiền chi trả lãi vay cho hoạt động của CTCK",
+    "old_ind_code": "lai_vay_da_tra",
+    "norm_name": "Tiền chi trả lãi vay cho hoạt động của công ty chứng khoán"
   },
   {
-    "stt": 675,
-    "ind_name": "Tiền chi trả nợ gốc vay",
-    "ind_code": "tien_tra_no_goc_vay"
+    "raw_name": "Tiền chi trả nợ gốc vay",
+    "old_ind_code": "tien_tra_no_goc_vay",
+    "norm_name": "Tiền chi trả nợ gốc vay"
   },
   {
-    "stt": 676,
-    "ind_name": "Tiền chi trả nợ thuê tài chính",
-    "ind_code": "tien_tra_no_goc_thue_tai_chinh"
+    "raw_name": "Tiền chi trả nợ thuê tài chính",
+    "old_ind_code": "tien_tra_no_goc_thue_tai_chinh",
+    "norm_name": "Tiền chi trả nợ thuê tài chính"
   },
   {
-    "stt": 677,
-    "ind_name": "Tiền chi trả từ cổ phần hóa",
-    "ind_code": "tien_chi_tra_tu_co_phan_hoa"
+    "raw_name": "Tiền chi trả từ cổ phần hóa",
+    "old_ind_code": "tien_chi_tra_tu_co_phan_hoa",
+    "norm_name": "Tiền chi trả từ cổ phần hóa"
   },
   {
-    "stt": 678,
-    "ind_name": "Tiền chi trả vốn góp cho chủ sở hữu, mua lại cổ phiếu quỹ",
-    "ind_code": "tien_chi_tra_von_gop_mua_lai_co_phieu"
+    "raw_name": "Tiền chi trả vốn góp cho chủ sở hữu, mua lại cổ phiếu quỹ",
+    "old_ind_code": "tien_chi_tra_von_gop_mua_lai_co_phieu",
+    "norm_name": "Tiền chi trả vốn góp cho chủ sở hữu, mua lại cổ phiếu quỹ"
   },
   {
-    "stt": 679,
-    "ind_name": "Tiền chi trả vốn góp cho các chủ sở hữu, mua cổ phiếu quỹ",
-    "ind_code": "tien_chi_tra_von_gop_mua_lai_co_phieu"
+    "raw_name": "Tiền chi trả vốn góp cho các chủ sở hữu, mua cổ phiếu quỹ",
+    "old_ind_code": "tien_chi_tra_von_gop_mua_lai_co_phieu",
+    "norm_name": "Tiền chi trả vốn góp cho các chủ sở hữu, mua cổ phiếu quỹ"
   },
   {
-    "stt": 680,
-    "ind_name": "Tiền chi trả vốn góp cho các chủ sở hữu, mua lại cổ phiếu của doanh nghiệp đã phát hành",
-    "ind_code": "tien_chi_tra_von_gop_mua_lai_co_phieu"
+    "raw_name": "Tiền chi trả vốn góp cho các chủ sở hữu, mua lại cổ phiếu của doanh nghiệp đã phát hành",
+    "old_ind_code": "tien_chi_tra_von_gop_mua_lai_co_phieu",
+    "norm_name": "Tiền chi trả vốn góp cho các chủ sở hữu, mua lại cổ phiếu của doanh nghiệp đã phát hành"
   },
   {
-    "stt": 681,
-    "ind_name": "Tiền chi từ thanh lý, nhượng bán TSCĐ",
-    "ind_code": "tien_chi_tu_thanh_ly_nhuong_ban_tscd"
+    "raw_name": "Tiền chi từ thanh lý, nhượng bán TSCĐ",
+    "old_ind_code": "tien_chi_tu_thanh_ly_nhuong_ban_tscd",
+    "norm_name": "Tiền chi từ thanh lý, nhượng bán tài sản cố định"
   },
   {
-    "stt": 682,
-    "ind_name": "Tiền chi đầu tư góp vốn vào đơn vị khác",
-    "ind_code": "tien_chi_dau_tu_gop_von_vao_don_vi_khac"
+    "raw_name": "Tiền chi đầu tư góp vốn vào đơn vị khác",
+    "old_ind_code": "tien_chi_dau_tu_gop_von_vao_don_vi_khac",
+    "norm_name": "Tiền chi đầu tư góp vốn vào đơn vị khác"
   },
   {
-    "stt": 683,
-    "ind_name": "Tiền chi đầu tư vốn vào công ty con, công ty liên doanh, liên kết và đầu tư khác",
-    "ind_code": "tien_chi_dau_tu_von_vao_cong_ty_con_cong_ty_lien_doanh_lien_ket_va_dau_tu_khac"
+    "raw_name": "Tiền chi đầu tư vốn vào công ty con, công ty liên doanh, liên kết và đầu tư khác",
+    "old_ind_code": "tien_chi_dau_tu_von_vao_cong_ty_con_cong_ty_lien_doanh_lien_ket_va_dau_tu_khac",
+    "norm_name": "Tiền chi đầu tư vốn vào công ty con, công ty liên doanh, liên kết và đầu tư khác"
   },
   {
-    "stt": 684,
-    "ind_name": "Tiền chi đầu tư, góp vốn vào các đơn vị khác",
-    "ind_code": "tien_chi_dau_tu_gop_von_vao_cac_don_vi_khac"
+    "raw_name": "Tiền chi đầu tư, góp vốn vào các đơn vị khác",
+    "old_ind_code": "tien_chi_dau_tu_gop_von_vao_cac_don_vi_khac",
+    "norm_name": "Tiền chi đầu tư, góp vốn vào các đơn vị khác"
   },
   {
-    "stt": 685,
-    "ind_name": "Tiền chi để mua sắm, xây dựng TSCĐ và các TS dài hạn khác",
-    "ind_code": "tien_chi_mua_sam_tscd"
+    "raw_name": "Tiền chi để mua sắm, xây dựng TSCĐ và các TS dài hạn khác",
+    "old_ind_code": "tien_chi_mua_sam_tscd",
+    "norm_name": "Tiền chi để mua sắm, xây dựng tài sản cố định và các tài sản dài hạn khác"
   },
   {
-    "stt": 686,
-    "ind_name": "Tiền chi để mua sắm, xây dựng TSCĐ và các tài sản dài hạn khác",
-    "ind_code": "ts_dh_khac"
+    "raw_name": "Tiền chi để mua sắm, xây dựng TSCĐ và các tài sản dài hạn khác",
+    "old_ind_code": "ts_dh_khac",
+    "norm_name": "Tiền chi để mua sắm, xây dựng tài sản cố định và các tài sản dài hạn khác"
   },
   {
-    "stt": 687,
-    "ind_name": "Tiền chi để mua sắm, xây dựng TSCĐ, BĐS đầu tư",
-    "ind_code": "tien_chi_mua_sam_tscd"
+    "raw_name": "Tiền chi để mua sắm, xây dựng TSCĐ, BĐS đầu tư",
+    "old_ind_code": "tien_chi_mua_sam_tscd",
+    "norm_name": "Tiền chi để mua sắm, xây dựng tài sản cố định, BĐS đầu tư"
   },
   {
-    "stt": 688,
-    "ind_name": "Tiền chi để mua sắm, xây dựng TSCĐ, BĐSĐT và các tài sản khác",
-    "ind_code": "tien_chi_mua_sam_tscd"
+    "raw_name": "Tiền chi để mua sắm, xây dựng TSCĐ, BĐSĐT và các tài sản khác",
+    "old_ind_code": "tien_chi_mua_sam_tscd",
+    "norm_name": "Tiền chi để mua sắm, xây dựng tài sản cố định, BĐSĐT và các tài sản khác"
   },
   {
-    "stt": 689,
-    "ind_name": "Tiền gửi các tổ chức tín dụng khác",
-    "ind_code": "tien_gui_cac_to_chuc_tin_dung_khac"
+    "raw_name": "Tiền gửi các tổ chức tín dụng khác",
+    "old_ind_code": "tien_gui_cac_to_chuc_tin_dung_khac",
+    "norm_name": "Tiền gửi các tổ chức tín dụng khác"
   },
   {
-    "stt": 690,
-    "ind_name": "Tiền gửi khách hàng",
-    "ind_code": "tien_gui_cua_khach_hang"
+    "raw_name": "Tiền gửi khách hàng",
+    "old_ind_code": "tien_gui_cua_khach_hang",
+    "norm_name": "Tiền gửi khách hàng"
   },
   {
-    "stt": 691,
-    "ind_name": "Tiền gửi ngân hàng cho hoạt động CTCK",
-    "ind_code": "tien_gui_ngan_hang_cho_hoat_dong_ctck"
+    "raw_name": "Tiền gửi ngân hàng cho hoạt động CTCK",
+    "old_ind_code": "tien_gui_ngan_hang_cho_hoat_dong_ctck",
+    "norm_name": "Tiền gửi ngân hàng cho hoạt động công ty chứng khoán"
   },
   {
-    "stt": 692,
-    "ind_name": "Tiền gửi ngân hàng cuối kỳ",
-    "ind_code": "tien_gui_ngan_hang_cuoi_ky"
+    "raw_name": "Tiền gửi ngân hàng cuối kỳ",
+    "old_ind_code": "tien_gui_ngan_hang_cuoi_ky",
+    "norm_name": "Tiền gửi ngân hàng cuối kỳ"
   },
   {
-    "stt": 693,
-    "ind_name": "Tiền gửi ngân hàng đầu kỳ",
-    "ind_code": "tien_gui_ngan_hang_dau_ky"
+    "raw_name": "Tiền gửi ngân hàng đầu kỳ",
+    "old_ind_code": "tien_gui_ngan_hang_dau_ky",
+    "norm_name": "Tiền gửi ngân hàng đầu kỳ"
   },
   {
-    "stt": 694,
-    "ind_name": "Tiền gửi tại NHNN",
-    "ind_code": "tien_gui_tai_ngan_hang_nha_nuoc_viet_nam"
+    "raw_name": "Tiền gửi tại NHNN",
+    "old_ind_code": "tien_gui_tai_ngan_hang_nha_nuoc_viet_nam",
+    "norm_name": "Tiền gửi tại Ngân hàng Nhà nước"
   },
   {
-    "stt": 695,
-    "ind_name": "Tiền gửi và cho vay các TCTD khác",
-    "ind_code": "tien_gui_tai_cac_tctd_khac_va_cho_vay_cac_tctd_khac"
+    "raw_name": "Tiền gửi và cho vay các TCTD khác",
+    "old_ind_code": "tien_gui_tai_cac_tctd_khac_va_cho_vay_cac_tctd_khac",
+    "norm_name": "Tiền gửi và cho vay các tổ chức tín dụng khác"
   },
   {
-    "stt": 696,
-    "ind_name": "Tiền lãi vay phải trả",
-    "ind_code": "tien_lai_vay_phai_tra"
+    "raw_name": "Tiền lãi vay phải trả",
+    "old_ind_code": "tien_lai_vay_phai_tra",
+    "norm_name": "Tiền lãi vay phải trả"
   },
   {
-    "stt": 697,
-    "ind_name": "Tiền lãi vay đã trả",
-    "ind_code": "lai_vay_da_tra"
+    "raw_name": "Tiền lãi vay đã trả",
+    "old_ind_code": "lai_vay_da_tra",
+    "norm_name": "Tiền lãi vay đã trả"
   },
   {
-    "stt": 698,
-    "ind_name": "Tiền lãi đã thu",
-    "ind_code": "tien_lai_da_thu"
+    "raw_name": "Tiền lãi đã thu",
+    "old_ind_code": "tien_lai_da_thu",
+    "norm_name": "Tiền lãi đã thu"
   },
   {
-    "stt": 699,
-    "ind_name": "Tiền lãi đã trả cho các nhà đầu tư vào doanh nghiệp",
-    "ind_code": "tien_lai_da_tra_cho_cac_nha_dau_tu_vao_doanh_nghiep"
+    "raw_name": "Tiền lãi đã trả cho các nhà đầu tư vào doanh nghiệp",
+    "old_ind_code": "tien_lai_da_tra_cho_cac_nha_dau_tu_vao_doanh_nghiep",
+    "norm_name": "Tiền lãi đã trả cho các nhà đầu tư vào doanh nghiệp"
   },
   {
-    "stt": 700,
-    "ind_name": "Tiền mua tài sản cố định",
-    "ind_code": "mua_sam_tscd"
+    "raw_name": "Tiền mua tài sản cố định",
+    "old_ind_code": "mua_sam_tscd",
+    "norm_name": "Tiền mua tài sản cố định"
   },
   {
-    "stt": 701,
-    "ind_name": "Tiền mặt tại quỹ (gồm cả ngân phiếu)",
-    "ind_code": "tien_mat_tai_quy"
+    "raw_name": "Tiền mặt tại quỹ (gồm cả ngân phiếu)",
+    "old_ind_code": "tien_mat_tai_quy",
+    "norm_name": "Tiền mặt tại quỹ (gồm cả ngân phiếu)"
   },
   {
-    "stt": 702,
-    "ind_name": "Tiền mặt, chứng từ có giá trị, ngoại tệ, kim loại quý, đá quý",
-    "ind_code": "tien_mat_chung_tu_co_gia_tri_ngoai_te_kim_loai_quy_da_quy"
+    "raw_name": "Tiền mặt, chứng từ có giá trị, ngoại tệ, kim loại quý, đá quý",
+    "old_ind_code": "tien_mat_chung_tu_co_gia_tri_ngoai_te_kim_loai_quy_da_quy",
+    "norm_name": "Tiền mặt, chứng từ có giá trị, ngoại tệ, kim loại quý, đá quý"
   },
   {
-    "stt": 703,
-    "ind_name": "Tiền nộp Quỹ Hỗ trợ thanh toán",
-    "ind_code": "tien_nop_quy_ho_tro_thanh_toan"
+    "raw_name": "Tiền nộp Quỹ Hỗ trợ thanh toán",
+    "old_ind_code": "tien_nop_quy_ho_tro_thanh_toan",
+    "norm_name": "Tiền nộp Quỹ Hỗ trợ thanh toán"
   },
   {
-    "stt": 704,
-    "ind_name": "Tiền thanh lý các khoản đầu tư vào công ty con, công ty liên doanh, liên kết và đầu tư khác",
-    "ind_code": "tien_thanh_ly_cac_khoan_dau_tu_vao_cong_ty_con_cong_ty_lien_doanh_lien_ket_va_dau_tu_khac"
+    "raw_name": "Tiền thanh lý các khoản đầu tư vào công ty con, công ty liên doanh, liên kết và đầu tư khác",
+    "old_ind_code": "tien_thanh_ly_cac_khoan_dau_tu_vao_cong_ty_con_cong_ty_lien_doanh_lien_ket_va_dau_tu_khac",
+    "norm_name": "Tiền thanh lý các khoản đầu tư vào công ty con, công ty liên doanh, liên kết và đầu tư khác"
   },
   {
-    "stt": 705,
-    "ind_name": "Tiền thu các khoản nợ đã được xử lý xóa, bù đắp bằng nguồn rủi ro",
-    "ind_code": "tien_thu_cac_khoan_no_da_duoc_xu_ly_xoa_bu_dap_bang_nguon_rui_ro"
+    "raw_name": "Tiền thu các khoản nợ đã được xử lý xóa, bù đắp bằng nguồn rủi ro",
+    "old_ind_code": "tien_thu_cac_khoan_no_da_duoc_xu_ly_xoa_bu_dap_bang_nguon_rui_ro",
+    "norm_name": "Tiền thu các khoản nợ đã được xử lý xóa, bù đắp bằng nguồn rủi ro"
   },
   {
-    "stt": 706,
-    "ind_name": "Tiền thu cổ tức và lợi nhuận được chia từ các khoản đầu tư, góp vốn dài hạn",
-    "ind_code": "tien_thu_co_tuc_va_loi_nhuan_duoc_chia"
+    "raw_name": "Tiền thu cổ tức và lợi nhuận được chia từ các khoản đầu tư, góp vốn dài hạn",
+    "old_ind_code": "tien_thu_co_tuc_va_loi_nhuan_duoc_chia",
+    "norm_name": "Tiền thu cổ tức và lợi nhuận được chia từ các khoản đầu tư, góp vốn dài hạn"
   },
   {
-    "stt": 707,
-    "ind_name": "Tiền thu do bán tài sản cố định",
-    "ind_code": "tien_thu_do_ban_tai_san_co_dinh"
+    "raw_name": "Tiền thu do bán tài sản cố định",
+    "old_ind_code": "tien_thu_do_ban_tai_san_co_dinh",
+    "norm_name": "Tiền thu do bán tài sản cố định"
   },
   {
-    "stt": 708,
-    "ind_name": "Tiền thu do các chủ sở hữu góp vốn",
-    "ind_code": "tien_thu_do_cac_chu_so_huu_gop_von"
+    "raw_name": "Tiền thu do các chủ sở hữu góp vốn",
+    "old_ind_code": "tien_thu_do_cac_chu_so_huu_gop_von",
+    "norm_name": "Tiền thu do các chủ sở hữu góp vốn"
   },
   {
-    "stt": 709,
-    "ind_name": "Tiền thu do đi vay",
-    "ind_code": "tien_thu_tu_di_vay"
+    "raw_name": "Tiền thu do đi vay",
+    "old_ind_code": "tien_thu_tu_di_vay",
+    "norm_name": "Tiền thu do đi vay"
   },
   {
-    "stt": 710,
-    "ind_name": "Tiền thu hồi cho vay, bán lại các công cụ nợ của các đơn vị khác",
-    "ind_code": "tien_thu_hoi_cho_vay_ban_lai_cac_cong_cu_no_cua_cac_don_vi_khac"
+    "raw_name": "Tiền thu hồi cho vay, bán lại các công cụ nợ của các đơn vị khác",
+    "old_ind_code": "tien_thu_hoi_cho_vay_ban_lai_cac_cong_cu_no_cua_cac_don_vi_khac",
+    "norm_name": "Tiền thu hồi cho vay, bán lại các công cụ nợ của các đơn vị khác"
   },
   {
-    "stt": 711,
-    "ind_name": "Tiền thu hồi cho vay, bán lại các công cụ nợ của đơn vị khác",
-    "ind_code": "tien_thu_hoi_cho_vay_ban_lai_cac_cong_cu_no_cua_don_vi_khac"
+    "raw_name": "Tiền thu hồi cho vay, bán lại các công cụ nợ của đơn vị khác",
+    "old_ind_code": "tien_thu_hoi_cho_vay_ban_lai_cac_cong_cu_no_cua_don_vi_khac",
+    "norm_name": "Tiền thu hồi cho vay, bán lại các công cụ nợ của đơn vị khác"
   },
   {
-    "stt": 712,
-    "ind_name": "Tiền thu hồi đầu tư góp vốn vào đơn vị khác",
-    "ind_code": "tien_thu_hoi_dau_tu_gop_von_vao_don_vi_khac"
+    "raw_name": "Tiền thu hồi đầu tư góp vốn vào đơn vị khác",
+    "old_ind_code": "tien_thu_hoi_dau_tu_gop_von_vao_don_vi_khac",
+    "norm_name": "Tiền thu hồi đầu tư góp vốn vào đơn vị khác"
   },
   {
-    "stt": 713,
-    "ind_name": "Tiền thu khác từ hoạt động kinh doanh",
-    "ind_code": "tien_thu_khac_tu_cac_hoat_dong_kinh_doanh"
+    "raw_name": "Tiền thu khác từ hoạt động kinh doanh",
+    "old_ind_code": "tien_thu_khac_tu_cac_hoat_dong_kinh_doanh",
+    "norm_name": "Tiền thu khác từ hoạt động kinh doanh"
   },
   {
-    "stt": 714,
-    "ind_name": "Tiền thu lãi cho vay, cổ tức và lợi nhuận được chia",
-    "ind_code": "tien_thu_lai_cho_vay_co_tuc_va_loi_nhuan_duoc_chia"
+    "raw_name": "Tiền thu lãi cho vay, cổ tức và lợi nhuận được chia",
+    "old_ind_code": "tien_thu_lai_cho_vay_co_tuc_va_loi_nhuan_duoc_chia",
+    "norm_name": "Tiền thu lãi cho vay, cổ tức và lợi nhuận được chia"
   },
   {
-    "stt": 715,
-    "ind_name": "Tiền thu lãi đầu tư",
-    "ind_code": "tien_thu_lai_dau_tu"
+    "raw_name": "Tiền thu lãi đầu tư",
+    "old_ind_code": "tien_thu_lai_dau_tu",
+    "norm_name": "Tiền thu lãi đầu tư"
   },
   {
-    "stt": 716,
-    "ind_name": "Tiền thu từ bán hàng, cung cấp dịch vụ và doanh thu khác",
-    "ind_code": "tien_thu_tu_ban_hang_cung_cap_dich_vu_va_doanh_thu_khac"
+    "raw_name": "Tiền thu từ bán hàng, cung cấp dịch vụ và doanh thu khác",
+    "old_ind_code": "tien_thu_tu_ban_hang_cung_cap_dich_vu_va_doanh_thu_khac",
+    "norm_name": "Tiền thu từ bán hàng, cung cấp dịch vụ và doanh thu khác"
   },
   {
-    "stt": 717,
-    "ind_name": "Tiền thu từ bán, thanh lý bất động sản đầu tư",
-    "ind_code": "bat_dong_san_dau_tu"
+    "raw_name": "Tiền thu từ bán, thanh lý bất động sản đầu tư",
+    "old_ind_code": "bat_dong_san_dau_tu",
+    "norm_name": "Tiền thu từ bán, thanh lý bất động sản đầu tư"
   },
   {
-    "stt": 718,
-    "ind_name": "Tiền thu từ các hoạt động kinh doanh khác",
-    "ind_code": "tien_thu_tu_cac_hoat_dong_kinh_doanh_khac"
+    "raw_name": "Tiền thu từ các hoạt động kinh doanh khác",
+    "old_ind_code": "tien_thu_tu_cac_hoat_dong_kinh_doanh_khac",
+    "norm_name": "Tiền thu từ các hoạt động kinh doanh khác"
   },
   {
-    "stt": 719,
-    "ind_name": "Tiền thu từ các khoản thu được giảm chi",
-    "ind_code": "tien_thu_tu_cac_khoan_thu_duoc_giam_chi"
+    "raw_name": "Tiền thu từ các khoản thu được giảm chi",
+    "old_ind_code": "tien_thu_tu_cac_khoan_thu_duoc_giam_chi",
+    "norm_name": "Tiền thu từ các khoản thu được giảm chi"
   },
   {
-    "stt": 720,
-    "ind_name": "Tiền thu từ các khoản đầu tư vào đơn vị khác",
-    "ind_code": "tien_thu_tu_cac_khoan_dau_tu_vao_don_vi_khac"
+    "raw_name": "Tiền thu từ các khoản đầu tư vào đơn vị khác",
+    "old_ind_code": "tien_thu_tu_cac_khoan_dau_tu_vao_don_vi_khac",
+    "norm_name": "Tiền thu từ các khoản đầu tư vào đơn vị khác"
   },
   {
-    "stt": 721,
-    "ind_name": "Tiền thu từ phát hành cổ phiếu, nhận vốn góp của chủ sở hữu",
-    "ind_code": "tien_thu_tu_phat_hanh_co_phieu_nhan_von_gop"
+    "raw_name": "Tiền thu từ phát hành cổ phiếu, nhận vốn góp của chủ sở hữu",
+    "old_ind_code": "tien_thu_tu_phat_hanh_co_phieu_nhan_von_gop",
+    "norm_name": "Tiền thu từ phát hành cổ phiếu, nhận vốn góp của chủ sở hữu"
   },
   {
-    "stt": 722,
-    "ind_name": "Tiền thu từ phát hành giấy tờ có giá dài hạn có đủ điều kiện tính vào vốn tự có và các khoản vốn vay dài hạn khác",
-    "ind_code": "phat_hanh_giay_to_co_gia"
+    "raw_name": "Tiền thu từ phát hành giấy tờ có giá dài hạn có đủ điều kiện tính vào vốn tự có và các khoản vốn vay dài hạn khác",
+    "old_ind_code": "phat_hanh_giay_to_co_gia",
+    "norm_name": "Tiền thu từ phát hành giấy tờ có giá dài hạn có đủ điều kiện tính vào vốn tự có và các khoản vốn vay dài hạn khác"
   },
   {
-    "stt": 723,
-    "ind_name": "Tiền thu từ thanh lý, nhượng bán TSCĐ",
-    "ind_code": "tien_thu_thanh_ly_tscd"
+    "raw_name": "Tiền thu từ thanh lý, nhượng bán TSCĐ",
+    "old_ind_code": "tien_thu_thanh_ly_tscd",
+    "norm_name": "Tiền thu từ thanh lý, nhượng bán tài sản cố định"
   },
   {
-    "stt": 724,
-    "ind_name": "Tiền thu từ thanh lý, nhượng bán TSCĐ và các TS dài hạn khác",
-    "ind_code": "tien_thu_thanh_ly_tscd"
+    "raw_name": "Tiền thu từ thanh lý, nhượng bán TSCĐ và các TS dài hạn khác",
+    "old_ind_code": "tien_thu_thanh_ly_tscd",
+    "norm_name": "Tiền thu từ thanh lý, nhượng bán tài sản cố định và các tài sản dài hạn khác"
   },
   {
-    "stt": 725,
-    "ind_name": "Tiền thu từ thanh lý, nhượng bán TSCĐ và các tài sản dài hạn khác",
-    "ind_code": "ts_dh_khac"
+    "raw_name": "Tiền thu từ thanh lý, nhượng bán TSCĐ và các tài sản dài hạn khác",
+    "old_ind_code": "ts_dh_khac",
+    "norm_name": "Tiền thu từ thanh lý, nhượng bán tài sản cố định và các tài sản dài hạn khác"
   },
   {
-    "stt": 726,
-    "ind_name": "Tiền thu từ thanh lý, nhượng bán TSCĐ, BĐSĐT và các tài sản khác",
-    "ind_code": "tien_thu_thanh_ly_tscd"
+    "raw_name": "Tiền thu từ thanh lý, nhượng bán TSCĐ, BĐSĐT và các tài sản khác",
+    "old_ind_code": "tien_thu_thanh_ly_tscd",
+    "norm_name": "Tiền thu từ thanh lý, nhượng bán tài sản cố định, BĐSĐT và các tài sản khác"
   },
   {
-    "stt": 727,
-    "ind_name": "Tiền thu về cổ tức và lợi nhuận được chia",
-    "ind_code": "tien_thu_ve_co_tuc_va_loi_nhuan_duoc_chia"
+    "raw_name": "Tiền thu về cổ tức và lợi nhuận được chia",
+    "old_ind_code": "tien_thu_ve_co_tuc_va_loi_nhuan_duoc_chia",
+    "norm_name": "Tiền thu về cổ tức và lợi nhuận được chia"
   },
   {
-    "stt": 728,
-    "ind_name": "Tiền thu được do bán cổ phiếu ngân quỹ",
-    "ind_code": "tien_thu_duoc_do_ban_co_phieu_ngan_quy"
+    "raw_name": "Tiền thu được do bán cổ phiếu ngân quỹ",
+    "old_ind_code": "tien_thu_duoc_do_ban_co_phieu_ngan_quy",
+    "norm_name": "Tiền thu được do bán cổ phiếu ngân quỹ"
   },
   {
-    "stt": 729,
-    "ind_name": "Tiền thu đầu tư, góp vốn vào các đơn vị khác",
-    "ind_code": "tien_thu_dau_tu_gop_von_vao_cac_don_vi_khac"
+    "raw_name": "Tiền thu đầu tư, góp vốn vào các đơn vị khác",
+    "old_ind_code": "tien_thu_dau_tu_gop_von_vao_cac_don_vi_khac",
+    "norm_name": "Tiền thu đầu tư, góp vốn vào các đơn vị khác"
   },
   {
-    "stt": 730,
-    "ind_name": "Tiền thuế thu nhập thực nộp trong kỳ",
-    "ind_code": "tien_thue_thu_nhap_thuc_nop_trong_ky"
+    "raw_name": "Tiền thuế thu nhập thực nộp trong kỳ",
+    "old_ind_code": "tien_thue_thu_nhap_thuc_nop_trong_ky",
+    "norm_name": "Tiền thuế thu nhập thực nộp trong kỳ"
   },
   {
-    "stt": 731,
-    "ind_name": "Tiền tạm ứng cho cán bộ công nhân viên và ứng trước cho người bán",
-    "ind_code": "tien_tam_ung_cho_can_bo_cong_nhan_vien_va_ung_truoc_cho_nguoi_ban"
+    "raw_name": "Tiền tạm ứng cho cán bộ công nhân viên và ứng trước cho người bán",
+    "old_ind_code": "tien_tam_ung_cho_can_bo_cong_nhan_vien_va_ung_truoc_cho_nguoi_ban",
+    "norm_name": "Tiền tạm ứng cho cán bộ công nhân viên và ứng trước cho người bán"
   },
   {
-    "stt": 732,
-    "ind_name": "Tiền từ thu phí và hoa hồng",
-    "ind_code": "tien_tu_thu_phi_va_hoa_hong"
+    "raw_name": "Tiền từ thu phí và hoa hồng",
+    "old_ind_code": "tien_tu_thu_phi_va_hoa_hong",
+    "norm_name": "Tiền từ thu phí và hoa hồng"
   },
   {
-    "stt": 733,
-    "ind_name": "Tiền vay Quỹ Hỗ trợ thanh toán",
-    "ind_code": "tien_vay_quy_ho_tro_thanh_toan"
+    "raw_name": "Tiền vay Quỹ Hỗ trợ thanh toán",
+    "old_ind_code": "tien_vay_quy_ho_tro_thanh_toan",
+    "norm_name": "Tiền vay Quỹ Hỗ trợ thanh toán"
   },
   {
-    "stt": 734,
-    "ind_name": "Tiền vay gốc",
-    "ind_code": "tien_vay_goc"
+    "raw_name": "Tiền vay gốc",
+    "old_ind_code": "tien_vay_goc",
+    "norm_name": "Tiền vay gốc"
   },
   {
-    "stt": 735,
-    "ind_name": "Tiền vay khác",
-    "ind_code": "tien_vay_khac"
+    "raw_name": "Tiền vay khác",
+    "old_ind_code": "tien_vay_khac",
+    "norm_name": "Tiền vay khác"
   },
   {
-    "stt": 736,
-    "ind_name": "Tiền vay ngắn hạn, dài hạn nhận được",
-    "ind_code": "tien_vay_ngan_han_dai_han_nhan_duoc"
+    "raw_name": "Tiền vay ngắn hạn, dài hạn nhận được",
+    "old_ind_code": "tien_vay_ngan_han_dai_han_nhan_duoc",
+    "norm_name": "Tiền vay ngắn hạn, dài hạn nhận được"
   },
   {
-    "stt": 737,
-    "ind_name": "Tiền và các khoản tương đương tiền",
-    "ind_code": "tien_va_tuong_duong_tien"
+    "raw_name": "Tiền và các khoản tương đương tiền",
+    "old_ind_code": "tien_va_tuong_duong_tien",
+    "norm_name": "Tiền và các khoản tương đương tiền"
   },
   {
-    "stt": 738,
-    "ind_name": "Tiền và các khoản tương đương tiền cuối kỳ",
-    "ind_code": "tien_va_tuong_duong_tien_cuoi_ky"
+    "raw_name": "Tiền và các khoản tương đương tiền cuối kỳ",
+    "old_ind_code": "tien_va_tuong_duong_tien_cuoi_ky",
+    "norm_name": "Tiền và các khoản tương đương tiền cuối kỳ"
   },
   {
-    "stt": 739,
-    "ind_name": "Tiền và các khoản tương đương tiền đầu kỳ",
-    "ind_code": "tien_va_tuong_duong_tien_dau_ky"
+    "raw_name": "Tiền và các khoản tương đương tiền đầu kỳ",
+    "old_ind_code": "tien_va_tuong_duong_tien_dau_ky",
+    "norm_name": "Tiền và các khoản tương đương tiền đầu kỳ"
   },
   {
-    "stt": 740,
-    "ind_name": "Tiền và tương đương tiền cuối kỳ",
-    "ind_code": "tien_va_tuong_duong_tien_cuoi_ky"
+    "raw_name": "Tiền và tương đương tiền cuối kỳ",
+    "old_ind_code": "tien_va_tuong_duong_tien_cuoi_ky",
+    "norm_name": "Tiền và các khoản tương đương tiền cuối kỳ"
   },
   {
-    "stt": 741,
-    "ind_name": "Tiền và tương đương tiền đầu kỳ",
-    "ind_code": "tien_va_tuong_duong_tien_dau_ky"
+    "raw_name": "Tiền và tương đương tiền đầu kỳ",
+    "old_ind_code": "tien_va_tuong_duong_tien_dau_ky",
+    "norm_name": "Tiền và các khoản tương đương tiền đầu kỳ"
   },
   {
-    "stt": 742,
-    "ind_name": "Tiền đã chi mua các tài sản tài chính",
-    "ind_code": "tien_da_chi_mua_cac_tai_san_tai_chinh"
+    "raw_name": "Tiền đã chi mua các tài sản tài chính",
+    "old_ind_code": "tien_da_chi_mua_cac_tai_san_tai_chinh",
+    "norm_name": "Tiền đã chi mua các tài sản tài chính"
   },
   {
-    "stt": 743,
-    "ind_name": "Tiền đã hoàn vốn cho các chủ sở hữu",
-    "ind_code": "tien_da_hoan_von_cho_cac_chu_so_huu"
+    "raw_name": "Tiền đã hoàn vốn cho các chủ sở hữu",
+    "old_ind_code": "tien_da_hoan_von_cho_cac_chu_so_huu",
+    "norm_name": "Tiền đã hoàn vốn cho các chủ sở hữu"
   },
   {
-    "stt": 744,
-    "ind_name": "Tiền đã thu từ bán các tài sản tài chính",
-    "ind_code": "tien_da_thu_tu_ban_cac_tai_san_tai_chinh"
+    "raw_name": "Tiền đã thu từ bán các tài sản tài chính",
+    "old_ind_code": "tien_da_thu_tu_ban_cac_tai_san_tai_chinh",
+    "norm_name": "Tiền đã thu từ bán các tài sản tài chính"
   },
   {
-    "stt": 745,
-    "ind_name": "Tiền đã trả nợ vay",
-    "ind_code": "tien_da_tra_no_vay"
+    "raw_name": "Tiền đã trả nợ vay",
+    "old_ind_code": "tien_da_tra_no_vay",
+    "norm_name": "Tiền đã trả nợ vay"
   },
   {
-    "stt": 746,
-    "ind_name": "Tiền đầu tư vào các đơn vị khác",
-    "ind_code": "tien_dau_tu_vao_cac_don_vi_khac"
+    "raw_name": "Tiền đầu tư vào các đơn vị khác",
+    "old_ind_code": "tien_dau_tu_vao_cac_don_vi_khac",
+    "norm_name": "Tiền đầu tư vào các đơn vị khác"
   },
   {
-    "stt": 747,
-    "ind_name": "Tiền, Vàng gửi tại các TCTD khác",
-    "ind_code": "tien_vang_gui_tai_cac_tctd_khac"
+    "raw_name": "Tiền, Vàng gửi tại các TCTD khác",
+    "old_ind_code": "tien_vang_gui_tai_cac_tctd_khac",
+    "norm_name": "Tiền, Vàng gửi tại các tổ chức tín dụng khác"
   },
   {
-    "stt": 748,
-    "ind_name": "Tiền, vàng gửi tại các TCTD khác và cho vay các TCTD khác",
-    "ind_code": "tien_gui_tai_cac_tctd_khac_va_cho_vay_cac_tctd_khac"
+    "raw_name": "Tiền, vàng gửi tại các TCTD khác và cho vay các TCTD khác",
+    "old_ind_code": "tien_gui_tai_cac_tctd_khac_va_cho_vay_cac_tctd_khac",
+    "norm_name": "Tiền, vàng gửi tại các tổ chức tín dụng khác và cho vay các tổ chức tín dụng khác"
   },
   {
-    "stt": 749,
-    "ind_name": "Trong đó: Chi phí lãi vay",
-    "ind_code": "cp_lai_vay"
+    "raw_name": "Trong đó: Chi phí lãi vay",
+    "old_ind_code": "cp_lai_vay",
+    "norm_name": "Trong đó: Chi phí lãi vay"
   },
   {
-    "stt": 750,
-    "ind_name": "Trong đó: Chi phí sửa lỗi giao dịch chứng khoán, lỗi khác",
-    "ind_code": "trong_do_chi_phi_sua_loi_giao_dich_chung_khoan_loi_khac"
+    "raw_name": "Trong đó: Chi phí sửa lỗi giao dịch chứng khoán, lỗi khác",
+    "old_ind_code": "trong_do_chi_phi_sua_loi_giao_dich_chung_khoan_loi_khac",
+    "norm_name": "Trong đó: Chi phí sửa lỗi giao dịch chứng khoán, lỗi khác"
   },
   {
-    "stt": 751,
-    "ind_name": "Trong đó: Lợi thế thương mại",
-    "ind_code": "loi_the_tm"
+    "raw_name": "Trong đó: Lợi thế thương mại",
+    "old_ind_code": "loi_the_tm",
+    "norm_name": "Trong đó: Lợi thế thương mại"
   },
   {
-    "stt": 752,
-    "ind_name": "Trái phiếu chuyển đổi",
-    "ind_code": "tp_chuyen_doi"
+    "raw_name": "Trái phiếu chuyển đổi",
+    "old_ind_code": "tp_chuyen_doi",
+    "norm_name": "Trái phiếu chuyển đổi"
   },
   {
-    "stt": 753,
-    "ind_name": "Trái phiếu phát hành dài hạn",
-    "ind_code": "trai_phieu_phat_hanh_dai_han"
+    "raw_name": "Trái phiếu phát hành dài hạn",
+    "old_ind_code": "trai_phieu_phat_hanh_dai_han",
+    "norm_name": "Trái phiếu phát hành dài hạn"
   },
   {
-    "stt": 754,
-    "ind_name": "Trái phiếu phát hành ngắn hạn",
-    "ind_code": "trai_phieu_phat_hanh_ngan_han"
+    "raw_name": "Trái phiếu phát hành ngắn hạn",
+    "old_ind_code": "trai_phieu_phat_hanh_ngan_han",
+    "norm_name": "Trái phiếu phát hành ngắn hạn"
   },
   {
-    "stt": 755,
-    "ind_name": "Trả tiền bồi thường bảo hiểm",
-    "ind_code": "tra_tien_boi_thuong_bao_hiem"
+    "raw_name": "Trả tiền bồi thường bảo hiểm",
+    "old_ind_code": "tra_tien_boi_thuong_bao_hiem",
+    "norm_name": "Trả tiền bồi thường bảo hiểm"
   },
   {
-    "stt": 756,
-    "ind_name": "Trả tiền cho các khoản nợ khác",
-    "ind_code": "tra_tien_cho_cac_khoan_no_khac"
+    "raw_name": "Trả tiền cho các khoản nợ khác",
+    "old_ind_code": "tra_tien_cho_cac_khoan_no_khac",
+    "norm_name": "Trả tiền cho các khoản nợ khác"
   },
   {
-    "stt": 757,
-    "ind_name": "Trả tiền cho cán bộ công nhân viên",
-    "ind_code": "tra_tien_cho_can_bo_cong_nhan_vien"
+    "raw_name": "Trả tiền cho cán bộ công nhân viên",
+    "old_ind_code": "tra_tien_cho_can_bo_cong_nhan_vien",
+    "norm_name": "Trả tiền cho cán bộ công nhân viên"
   },
   {
-    "stt": 758,
-    "ind_name": "Trả tiền cho người bán, người cung cấp dịch vụ",
-    "ind_code": "tra_tien_cho_nguoi_ban_nguoi_cung_cap_dich_vu"
+    "raw_name": "Trả tiền cho người bán, người cung cấp dịch vụ",
+    "old_ind_code": "tra_tien_cho_nguoi_ban_nguoi_cung_cap_dich_vu",
+    "norm_name": "Trả tiền cho người bán, người cung cấp dịch vụ"
   },
   {
-    "stt": 759,
-    "ind_name": "Trả tiền hoa hồng và các khoản nợ khác của kinh doanh bảo hiểm",
-    "ind_code": "tra_tien_hoa_hong_va_cac_khoan_no_khac_cua_kinh_doanh_bao_hiem"
+    "raw_name": "Trả tiền hoa hồng và các khoản nợ khác của kinh doanh bảo hiểm",
+    "old_ind_code": "tra_tien_hoa_hong_va_cac_khoan_no_khac_cua_kinh_doanh_bao_hiem",
+    "norm_name": "Trả tiền hoa hồng và các khoản nợ khác của kinh doanh bảo hiểm"
   },
   {
-    "stt": 760,
-    "ind_name": "Trả tiền nộp thuế và các khoản nợ Nhà nước",
-    "ind_code": "tra_tien_nop_thue_va_cac_khoan_no_nha_nuoc"
+    "raw_name": "Trả tiền nộp thuế và các khoản nợ Nhà nước",
+    "old_ind_code": "tra_tien_nop_thue_va_cac_khoan_no_nha_nuoc",
+    "norm_name": "Trả tiền nộp thuế và các khoản nợ Nhà nước"
   },
   {
-    "stt": 761,
-    "ind_name": "Trả trước cho người bán",
-    "ind_code": "tra_truoc_cho_nguoi_ban"
+    "raw_name": "Trả trước cho người bán",
+    "old_ind_code": "tra_truoc_cho_nguoi_ban",
+    "norm_name": "Trả trước cho người bán"
   },
   {
-    "stt": 762,
-    "ind_name": "TÀI SẢN DÀI HẠN",
-    "ind_code": "ts_dh"
+    "raw_name": "TÀI SẢN DÀI HẠN",
+    "old_ind_code": "ts_dh",
+    "norm_name": "Tài sản dài hạn"
   },
   {
-    "stt": 763,
-    "ind_name": "TÀI SẢN NGẮN HẠN",
-    "ind_code": "ts_nh"
+    "raw_name": "TÀI SẢN NGẮN HẠN",
+    "old_ind_code": "ts_nh",
+    "norm_name": "Tài sản ngắn hạn"
   },
   {
-    "stt": 764,
-    "ind_name": "Tài sản Thuế thu nhập hoãn lại",
-    "ind_code": "tai_san_thue_thu_nhap_hoan_lai"
+    "raw_name": "Tài sản Thuế thu nhập hoãn lại",
+    "old_ind_code": "tai_san_thue_thu_nhap_hoan_lai",
+    "norm_name": "Tài sản Thuế thu nhập hoãn lại"
   },
   {
-    "stt": 765,
-    "ind_name": "Tài sản có khác",
-    "ind_code": "ts_co_khac"
+    "raw_name": "Tài sản có khác",
+    "old_ind_code": "ts_co_khac",
+    "norm_name": "Tài sản có khác"
   },
   {
-    "stt": 766,
-    "ind_name": "Tài sản cố định",
-    "ind_code": "tscd"
+    "raw_name": "Tài sản cố định",
+    "old_ind_code": "tscd",
+    "norm_name": "Tài sản cố định"
   },
   {
-    "stt": 767,
-    "ind_name": "Tài sản cố định hữu hình",
-    "ind_code": "tscd_hh"
+    "raw_name": "Tài sản cố định hữu hình",
+    "old_ind_code": "tscd_hh",
+    "norm_name": "Tài sản cố định hữu hình"
   },
   {
-    "stt": 768,
-    "ind_name": "Tài sản cố định thuê tài chính",
-    "ind_code": "tai_san_co_dinh_thue_tai_chinh"
+    "raw_name": "Tài sản cố định thuê tài chính",
+    "old_ind_code": "tai_san_co_dinh_thue_tai_chinh",
+    "norm_name": "Tài sản cố định thuê tài chính"
   },
   {
-    "stt": 769,
-    "ind_name": "Tài sản cố định và đầu tư dài hạn",
-    "ind_code": "tai_san_co_dinh_va_dau_tu_dai_han"
+    "raw_name": "Tài sản cố định và đầu tư dài hạn",
+    "old_ind_code": "tai_san_co_dinh_va_dau_tu_dai_han",
+    "norm_name": "Tài sản cố định và đầu tư dài hạn"
   },
   {
-    "stt": 770,
-    "ind_name": "Tài sản cố định vô hình",
-    "ind_code": "tscd_vh"
+    "raw_name": "Tài sản cố định vô hình",
+    "old_ind_code": "tscd_vh",
+    "norm_name": "Tài sản cố định vô hình"
   },
   {
-    "stt": 771,
-    "ind_name": "Tài sản dài hạn khác",
-    "ind_code": "ts_dh_khac"
+    "raw_name": "Tài sản dài hạn khác",
+    "old_ind_code": "ts_dh_khac",
+    "norm_name": "Tài sản dài hạn khác"
   },
   {
-    "stt": 772,
-    "ind_name": "Tài sản dở dang dài hạn",
-    "ind_code": "tai_san_do_dang_dai_han"
+    "raw_name": "Tài sản dở dang dài hạn",
+    "old_ind_code": "tai_san_do_dang_dai_han",
+    "norm_name": "Tài sản dở dang dài hạn"
   },
   {
-    "stt": 773,
-    "ind_name": "Tài sản lưu động và đầu tư ngắn hạn",
-    "ind_code": "tai_san_luu_dong_va_dau_tu_ngan_han"
+    "raw_name": "Tài sản lưu động và đầu tư ngắn hạn",
+    "old_ind_code": "tai_san_luu_dong_va_dau_tu_ngan_han",
+    "norm_name": "Tài sản lưu động và đầu tư ngắn hạn"
   },
   {
-    "stt": 774,
-    "ind_name": "Tài sản ngắn hạn khác",
-    "ind_code": "ts_nh_khac"
+    "raw_name": "Tài sản ngắn hạn khác",
+    "old_ind_code": "ts_nh_khac",
+    "norm_name": "Tài sản ngắn hạn khác"
   },
   {
-    "stt": 775,
-    "ind_name": "Tài sản thuế TNDN hoãn lại",
-    "ind_code": "thue_tndn_hl"
+    "raw_name": "Tài sản thuế TNDN hoãn lại",
+    "old_ind_code": "thue_tndn_hl",
+    "norm_name": "Tài sản thuế thu nhập doanh nghiệp hoãn lại"
   },
   {
-    "stt": 776,
-    "ind_name": "Tài sản thuế thu nhập hoãn lãi",
-    "ind_code": "tai_san_thue_thu_nhap_hoan_lai"
+    "raw_name": "Tài sản thuế thu nhập hoãn lãi",
+    "old_ind_code": "tai_san_thue_thu_nhap_hoan_lai",
+    "norm_name": "Tài sản thuế thu nhập hoãn lãi"
   },
   {
-    "stt": 777,
-    "ind_name": "Tài sản thuế thu nhập hoãn lại",
-    "ind_code": "tai_san_thue_thu_nhap_hoan_lai"
+    "raw_name": "Tài sản thuế thu nhập hoãn lại",
+    "old_ind_code": "tai_san_thue_thu_nhap_hoan_lai",
+    "norm_name": "Tài sản thuế thu nhập hoãn lại"
   },
   {
-    "stt": 778,
-    "ind_name": "Tài sản tài chính",
-    "ind_code": "tai_san_tai_chinh"
+    "raw_name": "Tài sản tài chính",
+    "old_ind_code": "tai_san_tai_chinh",
+    "norm_name": "Tài sản tài chính"
   },
   {
-    "stt": 779,
-    "ind_name": "Tài sản tài chính dài hạn",
-    "ind_code": "tai_san_tai_chinh_dai_han"
+    "raw_name": "Tài sản tài chính dài hạn",
+    "old_ind_code": "tai_san_tai_chinh_dai_han",
+    "norm_name": "Tài sản tài chính dài hạn"
   },
   {
-    "stt": 780,
-    "ind_name": "Tăng (giảm) các khoản cho vay",
-    "ind_code": "tang_giam_cac_khoan_cho_vay"
+    "raw_name": "Tăng (giảm) các khoản cho vay",
+    "old_ind_code": "tang_giam_cac_khoan_cho_vay",
+    "norm_name": "Tăng/giảm các khoản cho vay"
   },
   {
-    "stt": 781,
-    "ind_name": "Tăng (giảm) các khoản đầu tư giữ đến ngày đáo hạn",
-    "ind_code": "chung_khoan_dau_tu_giu_den_ngay_dao_han"
+    "raw_name": "Tăng (giảm) các khoản đầu tư giữ đến ngày đáo hạn",
+    "old_ind_code": "chung_khoan_dau_tu_giu_den_ngay_dao_han",
+    "norm_name": "Tăng/giảm các khoản đầu tư giữ đến ngày đáo hạn"
   },
   {
-    "stt": 782,
-    "ind_name": "Tăng (giảm) các tài sản khác",
-    "ind_code": "tang_giam_cac_tai_san_khac"
+    "raw_name": "Tăng (giảm) các tài sản khác",
+    "old_ind_code": "tang_giam_cac_tai_san_khac",
+    "norm_name": "Tăng/giảm các tài sản khác"
   },
   {
-    "stt": 783,
-    "ind_name": "Tăng (giảm) dự phòng bồi thường",
-    "ind_code": "tang_giam_du_phong_boi_thuong"
+    "raw_name": "Tăng (giảm) dự phòng bồi thường",
+    "old_ind_code": "tang_giam_du_phong_boi_thuong",
+    "norm_name": "Tăng/giảm dự phòng bồi thường"
   },
   {
-    "stt": 784,
-    "ind_name": "Tăng (giảm) dự phòng phí, dự phòng toán học",
-    "ind_code": "tang_giam_du_phong_phi_du_phong_toan_hoc"
+    "raw_name": "Tăng (giảm) dự phòng phí, dự phòng toán học",
+    "old_ind_code": "tang_giam_du_phong_phi_du_phong_toan_hoc",
+    "norm_name": "Tăng/giảm dự phòng phí, dự phòng toán học"
   },
   {
-    "stt": 785,
-    "ind_name": "Tăng (giảm) lợi nhuận do chênh lệch tỉ giá",
-    "ind_code": "tang_giam_loi_nhuan_do_chenh_lech_ti_gia"
+    "raw_name": "Tăng (giảm) lợi nhuận do chênh lệch tỉ giá",
+    "old_ind_code": "tang_giam_loi_nhuan_do_chenh_lech_ti_gia",
+    "norm_name": "Tăng/giảm lợi nhuận do chênh lệch tỷ giá"
   },
   {
-    "stt": 786,
-    "ind_name": "Tăng (giảm) tài sản tài chính ghi nhận thông qua lãi lỗ",
-    "ind_code": "tang_giam_tai_san_tai_chinh_ghi_nhan_thong_qua_lai_lo"
+    "raw_name": "Tăng (giảm) tài sản tài chính ghi nhận thông qua lãi lỗ",
+    "old_ind_code": "tang_giam_tai_san_tai_chinh_ghi_nhan_thong_qua_lai_lo",
+    "norm_name": "Tăng/giảm tài sản tài chính ghi nhận thông qua lãi lỗ"
   },
   {
-    "stt": 787,
-    "ind_name": "Tăng (giảm) tài sản tài chính sẵn sàng để bán",
-    "ind_code": "chung_khoan_dau_tu_san_sang_de_ban"
+    "raw_name": "Tăng (giảm) tài sản tài chính sẵn sàng để bán",
+    "old_ind_code": "chung_khoan_dau_tu_san_sang_de_ban",
+    "norm_name": "Tăng/giảm tài sản tài chính sẵn sàng để bán"
   },
   {
-    "stt": 788,
-    "ind_name": "Tăng các chi phí phi tiền tệ",
-    "ind_code": "tang_cac_chi_phi_phi_tien_te"
+    "raw_name": "Tăng các chi phí phi tiền tệ",
+    "old_ind_code": "tang_cac_chi_phi_phi_tien_te",
+    "norm_name": "Tăng các chi phí phi tiền tệ"
   },
   {
-    "stt": 789,
-    "ind_name": "Tăng giảm chi phí trả trước",
-    "ind_code": "tang_giam_chi_phi_tra_truoc"
+    "raw_name": "Tăng giảm chi phí trả trước",
+    "old_ind_code": "tang_giam_chi_phi_tra_truoc",
+    "norm_name": "Tăng/giảm chi phí trả trước"
   },
   {
-    "stt": 790,
-    "ind_name": "Tăng giảm các khoản phải thu",
-    "ind_code": "tg_pt"
+    "raw_name": "Tăng giảm các khoản phải thu",
+    "old_ind_code": "tg_pt",
+    "norm_name": "Tăng/giảm các khoản phải thu"
   },
   {
-    "stt": 791,
-    "ind_name": "Tăng giảm các khoản phải trả (không kể Lãi vay phải trả, thuế thu nhập phải nộp)",
-    "ind_code": "tang_giam_cac_khoan_phai_tra_khong_ke_lai_vay_phai_tra_thue_thu_nhap_phai_nop"
+    "raw_name": "Tăng giảm các khoản phải trả (không kể Lãi vay phải trả, thuế thu nhập phải nộp)",
+    "old_ind_code": "tang_giam_cac_khoan_phai_tra_khong_ke_lai_vay_phai_tra_thue_thu_nhap_phai_nop",
+    "norm_name": "Tăng/giảm các khoản phải trả (không kể Lãi vay phải trả, thuế thu nhập phải nộp)"
   },
   {
-    "stt": 792,
-    "ind_name": "Tăng giảm hàng tồn kho",
-    "ind_code": "tang_giam_hang_ton_kho"
+    "raw_name": "Tăng giảm hàng tồn kho",
+    "old_ind_code": "tang_giam_hang_ton_kho",
+    "norm_name": "Tăng/giảm hàng tồn kho"
   },
   {
-    "stt": 793,
-    "ind_name": "Tăng giảm tài sản ngắn hạn khác",
-    "ind_code": "tang_giam_tai_san_ngan_han_khac"
+    "raw_name": "Tăng giảm tài sản ngắn hạn khác",
+    "old_ind_code": "tang_giam_tai_san_ngan_han_khac",
+    "norm_name": "Tăng/giảm tài sản ngắn hạn khác"
   },
   {
-    "stt": 794,
-    "ind_name": "Tăng vốn cổ phần từ góp vốn và phát hành cổ phiếu",
-    "ind_code": "tang_von_co_phan_tu_gop_von_va_hoac_phat_hanh_co_phieu"
+    "raw_name": "Tăng vốn cổ phần từ góp vốn và phát hành cổ phiếu",
+    "old_ind_code": "tang_von_co_phan_tu_gop_von_va_hoac_phat_hanh_co_phieu",
+    "norm_name": "Tăng vốn cổ phần từ góp vốn và phát hành cổ phiếu"
   },
   {
-    "stt": 795,
-    "ind_name": "Tăng, giảm các khoản phải thu",
-    "ind_code": "tg_pt"
+    "raw_name": "Tăng, giảm các khoản phải thu",
+    "old_ind_code": "tg_pt",
+    "norm_name": "Tăng/giảm các khoản phải thu"
   },
   {
-    "stt": 796,
-    "ind_name": "Tăng, giảm các khoản phải trả (Không kể lãi vay phải trả, thuế thu nhập doanh nghiệp phải nộp)",
-    "ind_code": "tang_giam_cac_khoan_phai_tra_khong_ke_lai_vay_phai_tra_thue_thu_nhap_doanh_nghiep_phai_nop"
+    "raw_name": "Tăng, giảm các khoản phải trả (Không kể lãi vay phải trả, thuế thu nhập doanh nghiệp phải nộp)",
+    "old_ind_code": "tang_giam_cac_khoan_phai_tra_khong_ke_lai_vay_phai_tra_thue_thu_nhap_doanh_nghiep_phai_nop",
+    "norm_name": "Tăng/giảm các khoản phải trả (Không kể lãi vay phải trả, thuế thu nhập doanh nghiệp phải nộp)"
   },
   {
-    "stt": 797,
-    "ind_name": "Tăng, giảm hàng tồn kho",
-    "ind_code": "tang_giam_hang_ton_kho"
+    "raw_name": "Tăng, giảm hàng tồn kho",
+    "old_ind_code": "tang_giam_hang_ton_kho",
+    "norm_name": "Tăng/giảm hàng tồn kho"
   },
   {
-    "stt": 798,
-    "ind_name": "Tăng/(Giảm) các công cụ tài chính phái sinh và các khoản nợ tài chính khác",
-    "ind_code": "phai_sinh_va_no_tc_khac"
+    "raw_name": "Tăng/(Giảm) các công cụ tài chính phái sinh và các khoản nợ tài chính khác",
+    "old_ind_code": "phai_sinh_va_no_tc_khac",
+    "norm_name": "Tăng/giảm các công cụ tài chính phái sinh và các khoản nợ tài chính khác"
   },
   {
-    "stt": 799,
-    "ind_name": "Tăng/(Giảm) các khoản nợ chính phủ và NHNN",
-    "ind_code": "tang_giam_cac_khoan_no_chinh_phu_va_nhnn"
+    "raw_name": "Tăng/(Giảm) các khoản nợ chính phủ và NHNN",
+    "old_ind_code": "tang_giam_cac_khoan_no_chinh_phu_va_nhnn",
+    "norm_name": "Tăng/giảm các khoản nợ chính phủ và Ngân hàng Nhà nước"
   },
   {
-    "stt": 800,
-    "ind_name": "Tăng/(Giảm) các khoản tiền gửi, tiền vay các TCTD",
-    "ind_code": "tang_giam_cac_khoan_tien_gui_tien_vay_cac_tctd"
+    "raw_name": "Tăng/(Giảm) các khoản tiền gửi, tiền vay các TCTD",
+    "old_ind_code": "tang_giam_cac_khoan_tien_gui_tien_vay_cac_tctd",
+    "norm_name": "Tăng/giảm các khoản tiền gửi, tiền vay các tổ chức tín dụng"
   },
   {
-    "stt": 801,
-    "ind_name": "Tăng/(Giảm) khác về công nợ hoạt động",
-    "ind_code": "tang_giam_khac_ve_cong_no_hoat_dong"
+    "raw_name": "Tăng/(Giảm) khác về công nợ hoạt động",
+    "old_ind_code": "tang_giam_khac_ve_cong_no_hoat_dong",
+    "norm_name": "Tăng/giảm khác về công nợ hoạt động"
   },
   {
-    "stt": 802,
-    "ind_name": "Tăng/(Giảm) phát hành giấy tờ có giá",
-    "ind_code": "phat_hanh_giay_to_co_gia"
+    "raw_name": "Tăng/(Giảm) phát hành giấy tờ có giá",
+    "old_ind_code": "phat_hanh_giay_to_co_gia",
+    "norm_name": "Tăng/giảm phát hành giấy tờ có giá"
   },
   {
-    "stt": 803,
-    "ind_name": "Tăng/(Giảm) tiền gửi của khách hàng",
-    "ind_code": "tien_gui_cua_khach_hang"
+    "raw_name": "Tăng/(Giảm) tiền gửi của khách hàng",
+    "old_ind_code": "tien_gui_cua_khach_hang",
+    "norm_name": "Tăng/giảm tiền gửi của khách hàng"
   },
   {
-    "stt": 804,
-    "ind_name": "Tăng/(Giảm) vốn tài trợ, ủy thác đầu tư, cho vay mà TCTD chịu rủi ro",
-    "ind_code": "von_tai_tro_uy_thac_dau_tu_cua_cp_va_cac_to_chuc_td_khac"
+    "raw_name": "Tăng/(Giảm) vốn tài trợ, ủy thác đầu tư, cho vay mà TCTD chịu rủi ro",
+    "old_ind_code": "von_tai_tro_uy_thac_dau_tu_cua_cp_va_cac_to_chuc_td_khac",
+    "norm_name": "Tăng/giảm vốn tài trợ, ủy thác đầu tư, cho vay mà tổ chức tín dụng chịu rủi ro"
   },
   {
-    "stt": 805,
-    "ind_name": "Tăng/giảm tiền thuần trong kỳ",
-    "ind_code": "luu_chuyen_tien_thuan_trong_ky"
+    "raw_name": "Tăng/giảm tiền thuần trong kỳ",
+    "old_ind_code": "luu_chuyen_tien_thuan_trong_ky",
+    "norm_name": "Tăng/giảm tiền thuần trong kỳ"
   },
   {
-    "stt": 806,
-    "ind_name": "Tạm ứng",
-    "ind_code": "tam_ung"
+    "raw_name": "Tạm ứng",
+    "old_ind_code": "tam_ung",
+    "norm_name": "Tạm ứng"
   },
   {
-    "stt": 807,
-    "ind_name": "TỔNG CỘNG NGUỒN VỐN",
-    "ind_code": "tong_nv"
+    "raw_name": "TỔNG CỘNG NGUỒN VỐN",
+    "old_ind_code": "tong_nv",
+    "norm_name": "Tổng cộng nguồn vốn"
   },
   {
-    "stt": 808,
-    "ind_name": "TỔNG CỘNG NỢ PHẢI TRẢ VÀ VỐN CHỦ SỞ HỮU",
-    "ind_code": "no_phai_tra"
+    "raw_name": "TỔNG CỘNG NỢ PHẢI TRẢ VÀ VỐN CHỦ SỞ HỮU",
+    "old_ind_code": "no_phai_tra",
+    "norm_name": "Tổng cộng nợ phải trả và vốn chủ sở hữu"
   },
   {
-    "stt": 809,
-    "ind_name": "TỔNG CỘNG TÀI SẢN",
-    "ind_code": "tong_ts"
+    "raw_name": "TỔNG CỘNG TÀI SẢN",
+    "old_ind_code": "tong_ts",
+    "norm_name": "Tổng cộng tài sản"
   },
   {
-    "stt": 810,
-    "ind_name": "TỔNG LỢI NHUẬN KẾ TOÁN TRƯỚC THUẾ",
-    "ind_code": "lntt"
+    "raw_name": "TỔNG LỢI NHUẬN KẾ TOÁN TRƯỚC THUẾ",
+    "old_ind_code": "lntt",
+    "norm_name": "Tổng lợi nhuận kế toán trước thuế"
   },
   {
-    "stt": 811,
-    "ind_name": "TỔNG NỢ PHẢI TRẢ VÀ VỐN CHỦ SỞ HỮU",
-    "ind_code": "no_phai_tra"
+    "raw_name": "TỔNG NỢ PHẢI TRẢ VÀ VỐN CHỦ SỞ HỮU",
+    "old_ind_code": "no_phai_tra",
+    "norm_name": "Tổng nợ phải trả và vốn chủ sở hữu"
   },
   {
-    "stt": 812,
-    "ind_name": "Tổng chi trực tiếp hoạt động kinh doanh bảo hiểm",
-    "ind_code": "tong_chi_truc_tiep_hoat_dong_kinh_doanh_bao_hiem"
+    "raw_name": "Tổng chi trực tiếp hoạt động kinh doanh bảo hiểm",
+    "old_ind_code": "tong_chi_truc_tiep_hoat_dong_kinh_doanh_bao_hiem",
+    "norm_name": "Tổng chi trực tiếp hoạt động kinh doanh bảo hiểm"
   },
   {
-    "stt": 813,
-    "ind_name": "Tổng doanh thu hoạt động kinh doanh",
-    "ind_code": "tong_doanh_thu_hoat_dong_kinh_doanh"
+    "raw_name": "Tổng doanh thu hoạt động kinh doanh",
+    "old_ind_code": "tong_doanh_thu_hoat_dong_kinh_doanh",
+    "norm_name": "Tổng doanh thu hoạt động kinh doanh"
   },
   {
-    "stt": 814,
-    "ind_name": "Tổng hàng tồn kho",
-    "ind_code": "hang_ton_kho"
+    "raw_name": "Tổng hàng tồn kho",
+    "old_ind_code": "hang_ton_kho",
+    "norm_name": "Tổng hàng tồn kho"
   },
   {
-    "stt": 815,
-    "ind_name": "Tổng lợi nhuận kế toán",
-    "ind_code": "tong_loi_nhuan_ke_toan"
+    "raw_name": "Tổng lợi nhuận kế toán",
+    "old_ind_code": "tong_loi_nhuan_ke_toan",
+    "norm_name": "Tổng lợi nhuận kế toán"
   },
   {
-    "stt": 816,
-    "ind_name": "Tổng lợi nhuận kế toán trước thuế (11)+(14)",
-    "ind_code": "lntt"
+    "raw_name": "Tổng lợi nhuận kế toán trước thuế (11)+(14)",
+    "old_ind_code": "lntt",
+    "norm_name": "Tổng lợi nhuận kế toán trước thuế +"
   },
   {
-    "stt": 817,
-    "ind_name": "Tổng lợi nhuận trước thuế",
-    "ind_code": "lntt"
+    "raw_name": "Tổng lợi nhuận trước thuế",
+    "old_ind_code": "lntt",
+    "norm_name": "Tổng lợi nhuận trước thuế"
   },
   {
-    "stt": 818,
-    "ind_name": "Tổng lợi nhuận trước thuế thu nhập doanh nghiệp",
-    "ind_code": "lntt"
+    "raw_name": "Tổng lợi nhuận trước thuế thu nhập doanh nghiệp",
+    "old_ind_code": "lntt",
+    "norm_name": "Tổng lợi nhuận trước thuế thu nhập doanh nghiệp"
   },
   {
-    "stt": 819,
-    "ind_name": "Tổng thu nhập toàn diện",
-    "ind_code": "tong_thu_nhap_toan_dien"
+    "raw_name": "Tổng thu nhập toàn diện",
+    "old_ind_code": "tong_thu_nhap_toan_dien",
+    "norm_name": "Tổng thu nhập toàn diện"
   },
   {
-    "stt": 820,
-    "ind_name": "Tổng tài sản dài hạn khác",
-    "ind_code": "ts_dh_khac"
+    "raw_name": "Tổng tài sản dài hạn khác",
+    "old_ind_code": "ts_dh_khac",
+    "norm_name": "Tổng tài sản dài hạn khác"
   },
   {
-    "stt": 821,
-    "ind_name": "Vay các TCTD khác",
-    "ind_code": "vay_cac_tctd_khac"
+    "raw_name": "Vay các TCTD khác",
+    "old_ind_code": "vay_cac_tctd_khac",
+    "norm_name": "Vay các tổ chức tín dụng khác"
   },
   {
-    "stt": 822,
-    "ind_name": "Vay dài hạn",
-    "ind_code": "vay_dai_han"
+    "raw_name": "Vay dài hạn",
+    "old_ind_code": "vay_dai_han",
+    "norm_name": "Vay dài hạn"
   },
   {
-    "stt": 823,
-    "ind_name": "Vay ngắn hạn",
-    "ind_code": "vay_ngan_han"
+    "raw_name": "Vay ngắn hạn",
+    "old_ind_code": "vay_ngan_han",
+    "norm_name": "Vay ngắn hạn"
   },
   {
-    "stt": 824,
-    "ind_name": "Vay và nợ dài hạn đến hạn phải trả",
-    "ind_code": "vay_va_no_dai_han"
+    "raw_name": "Vay và nợ dài hạn đến hạn phải trả",
+    "old_ind_code": "vay_va_no_dai_han",
+    "norm_name": "Vay và nợ dài hạn đến hạn phải trả"
   },
   {
-    "stt": 825,
-    "ind_name": "Vay và nợ ngắn hạn",
-    "ind_code": "vay_va_no_ngan_han"
+    "raw_name": "Vay và nợ ngắn hạn",
+    "old_ind_code": "vay_va_no_ngan_han",
+    "norm_name": "Vay và nợ ngắn hạn"
   },
   {
-    "stt": 826,
-    "ind_name": "Vay và nợ thuê tài chính dài hạn",
-    "ind_code": "vay_va_no_thue_tai_chinh_dai_han"
+    "raw_name": "Vay và nợ thuê tài chính dài hạn",
+    "old_ind_code": "vay_va_no_thue_tai_chinh_dai_han",
+    "norm_name": "Vay và nợ thuê tài chính dài hạn"
   },
   {
-    "stt": 827,
-    "ind_name": "Vay và nợ thuê tài chính ngắn hạn",
-    "ind_code": "vay_va_no_thue_tai_chinh_ngan_han"
+    "raw_name": "Vay và nợ thuê tài chính ngắn hạn",
+    "old_ind_code": "vay_va_no_thue_tai_chinh_ngan_han",
+    "norm_name": "Vay và nợ thuê tài chính ngắn hạn"
   },
   {
-    "stt": 828,
-    "ind_name": "Vay và nợ thuê tài sản tài chính dài hạn",
-    "ind_code": "vay_va_no_thue_tai_chinh_dai_han"
+    "raw_name": "Vay và nợ thuê tài sản tài chính dài hạn",
+    "old_ind_code": "vay_va_no_thue_tai_chinh_dai_han",
+    "norm_name": "Vay và nợ thuê tài sản tài chính dài hạn"
   },
   {
-    "stt": 829,
-    "ind_name": "Vay và nợ thuê tài sản tài chính ngắn hạn",
-    "ind_code": "vay_va_no_thue_tai_chinh_ngan_han"
+    "raw_name": "Vay và nợ thuê tài sản tài chính ngắn hạn",
+    "old_ind_code": "vay_va_no_thue_tai_chinh_ngan_han",
+    "norm_name": "Vay và nợ thuê tài sản tài chính ngắn hạn"
   },
   {
-    "stt": 830,
-    "ind_name": "Vật tư văn phòng, công cụ, dụng cụ",
-    "ind_code": "vat_tu_van_phong_cong_cu_dung_cu"
+    "raw_name": "Vật tư văn phòng, công cụ, dụng cụ",
+    "old_ind_code": "vat_tu_van_phong_cong_cu_dung_cu",
+    "norm_name": "Vật tư văn phòng, công cụ, dụng cụ"
   },
   {
-    "stt": 831,
-    "ind_name": "VỐN CHỦ SỞ HỮU",
-    "ind_code": "vcsh"
+    "raw_name": "VỐN CHỦ SỞ HỮU",
+    "old_ind_code": "vcsh",
+    "norm_name": "Vốn chủ sở hữu"
   },
   {
-    "stt": 832,
-    "ind_name": "Vốn chủ sở hữu",
-    "ind_code": "vcsh"
+    "raw_name": "Vốn chủ sở hữu",
+    "old_ind_code": "vcsh",
+    "norm_name": "Vốn chủ sở hữu"
   },
   {
-    "stt": 833,
-    "ind_name": "Vốn của Tổ chức tín dụng",
-    "ind_code": "von_cua_to_chuc_tin_dung"
+    "raw_name": "Vốn của Tổ chức tín dụng",
+    "old_ind_code": "von_cua_to_chuc_tin_dung",
+    "norm_name": "Vốn của Tổ chức tín dụng"
   },
   {
-    "stt": 834,
-    "ind_name": "Vốn góp của chủ sở hữu",
-    "ind_code": "von_gop_csh"
+    "raw_name": "Vốn góp của chủ sở hữu",
+    "old_ind_code": "von_gop_csh",
+    "norm_name": "Vốn góp của chủ sở hữu"
   },
   {
-    "stt": 835,
-    "ind_name": "Vốn góp của các cổ đông thiểu số vào các công ty con",
-    "ind_code": "von_gop_cua_cac_co_dong_thieu_so_vao_cac_cong_ty_con"
+    "raw_name": "Vốn góp của các cổ đông thiểu số vào các công ty con",
+    "old_ind_code": "von_gop_cua_cac_co_dong_thieu_so_vao_cac_cong_ty_con",
+    "norm_name": "Vốn góp của các cổ đông thiểu số vào các công ty con"
   },
   {
-    "stt": 836,
-    "ind_name": "Vốn khác",
-    "ind_code": "von_khac"
+    "raw_name": "Vốn khác",
+    "old_ind_code": "von_khac",
+    "norm_name": "Vốn khác"
   },
   {
-    "stt": 837,
-    "ind_name": "Vốn khác của chủ sở hữu",
-    "ind_code": "von_khac_cua_chu_so_huu"
+    "raw_name": "Vốn khác của chủ sở hữu",
+    "old_ind_code": "von_khac_cua_chu_so_huu",
+    "norm_name": "Vốn khác của chủ sở hữu"
   },
   {
-    "stt": 838,
-    "ind_name": "Vốn kinh doanh tại các đơn vị trực thuộc",
-    "ind_code": "von_kinh_doanh_tai_cac_don_vi_truc_thuoc"
+    "raw_name": "Vốn kinh doanh tại các đơn vị trực thuộc",
+    "old_ind_code": "von_kinh_doanh_tai_cac_don_vi_truc_thuoc",
+    "norm_name": "Vốn kinh doanh tại các đơn vị trực thuộc"
   },
   {
-    "stt": 839,
-    "ind_name": "Vốn tài trợ, uỷ thác đầu tư mà ngân hàng chịu rủi ro",
-    "ind_code": "von_tai_tro_uy_thac_dau_tu_ma_ngan_hang_chiu_rui_ro"
+    "raw_name": "Vốn tài trợ, uỷ thác đầu tư mà ngân hàng chịu rủi ro",
+    "old_ind_code": "von_tai_tro_uy_thac_dau_tu_ma_ngan_hang_chiu_rui_ro",
+    "norm_name": "Vốn tài trợ, ủy thác đầu tư mà ngân hàng chịu rủi ro"
   },
   {
-    "stt": 840,
-    "ind_name": "Vốn điều lệ",
-    "ind_code": "von_dieu_le"
+    "raw_name": "Vốn điều lệ",
+    "old_ind_code": "von_dieu_le",
+    "norm_name": "Vốn điều lệ"
   },
   {
-    "stt": 841,
-    "ind_name": "Vốn đầu tư XDCB",
-    "ind_code": "von_dau_tu_xdcb"
+    "raw_name": "Vốn đầu tư XDCB",
+    "old_ind_code": "von_dau_tu_xdcb",
+    "norm_name": "Vốn đầu tư xây dựng cơ bản"
   },
   {
-    "stt": 842,
-    "ind_name": "Vốn đầu tư của chủ sở hữu",
-    "ind_code": "von_gop_csh"
+    "raw_name": "Vốn đầu tư của chủ sở hữu",
+    "old_ind_code": "von_gop_csh",
+    "norm_name": "Vốn đầu tư của chủ sở hữu"
   },
   {
-    "stt": 843,
-    "ind_name": "Xóa sổ tài sản cố định (thuần)",
-    "ind_code": "xoa_so_tai_san_co_dinh_thuan"
+    "raw_name": "Xóa sổ tài sản cố định (thuần)",
+    "old_ind_code": "xoa_so_tai_san_co_dinh_thuan",
+    "norm_name": "Xóa sổ tài sản cố định (thuần)"
   },
   {
-    "stt": 844,
-    "ind_name": "c.Chi phí giao dịch mua các tài sản tài chính FVTPL",
-    "ind_code": "c_chi_phi_giao_dich_mua_cac_tai_san_tai_chinh_fvtpl"
+    "raw_name": "c.Chi phí giao dịch mua các tài sản tài chính FVTPL",
+    "old_ind_code": "c_chi_phi_giao_dich_mua_cac_tai_san_tai_chinh_fvtpl",
+    "norm_name": "Chi phí giao dịch mua các tài sản tài chính FVTPL"
   },
   {
-    "stt": 845,
-    "ind_name": "chi phí xây dựng cơ bản dở dang",
-    "ind_code": "chi_phi_xay_dung_co_ban_do_dang"
+    "raw_name": "chi phí xây dựng cơ bản dở dang",
+    "old_ind_code": "chi_phi_xay_dung_co_ban_do_dang",
+    "norm_name": "Chi phí xây dựng cơ bản dở dang"
   },
   {
-    "stt": 846,
-    "ind_name": "Điều chỉnh cho các khoản",
-    "ind_code": "dieu_chinh_cho_cac_khoan"
+    "raw_name": "Điều chỉnh cho các khoản",
+    "old_ind_code": "dieu_chinh_cho_cac_khoan",
+    "norm_name": "Điều chỉnh cho các khoản"
   },
   {
-    "stt": 847,
-    "ind_name": "Điều chỉnh cho các khoản:",
-    "ind_code": "dieu_chinh_cho_cac_khoan"
+    "raw_name": "Điều chỉnh cho các khoản:",
+    "old_ind_code": "dieu_chinh_cho_cac_khoan",
+    "norm_name": "Điều chỉnh cho các khoản"
   },
   {
-    "stt": 848,
-    "ind_name": "Điều chỉnh qua các khoản",
-    "ind_code": "dieu_chinh_qua_cac_khoan"
+    "raw_name": "Điều chỉnh qua các khoản",
+    "old_ind_code": "dieu_chinh_qua_cac_khoan",
+    "norm_name": "Điều chỉnh qua các khoản"
   },
   {
-    "stt": 849,
-    "ind_name": "Đầu tư chứng khoán dài hạn",
-    "ind_code": "dau_tu_chung_khoan_dai_han"
+    "raw_name": "Đầu tư chứng khoán dài hạn",
+    "old_ind_code": "dau_tu_chung_khoan_dai_han",
+    "norm_name": "Đầu tư chứng khoán dài hạn"
   },
   {
-    "stt": 850,
-    "ind_name": "Đầu tư chứng khoán ngắn hạn",
-    "ind_code": "dau_tu_chung_khoan_ngan_han"
+    "raw_name": "Đầu tư chứng khoán ngắn hạn",
+    "old_ind_code": "dau_tu_chung_khoan_ngan_han",
+    "norm_name": "Đầu tư chứng khoán ngắn hạn"
   },
   {
-    "stt": 851,
-    "ind_name": "Đầu tư dài hạn khác",
-    "ind_code": "dau_tu_dai_han_khac"
+    "raw_name": "Đầu tư dài hạn khác",
+    "old_ind_code": "dau_tu_dai_han_khac",
+    "norm_name": "Đầu tư dài hạn khác"
   },
   {
-    "stt": 852,
-    "ind_name": "Đầu tư góp vốn vào công ty liên doanh liên kết",
-    "ind_code": "dau_tu_gop_von_vao_cong_ty_lien_doanh_lien_ket"
+    "raw_name": "Đầu tư góp vốn vào công ty liên doanh liên kết",
+    "old_ind_code": "dau_tu_gop_von_vao_cong_ty_lien_doanh_lien_ket",
+    "norm_name": "Đầu tư góp vốn vào công ty liên doanh liên kết"
   },
   {
-    "stt": 853,
-    "ind_name": "Đầu tư khác vào công cụ vốn",
-    "ind_code": "dau_tu_khac_vao_cong_cu_von"
+    "raw_name": "Đầu tư khác vào công cụ vốn",
+    "old_ind_code": "dau_tu_khac_vao_cong_cu_von",
+    "norm_name": "Đầu tư khác vào công cụ vốn"
   },
   {
-    "stt": 854,
-    "ind_name": "Đầu tư ngắn hạn khác",
-    "ind_code": "dau_tu_ngan_han_khac"
+    "raw_name": "Đầu tư ngắn hạn khác",
+    "old_ind_code": "dau_tu_ngan_han_khac",
+    "norm_name": "Đầu tư ngắn hạn khác"
   },
   {
-    "stt": 855,
-    "ind_name": "Đầu tư nắm giữ đến ngày đáo hạn",
-    "ind_code": "chung_khoan_dau_tu_giu_den_ngay_dao_han"
+    "raw_name": "Đầu tư nắm giữ đến ngày đáo hạn",
+    "old_ind_code": "chung_khoan_dau_tu_giu_den_ngay_dao_han",
+    "norm_name": "Đầu tư nắm giữ đến ngày đáo hạn"
   },
   {
-    "stt": 856,
-    "ind_name": "Đầu tư vào công ty con",
-    "ind_code": "dau_tu_vao_cong_ty_con"
+    "raw_name": "Đầu tư vào công ty con",
+    "old_ind_code": "dau_tu_vao_cong_ty_con",
+    "norm_name": "Đầu tư vào công ty con"
   },
   {
-    "stt": 857,
-    "ind_name": "Đầu tư vào công ty liên doanh, liên kết",
-    "ind_code": "dau_tu_vao_cong_ty_lien_doanh_lien_ket"
+    "raw_name": "Đầu tư vào công ty liên doanh, liên kết",
+    "old_ind_code": "dau_tu_vao_cong_ty_lien_doanh_lien_ket",
+    "norm_name": "Đầu tư vào công ty liên doanh, liên kết"
   },
   {
-    "stt": 858,
-    "ind_name": "Đầu tư vào công ty liên kết",
-    "ind_code": "dau_tu_vao_cong_ty_lien_ket"
+    "raw_name": "Đầu tư vào công ty liên kết",
+    "old_ind_code": "dau_tu_vao_cong_ty_lien_ket",
+    "norm_name": "Đầu tư vào công ty liên kết"
   },
   {
-    "stt": 859,
-    "ind_name": "Đầu tư vào công ty liên kết, liên doanh",
-    "ind_code": "dau_tu_vao_cong_ty_lien_doanh_lien_ket"
+    "raw_name": "Đầu tư vào công ty liên kết, liên doanh",
+    "old_ind_code": "dau_tu_vao_cong_ty_lien_doanh_lien_ket",
+    "norm_name": "Đầu tư vào công ty liên kết, liên doanh"
   },
   {
-    "stt": 860,
-    "ind_name": "Ảnh hưởng của thay đổi tỷ giá hối đoái quy đổi ngoại tệ",
-    "ind_code": "ah_tygia"
+    "raw_name": "Ảnh hưởng của thay đổi tỷ giá hối đoái quy đổi ngoại tệ",
+    "old_ind_code": "ah_tygia",
+    "norm_name": "Ảnh hưởng của thay đổi tỷ giá hối đoái"
   }
 ]

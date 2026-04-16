@@ -6,18 +6,19 @@ import IncomeStatementDeepDive from "@/components/stock/IncomeStatementDeepDive"
 import CashFlowDeepDive from "@/components/stock/CashFlowDeepDive";
 import { useStockDetail } from "@/lib/StockDetailContext";
 import {
-  useDeepAnalysis,
   useFinancialReports,
   useFinancialRatios,
-  useAvailablePeriods,
-  type DeepAnalysisData,
+  useCompanyProfile,
   type OverviewStat,
   type HealthIndicator,
   type TrendYear,
-  type BalanceSheetItem,
 } from "@/hooks/useStockData";
 import BalanceSheetDeepDive from "@/components/stock/BalanceSheetDeepDive";
 import { transformBalanceSheet, transformIncomeStatement, transformCashFlow } from "@/lib/deepDiveTransformer";
+import BankTcdnDashboard from "@/components/stock/BankTcdnDashboard";
+import InsuranceTcdnDashboard from "@/components/stock/InsuranceTcdnDashboard";
+import FincoTcdnDashboard from "@/components/stock/FincoTcdnDashboard";
+import { isBankingIndustry, isInsuranceIndustry, isFincoIndustry } from "@/lib/industryClassifier";
 
 // ==================== HELPER FUNCTIONS ====================
 const formatNumber = (n: number) => n.toLocaleString("vi-VN");
@@ -86,7 +87,14 @@ function PageHeader({
           </div>
           <div className="flex flex-col">
             <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Đơn vị</span>
-            <div className="text-sm font-semibold text-foreground mt-0.5">Tỷ VND</div>
+            <select
+              className="text-sm font-semibold text-foreground bg-transparent border-none cursor-pointer focus:outline-none"
+              value={String(unit)}
+              onChange={(e) => onUnitChange(Number(e.target.value))}
+            >
+              <option value="1000000000">Tỷ VND</option>
+              <option value="1000000">Triệu VND</option>
+            </select>
           </div>
         </div>
       </div>
@@ -355,9 +363,10 @@ export default function BalanceSheetTab() {
   // Fetch raw financial reports and ratios
   const { data: financialReports } = useFinancialReports(stockInfo.ticker, 20);
   const { data: financialRatios } = useFinancialRatios(stockInfo.ticker, 20);
+  const { data: companyProfile } = useCompanyProfile(stockInfo.ticker);
 
   const [selectedPeriod, setSelectedPeriod] = useState<string | null>(null);
-  const unit = 1_000_000_000; // Fixed Billion
+  const [unit, setUnit] = useState<number>(1_000_000_000);
 
   // Extract available periods from the data
   const periods = useMemo(() => {
@@ -378,8 +387,11 @@ export default function BalanceSheetTab() {
 
   // Default to latest period
   React.useEffect(() => {
-    if (periods.length > 0 && selectedPeriod === null) {
-        setSelectedPeriod(periods[0]);
+    if (periods.length === 0) {
+      return;
+    }
+    if (selectedPeriod === null || !periods.includes(selectedPeriod)) {
+      setSelectedPeriod(periods[0]);
     }
   }, [periods, selectedPeriod]);
 
@@ -419,6 +431,75 @@ export default function BalanceSheetTab() {
   
   const [subTab, setSubTab] = useState<SubTab>("balance");
 
+  const isBankTicker = useMemo(() => {
+    const sector = companyProfile?.overview?.sector;
+    const industry = companyProfile?.overview?.industry;
+    return isBankingIndustry(sector, industry) || !!financialReports?.isBank;
+  }, [companyProfile, financialReports]);
+
+  const isInsuranceTicker = useMemo(() => {
+    const sector = companyProfile?.overview?.sector;
+    const industry = companyProfile?.overview?.industry;
+    return isInsuranceIndustry(sector, industry);
+  }, [companyProfile]);
+
+  const isFincoTicker = useMemo(() => {
+    const sector = companyProfile?.overview?.sector;
+    const industry = companyProfile?.overview?.industry;
+    return isFincoIndustry(sector, industry);
+  }, [companyProfile]);
+
+  if (isBankTicker) {
+    return (
+      <BankTcdnDashboard
+        ticker={stockInfo.ticker}
+        sector={companyProfile?.overview?.sector}
+        industry={companyProfile?.overview?.industry}
+        financialReports={financialReports ?? undefined}
+        financialRatios={financialRatios ?? undefined}
+        periods={periods}
+        selectedPeriod={selectedPeriod}
+        onPeriodChange={setSelectedPeriod}
+        unit={unit}
+        onUnitChange={setUnit}
+      />
+    );
+  }
+
+  if (isInsuranceTicker) {
+    return (
+      <InsuranceTcdnDashboard
+        ticker={stockInfo.ticker}
+        sector={companyProfile?.overview?.sector}
+        industry={companyProfile?.overview?.industry}
+        financialReports={financialReports ?? undefined}
+        financialRatios={financialRatios ?? undefined}
+        periods={periods}
+        selectedPeriod={selectedPeriod}
+        onPeriodChange={setSelectedPeriod}
+        unit={unit}
+        onUnitChange={setUnit}
+      />
+    );
+  }
+
+  if (isFincoTicker) {
+    return (
+      <FincoTcdnDashboard
+        ticker={stockInfo.ticker}
+        sector={companyProfile?.overview?.sector}
+        industry={companyProfile?.overview?.industry}
+        financialReports={financialReports ?? undefined}
+        financialRatios={financialRatios ?? undefined}
+        periods={periods}
+        selectedPeriod={selectedPeriod}
+        onPeriodChange={setSelectedPeriod}
+        unit={unit}
+        onUnitChange={setUnit}
+      />
+    );
+  }
+
   return (
     <div className="space-y-5">
       <PageHeader 
@@ -429,7 +510,7 @@ export default function BalanceSheetTab() {
         selectedPeriod={selectedPeriod}
         onPeriodChange={setSelectedPeriod}
         unit={unit}
-        onUnitChange={() => {}}
+        onUnitChange={setUnit}
       />
       
       {/* Pass transformed view data (casted to Record<string, unknown> to satisfy prop type) */}

@@ -26,6 +26,51 @@ interface SectorOverviewItem {
     cashFlow: number;
 }
 
+const SECTOR_SHORT_NAME_MAP: Record<string, string> = {
+    "Bất động sản": "BĐS",
+    "Ngân hàng": "NH",
+    "Chứng khoán": "CK",
+    "Bảo hiểm": "BH",
+    "Thép": "Thép",
+    "Xây dựng": "XD",
+    "Vật liệu xây dựng": "VLXD",
+    "Dầu khí": "Dầu khí",
+    "Điện": "Điện",
+    "Nước": "Nước",
+    "Bán lẻ": "BL",
+    "Hàng cá nhân & gia dụng": "HCN-GD",
+    "Thực phẩm & đồ uống": "TP-ĐU",
+    "Hóa chất": "Hóa chất",
+    "Viễn thông": "VT",
+    "Công nghệ thông tin": "CNTT",
+    "Dịch vụ tài chính": "DVTC",
+    "Tài nguyên cơ bản": "TNCB",
+    "Y tế": "Y tế",
+    "Du lịch & giải trí": "DL-GT",
+    "Hàng & dịch vụ công nghiệp": "CN",
+    "Ô tô & phụ tùng": "Ô tô",
+    "Truyền thông": "Media",
+    "Vận tải": "VTải",
+    "Cảng biển": "Cảng",
+    "Phân bón": "PB",
+    "Dệt may": "DM",
+    "Thủy sản": "TS",
+    "Nông nghiệp": "NN",
+};
+
+const getShortSectorName = (name: string) => {
+    const mapped = SECTOR_SHORT_NAME_MAP[name];
+    if (mapped) return mapped;
+
+    // Fallback: lấy chữ cái đầu để tránh tên quá dài trên giao diện.
+    const acronym = name
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((word) => word[0]?.toUpperCase() ?? "")
+        .join("");
+    return acronym || name;
+};
+
 const SectorMarketOverview = () => {
     const [data, setData] = useState<SectorOverviewItem[]>([]);
     const [loading, setLoading] = useState(true);
@@ -52,6 +97,16 @@ const SectorMarketOverview = () => {
         return () => clearInterval(interval);
     }, [fetchData]);
 
+    const chartData = useMemo(
+        () =>
+            data.map((item) => ({
+                originalName: item.name,
+                shortName: getShortSectorName(item.name),
+                change: item.change,
+            })),
+        [data]
+    );
+
     const chartOption = useMemo(() => ({
         tooltip: {
             trigger: "axis",
@@ -59,11 +114,19 @@ const SectorMarketOverview = () => {
             textStyle: {
                 fontFamily: "var(--font-roboto), Roboto, sans-serif",
             },
+            formatter: (params: Array<{ dataIndex: number; value: number }>) => {
+                const point = params?.[0];
+                if (!point) return "";
+                const item = chartData[point.dataIndex];
+                if (!item) return "";
+                return `${item.originalName}<br/>Biến động: ${point.value}%`;
+            },
         },
         grid: {
-            left: "3%",
-            right: "4%",
-            bottom: "3%",
+            left: "8%",
+            right: "8%",
+            top: "6%",
+            bottom: "8%",
             containLabel: true,
         },
         xAxis: {
@@ -77,20 +140,22 @@ const SectorMarketOverview = () => {
             axisLabel: { show: false },
             axisTick: { show: false },
             splitLine: { show: false },
-            data: data.map((item) => item.name),
+            data: chartData.map((item) => item.shortName),
         },
         series: [
             {
                 name: "Thay đổi %",
                 type: "bar",
                 stack: "Total",
+                barWidth: 12,
                 label: {
                     show: true,
-                    position: "right",
-                    formatter: "{b}",
+                    formatter: (params: { data: { shortName: string } }) => params.data?.shortName ?? "",
                 },
-                data: data.map((item) => ({
+                data: chartData.map((item) => ({
                     value: item.change,
+                    shortName: item.shortName,
+                    originalName: item.originalName,
                     itemStyle: {
                         color: item.change >= 0 ? "#22c55e" : "#ef4444",
                     },
@@ -100,7 +165,7 @@ const SectorMarketOverview = () => {
                 })),
             },
         ],
-    }), [data]);
+    }), [chartData]);
 
     if (loading) {
         return (
@@ -108,7 +173,7 @@ const SectorMarketOverview = () => {
                 <Card className="shadow-sm border-border">
                     <CardHeader className="pb-2"><CardTitle className="text-lg font-bold text-foreground">Biến động ngành</CardTitle></CardHeader>
                     <CardContent>
-                        <div className="h-[350px] relative overflow-hidden rounded-lg">
+                        <div className="h-[420px] relative overflow-hidden rounded-lg">
                             <Skeleton className="h-full w-full" />
                             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
                                 <Loader2 className="w-7 h-7 text-orange-500 animate-spin" />
@@ -161,7 +226,7 @@ const SectorMarketOverview = () => {
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <ReactECharts option={chartOption} style={{ height: "350px" }} />
+                    <ReactECharts option={chartOption} style={{ height: "420px" }} />
                 </CardContent>
             </Card>
 
@@ -170,7 +235,7 @@ const SectorMarketOverview = () => {
                         <CardTitle className="text-lg font-bold text-foreground">Chi tiết ngành</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="overflow-auto max-h-[350px]">
+                    <div className="overflow-auto max-h-[420px]">
                         <Table>
                             <TableHeader>
                                 <TableRow>

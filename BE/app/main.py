@@ -17,6 +17,10 @@ from app.modules.tong_quan.router import router as tong_quan_router
 from app.modules.news.router import router as news_router
 from app.modules.indices.router import router as indices_router
 from app.modules.stock_list.router import router as stock_list_router
+from app.modules.stock_list.mv_refresh import (
+    start_stock_mv_refresh_task,
+    stop_stock_mv_refresh_task,
+)
 from app.modules.market.router import router as market_router
 from app.modules.stock.router import router as stock_router
 from app.modules.analysis.router import router as analysis_router
@@ -33,8 +37,15 @@ settings = get_settings()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup — các connection pool đã lazy-init, không cần gì thêm
+    mv_refresh_task = None
+    if settings.STOCK_MV_REFRESH_ENABLED:
+        mv_refresh_task = start_stock_mv_refresh_task(
+            interval_seconds=settings.STOCK_MV_REFRESH_INTERVAL_SECONDS,
+            run_on_startup=settings.STOCK_MV_REFRESH_RUN_ON_STARTUP,
+        )
     yield
     # Shutdown — đóng sạch connection pools
+    await stop_stock_mv_refresh_task(mv_refresh_task)
     await close_db()
     await close_redis()
 

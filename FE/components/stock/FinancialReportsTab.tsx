@@ -1,11 +1,17 @@
 "use client";
 
-import React, { useState, useCallback, Component, type ReactNode, type ErrorInfo } from "react";
+import React, { useState, useCallback, useMemo, Component, type ReactNode, type ErrorInfo } from "react";
 import ExcelJS from "exceljs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useFinancialReports, type IncomeStatementItem, type BalanceSheetItem, type CashFlowItem } from "@/hooks/useStockData";
+import {
+    useFinancialReports,
+    type IncomeStatementItem,
+    type BalanceSheetItem,
+    type CashFlowItem,
+    type FinancialReportTable,
+} from "@/hooks/useStockData";
 import { useStockDetail } from "@/lib/StockDetailContext";
-import { Download, FileSpreadsheet, Building2 } from "lucide-react";
+import { Download, FileSpreadsheet, Building2, ChevronDown, ChevronRight } from "lucide-react";
 
 // Temporary error boundary to capture runtime errors
 class FinancialErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
@@ -31,6 +37,9 @@ class FinancialErrorBoundary extends Component<{ children: ReactNode }, { error:
 }
 
 type ReportType = "income" | "balance" | "cashflow";
+
+type DynamicReportType = "incomeStatement" | "balanceSheet" | "cashFlow";
+type ReportLayout = "nonFinancial" | "bank" | "financial" | "insurance";
 
 const formatNumber = (val: number): string => {
     if (val === 0) return "0";
@@ -63,6 +72,203 @@ function ChangeCell({ current, previous }: { current: number; previous: number }
             {isPositive ? "+" : ""}
             {pct}%
         </span>
+    );
+}
+
+function normalizeLabelForGrouping(label: string): string {
+    return (label || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9\s]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+function getParentGroupId(reportType: DynamicReportType, label: string, indCode: string): string {
+    const l = normalizeLabelForGrouping(label);
+    const c = normalizeLabelForGrouping(indCode);
+
+    if (reportType === "incomeStatement") {
+        if (l.includes("doanh thu") || l.includes("thu nhap") || l.includes("revenue") || l.includes("income")) return "income-revenue";
+        if (l.includes("chi phi") || l.includes("gia von") || l.includes("expense") || l.includes("cost")) return "income-expense";
+        if (l.includes("thue") || c.includes("thue")) return "income-tax";
+        if (l.includes("loi nhuan") || l.includes("lai") || l.includes("eps") || l.includes("profit") || c.includes("lntt") || c.includes("lnst")) return "income-profit";
+        return "income-other";
+    }
+
+    if (reportType === "balanceSheet") {
+        if (l.includes("tai san") || c.includes("ts_")) return "balance-assets";
+        if (l.includes("no") || c.includes("no_")) return "balance-liabilities";
+        if (l.includes("von chu so huu") || l.includes("von") || c.includes("vcsh")) return "balance-equity";
+        return "balance-other";
+    }
+
+    if (l.includes("hoat dong kinh doanh") || l.includes("hdkd") || c.includes("hdkd") || c.includes("operating")) return "cashflow-operating";
+    if (l.includes("hoat dong dau tu") || l.includes("hddt") || c.includes("hddt") || c.includes("investing")) return "cashflow-investing";
+    if (l.includes("hoat dong tai chinh") || l.includes("hdtc") || c.includes("hdtc") || c.includes("financing")) return "cashflow-financing";
+    return "cashflow-other";
+}
+
+function getParentTitle(groupId: string): string {
+    const map: Record<string, string> = {
+        "income-revenue": "Nhóm Doanh thu",
+        "income-expense": "Nhóm Chi phí",
+        "income-tax": "Nhóm Thuế",
+        "income-profit": "Nhóm Lợi nhuận",
+        "income-other": "Nhóm Khác",
+        "balance-assets": "Nhóm Tài sản",
+        "balance-liabilities": "Nhóm Nợ phải trả",
+        "balance-equity": "Nhóm Vốn chủ sở hữu",
+        "balance-other": "Nhóm Khác",
+        "cashflow-operating": "Nhóm HĐKD",
+        "cashflow-investing": "Nhóm HĐĐT",
+        "cashflow-financing": "Nhóm HĐTC",
+        "cashflow-other": "Nhóm Khác",
+    };
+    return map[groupId] ?? "Nhóm Khác";
+}
+
+function DynamicReportTable({
+    title,
+    subtitle,
+    reportType,
+    reportLayout,
+    table,
+}: {
+    title: string;
+    subtitle: string;
+    reportType: DynamicReportType;
+    reportLayout: ReportLayout;
+    table: FinancialReportTable;
+}) {
+    const periods = table.periods ?? [];
+    const rows = table.rows ?? [];
+    const groupedRows = useMemo(() => {
+        const groups = new Map<string, { sectionLabel: string; sectionOrder: number; rows: typeof rows }>();
+        for (const row of rows) {
+            const groupId = row.section || getParentGroupId(reportType, row.label, row.indCode);
+            const existing = groups.get(groupId) ?? {
+                sectionLabel: row.sectionLabel || getParentTitle(groupId),
+                sectionOrder: row.sectionOrder ?? 999,
+                rows: [],
+            };
+            existing.rows.push(row);
+            if (row.sectionLabel) {
+                existing.sectionLabel = row.sectionLabel;
+            }
+            if (typeof row.sectionOrder === "number") {
+                existing.sectionOrder = Math.min(existing.sectionOrder, row.sectionOrder);
+            }
+            groups.set(groupId, existing);
+        }
+        return Array.from(groups.entries())
+            .map(([groupId, group]) => ({
+                groupId,
+                title: group.sectionLabel || getParentTitle(groupId),
+                order: group.sectionOrder,
+                children: [...group.rows].sort((a, b) => {
+                    const ao = a.rowOrder ?? 999999;
+                    const bo = b.rowOrder ?? 999999;
+                    if (ao !== bo) return ao - bo;
+                    return (a.label || "").localeCompare(b.label || "", "vi");
+                }),
+            }))
+            .sort((a, b) => a.order - b.order || a.title.localeCompare(b.title, "vi"));
+    }, [rows, reportType]);
+    const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+
+    const toggleGroup = (groupId: string) => {
+        setCollapsedGroups((prev) => ({ ...prev, [groupId]: !prev[groupId] }));
+    };
+
+    return (
+        <Card className="shadow-sm border-border">
+            <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-bold text-foreground font-sans">{title}</CardTitle>
+                    <span className="text-xs text-muted-foreground italic font-sans">
+                        {subtitle} • Bố cục: {reportLayout === "bank" ? "Ngân hàng" : reportLayout === "financial" ? "Tài chính" : reportLayout === "insurance" ? "Bảo hiểm" : "Phi tài chính"}
+                    </span>
+                </div>
+            </CardHeader>
+            <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-xs font-sans">
+                        <thead>
+                            <tr className="bg-muted border-b border-border">
+                                <th className="text-left px-4 py-3 font-semibold text-muted-foreground min-w-[260px] sticky left-0 bg-muted z-10">
+                                    Chỉ tiêu
+                                </th>
+                                {periods.map((p, i) => (
+                                    <th
+                                        key={p}
+                                        className={`text-right px-3 py-3 font-semibold min-w-[120px] ${
+                                            i === 0 ? "text-blue-600 bg-blue-50/50" : "text-muted-foreground"
+                                        }`}
+                                    >
+                                        {p}
+                                        {i === 0 && <span className="block text-[10px] font-normal text-blue-400">Mới nhất</span>}
+                                    </th>
+                                ))}
+                                <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[90px]">% thay đổi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {groupedRows.map((group) => {
+                                const isCollapsed = collapsedGroups[group.groupId] ?? false;
+                                return (
+                                    <React.Fragment key={group.groupId}>
+                                        <tr className="bg-blue-50/35 border-b border-blue-100">
+                                            <td className="px-4 py-2.5 sticky left-0 bg-blue-50/35 z-10 font-semibold text-blue-800">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => toggleGroup(group.groupId)}
+                                                    className="inline-flex items-center gap-1.5 hover:text-blue-900"
+                                                >
+                                                    {isCollapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                                                    <span>{group.title}</span>
+                                                    <span className="text-[10px] text-blue-500">({group.children.length})</span>
+                                                </button>
+                                            </td>
+                                            {periods.map((_, i) => (
+                                                <td key={i} className="text-right px-3 py-2.5 text-blue-400">-</td>
+                                            ))}
+                                            <td className="text-right px-3 py-2.5 text-blue-400">-</td>
+                                        </tr>
+
+                                        {!isCollapsed && group.children.map((row) => {
+                                            const currentVal = row.values?.[0] ?? 0;
+                                            const prevVal = row.values?.[1] ?? 0;
+                                            return (
+                                                <tr key={row.indCode} className="border-b border-border/50 hover:bg-muted/50 transition-colors">
+                                                    <td className="px-4 py-2.5 pl-8 sticky left-0 bg-card z-10 font-normal text-muted-foreground">
+                                                        {row.label}
+                                                    </td>
+                                                    {(row.values ?? []).map((val, i) => (
+                                                        <td
+                                                            key={i}
+                                                            className={`text-right px-3 py-2.5 tabular-nums ${
+                                                                i === 0 ? "font-semibold text-blue-700 bg-blue-50/30" : "font-normal text-muted-foreground"
+                                                            } ${val < 0 ? "!text-red-500" : ""}`}
+                                                        >
+                                                            {fmtTy(val)}
+                                                        </td>
+                                                    ))}
+                                                    <td className="text-right px-3 py-2.5">
+                                                        <ChangeCell current={currentVal} previous={prevVal} />
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </React.Fragment>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            </CardContent>
+        </Card>
     );
 }
 
@@ -505,6 +711,15 @@ export default function FinancialReportsTab() {
     const [activeReport, setActiveReport] = useState<ReportType>("income");
 
     const isBank = reportData?.isBank ?? false;
+    const reportLayout: ReportLayout = reportData?.reportLayout ?? (isBank ? "bank" : "nonFinancial");
+    const reportLayoutLabel = reportData?.reportLayoutLabel || (reportLayout === "bank" ? "Ngân hàng" : reportLayout === "financial" ? "Tài chính" : reportLayout === "insurance" ? "Bảo hiểm" : "Phi tài chính");
+    const dynamicTables = reportData?.reportTables;
+    const hasDynamicRows = !!(
+        dynamicTables &&
+        ((dynamicTables.incomeStatement?.rows?.length ?? 0) > 0 ||
+            (dynamicTables.balanceSheet?.rows?.length ?? 0) > 0 ||
+            (dynamicTables.cashFlow?.rows?.length ?? 0) > 0)
+    );
 
     const data = reportData
         ? {
@@ -515,8 +730,8 @@ export default function FinancialReportsTab() {
         : null;
 
     const reportTabs: { id: ReportType; label: string; icon: string }[] = [
-        { id: "income", label: isBank ? "KQKD Ngân hàng" : "Kết quả kinh doanh", icon: isBank ? "🏦" : "📋" },
-        { id: "balance", label: isBank ? "CĐKT Ngân hàng" : "Cân đối kế toán", icon: isBank ? "🏦" : "🏛️" },
+        { id: "income", label: reportLayout === "bank" ? "KQKD Ngân hàng" : reportLayout === "insurance" ? "KQKD Bảo hiểm" : reportLayout === "financial" ? "KQKD Tài chính" : "Kết quả kinh doanh", icon: reportLayout === "bank" ? "🏦" : reportLayout === "insurance" ? "🛡️" : reportLayout === "financial" ? "💼" : "📋" },
+        { id: "balance", label: reportLayout === "bank" ? "CĐKT Ngân hàng" : reportLayout === "insurance" ? "CĐKT Bảo hiểm" : reportLayout === "financial" ? "CĐKT Tài chính" : "Cân đối kế toán", icon: reportLayout === "bank" ? "🏦" : reportLayout === "insurance" ? "🛡️" : reportLayout === "financial" ? "💼" : "🏛️" },
         { id: "cashflow", label: "Lưu chuyển tiền tệ", icon: "💵" },
     ];
 
@@ -768,12 +983,13 @@ export default function FinancialReportsTab() {
                     <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
                         {isBank && <Building2 className="w-5 h-5 text-blue-600" />}
                         Báo cáo tài chính
-                        {isBank && <span className="text-sm font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">Ngân hàng</span>}
+                        <span className="text-sm font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">{reportLayoutLabel}</span>
                         {" — "}{stockInfo.ticker}
                     </h2>
                     <p className="text-xs text-muted-foreground italic mt-0.5">
-                        So sánh 6 quý gần nhất • Đơn vị: Tỷ VND
-                        {isBank && " • Cấu trúc BCTC dành riêng cho ngành Ngân hàng"}
+                        So sánh các kỳ gần nhất • Đơn vị: Tỷ VND
+                        {" • Cấu trúc BCTC theo bộ "}{reportLayoutLabel}
+                        {hasDynamicRows && " • Mapping chỉ tiêu chuẩn hoá từ dữ liệu BCTC"}
                     </p>
                 </div>
                 <button
@@ -814,18 +1030,46 @@ export default function FinancialReportsTab() {
 
             {/* Report content */}
             <FinancialErrorBoundary>
+            {activeReport === "income" && hasDynamicRows && dynamicTables?.incomeStatement?.rows?.length ? (
+                <DynamicReportTable
+                    title={reportLayout === "bank" ? "🏦 KQKD Ngân hàng" : reportLayout === "insurance" ? "🛡️ KQKD Bảo hiểm" : reportLayout === "financial" ? "💼 KQKD Tài chính" : "📋 Kết quả kinh doanh"}
+                    subtitle="Đơn vị: Tỷ VND"
+                    reportType="incomeStatement"
+                    reportLayout={reportLayout}
+                    table={dynamicTables.incomeStatement}
+                />
+            ) : null}
+            {activeReport === "balance" && hasDynamicRows && dynamicTables?.balanceSheet?.rows?.length ? (
+                <DynamicReportTable
+                    title={reportLayout === "bank" ? "🏦 Cân đối kế toán Ngân hàng" : reportLayout === "insurance" ? "🛡️ Cân đối kế toán Bảo hiểm" : reportLayout === "financial" ? "💼 Cân đối kế toán Tài chính" : "🏛️ Cân đối kế toán"}
+                    subtitle="Đơn vị: Tỷ VND"
+                    reportType="balanceSheet"
+                    reportLayout={reportLayout}
+                    table={dynamicTables.balanceSheet}
+                />
+            ) : null}
+            {activeReport === "cashflow" && hasDynamicRows && dynamicTables?.cashFlow?.rows?.length ? (
+                <DynamicReportTable
+                    title="💵 Lưu chuyển tiền tệ"
+                    subtitle="Đơn vị: Tỷ VND"
+                    reportType="cashFlow"
+                    reportLayout={reportLayout}
+                    table={dynamicTables.cashFlow}
+                />
+            ) : null}
+
             {activeReport === "income" && data && (
-                isBank
+                !hasDynamicRows && (isBank
                     ? <BankIncomeStatementTable data={data.incomeStatements} />
-                    : <IncomeStatementTable data={data.incomeStatements} />
+                    : <IncomeStatementTable data={data.incomeStatements} />)
             )}
             {activeReport === "balance" && data && (
-                isBank
+                !hasDynamicRows && (isBank
                     ? <BankBalanceSheetTable data={data.balanceSheets} />
-                    : <BalanceSheetTable data={data.balanceSheets} />
+                    : <BalanceSheetTable data={data.balanceSheets} />)
             )}
             {activeReport === "cashflow" && data && (
-                <CashFlowTable data={data.cashFlows} />
+                !hasDynamicRows && <CashFlowTable data={data.cashFlows} />
             )}
             </FinancialErrorBoundary>
         </div>

@@ -11,8 +11,13 @@ Endpoints:
 from __future__ import annotations
 
 import asyncio
+import difflib
+import json
 import logging
+import re
+import unicodedata
 from datetime import date, timedelta
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
@@ -195,6 +200,23 @@ BS_BANK_EXTRA_CODES: Dict[str, str] = {
 BANK_INDUSTRY_KEYWORDS = ("ngân hàng", "bảo hiểm", "bank", "chứng khoán", "tài chính")
 # Stricter: only "Ngân hàng" is a true bank with bank-format BCTC
 BANK_STRICT_KEYWORDS = ("ngân hàng", "bank")
+INSURANCE_STRICT_KEYWORDS = ("bảo hiểm", "bao hiem", "insurance")
+FINANCIAL_STRICT_KEYWORDS = (
+    "tài chính",
+    "tai chinh",
+    "financial",
+    "finance",
+    "chứng khoán",
+    "chung khoan",
+    "securities",
+)
+
+REPORT_LAYOUT_LABELS: Dict[str, str] = {
+    "nonFinancial": "Phi tài chính",
+    "bank": "Ngân hàng",
+    "financial": "Tài chính",
+    "insurance": "Bảo hiểm",
+}
 
 
 # ────────────────────────────────────────────────────────────────────
@@ -247,8 +269,527 @@ def _safe_round(v: Any, ndigits: int = 2) -> Optional[float]:
         return None
 
 
+def _safe_div(numerator: Optional[float], denominator: Optional[float]) -> Optional[float]:
+    if numerator is None or denominator in (None, 0):
+        return None
+    try:
+        return float(numerator) / float(denominator)
+    except (ValueError, TypeError, ZeroDivisionError):
+        return None
+
+
 def _normalize_ind_name(name: str) -> str:
     return " ".join((name or "").strip().lower().split())
+
+
+def _normalize_text_loose(text: str) -> str:
+    """Aggressive normalization for fuzzy alias matching.
+
+    - lowercase
+    - remove accents/diacritics
+    - replace non-alnum with spaces
+    - collapse spaces
+    """
+    base = (text or "").strip().lower()
+    if not base:
+        return ""
+    decomp = unicodedata.normalize("NFKD", base)
+    no_diacritic = "".join(ch for ch in decomp if not unicodedata.combining(ch))
+    cleaned = re.sub(r"[^a-z0-9]+", " ", no_diacritic)
+    return " ".join(cleaned.split())
+
+
+def _load_bctc_name_code_mapping() -> Tuple[Dict[str, str], Dict[str, str]]:
+    """Load indicator alias mapping from md/bctc.md.
+
+    Returns:
+      - normalized ind_name -> canonical ind_code
+      - canonical ind_code -> preferred display label
+    """
+    name_to_code: Dict[str, str] = {}
+    code_to_label: Dict[str, str] = {}
+    try:
+        root_dir = Path(__file__).resolve().parents[4]
+        mapping_file = root_dir / "md" / "bctc.md"
+        if not mapping_file.exists():
+            return name_to_code, code_to_label
+
+        raw_data = json.loads(mapping_file.read_text(encoding="utf-8"))
+        if not isinstance(raw_data, list):
+            return name_to_code, code_to_label
+
+        for item in raw_data:
+            if not isinstance(item, dict):
+                continue
+            ind_name = str(item.get("ind_name") or "").strip()
+            ind_code = str(item.get("ind_code") or "").strip()
+            if not ind_name or not ind_code:
+                continue
+
+            normalized = _normalize_ind_name(ind_name)
+            if normalized:
+                name_to_code[normalized] = ind_code
+
+            # Pick first non-underscore alias as preferred display label.
+            preferred = code_to_label.get(ind_code)
+            if preferred is None:
+                code_to_label[ind_code] = ind_name
+            elif preferred.startswith("_") and not ind_name.startswith("_"):
+                code_to_label[ind_code] = ind_name
+    except Exception:
+        logger.exception("Failed to load bctc mapping file")
+
+    return name_to_code, code_to_label
+
+
+BCTC_NAME_TO_CODE, BCTC_CODE_TO_LABEL = _load_bctc_name_code_mapping()
+BCTC_NAME_TO_CODE_LOOSE: Dict[str, str] = {
+    _normalize_text_loose(name): code
+    for name, code in BCTC_NAME_TO_CODE.items()
+    if _normalize_text_loose(name)
+}
+
+
+def _resolve_canonical_code(raw_code: str, raw_name: str) -> str:
+    """Resolve canonical code with exact + loose + fuzzy alias matching."""
+    clean_code = (raw_code or "").strip()
+    name_exact = _normalize_ind_name(raw_name)
+    name_loose = _normalize_text_loose(raw_name)
+
+    # 1) Exact normalized match from mapping file.
+    if name_exact and name_exact in BCTC_NAME_TO_CODE:
+        return BCTC_NAME_TO_CODE[name_exact]
+
+    # 2) Loose normalized match (ignores accents/punctuation/spacing style).
+    if name_loose and name_loose in BCTC_NAME_TO_CODE_LOOSE:
+        return BCTC_NAME_TO_CODE_LOOSE[name_loose]
+
+    # 3) Fuzzy fallback for minor typos (single/few chars differences).
+    if name_loose and len(name_loose) >= 8:
+        close = difflib.get_close_matches(name_loose, BCTC_NAME_TO_CODE_LOOSE.keys(), n=1, cutoff=0.92)
+        if close:
+            return BCTC_NAME_TO_CODE_LOOSE[close[0]]
+
+    return clean_code or name_loose or "unknown_indicator"
+
+
+def _classify_statement(report_code: str, report_name: str, ind_code: str) -> Optional[str]:
+    """Classify a BCTC row into incomeStatement / balanceSheet / cashFlow buckets."""
+    rc = (report_code or "").strip().lower()
+    rn = (report_name or "").strip().lower()
+    code = (ind_code or "").strip()
+
+    if any(k in rc for k in ("is", "kqkd", "income")):
+        return "incomeStatement"
+    if any(k in rc for k in ("bs", "cdkt", "balance")):
+        return "balanceSheet"
+    if any(k in rc for k in ("cf", "lctt", "cash")):
+        return "cashFlow"
+
+    if any(k in rn for k in ("kết quả kinh doanh", "ket qua kinh doanh", "income")):
+        return "incomeStatement"
+    if any(k in rn for k in ("cân đối kế toán", "can doi ke toan", "balance")):
+        return "balanceSheet"
+    if any(k in rn for k in ("lưu chuyển tiền tệ", "luu chuyen tien te", "cash flow")):
+        return "cashFlow"
+
+    if code in IS_CODES.values() or code in IS_BANK_EXTRA_CODES.values() or code in IS_BANK_FALLBACKS.values():
+        return "incomeStatement"
+    if code in BS_CODES.values() or code in BS_BANK_EXTRA_CODES.values():
+        return "balanceSheet"
+    if code in CF_CODES.values():
+        return "cashFlow"
+
+    return None
+
+
+def _pick_value(existing: Optional[float], new_value: float) -> float:
+    """Pick most reliable value when same metric appears multiple times in a period.
+
+    We prefer non-zero and larger absolute magnitude to avoid double counting alias rows.
+    """
+    if existing is None:
+        return new_value
+    if abs(new_value) > abs(existing):
+        return new_value
+    return existing
+
+
+def _is_insurance_text(value: str) -> bool:
+    text_value = (value or "").strip().lower()
+    return any(keyword in text_value for keyword in INSURANCE_STRICT_KEYWORDS)
+
+
+def _is_bank_text(value: str) -> bool:
+    text_value = (value or "").strip().lower()
+    return any(keyword in text_value for keyword in BANK_STRICT_KEYWORDS)
+
+
+def _is_financial_text(value: str) -> bool:
+    text_value = (value or "").strip().lower()
+    return any(keyword in text_value for keyword in FINANCIAL_STRICT_KEYWORDS)
+
+
+def _detect_report_layout(industry_values: List[str]) -> str:
+    # Priority: insurance -> bank -> financial -> nonFinancial
+    if any(_is_insurance_text(v) for v in industry_values):
+        return "insurance"
+    if any(_is_bank_text(v) for v in industry_values):
+        return "bank"
+    if any(_is_financial_text(v) for v in industry_values):
+        return "financial"
+    return "nonFinancial"
+
+
+def _contains_any(text: str, terms: List[str]) -> bool:
+    return any(term in text for term in terms)
+
+
+def _resolve_layout_section(
+    report_layout: str,
+    stmt_type: str,
+    ind_code: str,
+    label: str,
+) -> Tuple[str, str, int]:
+    code_text = _normalize_text_loose(ind_code)
+    label_text = _normalize_text_loose(label)
+
+    def pick(rules: List[Dict[str, Any]], default_key: str, default_label: str) -> Tuple[str, str, int]:
+        for idx, rule in enumerate(rules):
+            code_terms = rule.get("codeTerms", [])
+            label_terms = rule.get("labelTerms", [])
+            if _contains_any(code_text, code_terms) or _contains_any(label_text, label_terms):
+                return str(rule["key"]), str(rule["label"]), idx
+        return default_key, default_label, 999
+
+    if stmt_type == "cashFlow":
+        return pick(
+            [
+                {
+                    "key": "cf_operating",
+                    "label": "Lưu chuyển từ hoạt động kinh doanh",
+                    "codeTerms": ["hdkd", "hoat dong sxkd", "hoat dong kinh doanh", "luu chuyen tien thuan tu hdkd"],
+                    "labelTerms": ["hoạt động kinh doanh", "hdkd", "kinh doanh"],
+                },
+                {
+                    "key": "cf_investing",
+                    "label": "Lưu chuyển từ hoạt động đầu tư",
+                    "codeTerms": ["hddt", "hoat dong dau tu", "lctt hd dt"],
+                    "labelTerms": ["hoạt động đầu tư", "hđđt", "đầu tư"],
+                },
+                {
+                    "key": "cf_financing",
+                    "label": "Lưu chuyển từ hoạt động tài chính",
+                    "codeTerms": ["hdtc", "hoat dong tai chinh", "luu chuyen tien tu hoat dong tai chinh"],
+                    "labelTerms": ["hoạt động tài chính", "hđtc", "tài chính"],
+                },
+                {
+                    "key": "cf_net",
+                    "label": "Tiền và tương đương tiền",
+                    "codeTerms": ["cuoi ky", "dau ky", "luu chuyen tien thuan trong ky", "tien va tuong duong tien"],
+                    "labelTerms": ["đầu kỳ", "cuối kỳ", "tiền và tương đương tiền", "tăng giảm tiền"],
+                },
+            ],
+            "cf_other",
+            "Khoản mục khác",
+        )
+
+    if report_layout == "bank":
+        if stmt_type == "incomeStatement":
+            return pick(
+                [
+                    {
+                        "key": "bank_is_interest",
+                        "label": "Thu nhập lãi và cận lãi",
+                        "codeTerms": ["thu_nhap_lai", "chi_phi_lai", "tn_lai_thuan"],
+                        "labelTerms": ["thu nhập lãi", "chi phí lãi", "lãi thuần"],
+                    },
+                    {
+                        "key": "bank_is_non_interest",
+                        "label": "Thu nhập ngoài lãi",
+                        "codeTerms": ["dv", "ngoai_hoi", "chung_khoan", "hoat_dong_khac", "tong_tn_hd"],
+                        "labelTerms": ["dịch vụ", "ngoại hối", "chứng khoán", "hoạt động khác", "tổng thu nhập hoạt động"],
+                    },
+                    {
+                        "key": "bank_is_cost",
+                        "label": "Chi phí hoạt động",
+                        "codeTerms": ["chi_phi_hoat_dong", "cp_hd", "cp_dv"],
+                        "labelTerms": ["chi phí hoạt động", "chi phí"],
+                    },
+                    {
+                        "key": "bank_is_provision",
+                        "label": "Dự phòng rủi ro tín dụng",
+                        "codeTerms": ["du_phong", "rui_ro_tin_dung"],
+                        "labelTerms": ["dự phòng", "rủi ro tín dụng"],
+                    },
+                    {
+                        "key": "bank_is_profit",
+                        "label": "Lợi nhuận và thuế",
+                        "codeTerms": ["lntt", "lnst", "thue", "eps", "lai_co_ban"],
+                        "labelTerms": ["lợi nhuận", "thuế", "eps"],
+                    },
+                ],
+                "bank_is_other",
+                "Khoản mục khác",
+            )
+        return pick(
+            [
+                {
+                    "key": "bank_bs_asset_core",
+                    "label": "Tài sản cốt lõi sinh lãi",
+                    "codeTerms": ["cho_vay_khach_hang", "chung_khoan", "tien_gui_tai_cac_tctd", "tong_ts"],
+                    "labelTerms": ["cho vay", "chứng khoán", "tài sản", "tiền gửi tại"],
+                },
+                {
+                    "key": "bank_bs_asset_other",
+                    "label": "Tài sản khác",
+                    "codeTerms": ["tai_san_co_dinh", "ts_dh", "ts_nh", "phai_thu"],
+                    "labelTerms": ["tài sản cố định", "phải thu", "tài sản dài hạn", "tài sản ngắn hạn"],
+                },
+                {
+                    "key": "bank_bs_funding",
+                    "label": "Nguồn vốn huy động",
+                    "codeTerms": ["tien_gui_cua_khach_hang", "phat_hanh_giay_to_co_gia", "vay_cac_to_chuc_tin_dung"],
+                    "labelTerms": ["tiền gửi khách hàng", "giấy tờ có giá", "huy động"],
+                },
+                {
+                    "key": "bank_bs_liabilities",
+                    "label": "Nợ phải trả khác",
+                    "codeTerms": ["no_phai_tra", "no_ngan_han", "no_dai_han", "phai_sinh"],
+                    "labelTerms": ["nợ phải trả", "nợ ngắn hạn", "nợ dài hạn", "phái sinh"],
+                },
+                {
+                    "key": "bank_bs_equity",
+                    "label": "Vốn chủ sở hữu",
+                    "codeTerms": ["vcsh", "von", "lnst_chua_pp", "chenh_lech"],
+                    "labelTerms": ["vốn chủ sở hữu", "vốn", "lợi nhuận chưa phân phối", "chênh lệch"],
+                },
+            ],
+            "bank_bs_other",
+            "Khoản mục khác",
+        )
+
+    if report_layout == "financial":
+        if stmt_type == "incomeStatement":
+            return pick(
+                [
+                    {
+                        "key": "fin_is_revenue",
+                        "label": "Doanh thu và thu nhập cốt lõi",
+                        "codeTerms": ["doanh_thu", "tn_lai_thuan", "dt_tc", "tong_tn_hd"],
+                        "labelTerms": ["doanh thu", "thu nhập", "lãi thuần", "thu phí"],
+                    },
+                    {
+                        "key": "fin_is_cost",
+                        "label": "Chi phí hoạt động",
+                        "codeTerms": ["chi_phi", "cp_", "gia_von"],
+                        "labelTerms": ["chi phí", "giá vốn", "hoạt động"],
+                    },
+                    {
+                        "key": "fin_is_provision",
+                        "label": "Dự phòng và rủi ro",
+                        "codeTerms": ["du_phong", "rui_ro"],
+                        "labelTerms": ["dự phòng", "rủi ro"],
+                    },
+                    {
+                        "key": "fin_is_profit",
+                        "label": "Lợi nhuận và thuế",
+                        "codeTerms": ["lntt", "lnst", "thue", "eps"],
+                        "labelTerms": ["lợi nhuận", "thuế", "eps"],
+                    },
+                ],
+                "fin_is_other",
+                "Khoản mục khác",
+            )
+        return pick(
+            [
+                {
+                    "key": "fin_bs_lending_invest",
+                    "label": "Cho vay và đầu tư tài chính",
+                    "codeTerms": ["cho_vay", "dt_tc", "chung_khoan", "dau_tu"],
+                    "labelTerms": ["cho vay", "đầu tư", "chứng khoán", "tài sản tài chính"],
+                },
+                {
+                    "key": "fin_bs_assets_other",
+                    "label": "Tài sản khác",
+                    "codeTerms": ["ts_nh", "ts_dh", "tien_va_tuong_duong_tien", "phai_thu", "tong_ts"],
+                    "labelTerms": ["tài sản", "tiền", "phải thu", "hàng tồn kho"],
+                },
+                {
+                    "key": "fin_bs_liabilities",
+                    "label": "Nợ phải trả và nguồn vốn vay",
+                    "codeTerms": ["no_", "vay", "phat_hanh", "tien_gui", "no_phai_tra"],
+                    "labelTerms": ["nợ", "vay", "phát hành", "tiền gửi"],
+                },
+                {
+                    "key": "fin_bs_equity",
+                    "label": "Vốn chủ sở hữu",
+                    "codeTerms": ["vcsh", "von", "lnst_chua_pp"],
+                    "labelTerms": ["vốn chủ sở hữu", "vốn", "lợi nhuận chưa phân phối"],
+                },
+            ],
+            "fin_bs_other",
+            "Khoản mục khác",
+        )
+
+    if report_layout == "insurance":
+        if stmt_type == "incomeStatement":
+            return pick(
+                [
+                    {
+                        "key": "ins_is_premium",
+                        "label": "Doanh thu bảo hiểm và tài chính",
+                        "codeTerms": ["doanh_thu", "phi", "bao_hiem", "dt_tc", "thu_nhap"],
+                        "labelTerms": ["doanh thu", "phí bảo hiểm", "thu nhập tài chính"],
+                    },
+                    {
+                        "key": "ins_is_claims",
+                        "label": "Bồi thường và dự phòng nghiệp vụ",
+                        "codeTerms": ["boi_thuong", "du_phong", "nghiep_vu"],
+                        "labelTerms": ["bồi thường", "dự phòng nghiệp vụ"],
+                    },
+                    {
+                        "key": "ins_is_cost",
+                        "label": "Chi phí hoạt động",
+                        "codeTerms": ["chi_phi", "cp_", "hoa_hong"],
+                        "labelTerms": ["chi phí", "hoa hồng", "quản lý"],
+                    },
+                    {
+                        "key": "ins_is_profit",
+                        "label": "Lợi nhuận và thuế",
+                        "codeTerms": ["lntt", "lnst", "thue", "eps"],
+                        "labelTerms": ["lợi nhuận", "thuế", "eps"],
+                    },
+                ],
+                "ins_is_other",
+                "Khoản mục khác",
+            )
+        return pick(
+            [
+                {
+                    "key": "ins_bs_invest_assets",
+                    "label": "Tài sản đầu tư và tài sản lỏng",
+                    "codeTerms": ["dau_tu", "chung_khoan", "tien", "tong_ts", "ts_nh", "ts_dh"],
+                    "labelTerms": ["tài sản đầu tư", "tiền", "chứng khoán", "tài sản"],
+                },
+                {
+                    "key": "ins_bs_tech_provisions",
+                    "label": "Dự phòng kỹ thuật",
+                    "codeTerms": ["du_phong", "ky_thuat", "bao_hiem"],
+                    "labelTerms": ["dự phòng kỹ thuật", "dự phòng bảo hiểm"],
+                },
+                {
+                    "key": "ins_bs_liabilities",
+                    "label": "Nợ phải trả khác",
+                    "codeTerms": ["no_", "no_phai_tra", "phai_tra"],
+                    "labelTerms": ["nợ phải trả", "phải trả"],
+                },
+                {
+                    "key": "ins_bs_equity",
+                    "label": "Vốn chủ sở hữu",
+                    "codeTerms": ["vcsh", "von", "lnst_chua_pp"],
+                    "labelTerms": ["vốn chủ sở hữu", "vốn", "lợi nhuận chưa phân phối"],
+                },
+            ],
+            "ins_bs_other",
+            "Khoản mục khác",
+        )
+
+    if stmt_type == "incomeStatement":
+        return pick(
+            [
+                {
+                    "key": "non_is_revenue",
+                    "label": "Doanh thu và giá vốn",
+                    "codeTerms": ["doanh_thu", "gia_von", "ln_gop"],
+                    "labelTerms": ["doanh thu", "giá vốn", "lợi nhuận gộp"],
+                },
+                {
+                    "key": "non_is_operating_cost",
+                    "label": "Chi phí hoạt động",
+                    "codeTerms": ["chi_phi_ban_hang", "cp_qldn", "chi_phi_hoat_dong"],
+                    "labelTerms": ["chi phí bán hàng", "chi phí quản lý", "chi phí hoạt động"],
+                },
+                {
+                    "key": "non_is_financial",
+                    "label": "Doanh thu/chi phí tài chính",
+                    "codeTerms": ["dt_tc", "chi_phi_tai_chinh", "cp_lai_vay"],
+                    "labelTerms": ["doanh thu tài chính", "chi phí tài chính", "lãi vay"],
+                },
+                {
+                    "key": "non_is_profit",
+                    "label": "Lợi nhuận và thuế",
+                    "codeTerms": ["lntt", "lnst", "thue", "eps"],
+                    "labelTerms": ["lợi nhuận", "thuế", "eps"],
+                },
+            ],
+            "non_is_other",
+            "Khoản mục khác",
+        )
+
+    return pick(
+        [
+            {
+                "key": "non_bs_assets_short",
+                "label": "Tài sản ngắn hạn",
+                "codeTerms": ["ts_nh", "tien_va_tuong_duong_tien", "phai_thu", "htk"],
+                "labelTerms": ["tài sản ngắn hạn", "tiền", "phải thu", "hàng tồn kho"],
+            },
+            {
+                "key": "non_bs_assets_long",
+                "label": "Tài sản dài hạn",
+                "codeTerms": ["ts_dh", "tai_san_co_dinh", "dt_tc_dh", "gia_tri_rong_tai_san_dau_tu"],
+                "labelTerms": ["tài sản dài hạn", "tài sản cố định", "đầu tư dài hạn"],
+            },
+            {
+                "key": "non_bs_liabilities",
+                "label": "Nợ phải trả",
+                "codeTerms": ["no_phai_tra", "no_ngan_han", "no_dai_han", "no_"],
+                "labelTerms": ["nợ phải trả", "nợ ngắn hạn", "nợ dài hạn"],
+            },
+            {
+                "key": "non_bs_equity",
+                "label": "Vốn chủ sở hữu",
+                "codeTerms": ["vcsh", "von", "lnst_chua_pp"],
+                "labelTerms": ["vốn chủ sở hữu", "vốn", "lợi nhuận chưa phân phối"],
+            },
+        ],
+        "non_bs_other",
+        "Khoản mục khác",
+    )
+
+
+def _pick_first_number(record: Dict[str, Any], keys: List[str], default: float = 0.0) -> float:
+    for key in keys:
+        val = record.get(key)
+        if val is None:
+            continue
+        try:
+            return float(val)
+        except (ValueError, TypeError):
+            continue
+    return default
+
+
+def _pick_report_by_period(rows: List[Dict[str, Any]], period: Optional[str]) -> Dict[str, Any]:
+    if not rows:
+        return {}
+    if not period:
+        return rows[0]
+    for row in rows:
+        row_period = (((row or {}).get("period") or {}).get("period") or "")
+        if str(row_period).upper() == str(period).upper():
+            return row
+    return rows[0]
+
+
+def _metric_payload(value: Optional[float], confidence: str, formula: str, source: str) -> Dict[str, Any]:
+    return {
+        "value": _safe_round(value, 4) if value is not None else None,
+        "confidence": confidence,
+        "formula": formula,
+        "source": source,
+    }
 
 
 def _compute_evaluation(ratio: Dict, current_price: float, ref_price: float) -> Dict[str, str]:
@@ -1298,7 +1839,9 @@ async def get_financial_reports(
     info_row = info_res.mappings().first()
     industry1 = (info_row["icb_name1"] or "").lower() if info_row else ""
     industry2 = (info_row["icb_name2"] or "").lower() if info_row else ""
-    is_bank = any(kw in industry2 for kw in BANK_STRICT_KEYWORDS) or any(kw in industry1 for kw in BANK_STRICT_KEYWORDS)
+    industry3 = (info_row["icb_name3"] or "").lower() if info_row else ""
+    report_layout = _detect_report_layout([industry1, industry2, industry3])
+    is_bank = report_layout == "bank"
 
     # ── Collect all needed ind_codes ──
     all_codes: set = set()
@@ -1361,6 +1904,9 @@ async def get_financial_reports(
     else:
         # Default behavior: limit by periods
         sorted_periods = sorted(pivot.keys(), key=lambda x: (x[0], x[1]), reverse=True)[:periods]
+
+    period_labels = [f"Q{quarter}/{year}" for year, quarter in sorted_periods]
+    period_index = {(year, quarter): idx for idx, (year, quarter) in enumerate(sorted_periods)}
 
     def _build_period(year: int, quarter: str) -> Dict:
         return {"period": {"period": f"Q{quarter}/{year}", "year": year, "quarter": int(quarter) if quarter.isdigit() else 0}}
@@ -1450,12 +1996,364 @@ async def get_financial_reports(
             item[field] = data.get(code, 0)
         cash_flow.append(item)
 
+    # ── Build dynamic statement tables (alias-aware, full indicators) ──
+    report_tables: Dict[str, Dict[str, Any]] = {
+        "incomeStatement": {"periods": period_labels, "rows": []},
+        "balanceSheet": {"periods": period_labels, "rows": []},
+        "cashFlow": {"periods": period_labels, "rows": []},
+    }
+
+    if sorted_periods:
+        period_clauses: List[str] = []
+        detail_params: Dict[str, Any] = {"ticker": ticker}
+        for idx, (y, q) in enumerate(sorted_periods):
+            y_key = f"y{idx}"
+            q_key = f"q{idx}"
+            period_clauses.append(f"(year = :{y_key} AND quarter = :{q_key})")
+            detail_params[y_key] = y
+            detail_params[q_key] = str(q)
+
+        detail_sql = text(f"""
+            SELECT year, quarter, report_code, report_name, ind_code, ind_name, value
+            FROM {SCHEMA}.bctc
+            WHERE ticker = :ticker
+              AND ({" OR ".join(period_clauses)})
+            ORDER BY year DESC, quarter DESC, report_code NULLS LAST, ind_code, ind_name
+        """)
+        detail_rows = (await db.execute(detail_sql, detail_params)).mappings().all()
+
+        bucket_rows: Dict[str, Dict[str, Dict[str, Any]]] = {
+            "incomeStatement": {},
+            "balanceSheet": {},
+            "cashFlow": {},
+        }
+
+        for r in detail_rows:
+            y = int(r["year"])
+            q = str(r["quarter"])
+            p_idx = period_index.get((y, q))
+            if p_idx is None:
+                continue
+
+            raw_code = str(r.get("ind_code") or "").strip()
+            raw_name = str(r.get("ind_name") or "").strip()
+            normalized_name = _normalize_ind_name(raw_name)
+            canonical_code = _resolve_canonical_code(raw_code, raw_name)
+
+            stmt_type = _classify_statement(
+                str(r.get("report_code") or ""),
+                str(r.get("report_name") or ""),
+                canonical_code,
+            )
+            if stmt_type is None:
+                continue
+
+            display_label = BCTC_CODE_TO_LABEL.get(canonical_code) or raw_name or canonical_code
+            value = _safe_float(r.get("value"), 0.0)
+
+            row_store = bucket_rows[stmt_type].get(canonical_code)
+            if row_store is None:
+                row_store = {
+                    "indCode": canonical_code,
+                    "label": display_label,
+                    "values": [0.0 for _ in period_labels],
+                    "_seen": [False for _ in period_labels],
+                    "_section": "",
+                    "_sectionLabel": "",
+                    "_sectionOrder": 999,
+                }
+                bucket_rows[stmt_type][canonical_code] = row_store
+
+            seen = row_store["_seen"][p_idx]
+            if not seen:
+                row_store["values"][p_idx] = value
+                row_store["_seen"][p_idx] = True
+            else:
+                row_store["values"][p_idx] = _pick_value(row_store["values"][p_idx], value)
+
+            if row_store["label"].startswith("_") and display_label and not display_label.startswith("_"):
+                row_store["label"] = display_label
+
+            section_key, section_label, section_order = _resolve_layout_section(
+                report_layout=report_layout,
+                stmt_type=stmt_type,
+                ind_code=canonical_code,
+                label=row_store["label"],
+            )
+            row_store["_section"] = section_key
+            row_store["_sectionLabel"] = section_label
+            row_store["_sectionOrder"] = section_order
+
+        income_order = list(dict.fromkeys(list(IS_CODES.values()) + list(IS_BANK_EXTRA_CODES.values()) + list(IS_BANK_FALLBACKS.values())))
+        balance_order = list(dict.fromkeys(list(BS_CODES.values()) + list(BS_BANK_EXTRA_CODES.values())))
+        cash_order = list(dict.fromkeys(list(CF_CODES.values())))
+        order_map = {
+            "incomeStatement": {code: idx for idx, code in enumerate(income_order)},
+            "balanceSheet": {code: idx for idx, code in enumerate(balance_order)},
+            "cashFlow": {code: idx for idx, code in enumerate(cash_order)},
+        }
+
+        for stmt_type in ("incomeStatement", "balanceSheet", "cashFlow"):
+            # Second-pass dedup by loose label to merge near-identical records
+            # that still slipped through code canonicalization.
+            deduped_by_label: Dict[str, Dict[str, Any]] = {}
+            for row in bucket_rows[stmt_type].values():
+                label_key = _normalize_text_loose(str(row.get("label") or ""))
+                merge_key = label_key or str(row.get("indCode") or "")
+                existing = deduped_by_label.get(merge_key)
+                if existing is None:
+                    deduped_by_label[merge_key] = row
+                    continue
+
+                for i, v in enumerate(row.get("values", [])):
+                    existing["values"][i] = _pick_value(existing["values"][i], v)
+
+                existing_label = str(existing.get("label") or "")
+                incoming_label = str(row.get("label") or "")
+                if existing_label.startswith("_") and incoming_label and not incoming_label.startswith("_"):
+                    existing["label"] = incoming_label
+
+            rows_list = list(deduped_by_label.values())
+            for row in rows_list:
+                row.pop("_seen", None)
+                row["section"] = row.pop("_section", "")
+                row["sectionLabel"] = row.pop("_sectionLabel", "Khoản mục khác")
+                row["sectionOrder"] = row.pop("_sectionOrder", 999)
+                row["rowOrder"] = order_map[stmt_type].get(row["indCode"], 999999)
+
+            rows_list.sort(
+                key=lambda row: (
+                    int(row.get("sectionOrder", 999)),
+                    int(row.get("rowOrder", 999999)),
+                    str(row.get("label") or "").lower(),
+                )
+            )
+            report_tables[stmt_type]["rows"] = rows_list
+
     return {
         "isBank": is_bank,
         "industry": (info_row["icb_name2"] if info_row else "") or "",
+        "reportLayout": report_layout,
+        "reportLayoutLabel": REPORT_LAYOUT_LABELS.get(report_layout, "Phi tài chính"),
         "incomeStatement": income_statement,
         "balanceSheet": balance_sheet,
         "cashFlow": cash_flow,
+        "reportTables": report_tables,
+    }
+
+
+@cached("stock:insurance:tcdn", ttl=300)
+async def get_insurance_tcdn_dashboard(
+    db: AsyncSession,
+    ticker: str = "BVH",
+    period: Optional[str] = None,
+    year: Optional[int] = None,
+    scenario: str = "adverse",
+) -> Dict[str, Any]:
+    """Build industry-aware insurance payload for TCDN dashboard.
+
+    The payload is proxy-capable: when strict insurance fields are unavailable,
+    it exposes computed values with confidence tags for the frontend.
+    """
+    await db.execute(_STMT_TIMEOUT)
+    ticker = ticker.upper()
+
+    company_info = await _query_company_info(db, ticker)
+    industry_texts = [
+        str((company_info or {}).get("icb_name1", "")),
+        str((company_info or {}).get("icb_name2", "")),
+        str((company_info or {}).get("icb_name3", "")),
+    ]
+    is_insurance = any(_is_insurance_text(v) for v in industry_texts)
+
+    reports, ratios = await asyncio.gather(
+        get_financial_reports(db, ticker=ticker, periods=12, year=year),
+        get_financial_ratios(db, ticker=ticker, periods=12, year=year),
+    )
+
+    income_rows: List[Dict[str, Any]] = reports.get("incomeStatement", []) or []
+    balance_rows: List[Dict[str, Any]] = reports.get("balanceSheet", []) or []
+
+    latest_income = _pick_report_by_period(income_rows, period)
+    latest_balance = _pick_report_by_period(balance_rows, period)
+
+    selected_period = (((latest_income or {}).get("period") or {}).get("period"))
+    if not selected_period:
+        selected_period = (((latest_balance or {}).get("period") or {}).get("period"))
+
+    total_assets = _pick_first_number(latest_balance, ["totalAssets"], 0)
+    total_equity = _pick_first_number(latest_balance, ["totalEquity"], 0)
+    total_liabilities = _pick_first_number(latest_balance, ["totalLiabilities"], 0)
+
+    technical_provisions = _pick_first_number(
+        latest_balance,
+        ["technicalProvisions", "insuranceTechnicalProvisions", "claimReserves", "premiumReserves"],
+        0,
+    )
+    if technical_provisions == 0 and total_liabilities > 0:
+        technical_provisions = total_liabilities * 0.6
+
+    net_earned_premium = _pick_first_number(
+        latest_income,
+        ["netEarnedPremium", "nep", "insuranceNetEarnedPremium", "revenue"],
+        0,
+    )
+    claims_incurred = _pick_first_number(
+        latest_income,
+        ["claimsIncurred", "netClaimsIncurred", "insuranceClaimsExpense", "claimExpense"],
+        0,
+    )
+    commission_expense = _pick_first_number(latest_income, ["commissionExpense", "brokerageExpense", "chiHoaHong"], 0)
+    operating_expense = _pick_first_number(latest_income, ["operatingExpenses", "adminExpenses", "gAndAExpense"], 0)
+
+    underwriting_expense = commission_expense + operating_expense
+    underwriting_result = net_earned_premium - claims_incurred - underwriting_expense
+    combined_ratio = _safe_div(claims_incurred + underwriting_expense, net_earned_premium)
+    combined_ratio_pct = combined_ratio * 100 if combined_ratio is not None else None
+
+    liquid_assets = _pick_first_number(latest_balance, ["cash"], 0) + _pick_first_number(latest_balance, ["shortTermInvestments"], 0)
+    solvency_required = _pick_first_number(latest_balance, ["minimumCapitalRequirement", "requiredCapital"], 0)
+    if solvency_required == 0 and technical_provisions > 0:
+        solvency_required = technical_provisions * 0.1
+    solvency_coverage = _safe_div(total_equity, solvency_required)
+
+    reinsurance_recoverables = _pick_first_number(
+        latest_balance,
+        ["reinsuranceRecoverables", "riRecoverables", "reinsuranceReceivable"],
+        0,
+    )
+    reinsurance_overdue = _pick_first_number(
+        latest_balance,
+        ["reinsurancePayablesOverdue", "riOverduePayables"],
+        0,
+    )
+
+    reinsurance_dependency = _safe_div(reinsurance_recoverables, claims_incurred)
+    reinsurance_overdue_ratio = _safe_div(reinsurance_overdue, reinsurance_recoverables)
+
+    scenario_name = str(scenario or "adverse").lower()
+    outflow_rate = 0.015
+    if scenario_name == "baseline":
+        outflow_rate = 0.008
+    elif scenario_name == "severe":
+        outflow_rate = 0.025
+
+    stress_days = list(range(1, 91))
+    stress_outflows = [claims_incurred * outflow_rate * day for day in stress_days]
+    liquidity_breach_day = next((idx + 1 for idx, value in enumerate(stress_outflows) if value > liquid_assets), None)
+
+    trend_income = list(reversed(income_rows[:8]))
+    trend_balance = list(reversed(balance_rows[:8]))
+    trend_periods = [(((row or {}).get("period") or {}).get("period") or "") for row in trend_income]
+
+    trend_nep = [
+        _pick_first_number(row, ["netEarnedPremium", "nep", "insuranceNetEarnedPremium", "revenue"], 0)
+        for row in trend_income
+    ]
+    trend_claims = [
+        _pick_first_number(row, ["claimsIncurred", "netClaimsIncurred", "insuranceClaimsExpense", "claimExpense"], 0)
+        for row in trend_income
+    ]
+    trend_combined_ratio = []
+    for row in trend_income:
+        row_nep = _pick_first_number(row, ["netEarnedPremium", "nep", "insuranceNetEarnedPremium", "revenue"], 0)
+        row_claims = _pick_first_number(row, ["claimsIncurred", "netClaimsIncurred", "insuranceClaimsExpense", "claimExpense"], 0)
+        row_opex = _pick_first_number(row, ["operatingExpenses", "adminExpenses", "gAndAExpense"], 0)
+        row_ratio = _safe_div(row_claims + row_opex, row_nep)
+        trend_combined_ratio.append(_safe_round(row_ratio * 100, 4) if row_ratio is not None else None)
+
+    trend_assets = [_pick_first_number(row, ["totalAssets"], 0) for row in trend_balance]
+    trend_equity = [_pick_first_number(row, ["totalEquity"], 0) for row in trend_balance]
+    trend_liquid_assets = [
+        _pick_first_number(row, ["cash"], 0) + _pick_first_number(row, ["shortTermInvestments"], 0)
+        for row in trend_balance
+    ]
+
+    latest_ratio = ratios[0] if ratios else {}
+    roe_ratio = _safe_float((latest_ratio or {}).get("roe"), 0)
+    roa_ratio = _safe_float((latest_ratio or {}).get("roa"), 0)
+
+    return {
+        "ticker": ticker,
+        "industry": (company_info or {}).get("icb_name2", "") or reports.get("industry", ""),
+        "isInsurance": bool(is_insurance),
+        "selectedPeriod": selected_period,
+        "scenario": scenario_name,
+        "kpis": {
+            "totalAssets": _metric_payload(total_assets, "high", "BS.totalAssets", "financialReports.balanceSheet"),
+            "totalEquity": _metric_payload(total_equity, "high", "BS.totalEquity", "financialReports.balanceSheet"),
+            "technicalProvisions": _metric_payload(
+                technical_provisions,
+                "proxy" if _pick_first_number(latest_balance, ["technicalProvisions", "insuranceTechnicalProvisions", "claimReserves", "premiumReserves"], 0) == 0 else "high",
+                "technicalProvisions || totalLiabilities*0.6",
+                "financialReports.balanceSheet",
+            ),
+            "netEarnedPremium": _metric_payload(net_earned_premium, "proxy", "NEP || revenue", "financialReports.incomeStatement"),
+            "claimsIncurred": _metric_payload(claims_incurred, "proxy", "claimsIncurred fallback", "financialReports.incomeStatement"),
+            "underwritingResult": _metric_payload(
+                underwriting_result,
+                "proxy",
+                "netEarnedPremium - claimsIncurred - (commissionExpense + operatingExpense)",
+                "computed",
+            ),
+            "combinedRatioPct": _metric_payload(
+                combined_ratio_pct,
+                "proxy",
+                "(claimsIncurred + underwritingExpense) / netEarnedPremium * 100",
+                "computed",
+            ),
+            "solvencyCoverage": _metric_payload(
+                solvency_coverage,
+                "proxy",
+                "availableCapital / requiredCapital",
+                "computed",
+            ),
+            "liquidAssets": _metric_payload(liquid_assets, "high", "cash + shortTermInvestments", "financialReports.balanceSheet"),
+            "liquidityToAssets": _metric_payload(_safe_div(liquid_assets, total_assets), "proxy", "liquidAssets/totalAssets", "computed"),
+            "liquidityToTechnicalProvisions": _metric_payload(
+                _safe_div(liquid_assets, technical_provisions),
+                "proxy",
+                "liquidAssets/technicalProvisions",
+                "computed",
+            ),
+            "reinsuranceDependency": _metric_payload(
+                reinsurance_dependency,
+                "proxy",
+                "reinsuranceRecoverables/claimsIncurred",
+                "computed",
+            ),
+            "reinsuranceOverdueRatio": _metric_payload(
+                reinsurance_overdue_ratio,
+                "proxy",
+                "reinsurancePayablesOverdue/reinsuranceRecoverables",
+                "computed",
+            ),
+            "roe": _metric_payload(roe_ratio, "high", "financialRatio.roe", "financialRatios"),
+            "roa": _metric_payload(roa_ratio, "high", "financialRatio.roa", "financialRatios"),
+        },
+        "stress": {
+            "days": stress_days,
+            "cumulativeOutflows": [_safe_round(v, 4) for v in stress_outflows],
+            "liquidAssetsLine": [_safe_round(liquid_assets, 4) for _ in stress_days],
+            "breachDay": liquidity_breach_day,
+            "outflowRate": outflow_rate,
+        },
+        "trends": {
+            "periods": trend_periods,
+            "nep": [_safe_round(v, 4) for v in trend_nep],
+            "claims": [_safe_round(v, 4) for v in trend_claims],
+            "combinedRatioPct": trend_combined_ratio,
+            "assets": [_safe_round(v, 4) for v in trend_assets],
+            "equity": [_safe_round(v, 4) for v in trend_equity],
+            "liquidAssets": [_safe_round(v, 4) for v in trend_liquid_assets],
+        },
+        "meta": {
+            "fallbackMode": True,
+            "notes": [
+                "Proxy metrics are returned with confidence tags when strict insurance fields are missing.",
+                "Use confidence='high' metrics first for regulatory interpretations.",
+            ],
+        },
     }
 
 
