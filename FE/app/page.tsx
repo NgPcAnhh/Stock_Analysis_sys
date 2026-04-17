@@ -13,14 +13,29 @@ import { TopStocks } from "@/components/dashboard/TopStocks";
 import { MacroData } from "@/components/dashboard/MacroData";
 import { NewsSection } from "@/components/dashboard/NewsSection";
 import { Footer } from "@/components/layout/Footer";
-import { BarChart3, TrendingUp, ChevronDown, Rocket, Activity, LineChart, Newspaper, ArrowRight, Database, Globe } from "lucide-react";
+import { BarChart3, TrendingUp, ChevronDown, Rocket, Activity, LineChart, Newspaper, ArrowRight, Database, Globe, ArrowLeftRight, CandlestickChart, ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/AuthContext";
-import { PriceBoardPopup } from "@/components/dashboard/PriceBoardPopup";
 
 export default function Home() {
     const [activeTicker, setActiveTicker] = useState("VNINDEX");
+    const [activeMoneyFlowImage, setActiveMoneyFlowImage] = useState(0);
     const { isAuthenticated, openAuthModal } = useAuth();
+
+    const moneyFlowImages = [
+        "/images/money-flow-1.png",
+        "/images/money-flow-2.png",
+        "/images/money-flow-3.png",
+        "/images/money-flow-4.png",
+    ];
+
+    const nextMoneyFlowImage = () => {
+        setActiveMoneyFlowImage((prev) => (prev + 1) % moneyFlowImages.length);
+    };
+
+    const prevMoneyFlowImage = () => {
+        setActiveMoneyFlowImage((prev) => (prev - 1 + moneyFlowImages.length) % moneyFlowImages.length);
+    };
 
     const scrollToMarket = () => {
         document.getElementById('market-overview')?.scrollIntoView({ behavior: 'smooth' });
@@ -28,7 +43,6 @@ export default function Home() {
 
     return (
         <div className="min-h-screen relative bg-background">
-            {isAuthenticated && <PriceBoardPopup />}
 
             {/* Ambient Background Glows */}
             {!isAuthenticated && (
@@ -289,21 +303,183 @@ export default function Home() {
                     </div>
                 </section>
 
-                {/* Inline Product Introduction Feature Banner (Between sections 1 & 2) */}
+                {/* DASHBOARD SHOWCASE (TCDN & QUANTITATIVE) MOVED BELOW MARKET OVERVIEW */}
                 {!isAuthenticated && (
-                    <section className="relative overflow-hidden rounded-3xl bg-linear-to-r from-primary/10 via-primary/5 to-background border border-primary/20 p-8 lg:p-12 flex flex-col lg:flex-row items-center justify-between gap-8">
-                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1/3 h-full bg-primary/10 blur-[80px] rounded-full -z-10"></div>
-                        <div className="max-w-xl">
-                            <h3 className="text-2xl lg:text-3xl font-bold mb-4 flex items-center gap-3">
-                                <Rocket className="h-8 w-8 text-primary" /> Phân tích dòng tiền thông minh
-                            </h3>
-                            <p className="text-muted-foreground text-lg leading-relaxed">
-                                Dữ liệu dòng tiền của FinVision được bóc tách sâu sắc theo từng nhóm ngành và mã cổ phiếu riêng lẻ, giúp bạn nhận diện cơ hội trước bờ vực bùng nổ của thị trường.
+                    <section className="py-12 relative overflow-hidden mt-8 mb-16 rounded-3xl bg-background border border-border/40 shadow-sm">
+                        <div className="absolute top-0 inset-x-0 h-px w-full bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
+                        <div className="text-center mb-16 px-4">
+                            <h2 className="text-3xl md:text-5xl font-bold mb-6 text-foreground tracking-tight">
+                                Giải pháp phân tích toàn diện <br className="hidden md:block" /> 
+                                <span className="text-primary mt-2 inline-block">định hướng quyết định</span>
+                            </h2>
+                            <p className="text-muted-foreground max-w-3xl mx-auto text-xl leading-relaxed font-light">
+                                Nền tảng được tinh chỉnh với các dashboard Tài Chính Doanh Nghiệp và Định Lượng trực quan. Giúp bạn bóc tách sâu rủi ro, định giá cổ phiếu, và tìm ra cơ hội đầu tư bằng dữ liệu chuẩn xác nhất.
                             </p>
                         </div>
-                        <Button size="lg" className="shrink-0 h-12 px-8 bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:scale-105 transition-transform" onClick={openAuthModal}>
-                            Trải nghiệm công cụ
-                        </Button>
+                        
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 px-6">
+                            {/* Dashboard TCDN Showcase */}
+                            <div className="group relative rounded-3xl overflow-hidden bg-muted/20 border border-border/60 hover:border-primary/60 transition-all duration-500 shadow-sm hover:shadow-[0_0_40px_-15px_rgba(var(--primary),0.3)] cursor-pointer p-6 flex flex-col h-full transform hover:-translate-y-1">
+                                <div className="flex-1">
+                                    <h3 className="text-2xl font-bold mb-4 group-hover:text-primary transition-colors flex items-center">
+                                        <Database className="w-6 h-6 mr-3 text-primary" />
+                                        Phân Tích Sức Khỏe TCDN
+                                    </h3>
+                                    <p className="text-muted-foreground leading-relaxed mb-6">
+                                        Xem bức tranh tài chính qua Bảng cân đối kế toán, Kết quả HĐKD và Lưu chuyển tiền tệ. Phát hiện những rủi ro ngầm và bóc tách lợi thế cạnh tranh cốt lõi (Ví dụ: VIC, VHM...).
+                                    </p>
+                                </div>
+                                <div className="aspect-[4/3] w-full rounded-xl overflow-hidden relative bg-muted/40 border border-border/50 shadow-inner group-hover:shadow-[0_10px_30px_-15px_rgba(0,0,0,0.5)] transition-shadow">
+                                    <img 
+                                        src="/images/dashboard-tcdn.png" 
+                                        alt="Dashboard Tài Chính Doanh Nghiệp (Ví dụ VIC)" 
+                                        className="w-full h-full object-cover object-top opacity-85 group-hover:opacity-100 group-hover:scale-[1.02] transition-all duration-700"
+                                        onError={(e) => {
+                                            (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiMxNjE2MTYiLz48dGV4dCB4PSI1MCUiIHk9IjQ1JSIgZm9udC1zaXplPSIyNCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgYWxpZ25tZW50LWJhc2VsaW5lPSJtaWRkbGUiIGZpbGw9IiM2NjYiPk1pc3NpbmcgSW1hZ2U6IGRhc2hib2FyZC10Y2RuLnBuZzwvdGV4dD48dGV4dCB4PSI1MCUiIHk9IjU1JSIgZm9udC1zaXplPSIxNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgYWxpZ25tZW50LWJhc2VsaW5lPSJtaWRkbGUiIGZpbGw9IiM2NjYiPlBsZWFzZSBzYXZlIHNjcmVlbnNob3QgdG8gRkUvcHVibGljL2ltYWdlcy88L3RleHQ+PC9zdmc+'; // Fallback
+                                        }}
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent pointer-events-none opacity-60 group-hover:opacity-20 transition-opacity duration-500" />
+                                </div>
+                            </div>
+
+                            {/* Dashboard Định Lượng Showcase */}
+                            <div className="group relative rounded-3xl overflow-hidden bg-muted/20 border border-border/60 hover:border-primary/60 transition-all duration-500 shadow-sm hover:shadow-[0_0_40px_-15px_rgba(var(--primary),0.3)] cursor-pointer p-6 flex flex-col h-full transform hover:-translate-y-1">
+                                <div className="flex-1">
+                                    <h3 className="text-2xl font-bold mb-4 group-hover:text-primary transition-colors flex items-center">
+                                        <LineChart className="w-6 h-6 mr-3 text-primary" />
+                                        Mô Hình Phân Tích Định Lượng
+                                    </h3>
+                                    <p className="text-muted-foreground leading-relaxed mb-6">
+                                        Khai thác chỉ báo định lượng, mô hình điểm số RS, mức độ biến động giá, và đánh giá Valuation đa chiều. Đưa ra quyết định xác suất cao với dữ liệu mạnh mẽ.
+                                    </p>
+                                </div>
+                                <div className="aspect-[4/3] w-full rounded-xl overflow-hidden relative bg-muted/40 border border-border/50 shadow-inner group-hover:shadow-[0_10px_30px_-15px_rgba(0,0,0,0.5)] transition-shadow">
+                                    <img 
+                                        src="/images/dashboard-quant.png" 
+                                        alt="Dashboard Định Lượng Cổ Phiếu (Ví dụ VIC)" 
+                                        className="w-full h-full object-cover object-top opacity-85 group-hover:opacity-100 group-hover:scale-[1.02] transition-all duration-700"
+                                        onError={(e) => {
+                                            (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiMxNjE2MTYiLz48dGV4dCB4PSI1MCUiIHk9IjQ1JSIgZm9udC1zaXplPSIyNCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgYWxpZ25tZW50LWJhc2VsaW5lPSJtaWRkbGUiIGZpbGw9IiM2NjYiPk1pc3NpbmcgSW1hZ2U6IGRhc2hib2FyZC1xdWFudC5wbmc8L3RleHQ+PHRleHQgeD0iNTAlIiB5PSI1NSUiIGZvbnQtc2l6ZT0iMTYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGFsaWdubWVudC1iYXNlbGluZT0ibWlkZGxlIiBmaWxsPSIjNjY2Ij5QbGVhc2Ugc2F2ZSBzY3JlZW5zaG90IHRvIEZFL3B1YmxpYy9pbWFnZXMvPC90ZXh0Pjwvc3ZnPg=='; // Fallback
+                                        }}
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent pointer-events-none opacity-60 group-hover:opacity-20 transition-opacity duration-500" />
+                                </div>
+                            </div>
+                            
+                            {/* So sánh cổ phiếu */}
+                            <div className="group relative rounded-3xl overflow-hidden bg-muted/20 border border-border/60 hover:border-primary/60 transition-all duration-500 shadow-sm hover:shadow-[0_0_40px_-15px_rgba(var(--primary),0.3)] cursor-pointer p-6 flex flex-col h-full transform hover:-translate-y-1">
+                                <div className="flex-1">
+                                    <h3 className="text-2xl font-bold mb-4 group-hover:text-primary transition-colors flex items-center">
+                                        <ArrowLeftRight className="w-6 h-6 mr-3 text-primary" />
+                                        So Sánh Cổ Phiếu Đa Chiều
+                                    </h3>
+                                    <p className="text-muted-foreground leading-relaxed mb-6">
+                                        Đối chiếu tương quan các mã cổ phiếu cùng ngành qua bộ chỉ số P/E, P/B, ROE... Nhận định đâu mới là "con gà đẻ trứng vàng" thực sự đang bị định giá thấp.
+                                    </p>
+                                </div>
+                                <div className="aspect-[4/3] w-full rounded-xl overflow-hidden relative bg-muted/40 border border-border/50 shadow-inner group-hover:shadow-[0_10px_30px_-15px_rgba(0,0,0,0.5)] transition-shadow">
+                                    <img 
+                                        src="/images/dashboard-compare.png" 
+                                        alt="So Sánh Cổ Phiếu" 
+                                        className="w-full h-full object-cover object-top opacity-85 group-hover:opacity-100 group-hover:scale-[1.02] transition-all duration-700"
+                                        onError={(e) => {
+                                            (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiMxNjE2MTYiLz48dGV4dCB4PSI1MCUiIHk9IjQ1JSIgZm9udC1zaXplPSIyNCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgYWxpZ25tZW50LWJhc2VsaW5lPSJtaWRkbGUiIGZpbGw9IiM2NjYiPk1pc3NpbmcgSW1hZ2U6IGRhc2hib2FyZC1jb21wYXJlLnBuZzwvdGV4dD48dGV4dCB4PSI1MCUiIHk9IjU1JSIgZm9udC1zaXplPSIxNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgYWxpZ25tZW50LWJhc2VsaW5lPSJtaWRkbGUiIGZpbGw9IiM2NjYiPlBsZWFzZSBzYXZlIHNjcmVlbnNob3QgdG8gRkUvcHVibGljL2ltYWdlcy88L3RleHQ+PC9zdmc+'; // Fallback
+                                        }}
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent pointer-events-none opacity-60 group-hover:opacity-20 transition-opacity duration-500" />
+                                </div>
+                            </div>
+
+                            {/* Phân tích kỹ thuật */}
+                            <div className="group relative rounded-3xl overflow-hidden bg-muted/20 border border-border/60 hover:border-primary/60 transition-all duration-500 shadow-sm hover:shadow-[0_0_40px_-15px_rgba(var(--primary),0.3)] cursor-pointer p-6 flex flex-col h-full transform hover:-translate-y-1">
+                                <div className="flex-1">
+                                    <h3 className="text-2xl font-bold mb-4 group-hover:text-primary transition-colors flex items-center">
+                                        <CandlestickChart className="w-6 h-6 mr-3 text-primary" />
+                                        Phân Tích Kỹ Thuật (Charting)
+                                    </h3>
+                                    <p className="text-muted-foreground leading-relaxed mb-6">
+                                        Hệ thống biểu đồ tương tác cao hỗ trợ hàng loạt công cụ vẽ, chỉ báo kỹ thuật phổ biến. Giúp nhà đầu tư bám sát nhịp điệu đồ thị giá tại thời gian thực.
+                                    </p>
+                                </div>
+                                <div className="aspect-[4/3] w-full rounded-xl overflow-hidden relative bg-muted/40 border border-border/50 shadow-inner group-hover:shadow-[0_10px_30px_-15px_rgba(0,0,0,0.5)] transition-shadow">
+                                    <img 
+                                        src="/images/dashboard-technical.png" 
+                                        alt="Phân Tích Kỹ Thuật" 
+                                        className="w-full h-full object-cover object-top opacity-85 group-hover:opacity-100 group-hover:scale-[1.02] transition-all duration-700"
+                                        onError={(e) => {
+                                            (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiMxNjE2MTYiLz48dGV4dCB4PSI1MCUiIHk9IjQ1JSIgZm9udC1zaXplPSIyNCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgYWxpZ25tZW50LWJhc2VsaW5lPSJtaWRkbGUiIGZpbGw9IiM2NjYiPk1pc3NpbmcgSW1hZ2U6IGRhc2hib2FyZC10ZWNobmljYWwucG5nPC90ZXh0Pjx0ZXh0IHg9IjUwJSIgeT0iNTUlIiBmb250LXNpemU9IjE2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBhbGlnbm1lbnQtYmFzZWxpbmU9Im1pZGRsZSIgZmlsbD0iIzY2NiI+UGxlYXNlIHNhdmUgc2NyZWVuc2hvdCB0byBGRS9wdWJsaWMvaW1hZ2VzLzwvdGV4dD48L3N2Zz4='; // Fallback
+                                        }}
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent pointer-events-none opacity-60 group-hover:opacity-20 transition-opacity duration-500" />
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                )}
+
+                {/* Inline Product Introduction Feature Banner (Between sections 1 & 2) */}
+                {!isAuthenticated && (
+                    <section className="relative overflow-hidden rounded-3xl bg-background border border-primary/20 p-8 flex flex-col gap-8 shadow-sm">
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1/3 h-full bg-primary/10 blur-[80px] rounded-full -z-10"></div>
+                        
+                        <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
+                            <div className="max-w-2xl">
+                                <h3 className="text-2xl lg:text-3xl font-bold mb-4 flex items-center gap-3">
+                                    <Rocket className="h-8 w-8 text-primary" /> Phân tích dòng tiền thông minh
+                                </h3>
+                                <p className="text-muted-foreground lg:text-lg leading-relaxed">
+                                    Dữ liệu dòng tiền của FinVision được bóc tách sâu sắc theo từng nhóm ngành và mã cổ phiếu riêng lẻ, nhận diện cơ hội từ những diễn biến dòng tiền ẩn giấu.
+                                </p>
+                            </div>
+                            <Button size="lg" className="shrink-0 h-12 px-8 bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:scale-105 transition-transform" onClick={openAuthModal}>
+                                Trải nghiệm công cụ
+                            </Button>
+                        </div>
+
+                        {/* Carousel / Slider */}
+                        <div className="relative w-full rounded-2xl overflow-hidden bg-muted/30 border border-border/50 group aspect-video lg:aspect-[21/9]">
+                            {moneyFlowImages.map((src, index) => (
+                                <img
+                                    key={src}
+                                    src={src}
+                                    alt={`Phân tích dòng tiền ${index + 1}`}
+                                    className={`absolute inset-0 w-full h-full object-cover object-top transition-opacity duration-700 ease-in-out ${index === activeMoneyFlowImage ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
+                                    onError={(e) => {
+                                        (e.target as HTMLImageElement).src = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiMxNjE2MTYiLz48dGV4dCB4PSI1MCUiIHk9IjQ1JSIgZm9udC1zaXplPSIyNCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgYWxpZ25tZW50LWJhc2VsaW5lPSJtaWRkbGUiIGZpbGw9IiM2NjYiPk1pc3NpbmcgSW1hZ2U6IG1vbmV5LWZsb3ctJHtpbmRleCArIDF9LnBuZzwvdGV4dD48dGV4dCB4PSI1MCUiIHk9IjU1JSIgZm9udC1zaXplPSIxNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgYWxpZ25tZW50LWJhc2VsaW5lPSJtaWRkbGUiIGZpbGw9IiM2NjYiPlBsZWFzZSBzYXZlIHNjcmVlbnNob3QgdG8gRkUvcHVibGljL2ltYWdlcy88L3RleHQ+PC9zdmc+`;
+                                    }}
+                                />
+                            ))}
+                            
+                            {/* Overlay Gradient */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent z-20 pointer-events-none" />
+
+                            {/* Left/Right Controls */}
+                            <button 
+                                onClick={prevMoneyFlowImage}
+                                className="absolute left-4 top-1/2 -translate-y-1/2 z-30 p-2 md:p-3 rounded-full bg-background/60 text-foreground backdrop-blur-sm border border-border/50 hover:bg-primary hover:text-primary-foreground hover:scale-110 transition-all opacity-0 group-hover:opacity-100"
+                            >
+                                <ChevronLeft className="w-6 h-6" />
+                            </button>
+
+                            <button 
+                                onClick={nextMoneyFlowImage}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 z-30 p-2 md:p-3 rounded-full bg-background/60 text-foreground backdrop-blur-sm border border-border/50 hover:bg-primary hover:text-primary-foreground hover:scale-110 transition-all opacity-0 group-hover:opacity-100"
+                            >
+                                <ChevronRight className="w-6 h-6" />
+                            </button>
+
+                            {/* Dots Indicator */}
+                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex gap-2">
+                                {moneyFlowImages.map((_, index) => (
+                                    <button
+                                        key={index}
+                                        onClick={() => setActiveMoneyFlowImage(index)}
+                                        className={`w-2.5 h-2.5 rounded-full transition-all ${index === activeMoneyFlowImage ? 'bg-primary w-8' : 'bg-primary/30 hover:bg-primary/60'}`}
+                                        aria-label={`Go to slide ${index + 1}`}
+                                    />
+                                ))}
+                            </div>
+                        </div>
                     </section>
                 )}
 

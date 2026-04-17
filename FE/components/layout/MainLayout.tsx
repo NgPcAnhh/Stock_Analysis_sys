@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { StockTicker } from "./StockTicker";
@@ -9,12 +9,21 @@ import ScrollToTopButton from "./ScrollToTopButton";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/AuthContext";
 import { useSessionTracking, usePageViewTracking, useErrorTracking } from "@/hooks/useTracking";
+import { PriceBoardPopup } from "@/components/dashboard/PriceBoardPopup";
+
+const JUST_LOGGED_IN_KEY = "finvision:auth:just-logged-in";
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(true);
+    const [showPopupForCurrentLogin, setShowPopupForCurrentLogin] = useState(false);
+    
+    // Trạng thái cho sidebar hover trên bảng điện
+    const [isHoverSidebarVisible, setIsHoverSidebarVisible] = useState(false);
+    const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
 
     const { isAuthenticated, isLoading, user, openAuthModal } = useAuth();
 
@@ -36,15 +45,95 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         }
     }, [isLoading, isAuthenticated, pathname, router, openAuthModal]);
 
-    return (
-        <div className="flex h-screen overflow-hidden bg-background">
-            {/* Desktop Sidebar - Hidden on mobile, visible on lg */}
-            <div className="hidden lg:block transition-all duration-300 ease-in-out">
-                <Sidebar
-                    collapsed={isCollapsed}
-                    onToggle={() => setIsCollapsed(!isCollapsed)}
-                />
+    // Chỉ cho phép popup bảng điện hiển thị ở tab Tổng quan ngay sau khi đăng nhập.
+    useEffect(() => {
+        if (isLoading) {
+            return;
+        }
+
+        if (!isAuthenticated) {
+            setShowPopupForCurrentLogin(false);
+            return;
+        }
+
+        if (pathname !== "/") {
+            setShowPopupForCurrentLogin(false);
+            return;
+        }
+
+        const justLoggedIn = sessionStorage.getItem(JUST_LOGGED_IN_KEY) === "1";
+        if (justLoggedIn) {
+            setShowPopupForCurrentLogin(true);
+            sessionStorage.removeItem(JUST_LOGGED_IN_KEY);
+        }
+    }, [isLoading, isAuthenticated, pathname]);
+
+    useEffect(() => {
+        if (showPopupForCurrentLogin && pathname !== "/") {
+            setShowPopupForCurrentLogin(false);
+        }
+    }, [pathname, showPopupForCurrentLogin]);
+
+    const hideSidebarFromUrl = searchParams.get("hideSidebar") === "true";
+    const isPriceBoardIframe = pathname === "/price-board" && hideSidebarFromUrl;
+    const isPriceBoardMain = pathname === "/price-board" && !hideSidebarFromUrl;
+    // Reset timeout khi thao tác với sidebar hover
+    const handleSidebarHoverActivity = () => {
+        if (hoverTimeout) {
+            clearTimeout(hoverTimeout);
+        }
+        setIsHoverSidebarVisible(true);
+        const timeout = setTimeout(() => {
+            setIsHoverSidebarVisible(false);
+        }, 3000);
+        setHoverTimeout(timeout);
+    };
+    if (isPriceBoardIframe) {
+        return (
+            <div className="flex h-screen overflow-hidden bg-background">
+                <main className="flex-1 overflow-hidden w-full transition-all duration-300">
+                    {children}
+                </main>
             </div>
+        );
+    }
+
+    return (
+        <div className="flex h-screen overflow-hidden bg-background relative">
+            {/* Vùng trigger bên trái để mở sidebar hover khi ở trang bảng điện chính */}
+            {isPriceBoardMain && (
+                <div 
+                    className="absolute left-0 top-0 bottom-0 w-8 z-40 bg-transparent" 
+                    onMouseEnter={handleSidebarHoverActivity} 
+                />
+            )}
+
+            {/* Desktop Sidebar - Hidden on mobile, visible on lg */}
+            {!isPriceBoardMain && (
+                <div className="hidden lg:block transition-all duration-300 ease-in-out">
+                    <Sidebar
+                        collapsed={isCollapsed}
+                        onToggle={() => setIsCollapsed(!isCollapsed)}
+                    />
+                </div>
+            )}
+
+            {/* Desktop Hover Sidebar for Price Board */}
+            {isPriceBoardMain && (
+                <div 
+                    className={cn(
+                        "hidden lg:block absolute left-0 top-0 bottom-0 z-50 transition-transform duration-300 ease-in-out bg-background border-r border-border shadow-2xl",
+                        isHoverSidebarVisible ? "translate-x-0" : "-translate-x-full"
+                    )}
+                    onMouseEnter={handleSidebarHoverActivity}
+                    onMouseMove={handleSidebarHoverActivity}
+                >
+                    <Sidebar
+                        collapsed={isCollapsed}
+                        onToggle={() => setIsCollapsed(!isCollapsed)}
+                    />
+                </div>
+            )}
 
             {/* Mobile Sidebar Overlay */}
             {isMobileMenuOpen && (
@@ -73,6 +162,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             </div>
 
             <ScrollToTopButton />
+            {isAuthenticated && !isPriceBoardIframe && pathname === "/" && showPopupForCurrentLogin && (
+                <PriceBoardPopup onHandled={() => setShowPopupForCurrentLogin(false)} />
+            )}
         </div>
     );
 }

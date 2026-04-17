@@ -3,6 +3,8 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, getAccessToken, clearTokens, fetchWithAuth } from './auth';
 
+const JUST_LOGGED_IN_KEY = 'finvision:auth:just-logged-in';
+
 interface AuthContextType {
     user: User | null;
     isAuthenticated: boolean;
@@ -54,6 +56,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const login = (newUser: User) => {
         setUser(newUser);
+        try {
+            sessionStorage.setItem(JUST_LOGGED_IN_KEY, '1');
+        } catch {
+            // ignore storage failures
+        }
     };
 
     const logout = async () => {
@@ -74,6 +81,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         clearTokens();
         setUser(null);
+        try {
+            sessionStorage.removeItem(JUST_LOGGED_IN_KEY);
+        } catch {
+            // ignore storage failures
+        }
     };
 
     return (

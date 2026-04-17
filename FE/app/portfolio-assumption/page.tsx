@@ -305,7 +305,9 @@ export default function PortfolioAssumptionPage() {
                                 <CardHeader>
                                     <CardTitle className="text-base flex items-center justify-between">
                                         <span>2) Mức sụt giảm Lịch sử</span>
-                                        <Info className="h-4 w-4 text-muted-foreground" title="Hiển thị độ sụt giảm lớn nhất từ đỉnh (Drawdown) trong quá khứ. Giúp đánh giá rủi ro lỗ tối đa." />
+                                        <div title="Hiển thị độ sụt giảm lớn nhất từ đỉnh (Drawdown) trong quá khứ. Giúp đánh giá rủi ro lỗ tối đa.">
+                                            <Info className="h-4 w-4 text-muted-foreground" />
+                                        </div>
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="h-80">
@@ -327,7 +329,9 @@ export default function PortfolioAssumptionPage() {
                                 <CardHeader>
                                     <CardTitle className="text-base flex items-center justify-between">
                                         <span>3) Phân phối Lợi nhuận</span>
-                                        <Info className="h-4 w-4 text-muted-foreground" title="So sánh thực tế (cột xanh) và xác suất chuẩn (đường cam). Nếu lệch hẳn sang trái, rủi ro lỗ nặng cao hơn bình thường." />
+                                        <div title="So sánh thực tế (cột xanh) và xác suất chuẩn (đường cam). Nếu lệch hẳn sang trái, rủi ro lỗ nặng cao hơn bình thường.">
+                                            <Info className="h-4 w-4 text-muted-foreground" />
+                                        </div>
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="h-80">
@@ -349,7 +353,9 @@ export default function PortfolioAssumptionPage() {
                                 <CardHeader>
                                     <CardTitle className="text-base flex items-center justify-between">
                                         <span>4) Nguồn gốc rủi ro theo Yếu tố</span>
-                                        <Info className="h-4 w-4 text-muted-foreground" title="Phân tích rủi ro tổng thể đến từ đâu: Thị trường, Cổ phiếu Giá trị, Quy mô hay Động lượng." />
+                                        <div title="Phân tích rủi ro tổng thể đến từ đâu: Thị trường, Cổ phiếu Giá trị, Quy mô hay Động lượng.">
+                                            <Info className="h-4 w-4 text-muted-foreground" />
+                                        </div>
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="h-80">
@@ -373,7 +379,9 @@ export default function PortfolioAssumptionPage() {
                                 <CardHeader>
                                     <CardTitle className="text-base flex items-center justify-between">
                                         <span>5) Sức chịu đựng Vĩ mô</span>
-                                        <Info className="h-4 w-4 text-muted-foreground" title="Dự phóng danh mục sẽ tăng giảm ra sao nếu kinh tế gặp các cú sốc: Khủng hoảng, lạm phát..." />
+                                        <div title="Dự phóng danh mục sẽ tăng giảm ra sao nếu kinh tế gặp các cú sốc: Khủng hoảng, lạm phát...">
+                                            <Info className="h-4 w-4 text-muted-foreground" />
+                                        </div>
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="h-80">
@@ -393,7 +401,9 @@ export default function PortfolioAssumptionPage() {
                                 <CardHeader>
                                     <CardTitle className="text-base flex items-center justify-between">
                                         <span>6) Đường biên Lợi nhuận/Rủi ro</span>
-                                        <Info className="h-4 w-4 text-muted-foreground" title="Đánh giá Lợi nhuận vs Rủi ro. Black-Litterman ổn định và an toàn hơn so với tính toán cổ điển Markowitz." />
+                                        <div title="Đánh giá Lợi nhuận vs Rủi ro. Black-Litterman ổn định và an toàn hơn so với tính toán cổ điển Markowitz.">
+                                            <Info className="h-4 w-4 text-muted-foreground" />
+                                        </div>
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="h-80">
@@ -417,7 +427,9 @@ export default function PortfolioAssumptionPage() {
                                 <CardHeader>
                                     <CardTitle className="text-base flex items-center justify-between">
                                         <span>7) Cấu trúc Thanh khoản</span>
-                                        <Info className="h-4 w-4 text-muted-foreground" title="Bao nhiêu % tiền nằm ở cổ phiếu dễ bán (cao), bao nhiêu nằm ở cổ phiếu khó bán (thấp)." />
+                                        <div title="Bao nhiêu % tiền nằm ở cổ phiếu dễ bán (cao), bao nhiêu nằm ở cổ phiếu khó bán (thấp).">
+                                            <Info className="h-4 w-4 text-muted-foreground" />
+                                        </div>
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="h-80">
@@ -428,7 +440,7 @@ export default function PortfolioAssumptionPage() {
                                                     <Cell key={`tier-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                                                 ))}
                                             </Pie>
-                                            <Tooltip formatter={(value: number) => formatMoney(value)} />
+                                            <Tooltip formatter={(value: any) => formatMoney(Number(value) || 0)} />
                                             <Legend />
                                         </PieChart>
                                     </ResponsiveContainer>
@@ -439,7 +451,9 @@ export default function PortfolioAssumptionPage() {
                                 <CardHeader>
                                     <CardTitle className="text-base flex items-center justify-between">
                                         <span className="flex items-center gap-2"><Goal className="h-4 w-4" />8) Tỷ trọng Tối ưu</span>
-                                        <Info className="h-4 w-4 text-muted-foreground" title="Tỷ trọng mua lý tưởng nhất (Weight %) và Số ngày dự kiến để bán được hết sạch (DTL)." />
+                                        <div title="Tỷ trọng mua lý tưởng nhất (Weight %) và Số ngày dự kiến để bán được hết sạch (DTL).">
+                                            <Info className="h-4 w-4 text-muted-foreground" />
+                                        </div>
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-2 max-h-80 overflow-auto">
@@ -466,7 +480,9 @@ export default function PortfolioAssumptionPage() {
                             <CardHeader>
                                 <CardTitle className="text-base flex items-center justify-between">
                                     <span className="flex items-center gap-2"><BrainCircuit className="h-4 w-4" />9) Lợi nhuận Hậu nghiệm (Black-Litterman)</span>
-                                    <Info className="h-4 w-4 text-muted-foreground" title="Lợi nhuận được chuẩn hoá lại giúp cho việc đánh giá danh mục ổn định hơn so với cách tính trung bình cổ điển." />
+                                    <div title="Lợi nhuận được chuẩn hoá lại giúp cho việc đánh giá danh mục ổn định hơn so với cách tính trung bình cổ điển.">
+                                        <Info className="h-4 w-4 text-muted-foreground" />
+                                    </div>
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="overflow-auto">

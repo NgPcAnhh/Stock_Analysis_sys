@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Roboto, Roboto_Mono } from "next/font/google";
+import { Suspense } from "react";
 import "./globals.css";
 import MainLayout from "@/components/layout/MainLayout";
 import { AuthProvider } from "@/lib/AuthContext";
@@ -35,9 +36,11 @@ export default function RootLayout({
       >
         <AuthProvider>
           <SettingsProvider>
-            <MainLayout>
-              {children}
-            </MainLayout>
+            <Suspense fallback={<div className="flex h-screen w-full items-center justify-center bg-background" />}>
+              <MainLayout>
+                {children}
+              </MainLayout>
+            </Suspense>
             <AuthModal />
           </SettingsProvider>
         </AuthProvider>
