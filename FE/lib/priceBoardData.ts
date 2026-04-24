@@ -5,7 +5,7 @@
 
 /** Index codes tracked in the top bar (these are WebSocket subscription targets) */
 export const INDEX_CODES = [
-  "VNINDEX", "VN30", "HNX30", "HNXINDEX", "VNXALL", "HNXUPCOMINDEX",
+  "VNINDEX", "VN30", "HNX30", "HNXINDEX", "VNXALL", "UPCOMINDEX",
 ] as const;
 
 /** Main index IDs for mini‑chart cards */

@@ -54,16 +54,16 @@ export default function PriceBoard() {
   }, [wsSymbols, updateSubscription]);
 
   return (
-    <div className="flex flex-col h-full bg-[#0d1117] text-gray-200 font-sans overflow-hidden">
+    <div className="flex flex-col h-full bg-black text-gray-200 font-sans overflow-hidden">
       {/* ── Top: Index bar ──────────────────────────────────── */}
       <div className="p-2 flex-shrink-0">
         <IndexBar />
       </div>
 
       {/* ── Tabs + Search bar ───────────────────────────────── */}
-      <div className="flex items-center justify-between px-2 py-1.5 bg-[#1a1e29] border-y border-[#2a2e39] gap-2 flex-shrink-0">
+      <div className="flex items-center justify-between px-2 py-1.5 bg-black border-y border-[#2a2e39] gap-2 flex-shrink-0">
         {/* Search */}
-        <div className="flex items-center gap-2 bg-[#131722] rounded px-2 py-1.5 w-44 border border-[#333] flex-shrink-0">
+        <div className="flex items-center gap-2 bg-black rounded px-2 py-1.5 w-44 border border-[#2a2e39] flex-shrink-0">
           <Search className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
           <input
             type="text"
@@ -83,7 +83,7 @@ export default function PriceBoard() {
               className={`whitespace-nowrap px-3 py-1.5 rounded text-[12px] font-semibold transition-colors ${
                 activeTab === tab.key
                   ? "bg-primary/20 text-primary border border-primary/40"
-                  : "hover:bg-[#222] text-[#7d90a8]"
+                  : "hover:bg-[#101010] text-[#7d90a8]"
               }`}
             >
               {tab.label}
@@ -106,7 +106,7 @@ export default function PriceBoard() {
               </button>
 
               {dropdownOpen && (
-                <div className="absolute top-full left-0 mt-1 z-50 bg-[#1a1e29] border border-[#2a2e39] rounded-lg shadow-xl py-1 min-w-[160px] max-h-[320px] overflow-y-auto">
+                <div className="absolute top-full left-0 mt-1 z-50 bg-black border border-[#2a2e39] rounded-lg shadow-xl py-1 min-w-[160px] max-h-[320px] overflow-y-auto">
                   {moreTabs.map((tab) => (
                     <button
                       key={tab.key}
@@ -117,7 +117,7 @@ export default function PriceBoard() {
                       className={`w-full text-left px-3 py-1.5 text-[12px] font-medium transition-colors ${
                         activeTab === tab.key
                           ? "bg-primary/20 text-primary"
-                          : "text-[#7d90a8] hover:bg-[#222] hover:text-white"
+                          : "text-[#7d90a8] hover:bg-[#101010] hover:text-white"
                       }`}
                     >
                       {tab.label}

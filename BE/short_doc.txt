@@ -1,7 +1,14 @@
-initialize: 
+setup:
+pip install -r requirements.txt
+
+env:
+- app loads .env
+- if .env is missing, app falls back to .env.example
+
+initialize:
 uvicorn app.main:app --reload
 
 
-api docs: 
+api docs:
 http://127.0.0.1:8000/docs
 http://127.0.0.1:8000/redoc  (ưu tiên)

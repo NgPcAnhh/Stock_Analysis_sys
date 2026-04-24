@@ -9,14 +9,14 @@ interface Props {
 
 export default function PriceBoardTable({ symbols }: Props) {
   return (
-    <div className="flex-1 overflow-auto custom-scrollbar relative bg-[#131722]">
+    <div className="flex-1 overflow-auto custom-scrollbar relative bg-black">
       <table className="w-full border-collapse border-spacing-0 min-w-[1400px]">
         {/* ── Header ─────────────────────────────────────────── */}
-        <thead className="sticky top-0 z-40 bg-[#1a1e29] text-[#7d90a8] text-[11px] font-semibold uppercase shadow-sm select-none">
+        <thead className="sticky top-0 z-40 bg-black text-[#7d90a8] text-[11px] font-semibold uppercase shadow-sm select-none">
           <tr>
             <th
               rowSpan={2}
-              className="p-1.5 border border-[#2a2e39] sticky left-0 z-50 bg-[#1a1e29] text-center w-[72px]"
+              className="p-1.5 border border-[#2a2e39] sticky left-0 z-50 bg-black text-center w-[72px]"
             >
               CK
             </th>
@@ -32,7 +32,7 @@ export default function PriceBoardTable({ symbols }: Props) {
             <th colSpan={6} className="py-1.5 border border-[#2a2e39] text-center border-b-0">
               Bên mua
             </th>
-            <th colSpan={4} className="py-1.5 border border-[#2a2e39] text-center border-b-0 bg-[#252a33] text-white">
+            <th colSpan={4} className="py-1.5 border border-[#2a2e39] text-center border-b-0 bg-[#0f0f10] text-white">
               Khớp lệnh
             </th>
             <th colSpan={6} className="py-1.5 border border-[#2a2e39] text-center border-b-0">
@@ -62,10 +62,10 @@ export default function PriceBoardTable({ symbols }: Props) {
               KL 1
             </th>
             {/* Match */}
-            <th className="p-1 border border-[#2a2e39] bg-[#252a33] text-gray-300 w-14">Giá</th>
-            <th className="p-1 border border-[#2a2e39] bg-[#252a33] text-gray-300 w-16">KL</th>
-            <th className="p-1 border border-[#2a2e39] bg-[#252a33] text-gray-300 w-14">+/-</th>
-            <th className="p-1 border-r-2 border-[#3a3f4b] border-b border-t border-l border-[#2a2e39] bg-[#252a33] text-gray-300 w-14">
+            <th className="p-1 border border-[#2a2e39] bg-[#0f0f10] text-gray-300 w-14">Giá</th>
+            <th className="p-1 border border-[#2a2e39] bg-[#0f0f10] text-gray-300 w-16">KL</th>
+            <th className="p-1 border border-[#2a2e39] bg-[#0f0f10] text-gray-300 w-14">+/-</th>
+            <th className="p-1 border-r-2 border-[#3a3f4b] border-b border-t border-l border-[#2a2e39] bg-[#0f0f10] text-gray-300 w-14">
               +/- (%)
             </th>
             {/* Sell 1-2-3 */}

@@ -121,10 +121,10 @@ export const StockRow = memo(function StockRow({ symbol }: StockRowProps) {
   const matchFlash = flash(mp);
 
   return (
-    <tr className="hover:bg-[#1e2329] bg-[#131722] transition-colors duration-75 group">
+    <tr className="hover:bg-[#0a0a0a] bg-black transition-colors duration-75 group">
       {/* Symbol */}
       <td
-        className={`px-2 py-[5px] border-r border-b border-[#2a2e39] font-bold sticky left-0 z-20 bg-[#131722] group-hover:bg-[#1e2329] text-left text-[12px] ${matchColor}`}
+        className={`px-2 py-[5px] border-r border-b border-[#2a2e39] font-bold sticky left-0 z-20 bg-black group-hover:bg-[#0a0a0a] text-left text-[12px] ${matchColor}`}
       >
         {symbol}
       </td>
@@ -157,7 +157,7 @@ export const StockRow = memo(function StockRow({ symbol }: StockRowProps) {
         value={mp}
         display={mp > 0 ? fmtPrice(mp) : ""}
         colorClass={`${matchColor} font-bold`}
-        className="bg-[#1a1e29]"
+        className="bg-[#0f0f10]"
         align="center"
         flashType={matchFlash}
       />
@@ -165,14 +165,14 @@ export const StockRow = memo(function StockRow({ symbol }: StockRowProps) {
         value={d.volume}
         display={mp > 0 ? fmtVolume(d.volume) : ""}
         colorClass={matchColor}
-        className="bg-[#1a1e29]"
+        className="bg-[#0f0f10]"
         flashType="neutral"
       />
       <BlinkingCell
         value={ch}
         display={mp > 0 ? fmtChange(ch) : ""}
         colorClass={getChangeColorClass(ch)}
-        className="bg-[#1a1e29]"
+        className="bg-[#0f0f10]"
         align="center"
         flashType={matchFlash}
       />
@@ -180,7 +180,7 @@ export const StockRow = memo(function StockRow({ symbol }: StockRowProps) {
         value={d.changePercent}
         display={mp > 0 ? fmtPercent(d.changePercent) : ""}
         colorClass={getChangeColorClass(ch)}
-        className="bg-[#1a1e29] border-r-2 border-[#3a3f4b]"
+        className="bg-[#0f0f10] border-r-2 border-[#3a3f4b]"
         align="center"
         flashType={matchFlash}
       />
