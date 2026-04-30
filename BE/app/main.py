@@ -29,6 +29,7 @@ from app.modules.tracking.router import router as tracking_router
 from app.modules.admin.router import router as admin_router
 from app.modules.alerts.router import router as alerts_router
 from app.modules.portfolio_assumption.router import router as portfolio_assumption_router
+from app.modules.chatbot.api.routes import router as chatbot_router
 
 settings = get_settings()
 
@@ -94,6 +95,7 @@ app.include_router(tracking_router, prefix="/api/v1")
 app.include_router(admin_router, prefix="/api/v1")
 app.include_router(alerts_router, prefix="/api/v1")
 app.include_router(portfolio_assumption_router, prefix="/api/v1")
+app.include_router(chatbot_router, prefix="/api/v1")
 
 @app.get("/")
 async def read_root():

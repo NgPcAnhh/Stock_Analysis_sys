@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import {
     LayoutDashboard, BarChart2, LineChart, PieChart,
-    Newspaper, Activity, Settings, Monitor, BriefcaseBusiness, type LucideIcon,
+    Newspaper, Activity, Settings, Monitor, BriefcaseBusiness, Bot, type LucideIcon,
 } from "lucide-react";
 
 // ─── Sidebar icon registry ────────────────────────────────────────────────────
@@ -17,6 +17,7 @@ export const SIDEBAR_ICON_MAP: Record<string, LucideIcon> = {
     Settings,
     Monitor,
     BriefcaseBusiness,
+    Bot,
 };
 
 // ─── Sidebar nav items ────────────────────────────────────────────────────────
@@ -37,6 +38,7 @@ export const DEFAULT_SIDEBAR_ITEMS: SidebarNavItem[] = [
     { id: "analysis",    name: "Phân tích",  href: "/analysis",    iconName: "PieChart",        enabled: true },
     { id: "portfolio-assumption", name: "Giả định danh mục", href: "/portfolio-assumption", iconName: "BriefcaseBusiness", enabled: true },
     { id: "news",        name: "Tin tức",    href: "/news",        iconName: "Newspaper",       enabled: true },
+    { id: "finpilot",    name: "FinPilot",   href: "/finpilot",    iconName: "Bot",             enabled: true },
     { id: "settings",    name: "Cài đặt",    href: "/settings",    iconName: "Settings",        enabled: true },
 ];
 

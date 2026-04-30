@@ -77,6 +77,12 @@ const fmtPct = (n: number) => Number((n * 100).toFixed(2)) + "%";
 const fmtNum = (n: number) => Number(n.toFixed(2));
 const fmtVal = (n: number, unit: number) => (n / unit).toLocaleString("vi-VN", { maximumFractionDigits: 2 }) + " Tỷ";
 
+const normalizePercentValue = (value: number | null | undefined): number | null => {
+    if (value == null || !Number.isFinite(value)) return null;
+    // Backend can return decimal (0.0797) or percentage points (7.97).
+    return Math.abs(value) <= 1 ? value * 100 : value;
+};
+
 type CostModelType = "manufacturing" | "trading" | "service" | "banking";
 
 function classifyCostModel(latest: IncomeStatementItem): { key: CostModelType; label: string } {
@@ -751,9 +757,11 @@ export function transformIncomeStatement(
     const ebitChg = prevEbit != null ? safeDiv(latestEbit - prevEbit, Math.abs(prevEbit)) * 100 : 0;
     const ebitdaChg = prevEbitda != null ? safeDiv(latestEbitda - prevEbitda, Math.abs(prevEbitda)) * 100 : 0;
 
-    const roeStr = ratio?.roe ? fmtNum(ratio.roe * 100) + "%" : "—";
-    const roaStr = ratio?.roa ? fmtNum(ratio.roa * 100) + "%" : "—";
-    const dupontVal = ratio?.roe ? fmtNum(ratio.roe * 100) : 0;
+    const roePct = normalizePercentValue(ratio?.roe);
+    const roaPct = normalizePercentValue(ratio?.roa);
+    const roeStr = roePct != null ? fmtNum(roePct) + "%" : "—";
+    const roaStr = roaPct != null ? fmtNum(roaPct) + "%" : "—";
+    const dupontVal = roePct != null ? fmtNum(roePct) : 0;
 
     const mkRow = (label: string, accessor: (d: IncomeStatementItem) => number, indent = 0, isBold = false): any => {
         const values = viewData.map(d => accessor(d) / unit);

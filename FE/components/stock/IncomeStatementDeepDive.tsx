@@ -270,38 +270,93 @@ function ProfitSection() {
   }, [profitDrivers]);
 
   const funnelChart = useMemo(() => {
-    const sorted = [...profitFunnel].sort((a, b) => b.value - a.value);
+    const prepared = profitFunnel
+      .map((d) => ({ ...d, value: Number(d.value) }))
+      .filter((d) => Number.isFinite(d.value) && d.value > 0);
+
+    const maxVal = prepared.length ? Math.max(...prepared.map((d) => d.value)) : 0;
+    const visualScaleExp = 0.72;
+    const visualFloorRatio = 0.2;
+
+    const visualized = prepared.map((d) => {
+      if (maxVal <= 0) {
+        return { ...d, realValue: d.value, visualValue: d.value, pctReal: 0 };
+      }
+      const ratio = d.value / maxVal;
+      const cheatedRatio = Math.max(Math.pow(ratio, visualScaleExp), visualFloorRatio);
+      return {
+        ...d,
+        realValue: d.value,
+        visualValue: cheatedRatio * maxVal,
+        pctReal: ratio * 100,
+      };
+    });
+
     return {
       tooltip: {
         trigger: "item" as const,
-        formatter: (p: { name: string; value: number }) => `${p.name}: ${fmtN(p.value)}`,
+        formatter: (p: { data?: { realValue?: number; pctReal?: number }; name: string }) => {
+          const real = p.data?.realValue ?? 0;
+          const pct = p.data?.pctReal ?? 0;
+          return `${p.name}<br/>Thực tế: ${fmtN(real)} (${pct.toFixed(1)}%)`;
+        },
       },
       series: [
         {
           type: "funnel",
           top: "6%",
           bottom: "6%",
-          left: "8%",
-          width: "84%",
-          minSize: "20%",
+          // Reserve ~25% right area for notes/labels; funnel uses ~75% remaining width.
+          left: "2%",
+          right: "26%",
+          minSize: "0%",
           maxSize: "100%",
-          sort: "descending" as const,
+          sort: "none" as const,
           gap: 3,
           label: {
             show: true,
-            position: "inside" as const,
-            color: "#ffffff",
-            fontSize: 11,
+            position: "right" as const,
+            alignTo: "edge" as const,
+            edgeDistance: "6%",
+            color: "#111827",
+            fontSize: 10,
             fontWeight: 600,
-            lineHeight: 16,
-            formatter: (p: { name: string; value: number }) => `${p.name}\n${fmtN(p.value)}`,
+            width: 170,
+            overflow: "truncate" as const,
+            align: "left" as const,
+            lineHeight: 14,
+            formatter: (p: { data?: { realValue?: number; pctReal?: number }; name: string }) => {
+              const real = p.data?.realValue ?? 0;
+              const pct = p.data?.pctReal ?? 0;
+              return `${p.name}\n${fmtN(real)} | ${pct.toFixed(1)}%`;
+            },
           },
-          labelLine: { show: false },
+          labelLine: {
+            show: true,
+            length: 14,
+            length2: 22,
+            lineStyle: { color: "#9CA3AF", width: 1 },
+          },
           itemStyle: {
-            borderColor: "#fff",
+            borderColor: "#ffffff",
             borderWidth: 1,
+            borderRadius: 4,
+            shadowBlur: 8,
+            shadowColor: "rgba(15, 23, 42, 0.12)",
           },
-          data: sorted.map((d) => ({ value: d.value, name: d.name, itemStyle: { color: d.color } })),
+          emphasis: {
+            label: { color: "#0F172A", fontWeight: 700 },
+            itemStyle: { shadowBlur: 14, shadowColor: "rgba(15, 23, 42, 0.24)" },
+          },
+          data: visualized.map((d) => ({
+            value: d.visualValue,
+            name: d.name,
+            realValue: d.realValue,
+            pctReal: d.pctReal,
+            itemStyle: {
+              color: d.color,
+            },
+          })),
         },
       ],
     };

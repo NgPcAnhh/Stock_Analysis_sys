@@ -58,6 +58,11 @@ const safeRatio = (num: number | null | undefined, den: number | null | undefine
   return num / den;
 };
 
+const annualizationFactor = (quarter: number | null | undefined): number => {
+  // Annual rows (quarter=0) should not be multiplied by 4.
+  return quarter === 0 ? 1 : 4;
+};
+
 const scaleByUnit = (val: number | null | undefined, unit: number): number | null => {
   if (val == null || isNaN(val)) return null;
   return val / unit;
@@ -191,8 +196,9 @@ export default function FincoTcdnDashboard({
   if (currentCoverage != null && Math.abs(currentCoverage * 100) < 45) {
       criticalWarnings.push(`Tỷ lệ bao phủ nợ xấu (LLR) ở mức RỦI RO (< 45%): ${fmtRatio(Math.abs(currentCoverage * 100))}`);
   }
+  const latestAnnualFactor = annualizationFactor(latestIs?.period.quarter);
   const currentCreditCost = latestIs?.provisionExpenses != null && latestBs?.loansToCustomers
-    ? Math.abs((latestIs.provisionExpenses * 4 * 100) / latestBs.loansToCustomers) : null;
+    ? Math.abs((latestIs.provisionExpenses * latestAnnualFactor * 100) / latestBs.loansToCustomers) : null;
   if (currentCreditCost != null && currentCreditCost > 15) {
       criticalWarnings.push(`Chi phí RRTD (Credit Cost) vượt ngưỡng 15%: ${fmtRatio(currentCreditCost)}`);
   }
@@ -356,8 +362,9 @@ export default function FincoTcdnDashboard({
     const prevCoverage = safeRatio(prevBs?.loanLossReserves, prevBs?.loansToCustomersGross ?? prevBs?.loansToCustomers);
     const coverageGrowth = currentCoverage != null && prevCoverage != null ? (currentCoverage - prevCoverage) * 100 : null;
 
+    const prevAnnualFactor = annualizationFactor(prevIs?.period.quarter);
     const prevCreditCost = prevIs?.provisionExpenses != null && prevBs?.loansToCustomers
-      ? Math.abs((prevIs.provisionExpenses * 4 * 100) / prevBs.loansToCustomers) : null;
+      ? Math.abs((prevIs.provisionExpenses * prevAnnualFactor * 100) / prevBs.loansToCustomers) : null;
     const creditCostGrowth = currentCreditCost != null && prevCreditCost != null ? currentCreditCost - prevCreditCost : null;
 
     const ppopVal = effectivePPOP;
@@ -419,7 +426,8 @@ export default function FincoTcdnDashboard({
                 const bs = trendBs[i];
                 const loanBase = bs?.loansToCustomers ?? bs?.shortTermReceivables;
                 if (!inc?.provisionExpenses || !loanBase) return null;
-                return Number((Math.abs(inc.provisionExpenses * 4 * 100) / loanBase).toFixed(2));
+              const annualFactor = annualizationFactor(inc.period.quarter);
+              return Number((Math.abs(inc.provisionExpenses * annualFactor * 100) / loanBase).toFixed(2));
             }),
             lineStyle: { color: COLORS.rose, width: 3 }, itemStyle: { color: COLORS.rose },
             areaStyle: { color: { type: "linear" as const, x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: "rgba(244,63,94,0.15)" }, { offset: 1, color: "rgba(244,63,94,0.02)" }] } }
@@ -438,7 +446,15 @@ export default function FincoTcdnDashboard({
             data: trendIs.map(x => { const margin = safeRatio(x.netProfit, x.revenue ?? x.totalOperatingIncome ?? 1); return margin != null ? Number((margin * 100).toFixed(2)) : null; }),
             lineStyle: { color: COLORS.green, width: 3 }, itemStyle: { color: COLORS.green }, symbol: "circle", symbolSize: 6 },
           { name: "ROE (ann. %)", type: "line",
-            data: trendIs.map((x, i) => { const eq = trendBs[i]?.totalEquity; return x.netProfitParent && eq ? Number((x.netProfitParent * 4 * 100 / eq).toFixed(2)) : null; }),
+            data: trendIs.map((x, i) => {
+              const eq = trendBs[i]?.totalEquity;
+              const prevEq = trendBs[i - 1]?.totalEquity;
+              const eqBase = ((eq ?? 0) + (prevEq ?? 0)) / ((eq != null && prevEq != null) ? 2 : 1);
+              const np = x.netProfitParent ?? x.netProfit;
+              if (np == null || eqBase <= 0) return null;
+              const annualFactor = annualizationFactor(x.period.quarter);
+              return Number((np * annualFactor * 100 / eqBase).toFixed(2));
+            }),
             lineStyle: { color: COLORS.orange, width: 3 }, itemStyle: { color: COLORS.orange }, symbol: "circle", symbolSize: 6 },
         ]
     } : null;
@@ -533,9 +549,11 @@ export default function FincoTcdnDashboard({
     const niiLabel = (latestIs?.netInterestIncome ?? 0) !== 0 ? "Thu nhập lãi thuần (NII)" : "Lợi nhuận gộp";
 
     const currentAvgAssets = ((latestBs?.totalAssets ?? 0) + (prevBs?.totalAssets ?? 0)) / 2;
-    const currentNIM = currentNII != null && currentAvgAssets > 0 ? (currentNII * 4 * 100) / currentAvgAssets : null;
+    const currentNimAnnualFactor = annualizationFactor(latestIs?.period.quarter);
+    const currentNIM = currentNII != null && currentAvgAssets > 0 ? (currentNII * currentNimAnnualFactor * 100) / currentAvgAssets : null;
     const prevAvgAssets = ((prevBs?.totalAssets ?? 0) + (bsList[periodIndex + 2]?.totalAssets ?? 0)) / 2;
-    const prevNIM = prevNII != null && prevAvgAssets > 0 ? (prevNII * 4 * 100) / prevAvgAssets : null;
+    const prevNimAnnualFactor = annualizationFactor(prevIs?.period.quarter);
+    const prevNIM = prevNII != null && prevAvgAssets > 0 ? (prevNII * prevNimAnnualFactor * 100) / prevAvgAssets : null;
     const nimGrowth = currentNIM != null && prevNIM != null ? currentNIM - prevNIM : null;
     const nimLabel = (latestIs?.netInterestIncome ?? 0) !== 0 ? "Biên lãi thuần (NIM)" : "Gross Yield (LN gộp/TS)";
 
@@ -555,11 +573,13 @@ export default function FincoTcdnDashboard({
     const totalAssets = latestBs?.totalAssets ?? 0;
     const equity = latestBs?.totalEquity ?? 0;
 
-    const roe = equity > 0 ? (netIncome * 4 / equity) * 100 : 0;
+    const annualFactor = annualizationFactor(latestIs?.period.quarter);
+    const avgEquityBase = ((latestBs?.totalEquity ?? 0) + (prevBs?.totalEquity ?? 0)) / ((latestBs?.totalEquity != null && prevBs?.totalEquity != null) ? 2 : 1);
+    const roe = avgEquityBase > 0 ? (netIncome * annualFactor / avgEquityBase) * 100 : 0;
     const taxBurden = pbt !== 0 ? netIncome / pbt : 0;
     const riskBurden = opIncome !== 0 ? pbt / opIncome : 0;
     const opMargin = safeRatio(opIncome, toi);
-    const assetTurnover = safeRatio(toi != null ? toi * 4 : null, totalAssets);
+    const assetTurnover = safeRatio(toi != null ? toi * annualFactor : null, totalAssets);
     const leverage = safeRatio(totalAssets, equity);
 
     const roeTrend = trendIs.length > 1 ? {
@@ -572,10 +592,13 @@ export default function FincoTcdnDashboard({
           {
             name: "ROE Annualized (%)", type: "line",
             data: trendIs.map((inc, i) => {
-                const eq = trendBs[i]?.totalEquity;
+                  const eq = trendBs[i]?.totalEquity;
+                  const prevEq = trendBs[i - 1]?.totalEquity;
+                  const eqBase = ((eq ?? 0) + (prevEq ?? 0)) / ((eq != null && prevEq != null) ? 2 : 1);
                 const np = inc?.netProfitParent ?? inc?.netProfit;
-                if (!np || !eq) return null;
-                return Number((np * 4 * 100 / eq).toFixed(2));
+                  if (np == null || eqBase <= 0) return null;
+                  const annualFactor = annualizationFactor(inc?.period.quarter);
+                  return Number((np * annualFactor * 100 / eqBase).toFixed(2));
             }),
             lineStyle: { color: COLORS.green, width: 3 }, itemStyle: { color: COLORS.green }, symbol: "circle", symbolSize: 6
           },
@@ -584,8 +607,9 @@ export default function FincoTcdnDashboard({
             data: trendIs.map((inc, i) => {
                 const ta = trendBs[i]?.totalAssets;
                 const np = inc?.netProfitParent ?? inc?.netProfit;
-                if (!np || !ta) return null;
-                return Number((np * 4 * 100 / ta).toFixed(2));
+                  if (np == null || !ta) return null;
+                  const annualFactor = annualizationFactor(inc?.period.quarter);
+                  return Number((np * annualFactor * 100 / ta).toFixed(2));
             }),
             lineStyle: { color: COLORS.blue, width: 2, type: "dashed" as const }, itemStyle: { color: COLORS.blue }, symbol: "circle", symbolSize: 5
           }

@@ -50,6 +50,12 @@ class Settings(BaseSettings):
     EMAIL_FROM: str = "noreply@stockanalysis.vn"
     FRONTEND_URL: str = "http://localhost:3000"
 
+    LM_STUDIO_CHAT_URL: str = "http://localhost:1234/v1/chat/completions"
+    LM_STUDIO_EMBED_URL: str = "http://localhost:1234/v1/embeddings"
+
+    LM_STUDIO_CHAT_MODEL: str = "google/gemma-4-e4b"
+    LM_STUDIO_EMBED_MODEL: str = "text-embedding-bge-m3"
+
     model_config = SettingsConfigDict(
         env_file=".env" if os.path.exists(".env") else ".env.example",
         env_file_encoding="utf-8",

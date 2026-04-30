@@ -135,11 +135,17 @@ class TimeoutMiddleware(BaseHTTPMiddleware):
     def __init__(self, app, timeout_seconds: float = 30.0):
         super().__init__(app)
         self.timeout = timeout_seconds
+        self.chatbot_timeout = None  # VÃ´ hiá»‡u hoÃ¡ timeout cho chatbot (#AnalystMode)
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+        timeout = self.chatbot_timeout if request.url.path.startswith("/api/v1/chat") else self.timeout
+        
+        if timeout is None:
+            return await call_next(request)
+            
         try:
             return await asyncio.wait_for(
-                call_next(request), timeout=self.timeout
+                call_next(request), timeout=timeout
             )
         except asyncio.TimeoutError:
             logger.warning("Request timeout: %s %s", request.method, request.url.path)

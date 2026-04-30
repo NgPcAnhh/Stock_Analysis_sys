@@ -27,6 +27,11 @@ export function isFincoIndustry(...candidates: Array<string | null | undefined>)
 
   if (normalized.length === 0) return false;
 
-  const keywords = ["tài chính", "tai chinh", "dịch vụ tài chính", "financial", "finco"];
+  const explicitNonFinKeywords = ["phi tài chính", "phi tai chinh", "non-financial", "non financial"];
+  if (normalized.some((text) => explicitNonFinKeywords.some((kw) => text.includes(kw)))) {
+    return false;
+  }
+
+  const keywords = ["dịch vụ tài chính", "tài chính", "tai chinh", "financial", "finco"];
   return normalized.some((text) => keywords.some((kw) => text.includes(kw)));
 }
