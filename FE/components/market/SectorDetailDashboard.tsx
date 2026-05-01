@@ -203,14 +203,18 @@ export default function SectorDetailDashboard({ slug }: SectorDetailDashboardPro
     };
 
     // 6. Liquidity by Cap (Donut)
+    const capColors = ["#f97316", "#ef4444", "#f59e0b", "#22c55e", "#0ea5e9"];
     const capOption = {
-        tooltip: { trigger: "item", formatter: "<strong>Phân bổ Thanh khoản</strong><br/>{b}: {c} tỷ ({d}%)<br/><span style='font-size:11px;color:#94a3b8'>Dòng tiền tập trung vào nhóm vốn hóa nào</span>" },
+        tooltip: { trigger: "item", formatter: "<strong>Phân bổ Thanh khoản</strong><br/>{b}: {c} tỷ ({d}%)" },
         legend: { bottom: 0, textStyle: { color: "#94a3b8" } },
         series: [{
             name: "Thanh khoản", type: "pie", radius: ["40%", "70%"],
-            avoidLabelOverlap: false, itemStyle: { borderRadius: 10, borderColor: "#1e293b", borderWidth: 2 },
             label: { show: false },
-            data: liquidityByCap.map((c) => ({ value: c.value, name: c.group })),
+            data: liquidityByCap.map((c, idx) => ({
+                value: c.value,
+                name: c.group,
+                itemStyle: { color: capColors[idx % capColors.length] },
+            })),
         }],
     };
 

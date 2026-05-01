@@ -36,7 +36,7 @@ export const DEFAULT_SIDEBAR_ITEMS: SidebarNavItem[] = [
     { id: "price-board", name: "Bảng điện",  href: "/price-board", iconName: "Monitor",         enabled: true },
     { id: "stocks",      name: "Cổ phiếu",   href: "/stocks",      iconName: "LineChart",       enabled: true },
     { id: "analysis",    name: "Phân tích",  href: "/analysis",    iconName: "PieChart",        enabled: true },
-    { id: "portfolio-assumption", name: "Giả định danh mục", href: "/portfolio-assumption", iconName: "BriefcaseBusiness", enabled: true },
+    { id: "portfolio", name: "Quản trị danh mục", href: "/portfolio", iconName: "BriefcaseBusiness", enabled: true },
     { id: "news",        name: "Tin tức",    href: "/news",        iconName: "Newspaper",       enabled: true },
     { id: "finpilot",    name: "FinPilot",   href: "/finpilot",    iconName: "Bot",             enabled: true },
     { id: "settings",    name: "Cài đặt",    href: "/settings",    iconName: "Settings",        enabled: true },

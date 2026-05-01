@@ -4,25 +4,33 @@ from app.modules.chatbot.llm.client import chat_completion
 from app.modules.chatbot.llm.prompt_loader import load_prompt
 
 
-def extract_json(text: str) -> dict:
+def _extract_json(text: str) -> dict:
     match = re.search(r"\{.*\}", text, re.DOTALL)
     if not match:
-        raise ValueError("LLM không trả JSON hợp lệ")
+        raise ValueError("Peer agent không trả JSON hợp lệ")
     return json.loads(match.group(0))
 
 
-async def generate_search_sql(
+async def run_peer_query_agent(
     message: str,
     entities: dict,
     rag_context: list[dict],
     ind_code_matches: list[dict],
+    peer_focus: str,
 ) -> dict:
-    system_prompt = load_prompt("data_retriever.txt")
+    """
+    Sub-agent 5.1: sinh SQL so sánh cùng ngành (peer comparison).
+    Trả về: { "thought": str, "queries": [{ "name", "sql", "purpose" }] }
+    """
+    system_prompt = load_prompt("subagent_peer_query.txt")
 
     prompt = f"""Câu hỏi user:
 {message}
 
-Entities:
+Yêu cầu tập trung Peer:
+{peer_focus}
+
+Entities đã trích xuất:
 {json.dumps(entities, ensure_ascii=False, indent=2)}
 
 BCTC ind_code candidates:
@@ -31,12 +39,17 @@ BCTC ind_code candidates:
 Schema/RAG context:
 {json.dumps(rag_context, ensure_ascii=False, indent=2)}
 
-Hãy sinh SQL.
+Hãy sinh các SQL so sánh cùng ngành.
 """
+
     response = await chat_completion(
         user_prompt=prompt,
         system_prompt=system_prompt,
         temperature=0.0,
-        max_tokens=2000,
+        max_tokens=2500,
     )
-    return extract_json(response)
+    result = _extract_json(response)
+    # Đảm bảo luôn có trường citations (fallback nếu LLM không trả)
+    if "citations" not in result:
+        result["citations"] = []
+    return result

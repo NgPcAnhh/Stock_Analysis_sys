@@ -1,17 +1,22 @@
 "use client";
 
-import { FormEvent, KeyboardEvent, ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, KeyboardEvent, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
     Bot,
+    BrainCircuit,
     ChevronDown,
     ChevronRight,
+    Database,
     History,
     Loader2,
     MessageSquare,
     PlusCircle,
     SendHorizontal,
     Sparkles,
+    Square,
+    Trash2,
     UserCircle2,
+    Zap,
 } from "lucide-react";
 
 import { fetchWithAuth } from "@/lib/auth";
@@ -31,7 +36,7 @@ const SUGGESTIONS = [
 interface ChatRequest {
     session_id?: string;
     message: string;
-    mode?: "auto";
+    mode?: "auto" | "search" | "analysis";   // ← đúng
     context?: Record<string, unknown>;
 }
 
@@ -125,6 +130,14 @@ function CollapsibleSection({
     );
 }
 
+type ChatMode = "auto" | "search" | "analysis";
+
+const MODE_CONFIG: Record<ChatMode, { label: string; icon: typeof Zap; desc: string }> = {
+    auto: { label: "Auto", icon: Zap, desc: "AI tự chọn" },
+    search: { label: "Tra cứu", icon: Database, desc: "Lấy số liệu" },
+    analysis: { label: "Phân tích", icon: BrainCircuit, desc: "Analyst" },
+};
+
 export default function FinPilotPage() {
     const [messages, setMessages] = useState<Message[]>([]);
     const [question, setQuestion] = useState("");
@@ -133,6 +146,9 @@ export default function FinPilotPage() {
 
     const [sessions, setSessions] = useState<ChatSession[]>([]);
     const [currentSessionId, setCurrentSessionId] = useState("");
+
+    const [selectedMode, setSelectedMode] = useState<ChatMode>("auto");
+    const [showAnalystConfirm, setShowAnalystConfirm] = useState(false);
 
     const endRef = useRef<HTMLDivElement | null>(null);
 
@@ -246,6 +262,61 @@ export default function FinPilotPage() {
         setIsHistoryOpen(false);
     };
 
+    const deleteSession = (sessionId: string) => {
+        setSessions((prev) => {
+            const next = prev.filter((s) => s.id !== sessionId);
+            window.localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(next));
+            return next;
+        });
+
+        // Nếu đang xóa session hiện tại → tạo chat mới
+        if (sessionId === currentSessionId) {
+            const newId = `chat-${crypto.randomUUID()}`;
+            window.sessionStorage.setItem(SESSION_STORAGE_KEY, newId);
+            setCurrentSessionId(newId);
+            setMessages([]);
+        }
+    };
+    const [pendingConfirmMessage, setPendingConfirmMessage] = useState<string | null>(null);
+
+    // ── Abort controller cho stop generation ──────────────────────────
+    const abortRef = useRef<AbortController | null>(null);
+    const pendingIdRef = useRef<string | null>(null);
+
+    const stopGeneration = useCallback(() => {
+        if (abortRef.current) {
+            abortRef.current.abort();
+            abortRef.current = null;
+        }
+
+        const stoppedId = pendingIdRef.current;
+        if (stoppedId) {
+            setMessages((prev) =>
+                prev.map((msg) =>
+                    msg.id === stoppedId
+                        ? { ...msg, content: "⏹ Đã dừng tạo câu trả lời.", pending: false }
+                        : msg
+                )
+            );
+            pendingIdRef.current = null;
+        }
+
+        setIsSubmitting(false);
+    }, []);
+
+    const handleModeChange = (mode: ChatMode) => {
+        if (mode === "analysis" && selectedMode !== "analysis") {
+            setShowAnalystConfirm(true);
+            return;
+        }
+        setSelectedMode(mode);
+    };
+
+    const confirmAnalystMode = () => {
+        setSelectedMode("analysis");
+        setShowAnalystConfirm(false);
+    };
+
     const askQuestion = async (value: string, forceMode?: "auto" | "search" | "analysis") => {
         const trimmed = value.trim();
         if (trimmed.length < 2 || isSubmitting) {
@@ -266,6 +337,13 @@ export default function FinPilotPage() {
             pending: true,
         };
 
+        // Lưu ref để stopGeneration biết pending message nào cần cập nhật
+        pendingIdRef.current = pendingId;
+
+        // Tạo AbortController mới cho request này
+        const controller = new AbortController();
+        abortRef.current = controller;
+
         setMessages((prev) => [...prev, userMsg, pendingMsg]);
         setQuestion("");
         setIsSubmitting(true);
@@ -274,7 +352,7 @@ export default function FinPilotPage() {
             const payload: ChatRequest = {
                 session_id: currentSessionId || getOrCreateSessionId(),
                 message: trimmed,
-                mode: forceMode || "auto",
+                mode: forceMode || selectedMode,
                 context: {},
             };
 
@@ -284,6 +362,7 @@ export default function FinPilotPage() {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify(payload),
+                signal: controller.signal,
             });
 
             const data = await response.json();
@@ -305,6 +384,10 @@ export default function FinPilotPage() {
 
             setMessages((prev) => prev.map((msg) => (msg.id === pendingId ? assistantMsg : msg)));
         } catch (error) {
+            // Nếu bị abort (user bấm Stop) → không hiện lỗi, đã xử lý trong stopGeneration
+            if (error instanceof DOMException && error.name === "AbortError") {
+                return;
+            }
             const errMsg = error instanceof Error ? error.message : "Loi khong xac dinh";
             const assistantErr: Message = {
                 id: pendingId,
@@ -314,6 +397,8 @@ export default function FinPilotPage() {
             };
             setMessages((prev) => prev.map((msg) => (msg.id === pendingId ? assistantErr : msg)));
         } finally {
+            abortRef.current = null;
+            pendingIdRef.current = null;
             setIsSubmitting(false);
         }
     };
@@ -331,12 +416,12 @@ export default function FinPilotPage() {
     };
 
     return (
-        <div className="relative h-[calc(100vh-64px)] w-full overflow-hidden bg-[radial-gradient(ellipse_at_top,#eef2ff_0%,#f8fafc_38%,#ffffff_80%)] dark:bg-[radial-gradient(ellipse_at_top,#111827_0%,#0b1220_35%,#030712_82%)]">
+        <div className="relative h-[calc(100vh-64px)] w-full overflow-hidden bg-background">
             <section className="mx-auto flex h-full min-w-0 max-w-5xl flex-col px-4">
                 <div className="sticky top-0 z-20 border-b border-border/60 bg-background/70 py-3 backdrop-blur-md">
                     <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-2.5">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-foreground text-background shadow-sm">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
                                 <Bot className="h-5 w-5" />
                             </div>
                             <div>
@@ -383,17 +468,17 @@ export default function FinPilotPage() {
                                                     .map((session) => {
                                                         const active = currentSessionId === session.id;
                                                         return (
-                                                            <li key={session.id}>
+                                                            <li key={session.id} className="group/item relative">
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => loadSession(session.id)}
                                                                     className={cn(
-                                                                        "w-full rounded-lg px-3 py-2 text-left transition",
-                                                                        active ? "bg-foreground text-background" : "hover:bg-muted"
+                                                                        "w-full rounded-lg px-3 py-2 pr-9 text-left transition",
+                                                                        active ? "bg-primary text-primary-foreground" : "hover:bg-muted"
                                                                     )}
                                                                 >
                                                                     <p className="truncate text-xs font-medium">{session.title.replace("...", "") || "New chat"}</p>
-                                                                    <p className={cn("mt-1 text-[11px]", active ? "text-background/70" : "text-muted-foreground")}>
+                                                                    <p className={cn("mt-1 text-[11px]", active ? "text-primary-foreground/70" : "text-muted-foreground")}>
                                                                         {new Date(session.updatedAt).toLocaleDateString("vi-VN", {
                                                                             hour: "2-digit",
                                                                             minute: "2-digit",
@@ -401,6 +486,17 @@ export default function FinPilotPage() {
                                                                             month: "2-digit",
                                                                         })}
                                                                     </p>
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        deleteSession(session.id);
+                                                                    }}
+                                                                    className="absolute right-2 top-1/2 -translate-y-1/2 hidden h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive group-hover/item:flex"
+                                                                    title="Xóa cuộc hội thoại"
+                                                                >
+                                                                    <Trash2 className="h-3.5 w-3.5" />
                                                                 </button>
                                                             </li>
                                                         );
@@ -417,7 +513,7 @@ export default function FinPilotPage() {
                 {messages.length === 0 ? (
                     <div className="flex flex-1 items-center justify-center py-8">
                         <div className="w-full max-w-3xl">
-                            <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-foreground text-background shadow-sm">
+                            <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
                                 <Sparkles className="h-7 w-7" />
                             </div>
                             <h1 className="text-center text-3xl font-semibold leading-tight text-foreground">Ban muon phan tich dieu gi hom nay?</h1>
@@ -431,7 +527,7 @@ export default function FinPilotPage() {
                                         key={item}
                                         type="button"
                                         onClick={() => askQuestion(item)}
-                                        className="rounded-2xl border border-border/80 bg-card/70 p-4 text-left text-sm text-muted-foreground transition hover:border-border hover:bg-card hover:text-foreground"
+                                        className="rounded-2xl border border-border/80 bg-card/70 p-4 text-left text-sm text-muted-foreground transition hover:border-primary/50 hover:bg-card hover:text-foreground"
                                     >
                                         {item}
                                     </button>
@@ -444,9 +540,9 @@ export default function FinPilotPage() {
                         <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
                             {messages.map((msg) => (
                                 <article key={msg.id} className="flex gap-3">
-                                    <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted/80">
+                                    <div className={cn("mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full", msg.role === "assistant" ? "bg-primary/15" : "bg-muted/80")}>
                                         {msg.role === "assistant" ? (
-                                            <Bot className="h-4 w-4 text-foreground" />
+                                            <Bot className="h-4 w-4 text-primary" />
                                         ) : (
                                             <UserCircle2 className="h-4 w-4 text-muted-foreground" />
                                         )}
@@ -458,7 +554,7 @@ export default function FinPilotPage() {
                                                 {msg.role === "assistant" ? "FinPilot" : "Ban"}
                                             </span>
                                             {msg.meta?.mode_used && (
-                                                <span className="rounded bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+                                                <span className="rounded bg-primary/10 px-2 py-0.5 text-[11px] text-primary">
                                                     role: {msg.meta.mode_used}
                                                 </span>
                                             )}
@@ -615,22 +711,98 @@ export default function FinPilotPage() {
                                     className="max-h-[180px] min-h-[44px] w-full resize-none rounded-xl bg-transparent px-3 py-2 text-sm outline-none placeholder:text-muted-foreground"
                                 />
 
-                                <button
-                                    type="submit"
-                                    disabled={!canSubmit}
-                                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-foreground text-background transition hover:opacity-90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
-                                >
-                                    {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <SendHorizontal className="h-4 w-4" />}
-                                </button>
+                                {isSubmitting ? (
+                                    <button
+                                        type="button"
+                                        onClick={stopGeneration}
+                                        className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-500 text-white transition hover:bg-red-600"
+                                        title="Dừng tạo câu trả lời"
+                                    >
+                                        <Square className="h-4 w-4 fill-current" />
+                                    </button>
+                                ) : (
+                                    <button
+                                        type="submit"
+                                        disabled={!canSubmit}
+                                        className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-foreground text-background transition hover:opacity-90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
+                                    >
+                                        <SendHorizontal className="h-4 w-4" />
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Mode Selector */}
+                            <div className="mt-2 flex items-center gap-1 border-t border-border/50 pt-2">
+                                {(Object.keys(MODE_CONFIG) as ChatMode[]).map((mode) => {
+                                    const cfg = MODE_CONFIG[mode];
+                                    const Icon = cfg.icon;
+                                    const active = selectedMode === mode;
+                                    return (
+                                        <button
+                                            key={mode}
+                                            type="button"
+                                            onClick={() => handleModeChange(mode)}
+                                            className={cn(
+                                                "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition",
+                                                active
+                                                    ? "bg-primary/10 text-primary"
+                                                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                            )}
+                                        >
+                                            <Icon className="h-3.5 w-3.5" />
+                                            {cfg.label}
+                                        </button>
+                                    );
+                                })}
+                                <span className="ml-auto text-[11px] text-muted-foreground">
+                                    {MODE_CONFIG[selectedMode].desc}
+                                </span>
                             </div>
                         </form>
 
                         <div className="mt-2 flex items-center justify-between px-1 text-xs text-muted-foreground">
-                            <span>LLM tu chon role theo ngu canh cau hoi.</span>
-                            {latestAssistant?.mode_used ? <span>Role vua dung: {latestAssistant.mode_used}</span> : <span>AI co the sai, hay xac minh ket qua quan trong.</span>}
+                            <span>Chế độ: {MODE_CONFIG[selectedMode].label}</span>
+                            {latestAssistant?.mode_used ? <span>Role vừa dùng: {latestAssistant.mode_used}</span> : <span>AI có thể sai, hãy xác minh kết quả quan trọng.</span>}
                         </div>
                     </div>
                 </div>
+
+                {/* Analyst Confirm Popup */}
+                {showAnalystConfirm && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+                        <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl">
+                            <div className="mb-4 flex items-center gap-3">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+                                    <BrainCircuit className="h-5 w-5 text-primary" />
+                                </div>
+                                <div>
+                                    <h3 className="text-sm font-semibold text-foreground">Chuyển sang chế độ Phân tích?</h3>
+                                    <p className="text-xs text-muted-foreground">Chế độ Analyst sử dụng nhiều tài nguyên hơn</p>
+                                </div>
+                            </div>
+                            <p className="mb-5 text-sm text-muted-foreground leading-relaxed">
+                                Chế độ <strong className="text-foreground">Phân tích (Analyst)</strong> sẽ kích hoạt pipeline chuyên sâu với nhiều sub-agent: so sánh theo năm (YoY), so sánh cùng ngành (Peer), kiểm tra dữ liệu (Tester) và tổng hợp insight.
+                                Thời gian phản hồi sẽ lâu hơn so với chế độ Tra cứu.
+                            </p>
+                            <div className="flex items-center justify-end gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowAnalystConfirm(false)}
+                                    className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                                >
+                                    Hủy
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={confirmAnalystMode}
+                                    className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
+                                >
+                                    Xác nhận
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </section>
         </div>
     );

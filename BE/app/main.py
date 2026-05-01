@@ -12,6 +12,7 @@ from app.core.middleware import (
     TimeoutMiddleware,
 )
 from app.database.database import close_db
+from app.modules.chatbot.db.pool import close_pool as close_chatbot_pool
 from app.core.cache import close_redis
 from app.modules.tong_quan.router import router as tong_quan_router
 from app.modules.news.router import router as news_router
@@ -28,7 +29,7 @@ from app.modules.auth.router import router as auth_router
 from app.modules.tracking.router import router as tracking_router
 from app.modules.admin.router import router as admin_router
 from app.modules.alerts.router import router as alerts_router
-from app.modules.portfolio_assumption.router import router as portfolio_assumption_router
+from app.modules.portfolio.router import router as portfolio_router
 from app.modules.chatbot.api.routes import router as chatbot_router
 
 settings = get_settings()
@@ -47,6 +48,7 @@ async def lifespan(app: FastAPI):
     yield
     # Shutdown — đóng sạch connection pools
     await stop_stock_mv_refresh_task(mv_refresh_task)
+    await close_chatbot_pool()
     await close_db()
     await close_redis()
 
@@ -94,7 +96,7 @@ app.include_router(auth_router, prefix="/api/v1")
 app.include_router(tracking_router, prefix="/api/v1")
 app.include_router(admin_router, prefix="/api/v1")
 app.include_router(alerts_router, prefix="/api/v1")
-app.include_router(portfolio_assumption_router, prefix="/api/v1")
+app.include_router(portfolio_router, prefix="/api/v1")
 app.include_router(chatbot_router, prefix="/api/v1")
 
 @app.get("/")

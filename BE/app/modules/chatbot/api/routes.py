@@ -10,13 +10,15 @@ from app.modules.chatbot.router.prompt_refiner import refine_prompt
 from app.modules.chatbot.retrieval.vector_search import vector_search
 from app.modules.chatbot.retrieval.ind_code_lookup import lookup_ind_code
 from app.modules.chatbot.sql.generator_search import generate_search_sql
-from app.modules.chatbot.sql.generator_analysis import generate_analysis_sql
 from app.modules.chatbot.sql.executor import execute_sql
-from app.modules.chatbot.sql.formatter import rows_to_markdown_table, format_analysis_context
-from app.modules.chatbot.llm.answer_generator import generate_financial_analysis
+from app.modules.chatbot.sql.formatter import rows_to_markdown_table
+from app.modules.chatbot.agents.analyst_agent import run_analyst_agent
 
 router = APIRouter(prefix="/chat", tags=["AI Chatbot"])
 
+# ------------------------------------------------------------------ #
+#  Timeout helper                                                      #
+# ------------------------------------------------------------------ #
 
 class StepTimeoutError(Exception):
     def __init__(self, step: str):
@@ -24,8 +26,9 @@ class StepTimeoutError(Exception):
         self.step = step
 
 
-async def _with_step_timeout(step: str, timeout: float, coro, bypass_timeout: bool = False):
-    if bypass_timeout:
+async def _run(step: str, coro, timeout: float | None = None):
+    """Chạy coroutine, raise StepTimeoutError nếu quá timeout."""
+    if timeout is None:
         return await coro
     try:
         return await asyncio.wait_for(coro, timeout=timeout)
@@ -33,19 +36,36 @@ async def _with_step_timeout(step: str, timeout: float, coro, bypass_timeout: bo
         raise StepTimeoutError(step) from exc
 
 
+# ------------------------------------------------------------------ #
+#  Quick entity / SQL (fast path cho search mode)                     #
+# ------------------------------------------------------------------ #
+
 def _quick_entities(message: str) -> dict:
-    raw_tokens = re.findall(r"\b[A-Z]{3,4}\b", message.upper())
     excluded = {
+        # Vietnamese common words (3-4 chars uppercase)
         "CUA", "VA", "CHO", "VOI", "THEO", "GAN", "NHAT", "NAM", "QUY",
-        "ROE", "ROA", "EPS", "PE", "PB", "YOY", "TTM", "TOP", "MUA", "BAN"
+        "TOP", "MUA", "BAN", "CAO", "THAP", "TANG", "GIAM", "TIM", "MOI",
+        "DAY", "LAM", "HAY", "LOI", "BIEN", "DOANH", "NGANH", "NHUNG",
+        "DUOC", "TREN", "DUOI", "SANG", "CUNG", "NHAU", "THEM", "GIUA",
+        "VIEC", "TRONG", "NGOAI", "HIEN", "DANG", "NGAY", "THANG",
+        "TONG", "QUAN", "HANG", "NGAN", "NGHE", "CONG", "XUAT", "NHAP",
+        "CHOT", "DONG", "KHOP", "CHIA", "TINH", "TRAI", "PHIEU",
+        "BANG", "LIEU", "THAM", "KHAO", "DANH", "SACH", "DIEM",
+        # Financial metric keywords
+        "ROE", "ROA", "EPS", "YOY", "TTM", "EBIT", "BVPS",
+        # Common short words
+        "THE", "AND", "FOR", "NOT", "ARE", "BUT", "ALL", "CAN",
     }
+    raw_tokens = re.findall(r"\b[A-Z]{3,4}\b", message.upper())
     tickers: list[str] = []
-    for token in raw_tokens:
-        if token in excluded:
-            continue
-        if token not in tickers:
-            tickers.append(token)
-    metrics = [kw for kw in ["roe", "roa", "eps", "pe", "pb", "doanh thu", "loi nhuan"] if kw in message.lower()]
+    for t in raw_tokens:
+        if t not in excluded and t not in tickers:
+            tickers.append(t)
+
+    metrics = [
+        kw for kw in ["roe", "roa", "eps", "pe", "pb", "doanh thu", "loi nhuan"]
+        if kw in message.lower()
+    ]
     return {
         "tickers": tickers,
         "metrics": metrics,
@@ -56,6 +76,7 @@ def _quick_entities(message: str) -> dict:
 
 
 def _build_fast_search_sql(message: str, entities: dict) -> dict | None:
+    """Fast-path: sinh SQL đơn giản không cần LLM cho các query 1 chỉ tiêu."""
     msg = message.lower()
     tickers = entities.get("tickers") or []
     ticker = tickers[0] if tickers else None
@@ -63,32 +84,14 @@ def _build_fast_search_sql(message: str, entities: dict) -> dict | None:
         return None
 
     metric_map = {
-        "roe": "roe",
-        "roa": "roa",
-        "eps": "eps",
-        "pe": "pe",
-        "p/e": "pe",
-        "pb": "pb",
-        "p/b": "pb",
+        "roe": "roe", "roa": "roa", "eps": "eps",
+        "pe": "pe", "p/e": "pe", "pb": "pb", "p/b": "pb",
     }
-
-    metric_key = None
-    metric_col = None
-    for key, col in metric_map.items():
-        if key in msg:
-            metric_key = key
-            metric_col = col
-            break
-
+    metric_col = next((col for key, col in metric_map.items() if key in msg), None)
     if not metric_col:
         return None
 
-    limit = 8
-    if "4 quy" in msg or "4 quý" in msg:
-        limit = 4
-    elif "8 quy" in msg or "8 quý" in msg:
-        limit = 8
-
+    limit = 4 if any(x in msg for x in ["4 quy", "4 quý"]) else 8
     sql = f"""
         SELECT ticker, year, quarter, {metric_col}
         FROM hethong_phantich_chungkhoan.financial_ratio
@@ -100,172 +103,140 @@ def _build_fast_search_sql(message: str, entities: dict) -> dict | None:
 
     return {
         "sql": sql,
-        "citations": [
-            {
-                "source_type": "financial_ratio",
-                "ticker": ticker,
-                "metric": metric_key,
-                "period": f"recent_{limit}_quarters",
-            }
-        ],
+        "citations": [{"source_type": "financial_ratio", "ticker": ticker,
+                        "metric": metric_col, "period": f"recent_{limit}_quarters"}],
     }
 
 
+# ------------------------------------------------------------------ #
+#  Main endpoint                                                       #
+# ------------------------------------------------------------------ #
+
 @router.post("/ask", response_model=ChatResponse)
 async def ask_chatbot(req: ChatRequest):
+    """
+    Luồng theo kiến trúc:
+    (1) User gửi prompt
+    (2.1) LLM select role: search | analysis
+    (2.2) Nếu auto detect = analysis → hỏi confirm user
+          Nếu user đã confirm (mode='analysis') → tiếp tục
+    (3) RAG retrieval → context + prompt + role
+    (4) LLM xử lý
+    (5) Nếu analysis → Agent Analyst (sub-agents YoY + peer + tester + insight)
+    (6) Trả answer
+    """
     trace_id = str(uuid4())
 
     try:
-        mode = detect_mode(req.message, req.mode)
-        
-        if mode == "analysis" and req.mode != "analysis":
+        # ── Bước 2.1: Select role ─────────────────────────────────────
+        detected_mode = detect_mode(req.message, req.mode)
+
+        # ── Bước 2.2: Confirm nếu auto detect ra analysis ─────────────
+        if detected_mode == "analysis" and req.mode == "auto":
             return ChatResponse(
                 mode_used="auto",
                 action_required="confirm_analysis",
-                answer="Hệ thống nhận thấy câu hỏi của bạn cần phân tích chuyên sâu đa chiều. Bạn có muốn chuyển sang chế độ **Chuyên viên Phân tích (Analyst)** để tôi lập luận chi tiết hơn không?",
-                thought_process="Đã phát hiện ý định phân tích phức tạp, cần xin phép user để kích hoạt các Agent chuyên sâu.",
-                data_tables=[]
+                answer=(
+                    "Hệ thống nhận thấy câu hỏi của bạn cần **phân tích chuyên sâu đa chiều**.\n\n"
+                    "Bạn có muốn chuyển sang chế độ **Chuyên viên Phân tích (Analyst)** "
+                    "để tôi lập luận chi tiết hơn không?\n\n"
+                    "_Gợi ý: Gửi lại câu hỏi với_ `mode: analysis` _để xác nhận._"
+                ),
+                thought_process="Phát hiện ý định phân tích phức tạp. Chờ xác nhận từ user.",
+                data_tables=[],
+                trace_id=trace_id,
             )
 
-        refined_message = await _with_step_timeout("refine_prompt", 30.0, refine_prompt(req.message), bypass_timeout=(mode == "analysis"))
+        # ── Bước 3a: Refine prompt ────────────────────────────────────
+        refined_message = await _run(
+            "refine_prompt",
+            refine_prompt(req.message),
+            timeout=30.0 if detected_mode == "search" else None,
+        )
 
-        entities = _quick_entities(refined_message)
-
-        if mode == "analysis":
+        # ── Bước 3b: Entity extraction ────────────────────────────────
+        if detected_mode == "analysis":
             try:
-                entities = await _with_step_timeout("extract_entities", 60.0, extract_entities(refined_message), bypass_timeout=True)
+                entities = await _run("extract_entities", extract_entities(refined_message))
             except Exception:
                 entities = _quick_entities(refined_message)
+        else:
+            entities = _quick_entities(refined_message)
 
-        metrics = entities.get("metrics") or []
-        metric_text = " ".join(metrics) if metrics else refined_message
+        metric_text = " ".join(entities.get("metrics") or []) or refined_message
 
-        if mode == "search":
-            fast_sql_payload = _build_fast_search_sql(refined_message, entities)
-            if fast_sql_payload:
-                sql = fast_sql_payload["sql"]
-                rows = await _with_step_timeout("execute_search_sql", 12.0, execute_sql(sql))
+        # ── Bước 3c: Fast path (search, 1 chỉ tiêu, không cần RAG) ───
+        if detected_mode == "search":
+            fast = _build_fast_search_sql(refined_message, entities)
+            if fast:
+                rows = await _run("execute_fast_sql", execute_sql(fast["sql"]), timeout=12.0)
                 return ChatResponse(
                     mode_used="search",
                     answer=rows_to_markdown_table(rows),
-                    thought_process=None,
                     data_tables=[DataTable(title="Kết quả truy vấn", rows=rows)],
-                    citations=fast_sql_payload.get("citations", []),
-                    sql_used=[sql],
-                    confidence=None,
-                    data_freshness=None,
+                    citations=fast["citations"],
+                    sql_used=[fast["sql"]],
                     trace_id=trace_id,
                 )
 
-        schema_context = await _with_step_timeout(
-            "vector_search_metadata",
-            12.0,
-            vector_search(
-                query=refined_message,
-                doc_type="metadata",
-                top_k=3,
-            ),
-            bypass_timeout=(mode == "analysis")
+        # ── Bước 3d: RAG retrieval (context + schema) ─────────────────
+        schema_context, ind_code_matches = await asyncio.gather(
+            _run("vector_search_metadata", vector_search(
+                query=refined_message, doc_type="metadata", top_k=3,
+            ), timeout=12.0),
+            _run("lookup_ind_code", lookup_ind_code(metric_text, top_k=3), timeout=12.0),
         )
 
-        ind_code_matches = await _with_step_timeout(
-            "lookup_ind_code",
-            12.0,
-            lookup_ind_code(metric_text, top_k=3),
-            bypass_timeout=(mode == "analysis")
-        )
-
-        if mode == "search":
-            sql_payload = await _with_step_timeout(
+        # ── Bước 4 + 5: LLM xử lý theo mode ─────────────────────────
+        if detected_mode == "search":
+            # Bước 4: LLM sinh SQL search
+            sql_payload = await _run(
                 "generate_search_sql",
-                300.0,
                 generate_search_sql(
                     message=refined_message,
                     entities=entities,
                     rag_context=schema_context,
                     ind_code_matches=ind_code_matches,
                 ),
+                timeout=60.0,
             )
-
-            sql = sql_payload["sql"]
-            rows = await _with_step_timeout("execute_search_sql", 12.0, execute_sql(sql))
-
-            answer = rows_to_markdown_table(rows)
-            citations = sql_payload.get("citations", [])
+            rows = await _run("execute_search_sql", execute_sql(sql_payload["sql"]), timeout=12.0)
 
             return ChatResponse(
                 mode_used="search",
-                answer=answer,
+                answer=rows_to_markdown_table(rows),
                 thought_process=sql_payload.get("thought"),
-                data_tables=[
-                    DataTable(title="Kết quả truy vấn", rows=rows)
-                ],
-                citations=citations,
-                sql_used=[sql],
-                confidence=None,
-                data_freshness=None,
+                data_tables=[DataTable(title="Kết quả truy vấn", rows=rows)],
+                citations=sql_payload.get("citations", []),
+                sql_used=[sql_payload["sql"]],
                 trace_id=trace_id,
             )
 
-        sql_payload = await _with_step_timeout(
-            "generate_analysis_sql",
-            300.0,
-            generate_analysis_sql(
+        else:
+            result = await run_analyst_agent(
                 message=refined_message,
                 entities=entities,
-                rag_context=schema_context,
+                schema_context=schema_context,
                 ind_code_matches=ind_code_matches,
-            ),
-            bypass_timeout=True
-        )
+            )
 
-        query_results = []
-        sql_used = []
-
-        for q in sql_payload.get("queries", []):
-            name = q["name"]
-            sql = q["sql"]
-            rows = await _with_step_timeout("execute_analysis_sql", 12.0, execute_sql(sql), bypass_timeout=True)
-
-            query_results.append({
-                "name": name,
-                "sql": sql,
-                "rows": rows,
-            })
-            sql_used.append(sql)
-
-        data_context = format_analysis_context(query_results)
-
-        answer = await _with_step_timeout(
-            "generate_financial_analysis",
-            300.0,
-            generate_financial_analysis(
-                user_message=refined_message,
-                data_context=data_context,
-                citations=sql_payload.get("citations", []),
-            ),
-            bypass_timeout=True
-        )
-
-        return ChatResponse(
-            mode_used="analysis",
-            answer=answer,
-            thought_process=sql_payload.get("thought"),
-            data_tables=[
-                DataTable(title=item["name"], rows=item["rows"])
-                for item in query_results
-            ],
-            citations=sql_payload.get("citations", []),
-            sql_used=sql_used,
-            confidence=None,
-            data_freshness=None,
-            trace_id=trace_id,
-        )
+            return ChatResponse(
+                mode_used="analysis",
+                answer=result["answer"],
+                thought_process=result["thought"],
+                data_tables=[
+                    DataTable(title=r["name"], rows=r["rows"])
+                    for r in result["query_results"]
+                ],
+                citations=result["citations"],
+                sql_used=result["sql_used"],
+                trace_id=trace_id,
+            )
 
     except StepTimeoutError as e:
         raise HTTPException(status_code=504, detail={
             "trace_id": trace_id,
-            "error": f"Chatbot processing timed out at step: {e.step}",
+            "error": f"Timeout tại bước: {e.step}",
         })
     except Exception as e:
         raise HTTPException(status_code=500, detail={

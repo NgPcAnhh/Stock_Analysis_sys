@@ -50,11 +50,13 @@ class Settings(BaseSettings):
     EMAIL_FROM: str = "noreply@stockanalysis.vn"
     FRONTEND_URL: str = "http://localhost:3000"
 
-    LM_STUDIO_CHAT_URL: str = "http://localhost:1234/v1/chat/completions"
     LM_STUDIO_EMBED_URL: str = "http://localhost:1234/v1/embeddings"
-
-    LM_STUDIO_CHAT_MODEL: str = "google/gemma-4-e4b"
     LM_STUDIO_EMBED_MODEL: str = "text-embedding-bge-m3"
+
+    # OpenAI settings
+    OPENAI_API_KEY: str = ""
+    OPENAI_MODEL: str = "gpt-5.4-mini"
+    OPENAI_FINETUNED_MODEL: str | None = None
 
     model_config = SettingsConfigDict(
         env_file=".env" if os.path.exists(".env") else ".env.example",
@@ -71,3 +73,5 @@ class Settings(BaseSettings):
 @lru_cache()
 def get_settings() -> Settings:
     return Settings()
+
+    

@@ -1,42 +1,7 @@
 import json
 import re
 from app.modules.chatbot.llm.client import chat_completion
-
-
-SYSTEM_PROMPT = """
-Bạn là Analysis SQL Agent.
-
-Vai trò của bạn KHÔNG phải phân tích văn bản.
-Vai trò của bạn là sinh nhiều SQL SELECT để lấy số liệu phục vụ chuyên viên phân tích tài chính.
-
-Bắt buộc tạo các nhóm query nếu có đủ dữ kiện:
-1. Chỉ tiêu chính theo 4-8 quý gần nhất.
-2. So sánh YoY.
-3. Financial ratio: ROE, ROA, PE, PB, EPS nếu liên quan.
-4. Peer comparison cùng ngành nếu có ticker.
-5. Tin tức hoặc sự kiện gần đây nếu cần.
-
-QUY TẮC:
-- Chỉ SELECT/WITH.
-- Không SELECT *.
-- Luôn LIMIT hợp lý.
-- Với bctc luôn dùng ind_code.
-- Không đưa ra nhận định đầu tư.
-
-Trả về JSON:
-{
-  "thought": "Mô tả suy nghĩ và lập luận của bạn khi chọn các chỉ tiêu, bảng và mốc thời gian. Tại sao lại cần những dữ liệu này?",
-  "queries": [
-    {
-      "name": "Tên query",
-      "sql": "SELECT ..."
-    }
-  ],
-  "citations": [
-    {"source_type": "...", "ticker": "...", "period": "...", "metric": "..."}
-  ]
-}
-"""
+from app.modules.chatbot.llm.prompt_loader import load_prompt
 
 
 def extract_json(text: str) -> dict:
@@ -52,8 +17,9 @@ async def generate_analysis_sql(
     rag_context: list[dict],
     ind_code_matches: list[dict],
 ) -> dict:
-    prompt = f"""
-Câu hỏi user:
+    system_prompt = load_prompt("analysis_sql_agent.txt")
+
+    prompt = f"""Câu hỏi user:
 {message}
 
 Entities:
@@ -67,12 +33,10 @@ Schema/RAG context:
 
 Hãy sinh danh sách SQL phục vụ phân tích.
 """
-
     response = await chat_completion(
         user_prompt=prompt,
-        system_prompt=SYSTEM_PROMPT,
+        system_prompt=system_prompt,
         temperature=0.0,
         max_tokens=3000,
     )
-
     return extract_json(response)

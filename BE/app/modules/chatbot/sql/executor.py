@@ -1,8 +1,5 @@
 import re
-import asyncpg
-from app.core.config import get_settings
-
-settings = get_settings()
+from app.modules.chatbot.db.pool import get_pool
 
 BLOCKED_SQL = re.compile(
     r"\b(insert|update|delete|drop|alter|truncate|create|grant|revoke|merge|copy)\b",
@@ -22,15 +19,12 @@ def validate_readonly_sql(sql: str) -> None:
 async def execute_sql(sql: str, max_rows: int = 200) -> list[dict]:
     validate_readonly_sql(sql)
 
-    conn = await asyncpg.connect(settings.DATABASE_URL_SYNC)
+    pool = await get_pool()
 
-    try:
+    async with pool.acquire() as conn:
         async with conn.transaction(readonly=True):
             await conn.execute("SET LOCAL statement_timeout = '10s'")
             rows = await conn.fetch(sql)
 
         result = [dict(row) for row in rows]
         return result[:max_rows]
-
-    finally:
-        await conn.close()
